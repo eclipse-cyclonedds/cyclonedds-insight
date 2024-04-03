@@ -1,13 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-from pathlib import Path
+import os
 
-cyclonedds_python_root = f"{Path(__name__).resolve().parent}/../../../"
-print('cyclonedds_python_root: ' + cyclonedds_python_root)
+cyclonedds_python_home = os.getenv('CYCLONEDDS_PYTHON_HOME', './')
+print('cyclonedds_python_home: ' + cyclonedds_python_home)
 
 a = Analysis(
     ['src/main.py'],
-    pathex=[cyclonedds_python_root],
+    pathex=[cyclonedds_python_home],
     binaries=[],
     datas=[],
     hiddenimports=[],

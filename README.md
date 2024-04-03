@@ -19,6 +19,8 @@ pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && python3 ./src/main.py
 
 ```bash
 # Execute
+export CYCLONEDDS_HOME=<path-to-cyclonedds-install-folder> &&\
+export CYCLONEDDS_PYTHON_HOME=<path-to-cyclonedds-python-repo> &&\
 pyside6-rcc ./resources.qrc -o ./src/qrc_file.py &&\
 DYLD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
 pyinstaller main.spec --noconfirm --clean
