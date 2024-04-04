@@ -5,6 +5,8 @@
 
 A graphical tool to visualize the current DDS system.
 
+![`cyclonedds insight`](res/images/cyclonedds-insight.png)
+
 ## How to run via python
 
 ```bash
