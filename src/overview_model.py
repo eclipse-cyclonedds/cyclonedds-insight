@@ -24,12 +24,12 @@ from dds_service import dds_qos_policy_id
 
 
 class TreeNode:
-    def __init__(self, data: str, is_domain=False, has_qos_missmatch=False, parent=None):
+    def __init__(self, data: str, is_domain=False, has_qos_mismatch=False, parent=None):
         self.parentItem = parent
         self.itemData = data
         self.childItems = []
         self.is_domain = is_domain
-        self.has_qos_missmatch = has_qos_missmatch
+        self.has_qos_mismatch = has_qos_mismatch
 
     def appendChild(self, item):
         self.childItems.append(item)
@@ -59,14 +59,14 @@ class TreeNode:
     def isDomain(self):
         return self.is_domain
 
-    def hasQosMissmatch(self):
-        return self.has_qos_missmatch
+    def hasQosMismatch(self):
+        return self.has_qos_mismatch
 
 class TreeModel(QAbstractItemModel):
 
     IsDomainRole = Qt.UserRole + 1
     DisplayRole = Qt.UserRole + 2
-    HasQosMissmatch = Qt.UserRole + 3
+    HasQosMismatch = Qt.UserRole + 3
 
     remove_domain_request_signal = Signal(int)
 
@@ -81,8 +81,8 @@ class TreeModel(QAbstractItemModel):
         self.dds_data.remove_topic_signal.connect(self.remove_topic_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.new_domain_signal.connect(self.addDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_domain_signal.connect(self.removeDomain, Qt.ConnectionType.QueuedConnection)
-        self.dds_data.new_missmatch_signal.connect(self.new_qos_missmatch, Qt.ConnectionType.QueuedConnection)
-        self.dds_data.no_more_missmatch_in_topic_signal.connect(self.no_more_missmatch_in_topic_slot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.new_mismatch_signal.connect(self.new_qos_mismatch, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.no_more_mismatch_in_topic_signal.connect(self.no_more_mismatch_in_topic_slot, Qt.ConnectionType.QueuedConnection)
 
         # Connect from self to dds_data
         self.remove_domain_request_signal.connect(self.dds_data.remove_domain, Qt.ConnectionType.QueuedConnection)
@@ -128,15 +128,15 @@ class TreeModel(QAbstractItemModel):
             return item.data(index)
         if role == self.IsDomainRole:
             return item.isDomain()
-        if role == self.HasQosMissmatch:
-            return item.hasQosMissmatch()
+        if role == self.HasQosMismatch:
+            return item.hasQosMismatch()
         return None
 
     def roleNames(self):
         return {
             self.DisplayRole: b'display',
             self.IsDomainRole: b'is_domain',
-            self.HasQosMissmatch: b'has_qos_missmatch'
+            self.HasQosMismatch: b'has_qos_mismatch'
         }
 
     def flags(self, index):
@@ -156,29 +156,29 @@ class TreeModel(QAbstractItemModel):
                 child.appendChild(topic_child)
                 self.endInsertRows()
 
-    def set_qos_missmatch(self, domain_id: int, topic_name: str, has_missmatch: bool):
+    def set_qos_mismatch(self, domain_id: int, topic_name: str, has_mismatch: bool):
         for idx in range(self.rootItem.childCount()):
             child: TreeNode = self.rootItem.child(idx)
             if child.data(0) == str(domain_id):
-                child.has_qos_missmatch = has_missmatch
+                child.has_qos_mismatch = has_mismatch
                 index_domain = self.index(idx, 0)
-                self.dataChanged.emit(index_domain, index_domain, [self.HasQosMissmatch])
+                self.dataChanged.emit(index_domain, index_domain, [self.HasQosMismatch])
                 for idx_child in range(child.childCount()):
                     topic_child: TreeNode = child.child(idx_child)
                     if topic_name == topic_child.data(0):
-                        topic_child.has_qos_missmatch = has_missmatch
+                        topic_child.has_qos_mismatch = has_mismatch
                         index1 = self.index(idx_child, 0, self.index(idx, 0))
                         index2 = self.index(idx_child, self.columnCount()-1, self.index(idx, self.columnCount()-1))
-                        roles = [self.HasQosMissmatch]
+                        roles = [self.HasQosMismatch]
                         self.dataChanged.emit(index1, index2, roles)
 
     @Slot(int, str, str, dds_qos_policy_id, str)
-    def new_qos_missmatch(self, domain_id, topic_name, endpoint_key, missmatch_type):
-        self.set_qos_missmatch(domain_id, topic_name, True)
+    def new_qos_mismatch(self, domain_id, topic_name, endpoint_key, mismatch_type):
+        self.set_qos_mismatch(domain_id, topic_name, True)
 
     @Slot(int, str)
-    def no_more_missmatch_in_topic_slot(self, domain_id, topic_name):
-        self.set_qos_missmatch(domain_id, topic_name, False)
+    def no_more_mismatch_in_topic_slot(self, domain_id, topic_name):
+        self.set_qos_mismatch(domain_id, topic_name, False)
 
     @Slot(int, str)
     def remove_topic_slot(self, domain_id, topic_name):

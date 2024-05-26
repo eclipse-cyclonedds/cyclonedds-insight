@@ -38,18 +38,18 @@ class EndpointModel(QAbstractItemModel):
     HostnameRole = Qt.UserRole + 8
     ProcessIdRole = Qt.UserRole + 9
     ProcessNameRole = Qt.UserRole + 10
-    EndpointHasQosMissmatch = Qt.UserRole + 11
-    EndpointQosMissmatchText = Qt.UserRole + 12
+    EndpointHasQosMismatch = Qt.UserRole + 11
+    EndpointQosMismatchText = Qt.UserRole + 12
 
     participants = {}
     endpoints = {}
     domain_id = -1
     topic_name = ""
     entity_type = EntityType.UNDEFINED
-    topic_has_missmatch = False
+    topic_has_mismatch = False
     mismatches = {}
 
-    topicHasQosMissmatchSignal = Signal(bool)
+    topicHasQosMismatchSignal = Signal(bool)
 
     def __init__(self, parent=None):
         super(EndpointModel, self).__init__(parent)
@@ -60,8 +60,8 @@ class EndpointModel(QAbstractItemModel):
         self.dds_data.removed_endpoint_signal.connect(self.remove_endpoint_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.new_participant_signal.connect(self.new_participant, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_participant_signal.connect(self.removed_participant, Qt.ConnectionType.QueuedConnection)
-        self.dds_data.new_missmatch_signal.connect(self.new_qos_missmatch, Qt.ConnectionType.QueuedConnection)
-        self.dds_data.no_more_missmatch_in_topic_signal.connect(self.no_more_missmatch_in_topic_slot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.new_mismatch_signal.connect(self.new_qos_mismatch, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.no_more_mismatch_in_topic_signal.connect(self.no_more_mismatch_in_topic_slot, Qt.ConnectionType.QueuedConnection)
 
     def index(self, row, column, parent=QModelIndex()):
         return self.createIndex(row, column)
@@ -113,11 +113,11 @@ class EndpointModel(QAbstractItemModel):
             return pid
         elif role == self.ProcessNameRole:
             return os.path.basename(appname)
-        elif role == self.EndpointHasQosMissmatch:
+        elif role == self.EndpointHasQosMismatch:
             if endp_key in self.mismatches.keys():
                 return True
             return False
-        elif role == self.EndpointQosMissmatchText:
+        elif role == self.EndpointQosMismatchText:
             qos_mm_txt = ""
             if endp_key in self.mismatches.keys():
                 qos_mm_txt += "\nQos-Mismatch:\n"
@@ -142,8 +142,8 @@ class EndpointModel(QAbstractItemModel):
             self.HostnameRole: b'endpoint_hostname',
             self.ProcessIdRole: b'endpoint_process_id',
             self.ProcessNameRole: b'endpoint_process_name',
-            self.EndpointHasQosMissmatch: b'endpoint_has_qos_missmatch',
-            self.EndpointQosMissmatchText: b'endpoint_qos_missmatch_text'
+            self.EndpointHasQosMismatch: b'endpoint_has_qos_mismatch',
+            self.EndpointQosMismatchText: b'endpoint_qos_mismatch_text'
         }
 
     @Slot(int, str, int)
@@ -168,9 +168,9 @@ class EndpointModel(QAbstractItemModel):
         self.endResetModel()
 
         if len(self.mismatches.keys()) > 0:
-            self.topicHasQosMissmatchSignal.emit(True)
+            self.topicHasQosMismatchSignal.emit(True)
         else:
-            self.topicHasQosMissmatchSignal.emit(False)
+            self.topicHasQosMismatchSignal.emit(False)
 
     @Slot(int, DcpsEndpoint, EntityType)
     def new_endpoint_slot(self, domain_id: int, endpoint: DcpsEndpoint, entity_type: EntityType):
@@ -216,29 +216,29 @@ class EndpointModel(QAbstractItemModel):
             self.endResetModel()
 
     @Slot(int, str, str, dds_qos_policy_id, str)
-    def new_qos_missmatch(self, domain_id, topic_name, endpoint_key, missmatch_type, endpoint_key_mm):
+    def new_qos_mismatch(self, domain_id, topic_name, endpoint_key, mismatch_type, endpoint_key_mm):
         if domain_id != self.domain_id or topic_name != self.topic_name:
             return
 
-        self.topicHasQosMissmatchSignal.emit(True)
+        self.topicHasQosMismatchSignal.emit(True)
         if endpoint_key not in self.mismatches.keys():
             self.mismatches[endpoint_key] = {}
         
-        self.mismatches[endpoint_key][endpoint_key_mm] = missmatch_type
+        self.mismatches[endpoint_key][endpoint_key_mm] = mismatch_type
 
         if str(endpoint_key) in self.endpoints.keys():
             idx = list(self.endpoints.keys()).index(endpoint_key)
             index = self.createIndex(idx, 0)
-            self.dataChanged.emit(index, index, [self.EndpointHasQosMissmatch, self.EndpointQosMissmatchText])
+            self.dataChanged.emit(index, index, [self.EndpointHasQosMismatch, self.EndpointQosMismatchText])
 
     @Slot(int, str)
-    def no_more_missmatch_in_topic_slot(self, domain_id, topic_name):
+    def no_more_mismatch_in_topic_slot(self, domain_id, topic_name):
         if domain_id != self.domain_id or topic_name != self.topic_name:
             return
 
         self.mismatches = {}
-        self.topicHasQosMissmatchSignal.emit(False)
+        self.topicHasQosMismatchSignal.emit(False)
 
         for idx, _ in enumerate(list(self.endpoints.keys())):
             index = self.createIndex(idx, 0)
-            self.dataChanged.emit(index, index, [self.EndpointHasQosMissmatch, self.EndpointQosMissmatchText])
+            self.dataChanged.emit(index, index, [self.EndpointHasQosMismatch, self.EndpointQosMismatchText])

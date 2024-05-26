@@ -24,7 +24,7 @@ Rectangle {
 
     property int domainId
     property string topicName
-    property bool hasQosMissmatch: false
+    property bool hasQosMismatch: false
 
     EndpointModel {
         id: endpointWriterModel
@@ -36,8 +36,8 @@ Rectangle {
 
     Connections {
         target: endpointWriterModel
-        function onTopicHasQosMissmatchSignal(missmatch) {
-            topicEndpointView.hasQosMissmatch = missmatch
+        function onTopicHasQosMismatchSignal(mismatch) {
+            topicEndpointView.hasQosMismatch = mismatch
         }
     }
 
@@ -81,8 +81,8 @@ Rectangle {
                         height: 30
                         Layout.alignment: Qt.AlignVCenter
                         enableTooltip: true
-                        tooltipText: "Qos missmatch detected."
-                        visible: topicEndpointView.hasQosMissmatch
+                        tooltipText: "Qos mismatch detected."
+                        visible: topicEndpointView.hasQosMismatch
                     }
                 }
 
@@ -114,7 +114,7 @@ Rectangle {
 
                                     anchors.fill: parent
                                     color: rootWindow.isDarkMode ? mouseAreaEndpointWriter.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : mouseAreaEndpointWriter.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
-                                    border.color: endpoint_has_qos_missmatch ? Constants.warningColor : rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
+                                    border.color: endpoint_has_qos_mismatch ? Constants.warningColor : rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
                                     border.width: 0.5
                                     Column {
                                         spacing: 0
@@ -145,7 +145,7 @@ Rectangle {
                                         parent: writerRec
                                         visible: writerRec.showTooltip
                                         delay: 200
-                                        text: "Key: " +endpoint_key + "\nParticipant Key:" + endpoint_participant_key + "\nInstance Handle: " + endpoint_participant_instance_handle + "\nTopic Name:" + endpoint_topic_name + "\nTopic Type: " + endpoint_topic_type + endpoint_qos_missmatch_text + "\nQos:\n" + endpoint_qos + "\nType Id: " + endpoint_type_id
+                                        text: "Key: " +endpoint_key + "\nParticipant Key:" + endpoint_participant_key + "\nInstance Handle: " + endpoint_participant_instance_handle + "\nTopic Name:" + endpoint_topic_name + "\nTopic Type: " + endpoint_topic_type + endpoint_qos_mismatch_text + "\nQos:\n" + endpoint_qos + "\nType Id: " + endpoint_type_id
                                         contentItem: Label {
                                             text: writerTooltip.text
                                         }
@@ -186,7 +186,7 @@ Rectangle {
                                 Rectangle {
                                     anchors.fill: parent
                                     color: rootWindow.isDarkMode ? mouseAreaEndpointReader.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : mouseAreaEndpointReader.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
-                                    border.color: endpoint_has_qos_missmatch ? Constants.warningColor : rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
+                                    border.color: endpoint_has_qos_mismatch ? Constants.warningColor : rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
                                     border.width: 0.5
                                     id: readerRec
                                     property bool showTooltip: false
@@ -220,7 +220,7 @@ Rectangle {
                                         parent: readerRec
                                         visible: readerRec.showTooltip
                                         delay: 200
-                                        text: "Key: " + endpoint_key + "\nParticipant Key:" + endpoint_participant_key + "\nInstance Handle: " + endpoint_participant_instance_handle + "\nTopic Name:" + endpoint_topic_name + "\nTopic Type: " + endpoint_topic_type + endpoint_qos_missmatch_text + "\nQos:\n" + endpoint_qos + "\nType Id: " + endpoint_type_id
+                                        text: "Key: " + endpoint_key + "\nParticipant Key:" + endpoint_participant_key + "\nInstance Handle: " + endpoint_participant_instance_handle + "\nTopic Name:" + endpoint_topic_name + "\nTopic Type: " + endpoint_topic_type + endpoint_qos_mismatch_text + "\nQos:\n" + endpoint_qos + "\nType Id: " + endpoint_type_id
                                         contentItem: Label {
                                             text: readerTooltip.text
                                         }
