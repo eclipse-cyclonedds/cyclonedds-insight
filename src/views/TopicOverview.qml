@@ -161,14 +161,25 @@ ColumnLayout {
                     }
                 }
             }
-
             Label {
                 id: label
                 x: padding + (isTreeNode ? (depth + 1) * indentation : 0)
                 anchors.verticalCenter: parent.verticalCenter
-                width: parent.width - padding - x
+                width: parent.width - padding - x - 10
                 clip: true
                 text: model.is_domain ? "Domain " + model.display : model.display 
+            }
+
+            WarningTriangle {
+                id: warning_triangle
+                visible: model.has_qos_missmatch
+                width: 15
+                height: 15
+                anchors.verticalCenter: label.verticalCenter
+                anchors.right: model.is_domain ? label.right : label.left
+                anchors.margins: 5
+                enableTooltip: true
+                tooltipText: "Qos missmatch detected."
             }
         }
     }

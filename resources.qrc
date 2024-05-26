@@ -27,5 +27,6 @@
         <file>src/views/SettingsView.qml</file>
         <file>src/views/TopicOverview.qml</file>
         <file>src/views/TopicEndpointView.qml</file>
+        <file>src/views/WarningTriangle.qml</file>
     </qresource>
 </RCC>

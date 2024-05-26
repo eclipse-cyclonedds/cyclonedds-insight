@@ -7,6 +7,15 @@ A graphical tool to visualize the current DDS system.
 
 ![`cyclonedds insight`](res/images/cyclonedds-insight.png)
 
+Features:
+
+- Show topics
+- Show reader/writer on a topic
+- Show qos of each reader/writer
+- Show qos mismatches
+- Dark and light mode support
+- Runs on MacOS, Windows, Linux
+
 ## How to run via python
 
 ```bash
