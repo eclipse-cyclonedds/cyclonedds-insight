@@ -242,6 +242,72 @@ def to_kind_destination_order(q: qos.Qos):
             return dds_destination_order.DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP
     return None
 
+def ddsi_patmatch(pat, s):
+    pat_idx = 0
+    s_idx = 0
+
+    while pat_idx < len(pat):
+        if pat[pat_idx] == '?':
+            # any character will do
+            if s_idx >= len(s):
+                return False
+            pat_idx += 1
+            s_idx += 1
+        elif pat[pat_idx] == '*':
+            # collapse a sequence of wildcards
+            while pat_idx < len(pat) and (pat[pat_idx] == '*' or pat[pat_idx] == '?'):
+                if pat[pat_idx] == '?' and s_idx >= len(s):
+                    return False
+                pat_idx += 1
+                s_idx += 1
+            # try matching on all positions where s matches pat
+            while s_idx < len(s):
+                if (pat_idx < len(pat) and s[s_idx] == pat[pat_idx] and
+                        ddsi_patmatch(pat[pat_idx + 1:], s[s_idx + 1:])):
+                    return True
+                s_idx += 1
+            return pat_idx == len(pat)
+        else:
+            # only an exact match
+            if s_idx >= len(s) or s[s_idx] != pat[pat_idx]:
+                return False
+            pat_idx += 1
+            s_idx += 1
+
+    return s_idx == len(s)
+
+def is_wildcard_partition(s):
+    return '*' in s or '?' in s
+
+def partition_patmatch_p(pat, name):
+    if not is_wildcard_partition(pat):
+        return pat == name
+    elif is_wildcard_partition(name):
+        return False
+    else:
+        return ddsi_patmatch(pat, name)
+
+def partitions_match_default(x):
+    if qos.Policy.Partition not in x or len(x[qos.Policy.Partition].partitions) == 0:
+        return True
+    for i in range(len(x.partition)):
+        if partition_patmatch_p(x[qos.Policy.Partition].partitions[i], ""):
+            return True
+    return False
+
+def partitions_match_p(a, b):
+    if (qos.Policy.Partition not in a) or len(a[qos.Policy.Partition].partitions) == 0:
+        return partitions_match_default(b)
+    elif (qos.Policy.Partition not in b) or len(b[qos.Policy.Partition].partitions) == 0:
+        return partitions_match_default(a)
+    else:
+        for i in range(len(a[qos.Policy.Partition].partitions)):
+            for j in range(len(b[qos.Policy.Partition].partitions)):
+                if (partition_patmatch_p(a[qos.Policy.Partition].partitions[i], b[qos.Policy.Partition].partitions[j]) or 
+                        partition_patmatch_p(b[qos.Policy.Partition].partitions[j], a[qos.Policy.Partition].partitions[i])):
+                    return True
+        return False
+
 def qos_match(endpoint_reader, endpoint_writer):
 
     if endpoint_reader.topic_name != endpoint_writer.topic_name:
@@ -302,12 +368,8 @@ def qos_match(endpoint_reader, endpoint_writer):
     if destination_order_rd and destination_order_wr and destination_order_rd > destination_order_wr:
         return False, dds_qos_policy_id.DDS_DESTINATIONORDER_QOS_POLICY_ID
 
-
-    """        
-    if ((mask & DDSI_QP_PARTITION) && !partitions_match_p (rd_qos, wr_qos)) 
-        *reason = DDS_PARTITION_QOS_POLICY_ID;
-        return false;
-    """
+    if not partitions_match_p(endpoint_reader.qos, endpoint_writer.qos):
+        return False, dds_qos_policy_id.DDS_PARTITION_QOS_POLICY_ID
 
     if qos.Policy.DataRepresentation in endpoint_reader.qos and qos.Policy.DataRepresentation in endpoint_writer.qos:
         if endpoint_writer.qos[qos.Policy.DataRepresentation].use_cdrv0_representation and endpoint_reader.qos[qos.Policy.DataRepresentation].use_cdrv0_representation:
@@ -318,66 +380,9 @@ def qos_match(endpoint_reader, endpoint_writer):
             return False, dds_qos_policy_id.DDS_DATA_REPRESENTATION_QOS_POLICY_ID
 
     if feature_typelib:
-        type_pair_has_id = False # TODO
-        # if (!type_pair_has_id (rd_type_pair) || !type_pair_has_id (wr_type_pair))
-        if not type_pair_has_id or not type_pair_has_id:
-            
-            if qos.Policy.TypeConsistency.AllowTypeCoercion in endpoint_reader.qos and endpoint_reader.qos[qos.Policy.TypeConsistency.AllowTypeCoercion].force_type_validation:
-                return False, dds_qos_policy_id.DDS_TYPE_CONSISTENCY_ENFORCEMENT_QOS_POLICY_ID
-            if qos.Policy.TypeConsistency.DisallowTypeCoercion in endpoint_reader.qos and endpoint_reader.qos[qos.Policy.TypeConsistency.DisallowTypeCoercion].force_type_validation:
-                return False, dds_qos_policy_id.DDS_TYPE_CONSISTENCY_ENFORCEMENT_QOS_POLICY_ID
-            
-            if endpoint_reader.type_name != endpoint_writer.type_name:
-                return False, dds_qos_policy_id.DDS_INVALID_QOS_POLICY_ID
-
-        else:
-
-            if qos.Policy.TypeConsistency.DisallowTypeCoercion in endpoint_reader.qos and endpoint_reader.qos[qos.Policy.TypeConsistency.DisallowTypeCoercion].force_type_validation:
-                # if ddsi_typeid_compare (ddsi_type_pair_minimal_id (rd_type_pair), ddsi_type_pair_minimal_id (wr_type_pair)))
-                #     return False, dds_qos_policy_id.DDS_TYPE_CONSISTENCY_ENFORCEMENT_QOS_POLICY_ID
-                pass
-            else:
-                pass
-            """
-            else
-            {
-                dds_type_consistency_enforcement_qospolicy_t tce = {
-                .kind = DDS_TYPE_CONSISTENCY_ALLOW_TYPE_COERCION,
-                .ignore_sequence_bounds = true,
-                .ignore_string_bounds = true,
-                .ignore_member_names = false,
-                .prevent_type_widening = false,
-                .force_type_validation = false
-                };
-                (void) dds_qget_type_consistency (rd_qos, &tce.kind, &tce.ignore_sequence_bounds, &tce.ignore_string_bounds, &tce.ignore_member_names, &tce.prevent_type_widening, &tce.force_type_validation);
-
-                if (tce.kind == DDS_TYPE_CONSISTENCY_DISALLOW_TYPE_COERCION)
-                {
-                    if (ddsi_typeid_compare (ddsi_type_pair_minimal_id (rd_type_pair), ddsi_type_pair_minimal_id (wr_type_pair)))
-                    {
-                        *reason = DDS_TYPE_CONSISTENCY_ENFORCEMENT_QOS_POLICY_ID;
-                        return false;
-                    }
-                }
-                else
-                {
-                    uint32_t rd_resolved, wr_resolved;
-                    if (!(rd_resolved = is_endpoint_type_resolved (gv, rd_qos->type_name, rd_type_pair, rd_typeid_req_lookup, "rd"))
-                        || !(wr_resolved = is_endpoint_type_resolved (gv, wr_qos->type_name, wr_type_pair, wr_typeid_req_lookup, "wr")))
-                        return false;
-
-                    if (!ddsi_is_assignable_from (gv, rd_type_pair, rd_resolved, wr_type_pair, wr_resolved, &tce))
-                    {
-                        *reason = DDS_TYPE_CONSISTENCY_ENFORCEMENT_QOS_POLICY_ID;
-                        return false;
-                    }
-                }
-            }
-            #else
-            """
+        pass # TODO: finish implement xtypes qos check
     else:
         if endpoint_reader.type_name != endpoint_writer.type_name:
             return False, dds_qos_policy_id.DDS_INVALID_QOS_POLICY_ID
-
 
     return True, None
