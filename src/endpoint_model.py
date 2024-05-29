@@ -17,7 +17,6 @@ import logging
 import os
 
 import dds_data
-from dds_service import dds_qos_policy_id
 from utils import EntityType
 
 
@@ -120,9 +119,12 @@ class EndpointModel(QAbstractItemModel):
         elif role == self.EndpointQosMismatchText:
             qos_mm_txt = ""
             if endp_key in self.mismatches.keys():
-                qos_mm_txt += "\nQos-Mismatch:\n"
+                qos_mm_txt += "\nQos-Mismatches:\n"
                 for idx, endp_mm in enumerate(self.mismatches[endp_key].keys()):
-                    qos_mm_txt += "  " + str(self.mismatches[endp_key][endp_mm]) + " with " + str(endp_mm)
+                    for idx_mm, mm_type in enumerate(self.mismatches[endp_key][endp_mm]):
+                        qos_mm_txt += "  " + str(mm_type) + " with " + str(endp_mm)
+                        if idx_mm < len(self.mismatches[endp_key][endp_mm]) - 1:
+                            qos_mm_txt += "\n"
                     if idx < len(self.mismatches[endp_key].keys()) - 1:
                         qos_mm_txt += "\n"
                 qos_mm_txt = qos_mm_txt.replace("dds_qos_policy_id.", "")
@@ -215,8 +217,8 @@ class EndpointModel(QAbstractItemModel):
             del self.participants[key]
             self.endResetModel()
 
-    @Slot(int, str, str, dds_qos_policy_id, str)
-    def new_qos_mismatch(self, domain_id, topic_name, endpoint_key, mismatch_type, endpoint_key_mm):
+    @Slot(int, str, str, list, str)
+    def new_qos_mismatch(self, domain_id, topic_name, endpoint_key, mismatches, endpoint_key_mm):
         if domain_id != self.domain_id or topic_name != self.topic_name:
             return
 
@@ -224,7 +226,7 @@ class EndpointModel(QAbstractItemModel):
         if endpoint_key not in self.mismatches.keys():
             self.mismatches[endpoint_key] = {}
         
-        self.mismatches[endpoint_key][endpoint_key_mm] = mismatch_type
+        self.mismatches[endpoint_key][endpoint_key_mm] = mismatches
 
         if str(endpoint_key) in self.endpoints.keys():
             idx = list(self.endpoints.keys()).index(endpoint_key)

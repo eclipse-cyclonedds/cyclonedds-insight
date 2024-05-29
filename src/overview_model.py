@@ -20,7 +20,7 @@ from PySide6.QtCore import QObject, Signal, Property, Slot
 import logging
 
 import dds_data
-from dds_service import dds_qos_policy_id
+from dds_qos import dds_qos_policy_id
 
 
 class TreeNode:
@@ -172,8 +172,8 @@ class TreeModel(QAbstractItemModel):
                         roles = [self.HasQosMismatch]
                         self.dataChanged.emit(index1, index2, roles)
 
-    @Slot(int, str, str, dds_qos_policy_id, str)
-    def new_qos_mismatch(self, domain_id, topic_name, endpoint_key, mismatch_type):
+    @Slot(int, str, str, list, str)
+    def new_qos_mismatch(self, domain_id, topic_name, endpoint_key, mismatches, endpoint_key_mm):
         self.set_qos_mismatch(domain_id, topic_name, True)
 
     @Slot(int, str)

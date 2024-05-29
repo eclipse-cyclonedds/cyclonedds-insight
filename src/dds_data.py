@@ -15,7 +15,8 @@ from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 import threading
 import logging
 
-from dds_service import builtin_observer, qos_match, dds_qos_policy_id
+from dds_service import builtin_observer
+from dds_qos import qos_match
 from utils import singleton, EntityType
 
 
@@ -35,7 +36,7 @@ class DdsData(QObject):
     removed_endpoint_signal = Signal(int, str)
     new_participant_signal = Signal(int, DcpsParticipant)
     removed_participant_signal = Signal(int, str)
-    new_mismatch_signal = Signal(int, str, str, dds_qos_policy_id, str)
+    new_mismatch_signal = Signal(int, str, str, list, str)
     no_more_mismatch_in_topic_signal = Signal(int, str)
 
     # data store
@@ -120,19 +121,19 @@ class DdsData(QObject):
                             entity_type_iter != entity_type):
 
                         if entity_type.READER and entity_type_iter.WRITER:
-                            matched, mismatch_type = qos_match(endpoint, endpoint_iter)
+                            mismatches = qos_match(endpoint, endpoint_iter)
                         else:
-                            matched, mismatch_type = qos_match(endpoint_iter, endpoint)
+                            mismatches = qos_match(endpoint_iter, endpoint)
 
-                        if matched is False:
+                        if len(mismatches) > 0:
                             if domain_id not in self.mismatches.keys():
                                 self.mismatches[domain_id] = {}
 
                             if str(endpoint.key) not in self.mismatches[domain_id]:
                                 self.mismatches[domain_id][str(endpoint.key)] = {}
 
-                            self.mismatches[domain_id][str(endpoint.key)][endpoint_iter.key] = mismatch_type
-                            self.new_mismatch_signal.emit(domain_id, endpoint.topic_name, str(endpoint.key), mismatch_type, str(endpoint_iter.key))
+                            self.mismatches[domain_id][str(endpoint.key)][endpoint_iter.key] = mismatches
+                            self.new_mismatch_signal.emit(domain_id, endpoint.topic_name, str(endpoint.key), mismatches, str(endpoint_iter.key))
 
     @Slot(int, DcpsEndpoint, EntityType)
     def add_endpoint(self, domain_id: int, endpoint: DcpsEndpoint, entity_type: EntityType):
