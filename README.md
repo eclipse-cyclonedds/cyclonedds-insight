@@ -1,5 +1,8 @@
 [![Website](https://img.shields.io/badge/web-cyclonedds.io-blue)](https://cyclonedds.io)
+[![License](https://img.shields.io/badge/License-EPL%202.0-blue)](https://choosealicense.com/licenses/epl-2.0/)
+[![License](https://img.shields.io/badge/License-EDL%201.0-blue)](https://choosealicense.com/licenses/edl-1.0/)
 [![Community](https://img.shields.io/badge/discord-join%20community-5865f2)](https://discord.gg/BkRYQPpZVV)
+
 
 # CycloneDDS Insight
 
