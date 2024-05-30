@@ -16,6 +16,7 @@ import threading
 import logging
 
 from dds_service import builtin_observer
+from dds_qos import qos_match
 from utils import singleton, EntityType
 
 
@@ -35,11 +36,14 @@ class DdsData(QObject):
     removed_endpoint_signal = Signal(int, str)
     new_participant_signal = Signal(int, DcpsParticipant)
     removed_participant_signal = Signal(int, str)
+    new_mismatch_signal = Signal(int, str, str, list, str)
+    no_more_mismatch_in_topic_signal = Signal(int, str)
 
     # data store
     domains = []
     endpoints = {}
     participants = {}
+    mismatches = {}
 
     def join_observer(self):
         for obs_key in self.observer_threads.keys():
@@ -103,15 +107,45 @@ class DdsData(QObject):
                     del self.participants[domain_id][idx]
                     self.removed_participant_signal.emit(domain_id, str(participant.key))
 
+    def check_qos_mismatches(self, domain_id):
+        """Check the given domain if there are reader and writer
+        with a qos mismatch. A signal is emitted on mismatch."""
+
+        if domain_id in self.endpoints.keys():
+            if domain_id in self.mismatches:
+                del self.mismatches[domain_id]
+            for (entity_type, endpoint) in self.endpoints[domain_id]:
+                for (entity_type_iter, endpoint_iter) in self.endpoints[domain_id]:
+                    if (endpoint.topic_name == endpoint_iter.topic_name and
+                            endpoint.key != endpoint_iter.key and
+                            entity_type_iter != entity_type):
+
+                        if entity_type.READER and entity_type_iter.WRITER:
+                            mismatches = qos_match(endpoint, endpoint_iter)
+                        else:
+                            mismatches = qos_match(endpoint_iter, endpoint)
+
+                        if len(mismatches) > 0:
+                            if domain_id not in self.mismatches.keys():
+                                self.mismatches[domain_id] = {}
+
+                            if str(endpoint.key) not in self.mismatches[domain_id]:
+                                self.mismatches[domain_id][str(endpoint.key)] = {}
+
+                            self.mismatches[domain_id][str(endpoint.key)][endpoint_iter.key] = mismatches
+                            self.new_mismatch_signal.emit(domain_id, endpoint.topic_name, str(endpoint.key), mismatches, str(endpoint_iter.key))
+
     @Slot(int, DcpsEndpoint, EntityType)
     def add_endpoint(self, domain_id: int, endpoint: DcpsEndpoint, entity_type: EntityType):
         with self.mutex:
+            # add endpoint
             logging.info(f"Add endpoint domain: {domain_id}, key: {str(endpoint.key)}, entity: {entity_type}")
             if domain_id in self.endpoints.keys():
                 self.endpoints[domain_id].append((entity_type, endpoint))
             else:
                 self.endpoints[domain_id] = [(entity_type, endpoint)]
 
+            # check new topic
             if domain_id in self.endpoints.keys():
                 already_endpoint_on_topic = False
                 for (_, endpoint_iter) in self.endpoints[domain_id]:
@@ -125,10 +159,12 @@ class DdsData(QObject):
 
                 self.new_endpoint_signal.emit(domain_id, endpoint, entity_type)
 
+            # check qos
+            self.check_qos_mismatches(domain_id)
+
     @Slot(int, DcpsEndpoint)
     def remove_endpoint(self, domain_id: int, endpoint: DcpsEndpoint):
         with self.mutex:
-            endpoint.topic_name
             if domain_id in self.endpoints.keys():
                 available = -1
                 other_endpoint_on_topic = False
@@ -154,6 +190,10 @@ class DdsData(QObject):
                     logging.info(f"Remove topic {str(topic_name)}")
                     self.remove_topic_signal.emit(domain_id, topic_name)
 
+            # check qos
+            self.no_more_mismatch_in_topic_signal.emit(domain_id, topic_name)
+            self.check_qos_mismatches(domain_id)     
+
     @Slot(int,result=[(EntityType, DcpsEndpoint)])
     def getEndpoints(self, domain_id: int):
         with self.mutex:
@@ -165,3 +205,13 @@ class DdsData(QObject):
         with self.mutex:
             if domain_id in self.participants.keys():
                 return self.participants[domain_id]
+
+    def getQosMismatches(self, domain_id: int, topic_name: str):
+        with self.mutex:
+            if domain_id in self.mismatches.keys() and domain_id in self.endpoints.keys():
+                topic_mismatches = {}
+                for (_, endpoint_iter) in self.endpoints[domain_id]:
+                    if topic_name == endpoint_iter.topic_name and str(endpoint_iter.key) in self.mismatches[domain_id].keys():
+                        topic_mismatches[str(endpoint_iter.key)] = self.mismatches[domain_id][str(endpoint_iter.key)]
+                return topic_mismatches
+        return {}

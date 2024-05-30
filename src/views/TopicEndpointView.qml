@@ -24,6 +24,7 @@ Rectangle {
 
     property int domainId
     property string topicName
+    property bool hasQosMismatch: false
 
     EndpointModel {
         id: endpointWriterModel
@@ -31,6 +32,13 @@ Rectangle {
 
     EndpointModel {
         id: endpointReaderModel
+    }
+
+    Connections {
+        target: endpointWriterModel
+        function onTopicHasQosMismatchSignal(mismatch) {
+            topicEndpointView.hasQosMismatch = mismatch
+        }
     }
 
     Component.onCompleted: {
@@ -51,11 +59,31 @@ Rectangle {
                 width: parent.width - 20
                 spacing: 10
 
-                Label {
-                    text: "Domain Id: " + domainId
-                }
-                Label {
-                    text: "Topic Name: " + topicName
+                Row {
+                    Column {
+                        id: headlineLabel
+                        Label {
+                            text: "Domain Id: " + domainId
+                        }
+                        Label {
+                            text: "Topic Name: " + topicName
+                        }
+                    }
+
+                    Item {
+                        height: 1
+                        width: topicEndpointView.width - headlineLabel.width - warning_triangle.width - 20
+                    }
+
+                    WarningTriangle {
+                        id: warning_triangle
+                        width: 30
+                        height: 30
+                        Layout.alignment: Qt.AlignVCenter
+                        enableTooltip: true
+                        tooltipText: "Qos mismatch detected."
+                        visible: topicEndpointView.hasQosMismatch
+                    }
                 }
 
                 Row {
@@ -86,7 +114,7 @@ Rectangle {
 
                                     anchors.fill: parent
                                     color: rootWindow.isDarkMode ? mouseAreaEndpointWriter.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : mouseAreaEndpointWriter.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
-                                    border.color: rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
+                                    border.color: endpoint_has_qos_mismatch ? Constants.warningColor : rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
                                     border.width: 0.5
                                     Column {
                                         spacing: 0
@@ -117,7 +145,7 @@ Rectangle {
                                         parent: writerRec
                                         visible: writerRec.showTooltip
                                         delay: 200
-                                        text: "Key: " +endpoint_key + "\nParticipant Key:" + endpoint_participant_key + "\nInstance Handle: " + endpoint_participant_instance_handle + "\nTopic Name:" + endpoint_topic_name + "\nTopic Type: " + endpoint_topic_type + "\nQos:\n" + endpoint_qos + "\nType Id: " + endpoint_type_id
+                                        text: "Key: " +endpoint_key + "\nParticipant Key:" + endpoint_participant_key + "\nInstance Handle: " + endpoint_participant_instance_handle + "\nTopic Name:" + endpoint_topic_name + "\nTopic Type: " + endpoint_topic_type + endpoint_qos_mismatch_text + "\nQos:\n" + endpoint_qos + "\nType Id: " + endpoint_type_id
                                         contentItem: Label {
                                             text: writerTooltip.text
                                         }
@@ -158,7 +186,7 @@ Rectangle {
                                 Rectangle {
                                     anchors.fill: parent
                                     color: rootWindow.isDarkMode ? mouseAreaEndpointReader.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : mouseAreaEndpointReader.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
-                                    border.color: rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
+                                    border.color: endpoint_has_qos_mismatch ? Constants.warningColor : rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
                                     border.width: 0.5
                                     id: readerRec
                                     property bool showTooltip: false
@@ -192,7 +220,7 @@ Rectangle {
                                         parent: readerRec
                                         visible: readerRec.showTooltip
                                         delay: 200
-                                        text: "Key: " + endpoint_key + "\nParticipant Key:" + endpoint_participant_key + "\nInstance Handle: " + endpoint_participant_instance_handle + "\nTopic Name:" + endpoint_topic_name + "\nTopic Type: " + endpoint_topic_type + "\nQos:\n" + endpoint_qos + "\nType Id: " + endpoint_type_id
+                                        text: "Key: " + endpoint_key + "\nParticipant Key:" + endpoint_participant_key + "\nInstance Handle: " + endpoint_participant_instance_handle + "\nTopic Name:" + endpoint_topic_name + "\nTopic Type: " + endpoint_topic_type + endpoint_qos_mismatch_text + "\nQos:\n" + endpoint_qos + "\nType Id: " + endpoint_type_id
                                         contentItem: Label {
                                             text: readerTooltip.text
                                         }
