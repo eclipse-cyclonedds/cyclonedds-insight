@@ -10,6 +10,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
+import sys
+import os
+
+if getattr(sys, 'frozen', False):
+    application_path = sys._MEIPASS
+    # remove the env variable early to ensure that
+    # cyclonedds-python will pick the correct libs
+    # provided by the app bundle
+    if "CYCLONEDDS_HOME" in os.environ:
+        del os.environ["CYCLONEDDS_HOME"]
+else:
+    application_path = os.path.dirname(os.path.abspath(__file__))
+
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 from PySide6.QtCore import qInstallMessageHandler, QUrl
@@ -17,8 +30,6 @@ from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtQuickControls2 import QQuickStyle
 from sys import platform
 import logging
-import sys
-import os
 
 import dds_data
 from overview_model import TreeModel, TreeNode
@@ -36,6 +47,7 @@ if __name__ == "__main__":
     qInstallMessageHandler(qt_message_handler)
 
     logging.info("Starting App ...")
+    logging.debug(f"Application path: {application_path}")
 
     app = QGuiApplication(sys.argv)
     app.setWindowIcon(QIcon(QPixmap(":/res/images/cyclonedds.png")))

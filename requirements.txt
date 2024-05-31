@@ -1,3 +1,4 @@
 cyclonedds
 PySide6
 pyinstaller
+pyinstaller-hooks-contrib
