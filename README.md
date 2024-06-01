@@ -29,7 +29,7 @@ python3 -m pip install -r requirements.txt
 pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && python3 ./src/main.py
 ```
 
-## How to build a standalone MacOS App
+## How to build a standalone MacOS App / Installer
 
 ```bash
 # Execute
@@ -38,20 +38,11 @@ export CYCLONEDDS_PYTHON_HOME=<path-to-cyclonedds-python-repo> &&\
 pyside6-rcc ./resources.qrc -o ./src/qrc_file.py &&\
 DYLD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
 pyinstaller main.spec --noconfirm --clean
-```
-
-The app is located at `./dist/CycloneDDS Insight.app` after the build.
-
-### Build MacOS Installer
-
-After the build of the standalone MacOS App i can be put into the installer.
-
-```bash
 brew install create-dmg # only once
 sh ./setup_dmg.sh 0.0.0
 ```
 
-## How to build a Windows Executable/Installer
+## How to build a Windows Executable / Installer
 
 ```bash
 # Build cyclonedds-c
