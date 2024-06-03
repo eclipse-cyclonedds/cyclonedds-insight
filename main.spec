@@ -12,13 +12,22 @@
 
 import os
 
+cyclonedds_home = os.getenv('CYCLONEDDS_HOME', './')
+print('cyclonedds_home: ' + cyclonedds_home)
+
 cyclonedds_python_home = os.getenv('CYCLONEDDS_PYTHON_HOME', './')
 print('cyclonedds_python_home: ' + cyclonedds_python_home)
+
+bins = []
+
+if os.name == 'nt':
+    bins.append((f"{cyclonedds_home}/bin/*.dll", '.'))
+    bins.append((f"{cyclonedds_home}/bin/idlc.exe", '.'))
 
 a = Analysis(
     ['src/main.py'],
     pathex=[cyclonedds_python_home],
-    binaries=[],
+    binaries=bins,
     datas=[],
     hiddenimports=[],
     hookspath=[],
@@ -27,6 +36,7 @@ a = Analysis(
     excludes=[],
     noarchive=False,
 )
+
 pyz = PYZ(a.pure)
 
 exe = EXE(
@@ -45,6 +55,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='./res/images/cyclonedds.ico'
 )
 coll = COLLECT(
     exe,
@@ -59,5 +70,5 @@ app = BUNDLE(coll,
     name='CycloneDDS Insight.app',
     icon='./res/images/icon.icns',
     bundle_identifier=None,
-    version='1.0.0'
+    version='0.0.0'
 )

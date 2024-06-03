@@ -29,7 +29,7 @@ python3 -m pip install -r requirements.txt
 pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && python3 ./src/main.py
 ```
 
-## How to build a standalone MacOS App
+## How to build a standalone MacOS App / Installer
 
 ```bash
 # Execute
@@ -38,6 +38,28 @@ export CYCLONEDDS_PYTHON_HOME=<path-to-cyclonedds-python-repo> &&\
 pyside6-rcc ./resources.qrc -o ./src/qrc_file.py &&\
 DYLD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
 pyinstaller main.spec --noconfirm --clean
+brew install create-dmg # only once
+sh ./setup_dmg.sh 0.0.0
 ```
 
-The app is located at `./dist/CycloneDDS Insight.app` after the build.
+## How to build a Windows Executable / Installer
+
+```bash
+# Build cyclonedds-c
+git clone https://github.com/eclipse-cyclonedds/cyclonedds.git
+cd cyclonedds && mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install -DENABLE_SSL=off -DENABLE_SECURITY=off .. && cmake --build . --config Release --target install
+
+# Build cyclonedds-python
+git clone https://github.com/eclipse-cyclonedds/cyclonedds-python.git
+cd cyclonedds-python
+set CYCLONEDDS_HOME=<path-to-cyclonedds-home-install>
+pip install .
+
+# Build cyclonedds-insight executable
+set PATH=%PATH%;%CYCLONEDDS_HOME%\bin
+pyinstaller main.spec --noconfirm --clean
+
+# Build cyclonedds-insight setup
+iscc setup.iss /DTheAppVersion=0.0.0
+```
