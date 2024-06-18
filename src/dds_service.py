@@ -11,11 +11,17 @@
 """
 
 import logging
+import datetime
 from enum import Enum
-from cyclonedds import core, domain, builtin, qos
-from cyclonedds.internal import feature_typelib
+from PySide6.QtCore import Signal, Slot, QThread
+
+from cyclonedds import core, domain, builtin
 from cyclonedds.util import duration
-from utils import EntityType, OrderedEnum
+from cyclonedds.core import SampleState, ViewState, InstanceState
+from cyclonedds.topic import Topic
+from cyclonedds.sub import Subscriber, DataReader
+
+from utils import EntityType
 
 IGNORE_TOPICS = ["DCPSParticipant", "DCPSPublication", "DCPSSubscription"]
 
@@ -74,3 +80,57 @@ def builtin_observer(domain_id, dds_data, running):
                 dds_data.remove_endpoint(domain_id, sub)
 
     logging.info(f"builtin_observer({domain_id}) ... DONE")
+
+
+class WorkerThread(QThread):
+
+    data_emitted = Signal(str)
+    
+    def __init__(self, domain_id, topic_name, topic_type, qos, parent=None):
+        super().__init__(parent)
+        self.domain_id = domain_id
+        self.topic_name = topic_name
+        self.topic_type = topic_type
+        self.qos = qos
+        self.running = True
+        self.readerData = []
+
+    @Slot()
+    def receive_data(self, topic_name, topic_type, qos):
+        logging.info("Add reader")
+        try:
+            topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
+            subscriber = Subscriber(self.domain_participant)
+            reader = DataReader(subscriber, topic)
+            readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
+            self.waitset.attach(readCondition)
+
+            self.readerData.append((topic,subscriber, reader, readCondition))
+        except Exception as e:
+            logging.error(f"Error creating reader {topic_name}: {e}")
+
+    def run(self):
+        logging.info(f"Worker thread for domain({str(self.domain_id)}) ...")    
+
+        self.domain_participant = domain.DomainParticipant(self.domain_id)
+        self.waitset = core.WaitSet(self.domain_participant)
+        self.receive_data(self.topic_name, self.topic_type, self.qos)
+
+        while self.running:
+            amount_triggered = 0
+            try:
+                amount_triggered = self.waitset.wait(duration(milliseconds=100))
+            except:
+                pass
+            if amount_triggered == 0:
+                continue
+
+            for (_, _, readItem, condItem) in self.readerData:
+                for sample in readItem.take(condition=condItem):
+                    self.data_emitted.emit(f"[{str(datetime.datetime.now().isoformat())}]  -  {str(sample)}")
+
+        logging.info(f"Worker thread for domain({str(self.domain_id)}) ... DONE")
+
+    def stop(self):
+        logging.info(f"Request to stop worker thread for domain({str(self.domain_id)})")
+        self.running = False

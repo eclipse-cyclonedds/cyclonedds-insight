@@ -10,17 +10,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtGui import QGuiApplication
-from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt
-from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QApplication, QTreeView
-from PySide6.QtQuick import QQuickView
-from PySide6.QtCore import QObject, Signal, Property, Slot
+from PySide6.QtCore import Signal, Slot
 import logging
-
 import dds_data
-from dds_qos import dds_qos_policy_id
 
 
 class TreeNode:

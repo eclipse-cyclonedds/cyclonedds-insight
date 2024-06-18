@@ -52,7 +52,7 @@ class EndpointModel(QAbstractItemModel):
 
     def __init__(self, parent=None):
         super(EndpointModel, self).__init__(parent)
-        print("New instance EndpointModel:", self)
+        logging.debug("New instance EndpointModel:" + str(self))
         self.dds_data = dds_data.DdsData()
         # From dds_data to self
         self.dds_data.new_endpoint_signal.connect(self.new_endpoint_slot, Qt.ConnectionType.QueuedConnection)

@@ -18,6 +18,8 @@ Features:
 - Show qos mismatches
 - Dark and light mode support
 - Runs on MacOS, Windows, Linux
+- Import idl files
+- Create Reader to Listen to a topic
 
 ## How to run via python
 
@@ -45,21 +47,5 @@ sh ./setup_dmg.sh 0.0.0
 ## How to build a Windows Executable / Installer
 
 ```bash
-# Build cyclonedds-c
-git clone https://github.com/eclipse-cyclonedds/cyclonedds.git
-cd cyclonedds && mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install -DENABLE_SSL=off -DENABLE_SECURITY=off .. && cmake --build . --config Release --target install
-
-# Build cyclonedds-python
-git clone https://github.com/eclipse-cyclonedds/cyclonedds-python.git
-cd cyclonedds-python
-set CYCLONEDDS_HOME=<path-to-cyclonedds-home-install>
-pip install .
-
-# Build cyclonedds-insight executable
-set PATH=%PATH%;%CYCLONEDDS_HOME%\bin
-pyinstaller main.spec --noconfirm --clean
-
-# Build cyclonedds-insight setup
-iscc setup.iss /DTheAppVersion=0.0.0
+.\build.bat
 ```
