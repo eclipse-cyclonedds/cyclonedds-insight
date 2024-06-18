@@ -11,18 +11,32 @@
 """
 
 import os
+import platform
 
-cyclonedds_home = os.getenv('CYCLONEDDS_HOME', './')
-print('cyclonedds_home: ' + cyclonedds_home)
 
-cyclonedds_python_home = os.getenv('CYCLONEDDS_PYTHON_HOME', './')
-print('cyclonedds_python_home: ' + cyclonedds_python_home)
+# CycloneDDS
+cyclonedds_home = os.getenv('CYCLONEDDS_HOME')
+if not cyclonedds_home:
+    raise Exception('CYCLONEDDS_HOME environment variable is not set.')
+else:
+    print('cyclonedds_home: ' + cyclonedds_home)
 
+# CycloneDDS-Python
+cyclonedds_python_home = os.getenv('CYCLONEDDS_PYTHON_HOME')
+if not cyclonedds_python_home:
+    raise Exception('CYCLONEDDS_PYTHON_HOME environment variable is not set - must be install via pip install -e .')
+else:
+    print('cyclonedds_python_home: ' + cyclonedds_python_home)
+
+# Add all needed files to the bundle
 bins = []
+bins.append((f"{cyclonedds_python_home}/cyclonedds/_idlpy.*", '.'))
 
-if os.name == 'nt':
+if platform.system() == 'Windows':
     bins.append((f"{cyclonedds_home}/bin/*.dll", '.'))
     bins.append((f"{cyclonedds_home}/bin/idlc.exe", '.'))
+elif platform.system() == 'Darwin':
+    bins.append((f"{cyclonedds_home}/bin/idlc", '.'))
 
 a = Analysis(
     ['src/main.py'],

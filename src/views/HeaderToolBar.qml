@@ -42,9 +42,15 @@ ToolBar {
             Layout.fillWidth: true
         }
         ToolButton {
+            text: "Home"
+            onClicked: {
+                layout.currentIndex = 1
+            }
+        }
+        ToolButton {
             text: "Settings"
             onClicked: {
-                settingsDialog.open()
+                layout.currentIndex = 0
             }
         }
     }

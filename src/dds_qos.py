@@ -12,7 +12,7 @@
 
 from enum import Enum
 from cyclonedds import qos
-from cyclonedds.internal import feature_typelib
+# from cyclonedds.internal import feature_typelib # not available in v0.10.5
 from utils import OrderedEnum
 
 
@@ -89,8 +89,8 @@ def qos_match(endpoint_reader, endpoint_writer) -> list:
         else:
             mismatches.append(dds_qos_policy_id.DDS_DATA_REPRESENTATION_QOS_POLICY_ID)
 
-    if feature_typelib:
-        pass # TODO: finish implement xtypes qos check
+    if False: # feature_typelib:
+        pass # TODO: finish implementation of xtypes qos check
     else:
         if endpoint_reader.type_name != endpoint_writer.type_name:
             mismatches.append(dds_qos_policy_id.DDS_INVALID_QOS_POLICY_ID)

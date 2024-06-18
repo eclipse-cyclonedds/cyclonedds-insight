@@ -11,9 +11,12 @@
 """
 
 from PySide6 import QtCore
+from PySide6.QtCore import QStandardPaths, QDir
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 from enum import Enum
+
 
 @QtCore.QEnum
 class EntityType(Enum):
@@ -69,3 +72,32 @@ class OrderedEnum(Enum):
             return self.value < other.value
 
         return NotImplemented
+
+def setupLogger(log_level = logging.DEBUG):
+    
+    logger = logging.getLogger()
+    logger.handlers.clear()
+    logger.setLevel(log_level)
+
+    app_data_dir = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+    if len(app_data_dir) == 0:
+        print("Failed to locate basic app folders")
+        exit(-1)
+
+    log_dir = os.path.join(app_data_dir, "logs")
+    if not QDir(log_dir).exists():
+        QDir().mkpath(log_dir)
+
+    log_file = os.path.join(log_dir, "cyclonedds_insight.log")
+    file_handler = RotatingFileHandler(log_file, maxBytes=1024*1024, backupCount=5) # Rotates after 1MB, keeps 5 backups
+    file_handler.setLevel(log_level)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(log_level)
+
+    formatter = logging.Formatter('%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)s] %(message)s')
+    file_handler.setFormatter(formatter)
+    stream_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)

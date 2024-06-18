@@ -1,6 +1,7 @@
 # Custom
 cyclonedds/__library__.py
 src/qrc_file.py
+deps/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

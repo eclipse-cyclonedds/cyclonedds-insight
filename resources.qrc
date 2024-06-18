@@ -17,6 +17,7 @@
         <file>res/images/cyclonedds.png</file>
         <file>res/images/cyclonedds@2x.png</file>
         <file>res/images/cyclonedds@3x.png</file>
+        <file>res/images/spinning.gif</file>
 
         <!-- source files -->
         <file>src/views/main.qml</file>
@@ -28,5 +29,11 @@
         <file>src/views/TopicOverview.qml</file>
         <file>src/views/TopicEndpointView.qml</file>
         <file>src/views/WarningTriangle.qml</file>
+        <file>src/views/IdlDropArea.qml</file>
+        <file>src/views/Overview.qml</file>
+        <file>src/views/DataModelOverview.qml</file>
+        <file>src/views/ReaderTester.qml</file>
+        <file>src/views/ListenerView.qml</file>
+        <file>src/views/LoadingView.qml</file>
     </qresource>
 </RCC>
