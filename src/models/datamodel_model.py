@@ -17,6 +17,7 @@ import os
 import sys
 import importlib
 import inspect
+from pathlib import Path
 import subprocess
 import glob
 from dataclasses import dataclass
@@ -138,8 +139,16 @@ class DatamodelModel(QAbstractListModel):
         parent_dir = self.destination_folder_py
         sys.path.insert(0, parent_dir)
 
-        submodules = [name for name in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, name))]
+        py_files = [f for f in os.listdir(parent_dir) if f.endswith('.py')]
+        for py_file in py_files:            
+            module_name = Path(py_file).stem
+            try:
+                module = importlib.import_module(module_name)
+                self.add_idl_without_module(module)
+            except Exception as e:
+                logging.error(f"Error importing {module_name}")
 
+        submodules = [name for name in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, name))]
         for submodule in submodules:
             module_name = submodule
             # logging.debug("Inspecting "  + module_name)
@@ -149,12 +158,12 @@ class DatamodelModel(QAbstractListModel):
                 for type_name in all_types:
                     # logging.debug("Inspecting "  + module_name+ " " + type_name)
                     try:
-                        cls = getattr(importlib.import_module(module_name), type_name)
+                        cls = getattr(module, type_name)
                     except Exception as e:
                         logging.error(f"Error importing 2 {module_name} : {type_name} : {e}")
                     if inspect.isclass(cls):
                         if not self.has_nested_annotation(cls) and not self.is_enum(cls):
-                            sId: str = f"{module_name}.{cls.__name__}"
+                            sId: str = f"{module_name}::{cls.__name__}"
                             if sId not in self.dataModelItems:
                                 self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
                                 self.dataModelItems[sId] = DataModelItem(sId, [module_name, cls.__name__])
@@ -173,6 +182,16 @@ class DatamodelModel(QAbstractListModel):
         logging.debug(f"Attributes of class {cls.__name__}:")
         for attr_name in dir(cls):
             logging.debug(f"  {attr_name}: {getattr(cls, attr_name)}")
+
+    def add_idl_without_module(self, module):
+        classes = [getattr(module, name) for name in dir(module) if isinstance(getattr(module, name), type)]
+        for cls in classes:
+            if not self.has_nested_annotation(cls) and "(IdlStruct" in str(cls):
+                sId: str = f"{module.__name__}::{cls.__name__}"
+                if sId not in self.dataModelItems:
+                    self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
+                    self.dataModelItems[sId] = DataModelItem(sId, [module.__name__, cls.__name__])
+                    self.endInsertRows()
 
     @Slot(int, str, str, str, str, str)
     def addReader(self, domain_id, topic_name, topic_type, q_own, q_dur, q_rel):
