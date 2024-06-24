@@ -27,6 +27,9 @@ Rectangle {
     property bool autoScrollEnabled: true
     property string logCache: ""
 
+    border.color : autoScrollEnabled ? "transparent" : "orange"
+    border.width : 2
+
     function logClear() {
         listenerTextArea.text = ""
         logCache = ""
@@ -65,7 +68,7 @@ Rectangle {
                 onClicked: logClear()
             }
             Button {
-                text: listenerTabId.autoScrollEnabled ? "Stop Scroll" : "Start Scroll"
+                text: listenerTabId.autoScrollEnabled ? "Pause Messages" : "Resume Messages"
                 onClicked: {
                     listenerTabId.autoScrollEnabled = !listenerTabId.autoScrollEnabled
                     if (listenerTabId.autoScrollEnabled) {
@@ -98,6 +101,7 @@ Rectangle {
             color: rootWindow.isDarkMode ? "black" : "white"
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.margins: 3
 
             Flickable {
                 id: scrollView

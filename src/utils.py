@@ -26,7 +26,13 @@ class EntityType(Enum):
     WRITER = 4
 
 def qt_message_handler(mode, context, message):
-    file = os.path.basename(context.file)
+    file = context.file
+    if file:
+        file = os.path.basename(file)
+    else:
+        file = "<unknown>"
+    if message.startswith("qrc:/"):
+        message = message[len("qrc:/"):] 
     log_msg = f"[{file}:{context.line}] {message}"
     if mode == QtCore.QtMsgType.QtInfoMsg:
         logging.info(log_msg)

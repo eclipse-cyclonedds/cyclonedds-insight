@@ -13,10 +13,12 @@
 import logging
 import datetime
 from enum import Enum
-from PySide6.QtCore import Signal, Slot, QThread
-
+from queue import Queue
+from PySide6.QtCore import QObject, Signal, Slot, QThread
+from dataclasses import dataclass
 from cyclonedds import core, domain, builtin
 from cyclonedds.util import duration
+from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 from cyclonedds.core import SampleState, ViewState, InstanceState
 from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
@@ -26,7 +28,16 @@ from utils import EntityType
 IGNORE_TOPICS = ["DCPSParticipant", "DCPSPublication", "DCPSSubscription"]
 
 
-def builtin_observer(domain_id, dds_data, running):
+class BuiltInDataItem():
+
+    def __init__(self):
+        self.new_participants = []
+        self.new_endpoints = []
+        self.remove_participants = []
+        self.remove_endpoints = []
+
+
+def builtin_observer(domain_id: int, queue: Queue, running):
     logging.info(f"builtin_observer({domain_id}) ...")
 
     domain_participant = domain.DomainParticipant(domain_id)
@@ -47,37 +58,39 @@ def builtin_observer(domain_id, dds_data, running):
         rdr, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
     waitset.attach(rcr)
 
-    logging.info("")
-
     while running[0]:
 
         amount_triggered = 0
         try:
             amount_triggered = waitset.wait(duration(milliseconds=100))
-        except:
-            pass
+        except Exception as e:
+            logging.error(str(e))
         if amount_triggered == 0:
             continue
 
+        dataItem = BuiltInDataItem()
+
         for p in rdp.take(condition=rcp):
             if p.sample_info.sample_state == core.SampleState.NotRead and p.sample_info.instance_state == core.InstanceState.Alive:
-                dds_data.add_domain_participant(domain_id, p)
+                dataItem.new_participants.append((domain_id, p))
             elif p.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
-                dds_data.remove_domain_participant(domain_id, p)
+                dataItem.remove_participants.append((domain_id, p))
 
         for pub in rdw.take(condition=rcw):
             if pub.sample_info.sample_state == core.SampleState.NotRead and pub.sample_info.instance_state == core.InstanceState.Alive:
                 if pub.topic_name not in IGNORE_TOPICS:
-                    dds_data.add_endpoint(domain_id, pub, EntityType.WRITER)
+                    dataItem.new_endpoints.append((domain_id, pub, EntityType.WRITER))
             elif pub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
-                dds_data.remove_endpoint(domain_id, pub)
+                dataItem.remove_endpoints.append((domain_id, pub))
 
         for sub in rdr.take(condition=rcr):
             if sub.sample_info.sample_state == core.SampleState.NotRead and sub.sample_info.instance_state == core.InstanceState.Alive:
                 if sub.topic_name not in IGNORE_TOPICS:
-                    dds_data.add_endpoint(domain_id, sub, EntityType.READER)
+                    dataItem.new_endpoints.append((domain_id, sub, EntityType.READER))
             elif sub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
-                dds_data.remove_endpoint(domain_id, sub)
+                dataItem.remove_endpoints.append((domain_id, sub))
+
+        queue.put(dataItem)
 
     logging.info(f"builtin_observer({domain_id}) ... DONE")
 

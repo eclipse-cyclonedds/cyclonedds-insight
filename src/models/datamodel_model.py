@@ -139,6 +139,7 @@ class DatamodelModel(QAbstractListModel):
         parent_dir = self.destination_folder_py
         sys.path.insert(0, parent_dir)
 
+        # Structs without any module, can only appear on root level
         py_files = [f for f in os.listdir(parent_dir) if f.endswith('.py')]
         for py_file in py_files:            
             module_name = Path(py_file).stem
@@ -168,6 +169,8 @@ class DatamodelModel(QAbstractListModel):
                                 self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
                                 self.dataModelItems[sId] = DataModelItem(sId, [module_name, cls.__name__])
                                 self.endInsertRows()
+                    elif inspect.ismodule(cls):
+                        pass # TODO: implement nested modules import 
 
             except Exception as e:
                 logging.error(f"Error importing {module_name}: {e}")
@@ -229,7 +232,7 @@ class DatamodelModel(QAbstractListModel):
                 self.threads[domain_id].receive_data(topic_name, class_type, qos)
             else:
                 self.threads[domain_id] = WorkerThread(domain_id, topic_name, class_type, qos)
-                self.threads[domain_id].data_emitted.connect(self.received_data)
+                self.threads[domain_id].data_emitted.connect(self.received_data, Qt.ConnectionType.QueuedConnection)
                 self.threads[domain_id].start()
 
         logging.debug("try add reader ... DONE")

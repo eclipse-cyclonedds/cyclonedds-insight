@@ -32,7 +32,7 @@ else:
 
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
-from PySide6.QtCore import qInstallMessageHandler, QUrl
+from PySide6.QtCore import qInstallMessageHandler, QUrl, QThread
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtQuickControls2 import QQuickStyle
 import logging
@@ -68,7 +68,12 @@ if __name__ == "__main__":
     else:
         QQuickStyle.setStyle("Fusion")
 
+    worker_thread = QThread()
     data = dds_data.DdsData()
+    data.moveToThread(worker_thread)
+    worker_thread.finished.connect(data.deleteLater)
+    worker_thread.start()
+
     rootItem = TreeNode("Root")
     treeModel = TreeModel(rootItem)
     datamodelRepoModel = DatamodelModel()
@@ -91,8 +96,11 @@ if __name__ == "__main__":
     ret_code = app.exec()
     logging.info("qt ... DONE")
 
-    # Clean up threads
+    logging.info("Clean up ...")
     datamodelRepoModel.deleteAllReaders()
     data.join_observer()
+    worker_thread.quit()
+    worker_thread.wait()
+    logging.info("Clean up ... DONE")
 
     sys.exit(ret_code)
