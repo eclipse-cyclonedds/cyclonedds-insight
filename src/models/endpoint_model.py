@@ -127,19 +127,19 @@ class EndpointModel(QAbstractItemModel):
         elif role == self.ProcessNameRole:
             return Path(appname.replace("\\", f"{os.path.sep}")).stem
         elif role == self.EndpointHasQosMismatch:
-            if len(self.endpoints[endp_key].missmatches.keys()):
+            if len(self.endpoints[endp_key].mismatches.keys()):
                 return True
             return False
         elif role == self.EndpointQosMismatchText:
             qos_mm_txt = ""
-            if len(self.endpoints[endp_key].missmatches.keys()) > 0:
+            if len(self.endpoints[endp_key].mismatches.keys()) > 0:
                 qos_mm_txt += "\nQos-Mismatches:\n"
-                for idx, endp_mm in enumerate(self.endpoints[endp_key].missmatches.keys()):
-                    for idx_mm, mm_type in enumerate(self.endpoints[endp_key].missmatches[endp_mm]):
+                for idx, endp_mm in enumerate(self.endpoints[endp_key].mismatches.keys()):
+                    for idx_mm, mm_type in enumerate(self.endpoints[endp_key].mismatches[endp_mm]):
                         qos_mm_txt += "  " + str(mm_type) + " with " + str(endp_mm)
-                        if idx_mm < len(self.endpoints[endp_key].missmatches[endp_mm]) - 1:
+                        if idx_mm < len(self.endpoints[endp_key].mismatches[endp_mm]) - 1:
                             qos_mm_txt += "\n"
-                    if idx < len(self.endpoints[endp_key].missmatches.keys()) - 1:
+                    if idx < len(self.endpoints[endp_key].mismatches.keys()) - 1:
                         qos_mm_txt += "\n"
                 qos_mm_txt = qos_mm_txt.replace("dds_qos_policy_id.", "")
             return qos_mm_txt
@@ -189,10 +189,10 @@ class EndpointModel(QAbstractItemModel):
         if self.topic_name != endpointData.endpoint.topic_name:
             return
         if (endpointData.isReader() and EntityType.WRITER == self.entity_type) or (endpointData.isWriter() and EntityType.READER == self.entity_type):
-            if len(endpointData.missmatches.keys()) > 0:
-                for mismKey in endpointData.missmatches.keys():
+            if len(endpointData.mismatches.keys()) > 0:
+                for mismKey in endpointData.mismatches.keys():
                     if mismKey in self.endpoints:
-                        self.endpoints[mismKey].missmatches[str(endpointData.endpoint.key)] = endpointData.missmatches[mismKey]
+                        self.endpoints[mismKey].mismatches[str(endpointData.endpoint.key)] = endpointData.mismatches[mismKey]
                         idx = list(self.endpoints.keys()).index(mismKey)
                         index = self.createIndex(idx, 0)
                         self.dataChanged.emit(index, index, [self.EndpointHasQosMismatch, self.EndpointQosMismatchText])
@@ -211,7 +211,7 @@ class EndpointModel(QAbstractItemModel):
 
         self.totalEndpointsSignal.emit(len(self.endpoints))
 
-        if len(endpointData.missmatches.keys()) > 0:
+        if len(endpointData.mismatches.keys()) > 0:
             self.topicHasQosMismatchSignal.emit(True)
 
     @Slot(int, str)
@@ -227,8 +227,8 @@ class EndpointModel(QAbstractItemModel):
             self.totalEndpointsSignal.emit(len(self.endpoints))
         else:
             for endpKey in self.endpoints.keys():
-                if str(endpoint_key) in self.endpoints[endpKey].missmatches:
-                    del self.endpoints[endpKey].missmatches[str(endpoint_key)]
+                if str(endpoint_key) in self.endpoints[endpKey].mismatches:
+                    del self.endpoints[endpKey].mismatches[str(endpoint_key)]
                     idx = list(self.endpoints.keys()).index(endpKey)
                     index = self.createIndex(idx, 0)
                     self.dataChanged.emit(index, index, [self.EndpointHasQosMismatch, self.EndpointQosMismatchText])

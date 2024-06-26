@@ -30,7 +30,7 @@ class DataEndpoint:
         self.endpoint: DcpsEndpoint = endpoint
         self.entity_type: EntityType = entity_type
         self.participant = None
-        self.missmatches : Dict[str, List[dds_qos_policy_id]]= {}
+        self.mismatches : Dict[str, List[dds_qos_policy_id]]= {}
 
     def isReader(self):
         return self.entity_type == EntityType.READER
@@ -61,18 +61,18 @@ class DataTopic:
 
     def remove_endpoint(self, endpointKey: str):
         if endpointKey in self.reader_endpoints:
-            for mimKey in self.reader_endpoints[endpointKey].missmatches:
+            for mimKey in self.reader_endpoints[endpointKey].mismatches:
                 if mimKey in self.writer_endpoints:
-                    if endpointKey in self.writer_endpoints[mimKey].missmatches:
-                        del self.writer_endpoints[mimKey].missmatches[endpointKey]
+                    if endpointKey in self.writer_endpoints[mimKey].mismatches:
+                        del self.writer_endpoints[mimKey].mismatches[endpointKey]
 
             del self.reader_endpoints[endpointKey]
     
         if endpointKey in self.writer_endpoints:
-            for mimKey in self.writer_endpoints[endpointKey].missmatches:
+            for mimKey in self.writer_endpoints[endpointKey].mismatches:
                 if mimKey in self.reader_endpoints:
-                    if endpointKey in self.reader_endpoints[mimKey].missmatches:
-                        del self.reader_endpoints[mimKey].missmatches[endpointKey]
+                    if endpointKey in self.reader_endpoints[mimKey].mismatches:
+                        del self.reader_endpoints[mimKey].mismatches[endpointKey]
 
             del self.writer_endpoints[endpointKey]
 
@@ -101,17 +101,17 @@ class DataTopic:
                 mismatches = qos_match(endpoint_to_check.endpoint, data_endpoint.endpoint)
 
             if len(mismatches) > 0:
-                data_endpoint.missmatches[str(endpoint_to_check.endpoint.key)] = mismatches
-                endpoint_to_check.missmatches[str(data_endpoint.endpoint.key)] = mismatches
+                data_endpoint.mismatches[str(endpoint_to_check.endpoint.key)] = mismatches
+                endpoint_to_check.mismatches[str(data_endpoint.endpoint.key)] = mismatches
 
     def get_mismatches(self) -> List[str]:
         mism_endp_keys: List[str] = []
         for endpKey in self.reader_endpoints.keys():
-            if len(self.reader_endpoints[endpKey].missmatches):
-                mism_endp_keys += self.reader_endpoints[endpKey].missmatches.keys()
+            if len(self.reader_endpoints[endpKey].mismatches):
+                mism_endp_keys += self.reader_endpoints[endpKey].mismatches.keys()
         for endpKey in self.writer_endpoints.keys():
-            if len(self.writer_endpoints[endpKey].missmatches):
-                mism_endp_keys += self.writer_endpoints[endpKey].missmatches.keys()
+            if len(self.writer_endpoints[endpKey].mismatches):
+                mism_endp_keys += self.writer_endpoints[endpKey].mismatches.keys()
 
         return list(dict.fromkeys(mism_endp_keys))
 
