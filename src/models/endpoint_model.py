@@ -18,16 +18,17 @@ import os
 from pathlib import Path
 import time
 import uuid
+from typing import Optional, List
 
 import dds_data
 from dds_data import DataEndpoint
 from utils import EntityType
 
 
-HOSTNAME_GET = core.Policy.Property("__Hostname", "")
-APPNAME_GET = core.Policy.Property("__ProcessName", "")
-PID_GET = core.Policy.Property("__Pid", "")
-ADDRESS_GET = core.Policy.Property("__NetworkAddresses", "")
+HOSTNAMES     = ["__Hostname",    "dds.sys_info.hostname"]
+PROCESS_NAMES = ["__ProcessName", "dds.sys_info.executable_filepath"]
+PIDS          = ["__Pid",         "dds.sys_info.process_id"]
+ADDRESSES     = ["__NetworkAddresses"]
 
 
 class EndpointModel(QAbstractItemModel):
@@ -44,6 +45,7 @@ class EndpointModel(QAbstractItemModel):
     ProcessNameRole = Qt.UserRole + 10
     EndpointHasQosMismatch = Qt.UserRole + 11
     EndpointQosMismatchText = Qt.UserRole + 12
+    AddressesRole = Qt.UserRole + 13
 
     topicHasQosMismatchSignal = Signal(bool)
     totalEndpointsSignal = Signal(int)
@@ -83,6 +85,17 @@ class EndpointModel(QAbstractItemModel):
     def parent(self, index):
         return QModelIndex()
 
+    def getProperty(self, p: Optional[DcpsParticipant], names: List[str]):
+        propName: str = "Unknown"
+        if p is None:
+            return propName
+        for item in names:
+            if p.qos[core.Policy.Property(item, "Unknown")] is not None:
+                propName = str(p.qos[core.Policy.Property(item, "Unknown")].value)
+                if propName != "Unknown":
+                    break
+        return propName
+
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid() or not (0 <= index.row() < self.rowCount()):
             return None
@@ -91,15 +104,7 @@ class EndpointModel(QAbstractItemModel):
         endp_key = list(self.endpoints.keys())[row]
 
         endp: DcpsEndpoint = self.endpoints[endp_key].endpoint
-
-        hostname = "Unknown"
-        appname = "Unknown"
-        pid = "Unknown"
-        if self.endpoints[endp_key].participant is not None:
-            p = self.endpoints[endp_key].participant
-            hostname = p.qos[HOSTNAME_GET].value if p.qos[HOSTNAME_GET] is not None else "Unknown"
-            appname = p.qos[APPNAME_GET].value if p.qos[APPNAME_GET] is not None else "Unknown"
-            pid = p.qos[PID_GET].value if p.qos[PID_GET] is not None else "Unknown"
+        p: Optional[DcpsParticipant] =  self.endpoints[endp_key].participant
 
         if role == self.KeyRole:
             return str(endp.key)
@@ -121,11 +126,14 @@ class EndpointModel(QAbstractItemModel):
         elif role == self.TypeIdRole:
             return str(endp.type_id)
         elif role == self.HostnameRole:
-            return hostname
+            return self.getProperty(p, HOSTNAMES)
         elif role == self.ProcessIdRole:
-            return pid
+            return self.getProperty(p, PIDS)
         elif role == self.ProcessNameRole:
+            appname: str = self.getProperty(p, PROCESS_NAMES)
             return Path(appname.replace("\\", f"{os.path.sep}")).stem
+        elif role == self.AddressesRole:
+            return self.getProperty(p, ADDRESSES)
         elif role == self.EndpointHasQosMismatch:
             if len(self.endpoints[endp_key].mismatches.keys()):
                 return True
@@ -159,7 +167,8 @@ class EndpointModel(QAbstractItemModel):
             self.ProcessIdRole: b'endpoint_process_id',
             self.ProcessNameRole: b'endpoint_process_name',
             self.EndpointHasQosMismatch: b'endpoint_has_qos_mismatch',
-            self.EndpointQosMismatchText: b'endpoint_qos_mismatch_text'
+            self.EndpointQosMismatchText: b'endpoint_qos_mismatch_text',
+            self.AddressesRole: b'addresses'
         }
 
     @Slot(int, str, int)
