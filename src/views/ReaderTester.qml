@@ -37,7 +37,7 @@ Popup {
     }
 
     function setType(topicType) {
-        topicNameTextFieldId.text = topicType.replace("::", "_")
+        topicNameTextFieldId.text = topicType.replace(/::/g, "_");
         readerTesterDiaId.topicType = topicType
     }
 

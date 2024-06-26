@@ -151,29 +151,28 @@ class DatamodelModel(QAbstractListModel):
 
         submodules = [name for name in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, name))]
         for submodule in submodules:
-            module_name = submodule
-            # logging.debug("Inspecting "  + module_name)
-            try:
-                module = importlib.import_module(module_name)
-                all_types = getattr(module, '__all__', [])
-                for type_name in all_types:
-                    # logging.debug("Inspecting "  + module_name+ " " + type_name)
-                    try:
-                        cls = getattr(module, type_name)
-                    except Exception as e:
-                        logging.error(f"Error importing 2 {module_name} : {type_name} : {e}")
+            self.import_module_and_nested(submodule)
+
+    def import_module_and_nested(self, module_name):
+        try:
+            module = importlib.import_module(module_name)
+            all_types = getattr(module, '__all__', [])
+            for type_name in all_types:
+                try:
+                    cls = getattr(module, type_name)
                     if inspect.isclass(cls):
                         if not self.has_nested_annotation(cls) and not self.is_enum(cls):
-                            sId: str = f"{module_name}::{cls.__name__}"
+                            sId: str = f"{module_name}::{cls.__name__}".replace(".", "::")
                             if sId not in self.dataModelItems:
                                 self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
                                 self.dataModelItems[sId] = DataModelItem(sId, [module_name, cls.__name__])
                                 self.endInsertRows()
                     elif inspect.ismodule(cls):
-                        pass # TODO: implement nested modules import 
-
-            except Exception as e:
-                logging.error(f"Error importing {module_name}: {e}")
+                        self.import_module_and_nested(cls.__name__)
+                except Exception as e:
+                    logging.error(f"Error importing {module_name} : {type_name} : {e}")
+        except Exception as e:
+            logging.error(f"Error importing {module_name}: {e}")
 
     def has_nested_annotation(self, cls):
         return 'nested' in getattr(cls, '__idl_annotations__', {})
