@@ -128,7 +128,7 @@ Rectangle {
                         }
 
                         delegate: Item {
-                            height: 50
+                            height: 65
                             width: listViewWriter.width
 
                             Rectangle {
@@ -150,6 +150,10 @@ Rectangle {
                                     Label {
                                         text: endpoint_process_name + ":" + endpoint_process_id + "@" + endpoint_hostname
                                         font.pixelSize: 12
+                                    }
+                                    Label {
+                                        text: addresses
+                                        font.pixelSize: 8
                                     }
                                 }
                                 MouseArea {
@@ -210,7 +214,7 @@ Rectangle {
                         }
 
                         delegate: Item {
-                            height: 50
+                            height: 65
                             width: listViewReader.width
 
                             Rectangle {
@@ -232,6 +236,10 @@ Rectangle {
                                     Label {
                                         text: endpoint_process_name + ":" + endpoint_process_id + "@" + endpoint_hostname
                                         font.pixelSize: 12
+                                    }
+                                    Label {
+                                        text: addresses
+                                        font.pixelSize: 8
                                     }
                                 }
                                 MouseArea {
