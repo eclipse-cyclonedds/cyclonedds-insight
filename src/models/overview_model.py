@@ -74,8 +74,8 @@ class TreeModel(QAbstractItemModel):
         self.dds_data.remove_topic_signal.connect(self.remove_topic_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.new_domain_signal.connect(self.addDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_domain_signal.connect(self.removeDomain, Qt.ConnectionType.QueuedConnection)
-        self.dds_data.new_mismatch_signal.connect(self.new_qos_mismatch, Qt.ConnectionType.QueuedConnection)
         self.dds_data.no_more_mismatch_in_topic_signal.connect(self.no_more_mismatch_in_topic_slot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.publish_mismatch_signal.connect(self.publish_mismatch_slot, Qt.ConnectionType.QueuedConnection)
 
         # Connect from self to dds_data
         self.remove_domain_request_signal.connect(self.dds_data.remove_domain, Qt.ConnectionType.QueuedConnection)
@@ -165,9 +165,10 @@ class TreeModel(QAbstractItemModel):
                         roles = [self.HasQosMismatch]
                         self.dataChanged.emit(index1, index2, roles)
 
-    @Slot(int, str, str, list, str)
-    def new_qos_mismatch(self, domain_id, topic_name, endpoint_key, mismatches, endpoint_key_mm):
-        self.set_qos_mismatch(domain_id, topic_name, True)
+    @Slot(int, str, list)
+    def publish_mismatch_slot(self, domain_id, topicName, mismatches):
+        if len(mismatches) > 0:
+            self.set_qos_mismatch(domain_id, topicName, True)
 
     @Slot(int, str)
     def no_more_mismatch_in_topic_slot(self, domain_id, topic_name):
@@ -234,7 +235,10 @@ class TreeModel(QAbstractItemModel):
         isDomain = self.data(index, role=self.IsDomainRole)
         if not isDomain:
             parentIndex = self.parent(index)
-            return int(self.data(parentIndex, role=self.DisplayRole))
+            dom = self.data(parentIndex, role=self.DisplayRole)
+            if dom:
+                return int(dom)
+            return None
 
         return int(self.data(index, role=self.DisplayRole))
 
