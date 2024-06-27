@@ -71,13 +71,13 @@ SplitView {
                     width: implicitWidth + 20
                 }
                 TabButton {
-                    text: qsTr("Listener")
+                    text: qsTr("Listener (Readers)")
                     width: implicitWidth + 20
                 }
-                /*TabButton {
-                    text: qsTr("Tester")
+                TabButton {
+                    text: qsTr("Tester (Writers)")
                     width: implicitWidth + 20
-                }*/
+                }
             }
             StackLayout {
                 id: mainLayoutId
@@ -102,11 +102,11 @@ SplitView {
 
                     ListenerView {}
                 }
-                /*Item {
+                Item {
                     id: testerTab
 
                     TesterView {}
-                }*/
+                }
             }
         }
     }

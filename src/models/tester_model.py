@@ -33,7 +33,7 @@ class DataModelItem:
     parts: dict
 
 
-class DatamodelModel(QAbstractListModel):
+class TesterModel(QAbstractListModel):
 
     NameRole = Qt.UserRole + 1
 
@@ -195,9 +195,9 @@ class DatamodelModel(QAbstractListModel):
                     self.dataModelItems[sId] = DataModelItem(sId, [module.__name__, cls.__name__])
                     self.endInsertRows()
 
-    @Slot(int, str, str, str, str, str, int)
-    def addReader(self, domain_id, topic_name, topic_type, q_own, q_dur, q_rel, entityType):
-        logging.debug(f"try add endpoint {str(domain_id)} {str(topic_name)} {str(topic_type)} {str(q_own)} {str(q_dur)} {str(q_rel)} {str(entityType)}")
+    @Slot(int, str, str, str, str, str)
+    def addReader(self, domain_id, topic_name, topic_type, q_own, q_dur, q_rel):
+        logging.debug("try add reader" + str(domain_id) + str(topic_name) + str(topic_type) + str(q_own) + str(q_dur) + str(q_rel))
 
         if topic_type in self.dataModelItems:
             module_type = importlib.import_module(self.dataModelItems[topic_type].parts[0])
@@ -228,13 +228,13 @@ class DatamodelModel(QAbstractListModel):
                 qos += Qos(Policy.Reliability.Reliable(max_blocking_time=duration(seconds=1)))
 
             if domain_id in self.threads:
-                self.threads[domain_id].receive_data(topic_name, class_type, qos, entityType)
+                self.threads[domain_id].receive_data(topic_name, class_type, qos)
             else:
-                self.threads[domain_id] = WorkerThread(domain_id, topic_name, class_type, qos, entityType)
+                self.threads[domain_id] = WorkerThread(domain_id, topic_name, class_type, qos)
                 self.threads[domain_id].data_emitted.connect(self.received_data, Qt.ConnectionType.QueuedConnection)
                 self.threads[domain_id].start()
 
-        logging.debug("try add endpoint ... DONE")
+        logging.debug("try add reader ... DONE")
 
     @Slot(str)
     def received_data(self, data: str):

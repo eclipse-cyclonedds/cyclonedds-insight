@@ -31,6 +31,7 @@ Popup {
 
     property int domainId: 0
     property string topicType
+    property int entityType
 
     Component.onCompleted: {
         console.log("Reader", readerTesterDiaId.topicType)
@@ -41,13 +42,17 @@ Popup {
         readerTesterDiaId.topicType = topicType
     }
 
+    function setEntityType(entityType) {
+        readerTesterDiaId.entityType = entityType
+    }
+
     Column {
         anchors.fill: parent
         spacing: 5
         padding: 0
 
         Label {
-            text: "Create Reader"
+            text: readerTesterDiaId.entityType === 3 ? "Create Reader" : "Create Writer"
             font.bold: true
             font.pixelSize: 30
             Layout.alignment: Qt.AlignHCenter
@@ -114,7 +119,7 @@ Popup {
 
         Row {
             Button {
-                text: qsTr("Create Reader")
+                text: readerTesterDiaId.entityType === 3 ? qsTr("Create Reader") : qsTr("Create Writer")
                 onClicked: {
                     datamodelRepoModel.addReader(
                         readerDomainIdSpinBox.value,
@@ -122,7 +127,8 @@ Popup {
                         topicType,
                         ownershipComboId.currentText,
                         durabilityComboId.currentText,
-                        reliabilityComboId.currentText
+                        reliabilityComboId.currentText,
+                        readerTesterDiaId.entityType
                     )
                     readerTesterDiaId.close()
                 }

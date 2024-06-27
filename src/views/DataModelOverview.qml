@@ -115,13 +115,18 @@ Rectangle {
                             text: "Create Reader (Listener)"
                             onTriggered: {
                                 readerTesterDialogId.setType(name)
+                                readerTesterDialogId.setEntityType(3)
                                 readerTesterDialogId.open()
                             }
                         }
-                        /*MenuItem {
+                        MenuItem {
                             text: "Create Writer (Tester)"
-                            enabled: false
-                        }*/
+                            onTriggered: {
+                                readerTesterDialogId.setType(name)
+                                readerTesterDialogId.setEntityType(4)
+                                readerTesterDialogId.open()
+                            }
+                        }
                     }
                 }
             }

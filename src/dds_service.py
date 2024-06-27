@@ -22,6 +22,7 @@ from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 from cyclonedds.core import SampleState, ViewState, InstanceState
 from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
+from cyclonedds.pub import Publisher, DataWriter
 
 from utils import EntityType
 
@@ -99,35 +100,43 @@ class WorkerThread(QThread):
 
     data_emitted = Signal(str)
     
-    def __init__(self, domain_id, topic_name, topic_type, qos, parent=None):
+    def __init__(self, domain_id, topic_name, topic_type, qos, entity_type: EntityType, parent=None):
         super().__init__(parent)
         self.domain_id = domain_id
         self.topic_name = topic_name
         self.topic_type = topic_type
+        self.entity_type = entity_type
         self.qos = qos
         self.running = True
         self.readerData = []
+        self.writerData = {}
 
     @Slot()
-    def receive_data(self, topic_name, topic_type, qos):
-        logging.info("Add reader")
+    def receive_data(self, topic_name, topic_type, qos, entity_type: EntityType):
+        logging.info("Add endpoint")
         try:
             topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
-            subscriber = Subscriber(self.domain_participant)
-            reader = DataReader(subscriber, topic)
-            readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
-            self.waitset.attach(readCondition)
 
-            self.readerData.append((topic,subscriber, reader, readCondition))
+            if EntityType(entity_type) == EntityType.READER:
+                subscriber = Subscriber(self.domain_participant)
+                reader = DataReader(subscriber, topic)
+                readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
+                self.waitset.attach(readCondition)
+                self.readerData.append((topic,subscriber, reader, readCondition))
+            elif EntityType(entity_type) == EntityType.WRITER:
+                publisher = Publisher(self.domain_participant)
+                writer = DataWriter(publisher, topic)
+                self.writerData["1"] = (publisher, writer)
         except Exception as e:
             logging.error(f"Error creating reader {topic_name}: {e}")
+        logging.info("Add endpoint ... DONE")
 
     def run(self):
         logging.info(f"Worker thread for domain({str(self.domain_id)}) ...")    
 
         self.domain_participant = domain.DomainParticipant(self.domain_id)
         self.waitset = core.WaitSet(self.domain_participant)
-        self.receive_data(self.topic_name, self.topic_type, self.qos)
+        self.receive_data(self.topic_name, self.topic_type, self.qos, self.entity_type)
 
         while self.running:
             amount_triggered = 0
