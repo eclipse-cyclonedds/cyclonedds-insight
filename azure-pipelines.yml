@@ -61,13 +61,14 @@ jobs:
     - bash: |
         set -e -x
         ls -al
+        export CYCLONEDDS_HOME=$PWD/deps/cyclonedds/build/install
         cd deps
         cd cyclonedds-python
         python -m pip install -e .
       name: cyclonedds_python_build
       displayName: Build CycloneDDS-Python
     
-    # Build App
+    # Build CycloneDDS-Insight
     - bash: |
         set -e -x
         ls -al
@@ -80,26 +81,16 @@ jobs:
       name: cyclonedds_insight_build
       displayName: Build CycloneDDS-Insight
 
-    # Install Inno Setup with chocolatey
+    # Build Windows Installer
     - task: PowerShell@2
       displayName: 'Inno setup download'
       condition: eq(variables['Agent.OS'], 'Windows_NT')
       inputs:
         targetType: 'inline'
         script: 'choco install innosetup'
-
-    # Build Windows Installer
     - bash: |
         set -e -x
         iscc.exe setup.iss /DTheAppVersion=0.0.0
       condition: eq(variables['Agent.OS'], 'Windows_NT')
       name: cyclonedds_insight_build_win_setup
       displayName: Build CycloneDDS-Insight
-
-
-
-
-
-
-
-
