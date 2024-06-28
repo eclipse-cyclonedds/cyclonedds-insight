@@ -1,0 +1,73 @@
+#
+# Copyright(c) 2024 Sven Trittler
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License v. 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0, or the Eclipse Distribution License
+# v. 1.0 which is available at
+# http://www.eclipse.org/org/documents/edl-v10.php.
+#
+# SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
+
+trigger: [ '*' ]
+pr: [ '*' ]
+
+variables:
+  PY_VERSION: "3.10"
+
+jobs:
+- job: BuildCyclone
+  pool:
+    vmImage: $(image)
+  strategy:
+    matrix:
+      #'Ubuntu 22.04 LTS':
+      #  image: ubuntu-22.04
+      #'macOS 10.15':
+      #  image: macOS-11
+      'Windows Server':
+        image: windows-latest
+  steps:
+    - task: UsePythonVersion@0
+      displayName: Fetch Python
+      inputs:
+        versionSpec: $(PY_VERSION)
+    - bash: |
+        git clone https://github.com/eclipse-cyclonedds/cyclonedds.git --branch master
+      name: clone_cyclone
+      displayName: Clone the CycloneDDS repository
+    - bash: |
+        set -e -x
+        mkdir -p cyclonedds/build
+        cd cyclonedds/build
+        cmake -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=./install \
+              -DENABLE_SSL=off -DENABLE_SECURITY=off ..
+        cmake --build . --config Release --target install --parallel
+      name: cyclonedds_build
+      displayName: Build CycloneDDS
+    - bash: |
+        git clone https://github.com/eclipse-cyclonedds/cyclonedds-python.git --branch master
+      name: clone_cyclone_python
+      displayName: Clone the CycloneDDS-Python repository
+    - bash: |
+        set -e -x
+        ls -al
+        cd cyclonedds-python
+        pip install -e . && ^
+        pip install -r ..\..\requirements.txt && ^
+      name: cyclonedds_build
+      displayName: Build CycloneDDS-Python
+
+
+
+
+
+
+
+
+
+
+
+
+
