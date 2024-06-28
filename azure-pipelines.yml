@@ -13,7 +13,7 @@ trigger: [ '*' ]
 pr: [ '*' ]
 
 variables:
-  PY_VERSION: "3.10"
+  PY_VERSION: "3.8"
 
 jobs:
 - job: BuildCyclone
@@ -25,44 +25,76 @@ jobs:
       #  image: ubuntu-22.04
       #'macOS 10.15':
       #  image: macOS-11
-      'Windows Server':
-        image: windows-latest
+      'Windows_Server_2019_64_bit':
+        image: windows-2019
   steps:
     - task: UsePythonVersion@0
       displayName: Fetch Python
       inputs:
         versionSpec: $(PY_VERSION)
+    
+    # Build CycloneDDS
     - bash: |
+        mkdir -p deps
+        cd deps
         git clone https://github.com/eclipse-cyclonedds/cyclonedds.git --branch master
       name: clone_cyclone
       displayName: Clone the CycloneDDS repository
     - bash: |
         set -e -x
-        mkdir -p cyclonedds/build
-        cd cyclonedds/build
+        cd deps/cyclonedds
+        mkdir -p build
+        cd build
         cmake -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX=./install \
               -DENABLE_SSL=off -DENABLE_SECURITY=off ..
         cmake --build . --config Release --target install --parallel
       name: cyclonedds_build
       displayName: Build CycloneDDS
+    
+    # Build CycloneDDS-Python
     - bash: |
+        cd deps
         git clone https://github.com/eclipse-cyclonedds/cyclonedds-python.git --branch master
       name: clone_cyclone_python
       displayName: Clone the CycloneDDS-Python repository
     - bash: |
         set -e -x
         ls -al
+        cd deps
         cd cyclonedds-python
-        pip install -e . && ^
-        pip install -r ..\..\requirements.txt && ^
-      name: cyclonedds_build
+        python -m pip install -e .
+      name: cyclonedds_python_build
       displayName: Build CycloneDDS-Python
+    
+    # Build App
+    - bash: |
+        set -e -x
+        ls -al
+        export CYCLONEDDS_HOME=$PWD/deps/cyclonedds/build/install
+        export CYCLONEDDS_PYTHON_HOME=$PWD/deps/cyclonedds-python
+        export PATH=$PATH:$CYCLONEDDS_HOME/bin
+        python -m pip install -r ./requirements.txt && \
+        pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && \
+        pyinstaller main.spec --noconfirm --clean
+      name: cyclonedds_insight_build
+      displayName: Build CycloneDDS-Insight
 
+    # Install Inno Setup with chocolatey
+    - task: PowerShell@2
+      displayName: 'Inno setup download'
+      condition: eq(variables['Agent.OS'], 'Windows_NT')
+      inputs:
+        targetType: 'inline'
+        script: 'choco install innosetup'
 
-
-
-
+    # Build Windows Installer
+    - bash: |
+        set -e -x
+        iscc.exe setup.iss /DTheAppVersion=0.0.0
+      condition: eq(variables['Agent.OS'], 'Windows_NT')
+      name: cyclonedds_insight_build_win_setup
+      displayName: Build CycloneDDS-Insight
 
 
 
