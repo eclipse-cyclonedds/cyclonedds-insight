@@ -94,3 +94,7 @@ jobs:
       condition: eq(variables['Agent.OS'], 'Windows_NT')
       name: cyclonedds_insight_build_win_setup
       displayName: Build CycloneDDS-Insight
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: dist/cyclonedds-insight-0.0.0-win-x64.exe
+        artifactName: cyclonedds-insight-0.0.0-win-x64
