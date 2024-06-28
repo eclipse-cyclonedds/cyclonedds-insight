@@ -70,19 +70,115 @@ Rectangle {
         }
 
        Rectangle {
+            id: contentRec
             color: rootWindow.isDarkMode ? "black" : "white"
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.margins: 3
 
-            Flickable {
+            /*Flickable {
                 id: scrollView
                 anchors.fill: parent
                 boundsBehavior: Flickable.StopAtBounds
                 interactive: true
                 ScrollBar.vertical: ScrollBar {}
 
+            }*/
+        
+        
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    var str = `
+import QtCore
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Layouts
 
+import org.eclipse.cyclonedds.insight
+
+Rectangle {
+    id: settingsViewId
+    anchors.fill: parent
+    color: "green"
+
+    ScrollView {
+        anchors.fill: parent
+
+        GridLayout {
+            columns: 2
+            anchors.fill: parent
+            anchors.margins: 10
+            rowSpacing: 10
+            columnSpacing: 10
+Label {
+    text: "name"
+}
+TextField {
+    id: idname
+}
+Label {
+    text: "ss"
+}
+Label {
+    text: "Listtype TBD"
+}
+Label {
+    text: "x"
+}
+TextField {
+    id: idx
+    text: "0"
+}
+Label {
+    text: "y"
+}
+TextField {
+    id: idy
+    text: "0"
+}
+Label {
+    text: "ha"
+}
+Item {}
+Label {
+    text: "franz"
+}
+TextField {
+    id: idfranz
+}
+Label {
+    text: "z"
+}
+TextField {
+    id: idz
+    text: "0"
+}
+Label {
+    text: "b"
+}
+TextField {
+    id: idb
+    text: "0.0"
+}
+Label {
+    text: "d"
+}
+TextField {
+    id: idd
+    text: "0.0"
+}
+Label {
+    text: "c"
+}
+TextField {
+    id: idc
+}
+}}}
+                    `;
+                    var component = Qt.createQmlObject(str, contentRec);
+                }
             }
         }
     }

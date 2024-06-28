@@ -113,7 +113,7 @@ class WorkerThread(QThread):
 
     @Slot()
     def receive_data(self, topic_name, topic_type, qos, entity_type: EntityType):
-        logging.info("Add endpoint")
+        logging.info("Add endpoint ...")
         try:
             topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
 

@@ -15,6 +15,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 import logging
 import os
 import sys
+import typing
 import importlib
 import inspect
 from pathlib import Path
@@ -44,6 +45,8 @@ class DatamodelModel(QAbstractListModel):
         super().__init__()
         self.idlcWorker = None
         self.dataModelItems = {}
+        self.structMembers = {}
+        self.loaded_structs = {}
         self.threads = {}
         self.app_data_dir = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
         self.datamodel_dir = os.path.join(self.app_data_dir, "datamodel")
@@ -153,6 +156,8 @@ class DatamodelModel(QAbstractListModel):
         for submodule in submodules:
             self.import_module_and_nested(submodule)
 
+        print("self.structMembers", self.structMembers)
+
     def import_module_and_nested(self, module_name):
         try:
             module = importlib.import_module(module_name)
@@ -166,6 +171,7 @@ class DatamodelModel(QAbstractListModel):
                             if sId not in self.dataModelItems:
                                 self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
                                 self.dataModelItems[sId] = DataModelItem(sId, [module_name, cls.__name__])
+                                self.structMembers[sId] = self.get_struct_members(cls)
                                 self.endInsertRows()
                     elif inspect.ismodule(cls):
                         self.import_module_and_nested(cls.__name__)
@@ -173,6 +179,19 @@ class DatamodelModel(QAbstractListModel):
                     logging.error(f"Error importing {module_name} : {type_name} : {e}")
         except Exception as e:
             logging.error(f"Error importing {module_name}: {e}")
+
+    def get_struct_membersX(self, cls):
+        return {name: type_ for name, type_ in cls.__annotations__.items()}
+
+    def get_struct_members(self, cls):
+        members = {}
+        for name, type_ in cls.__annotations__.items():
+            if inspect.isclass(type_) and type_ in self.loaded_structs:
+                members[name] = type_
+                self.structMembers[f"{type_.__module__}::{type_.__name__}".replace(".", "::")] = self.get_struct_members(type_)
+            else:
+                members[name] = type_
+        return members
 
     def has_nested_annotation(self, cls):
         return 'nested' in getattr(cls, '__idl_annotations__', {})
@@ -198,6 +217,36 @@ class DatamodelModel(QAbstractListModel):
     @Slot(int, str, str, str, str, str, int)
     def addReader(self, domain_id, topic_name, topic_type, q_own, q_dur, q_rel, entityType):
         logging.debug(f"try add endpoint {str(domain_id)} {str(topic_name)} {str(topic_type)} {str(q_own)} {str(q_dur)} {str(q_rel)} {str(entityType)}")
+
+        qmlCode = """
+import QtCore
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Layouts
+
+import org.eclipse.cyclonedds.insight
+
+Rectangle {
+    id: settingsViewId
+    anchors.fill: parent
+    color: "green"
+
+    ScrollView {
+        anchors.fill: parent
+
+        GridLayout {
+            columns: 2
+            anchors.fill: parent
+            anchors.margins: 10
+            rowSpacing: 10
+            columnSpacing: 10
+"""
+        qmlCode = self.toQml(topic_type, qmlCode)
+        qmlCode += "}}}"
+
+        print("Qml:")
+        print(qmlCode)
 
         if topic_type in self.dataModelItems:
             module_type = importlib.import_module(self.dataModelItems[topic_type].parts[0])
@@ -235,6 +284,52 @@ class DatamodelModel(QAbstractListModel):
                 self.threads[domain_id].start()
 
         logging.debug("try add endpoint ... DONE")
+
+    def toQml(self, theType, qmlCode) -> str:
+        if theType in self.structMembers:
+            print("xxx",theType, self.structMembers[theType])
+            for keyStructMem in self.structMembers[theType].keys():
+                qmlCode += "Label {\n"
+                qmlCode += "    text: " + "\"" + keyStructMem + "\"\n"
+                qmlCode += "}\n"
+                print(str(self.structMembers[theType][keyStructMem]))
+    
+                # string
+                if self.structMembers[theType][keyStructMem] == str or str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[str"):
+                    qmlCode += "TextField {\n"
+                    qmlCode += f"    id: id{keyStructMem}\n"
+                    qmlCode += "}\n"
+
+                # tnteger
+                elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[int"):
+                    qmlCode += "TextField {\n"
+                    qmlCode += f"    id: id{keyStructMem}\n"
+                    qmlCode += f"    text: \"0\"\n"
+                    qmlCode += "}\n"
+
+                elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[float"):
+                    qmlCode += "TextField {\n"
+                    qmlCode += f"    id: id{keyStructMem}\n"
+                    qmlCode += f"    text: \"0.0\"\n"
+                    qmlCode += "}\n"
+
+                elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[typing.Sequence"):
+                    qmlCode += "Label {\n"
+                    qmlCode += "    text: " + "\"Listtype TBD\"\n"
+                    qmlCode += "}\n"
+
+                # struct
+                elif str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
+                    qmlCode += "Item {}\n"
+                    qmlCode = self.toQml(str(self.structMembers[theType][keyStructMem]).replace(".", "::"), qmlCode)
+                
+                # Unknown
+                else:
+                    qmlCode += "Label {\n"
+                    qmlCode += "    text: " + "\"Unknown Datatype\"\n"
+                    qmlCode += "}\n"
+
+            return qmlCode
 
     @Slot(str)
     def received_data(self, data: str):
