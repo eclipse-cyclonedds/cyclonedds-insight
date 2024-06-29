@@ -241,12 +241,43 @@ Rectangle {
             anchors.margins: 10
             rowSpacing: 10
             columnSpacing: 10
+
 """
-        qmlCode = self.toQml(topic_type, qmlCode)
-        qmlCode += "}}}"
+        pyCode: str = """
+import logging
+from PySide6.QtCore import QObject, Signal, Slot
+
+class DataWriterModel(QObject):
+
+    writeDataSignal = Signal()
+
+    def __init__(self):
+        super().__init__()
+        logging.debug("Construct DataWriterModel")
+
+"""
+        pyCode += f"        @Slot()\n"
+        topic_type_underscore = topic_type.replace("::", "_")
+        pyCode += f"        def write_{topic_type_underscore}(self\n"
+
+        pyCodeInner = f"            logging.debug(\"Write {topic_type_underscore} ...\")\n"
+        topic_type_dot = topic_type.replace("::", ".")
+        pyCodeInner = f"            data = {topic_type_dot}(\n"
+
+        (qmlCode, pyCode, pyCodeInner) = self.toQml(topic_type, qmlCode, pyCode, pyCodeInner, "")
+        qmlCode += "        }\n    }\n}"
+
+        pyCode += "            ):\n"
+
+        pyCodeInner += "            )\n"
+        pyCodeInner += "            self.writeDataSignal.emit(data)\n"
+        pyCodeInner += f"            logging.debug(\"Write {topic_type_underscore} ... DONE\")\n"
+        pyCode += pyCodeInner
 
         print("Qml:")
         print(qmlCode)
+        print("Py:")
+        print(pyCode)
 
         if topic_type in self.dataModelItems:
             module_type = importlib.import_module(self.dataModelItems[topic_type].parts[0])
@@ -285,51 +316,92 @@ Rectangle {
 
         logging.debug("try add endpoint ... DONE")
 
-    def toQml(self, theType, qmlCode) -> str:
+    def toQml(self, theType, qmlCode, pyCode, pyCodeInner, prefix):
         if theType in self.structMembers:
             print("xxx",theType, self.structMembers[theType])
+            isFirst = True
             for keyStructMem in self.structMembers[theType].keys():
-                qmlCode += "Label {\n"
-                qmlCode += "    text: " + "\"" + keyStructMem + "\"\n"
-                qmlCode += "}\n"
+                qmlCode += "            Label {\n"
+                qmlCode += "                text: " + "\"" + keyStructMem + "\"\n"
+                qmlCode += "            }\n"
                 print(str(self.structMembers[theType][keyStructMem]))
+
+                keyWithPrefix: str = prefix + keyStructMem
     
                 # string
                 if self.structMembers[theType][keyStructMem] == str or str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[str"):
-                    qmlCode += "TextField {\n"
-                    qmlCode += f"    id: id{keyStructMem}\n"
-                    qmlCode += "}\n"
+                    qmlCode += "            TextField {\n"
+                    qmlCode += f"                id: id{keyWithPrefix}\n"
+                    qmlCode += "            }\n"
+
+                    pyCode += f"            , {keyWithPrefix}: str\n"
+
+                    pyCodeInner += f"                "
+                    if not isFirst:
+                        pyCodeInner += ", "
+                    pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
+                    isFirst = False
 
                 # tnteger
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[int"):
-                    qmlCode += "TextField {\n"
-                    qmlCode += f"    id: id{keyStructMem}\n"
-                    qmlCode += f"    text: \"0\"\n"
-                    qmlCode += "}\n"
+                    qmlCode += "            TextField {\n"
+                    qmlCode += f"                id: id{keyWithPrefix}\n"
+                    qmlCode += f"                text: \"0\"\n"
+                    qmlCode += "            }\n"
+
+                    pyCode += f"            , {keyWithPrefix}: int\n"
+                    pyCodeInner += f"                , {keyStructMem} = {keyWithPrefix}\n"
 
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[float"):
-                    qmlCode += "TextField {\n"
-                    qmlCode += f"    id: id{keyStructMem}\n"
-                    qmlCode += f"    text: \"0.0\"\n"
-                    qmlCode += "}\n"
+                    qmlCode += "            TextField {\n"
+                    qmlCode += f"                id: id{keyWithPrefix}\n"
+                    qmlCode += f"                text: \"0.0\"\n"
+                    qmlCode += "            }\n"
+
+                    pyCode += f"            , {keyWithPrefix}: float\n"
+
+                    pyCodeInner += f"                "
+                    if not isFirst:
+                        pyCodeInner += ", "
+                    pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
+                    isFirst = False
 
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[typing.Sequence"):
-                    qmlCode += "Label {\n"
-                    qmlCode += "    text: " + "\"Listtype TBD\"\n"
-                    qmlCode += "}\n"
+                    qmlCode += "            Label {\n"
+                    qmlCode += "                text: " + "\"Listtype TBD\"\n"
+                    qmlCode += "            }\n"
+
+                    pyCode += f"            , {keyWithPrefix}: []\n"# TODO: for array probally a model is needed, or only qml model!
+
+                    pyCodeInner += f"                "
+                    if not isFirst:
+                        pyCodeInner += ", "
+                    pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
+                    isFirst = False
 
                 # struct
                 elif str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
-                    qmlCode += "Item {}\n"
-                    qmlCode = self.toQml(str(self.structMembers[theType][keyStructMem]).replace(".", "::"), qmlCode)
-                
+                    qmlCode += "            Item {}\n"
+                    theType_strcut = str(self.structMembers[theType][keyStructMem])
+                    pyCodeInner += f"                , {keyStructMem} = {theType_strcut}(\n"
+                    (qmlCode, pyCode, pyCodeInner) = self.toQml(str(self.structMembers[theType][keyStructMem]).replace(".", "::"), qmlCode, pyCode, pyCodeInner, keyWithPrefix)
+                    pyCodeInner += f"                )\n"
+
                 # Unknown
                 else:
-                    qmlCode += "Label {\n"
-                    qmlCode += "    text: " + "\"Unknown Datatype\"\n"
-                    qmlCode += "}\n"
+                    qmlCode += "            Label {\n"
+                    qmlCode += "                text: " + "\"Unknown Datatype\"\n"
+                    qmlCode += "            }\n"
 
-            return qmlCode
+                    pyCode += f"            , {keyWithPrefix}\n"
+
+                    pyCodeInner += f"                "
+                    if not isFirst:
+                        pyCodeInner += ", "
+                    pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
+                    isFirst = False
+
+            return (qmlCode, pyCode, pyCodeInner)
 
     @Slot(str)
     def received_data(self, data: str):
