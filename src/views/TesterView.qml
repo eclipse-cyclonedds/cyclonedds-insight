@@ -179,7 +179,7 @@ Rectangle {
                 text: qsTr("Write")
                 onClicked: {
                     console.log("write button pressed")
-                    theModel.write_vehicles_Vehicle(idname.text, idx.text, idy.text, idhafranz.text, idhaz.text, idhab.text, idhad.text, idhac.text)
+                    console.log(idname.text, parseInt(idx.text), parseInt(idy.text), idhafranz.text, parseInt(idhaz.text), parseFloat(idhab.text), parseFloat(idhad.text), idhac.text)
                 }
             }
         }

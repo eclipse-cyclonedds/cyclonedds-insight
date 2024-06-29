@@ -398,7 +398,7 @@ class DataWriterModel(QObject):
                     pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
                     isFirst = False
 
-                    qmlCodeWrite += f"id{keyWithPrefix}.text"
+                    qmlCodeWrite += f"parseInt(id{keyWithPrefix}.text)"
 
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[float"):
                     qmlCode += "            TextField {\n"
@@ -415,7 +415,7 @@ class DataWriterModel(QObject):
                     pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
                     isFirst = False
 
-                    qmlCodeWrite += f"id{keyWithPrefix}.text"
+                    qmlCodeWrite += f"parseFloat(id{keyWithPrefix}.text)"
 
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[typing.Sequence"):
                     qmlCode += "            Label {\n"
