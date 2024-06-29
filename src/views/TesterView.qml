@@ -38,7 +38,7 @@ Rectangle {
                 implicitWidth: 1
             }
 
-            ComboBox {
+            /*ComboBox { # TODO: in the next PR
                 //currentIndex: 0
                 //enabled: !libraryView.selectionActivated
                 id: librariesCombobox
@@ -53,12 +53,12 @@ Rectangle {
                     console.log("onCurrentIndexChanged")
                     //myLibraryModel.download(model.getIdByIndex(currentIndex))
                 }
-            }
+            }*/
 
-            /*Item {
+            Item {
                 implicitHeight: 1
                 Layout.fillWidth: true
-            }*/
+            }
             Button {
                 text: "Delete All Writers"
                 onClicked: datamodelRepoModel.deleteAllReaders()
@@ -101,7 +101,7 @@ import org.eclipse.cyclonedds.insight
 Rectangle {
     id: settingsViewId
     anchors.fill: parent
-    color: "green"
+    color: rootWindow.isDarkMode ? "black" : "white"
 
     ScrollView {
         anchors.fill: parent
@@ -112,70 +112,79 @@ Rectangle {
             anchors.margins: 10
             rowSpacing: 10
             columnSpacing: 10
-Label {
-    text: "name"
+
+            Label {
+                text: "vehicles::Vehicle"
+                font.bold: true
+            }
+            Item {}
+            Label {
+                text: "name"
+            }
+            TextField {
+                id: idname
+            }
+            Label {
+                text: "x"
+            }
+            TextField {
+                id: idx
+                text: "0"
+            }
+            Label {
+                text: "y"
+            }
+            TextField {
+                id: idy
+                text: "0"
+            }
+            Label {
+                text: "ha"
+            }
+            Item {}
+            Label {
+                text: "franz"
+            }
+            TextField {
+                id: idhafranz
+            }
+            Label {
+                text: "z"
+            }
+            TextField {
+                id: idhaz
+                text: "0"
+            }
+            Label {
+                text: "b"
+            }
+            TextField {
+                id: idhab
+                text: "0.0"
+            }
+            Label {
+                text: "d"
+            }
+            TextField {
+                id: idhad
+                text: "0.0"
+            }
+            Label {
+                text: "c"
+            }
+            TextField {
+                id: idhac
+            }
+            Button {
+                text: qsTr("Write")
+                onClicked: {
+                    console.log("write button pressed")
+                    theModel.write_vehicles_Vehicle(idname.text, idx.text, idy.text, idhafranz.text, idhaz.text, idhab.text, idhad.text, idhac.text)
+                }
+            }
+        }
+    }
 }
-TextField {
-    id: idname
-}
-Label {
-    text: "ss"
-}
-Label {
-    text: "Listtype TBD"
-}
-Label {
-    text: "x"
-}
-TextField {
-    id: idx
-    text: "0"
-}
-Label {
-    text: "y"
-}
-TextField {
-    id: idy
-    text: "0"
-}
-Label {
-    text: "ha"
-}
-Item {}
-Label {
-    text: "franz"
-}
-TextField {
-    id: idfranz
-}
-Label {
-    text: "z"
-}
-TextField {
-    id: idz
-    text: "0"
-}
-Label {
-    text: "b"
-}
-TextField {
-    id: idb
-    text: "0.0"
-}
-Label {
-    text: "d"
-}
-TextField {
-    id: idd
-    text: "0.0"
-}
-Label {
-    text: "c"
-}
-TextField {
-    id: idc
-}
-}}}
                     `;
                     var component = Qt.createQmlObject(str, contentRec);
                 }

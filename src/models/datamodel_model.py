@@ -17,6 +17,7 @@ import os
 import sys
 import typing
 import importlib
+import types
 import inspect
 from pathlib import Path
 import subprocess
@@ -218,66 +219,8 @@ class DatamodelModel(QAbstractListModel):
     def addReader(self, domain_id, topic_name, topic_type, q_own, q_dur, q_rel, entityType):
         logging.debug(f"try add endpoint {str(domain_id)} {str(topic_name)} {str(topic_type)} {str(q_own)} {str(q_dur)} {str(q_rel)} {str(entityType)}")
 
-        qmlCode = """
-import QtCore
-import QtQuick
-import QtQuick.Window
-import QtQuick.Controls
-import QtQuick.Layouts
 
-import org.eclipse.cyclonedds.insight
 
-Rectangle {
-    id: settingsViewId
-    anchors.fill: parent
-    color: "green"
-
-    ScrollView {
-        anchors.fill: parent
-
-        GridLayout {
-            columns: 2
-            anchors.fill: parent
-            anchors.margins: 10
-            rowSpacing: 10
-            columnSpacing: 10
-
-"""
-        pyCode: str = """
-import logging
-from PySide6.QtCore import QObject, Signal, Slot
-
-class DataWriterModel(QObject):
-
-    writeDataSignal = Signal()
-
-    def __init__(self):
-        super().__init__()
-        logging.debug("Construct DataWriterModel")
-
-"""
-        pyCode += f"        @Slot()\n"
-        topic_type_underscore = topic_type.replace("::", "_")
-        pyCode += f"        def write_{topic_type_underscore}(self\n"
-
-        pyCodeInner = f"            logging.debug(\"Write {topic_type_underscore} ...\")\n"
-        topic_type_dot = topic_type.replace("::", ".")
-        pyCodeInner = f"            data = {topic_type_dot}(\n"
-
-        (qmlCode, pyCode, pyCodeInner) = self.toQml(topic_type, qmlCode, pyCode, pyCodeInner, "")
-        qmlCode += "        }\n    }\n}"
-
-        pyCode += "            ):\n"
-
-        pyCodeInner += "            )\n"
-        pyCodeInner += "            self.writeDataSignal.emit(data)\n"
-        pyCodeInner += f"            logging.debug(\"Write {topic_type_underscore} ... DONE\")\n"
-        pyCode += pyCodeInner
-
-        print("Qml:")
-        print(qmlCode)
-        print("Py:")
-        print(pyCode)
 
         if topic_type in self.dataModelItems:
             module_type = importlib.import_module(self.dataModelItems[topic_type].parts[0])
@@ -314,9 +257,103 @@ class DataWriterModel(QObject):
                 self.threads[domain_id].data_emitted.connect(self.received_data, Qt.ConnectionType.QueuedConnection)
                 self.threads[domain_id].start()
 
+        if entityType == 4:
+            qmlCode = """
+import QtCore
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Layouts
+
+import org.eclipse.cyclonedds.insight
+
+Rectangle {
+    id: settingsViewId
+    anchors.fill: parent
+    color: rootWindow.isDarkMode ? "black" : "white"
+
+    ScrollView {
+        anchors.fill: parent
+
+        GridLayout {
+            columns: 2
+            anchors.fill: parent
+            anchors.margins: 10
+            rowSpacing: 10
+            columnSpacing: 10
+
+"""
+            qmlCode += "            Label {\n"
+            qmlCode += "                text: " + "\"" + topic_type + "\"\n"
+            qmlCode += "                font.bold: true\n"
+            qmlCode += "            }\n"
+            qmlCode += "            Item {}\n"
+
+            pyCode: str = """
+import logging
+from PySide6.QtCore import QObject, Signal, Slot
+
+class DataWriterModel(QObject):
+
+    writeDataSignal = Signal(object, object)
+
+    def __init__(self, topic_name):
+        super().__init__()
+        logging.debug(f"Construct DataWriterModel {topic_name}")
+        self.topic_name = topic_name
+"""
+            pyCode += f"    @Slot(object, object, object, object, object)\n"
+            topic_type_underscore = topic_type.replace("::", "_")
+            pyCode += f"    def write_{topic_type_underscore}(self\n"
+
+            pyCodeInner = f"        logging.debug(\"Write {topic_type_underscore} ...\")\n"
+            topic_type_dot: str = topic_type.replace("::", ".")
+            pyCodeInner += f"        data = {topic_type_dot}(\n"
+
+            pyCodeImport = set()
+            pyCodeImport.add(topic_type_dot.split('.')[0])
+
+            qmlCodeWrite = ""
+
+            (qmlCode, qmlCodeWrite, pyCode, pyCodeInner) = self.toQml(topic_type, qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, "")
+
+            # Qml-Code
+            qmlCode += "            Button {\n"
+            qmlCode += "                text: qsTr(\"Write\")\n"
+            qmlCode += "                onClicked: {\n"
+            qmlCode += "                    console.log(\"write button pressed\")\n"
+            qmlCode += f"                    theModel.write_{topic_type_underscore}({qmlCodeWrite})\n"
+            qmlCode += "                }\n"
+            qmlCode += "            }\n"
+            qmlCode += "        }\n    }\n}"
+
+            imp_str = ""
+            for imp in pyCodeImport:
+                imp_str += f"import {imp}\n"
+            pyCode = imp_str + pyCode
+            pyCode += "            ):\n"
+
+            pyCodeInner += "        )\n"
+            pyCodeInner += "        self.writeDataSignal.emit(self.topic_name, data)\n"
+            pyCodeInner += f"        logging.debug(\"Write {topic_type_underscore} ... DONE\")\n"
+            pyCode += pyCodeInner
+
+            print("Qml:")
+            print(qmlCode)
+            print("Py:")
+            print(pyCode)
+
+            # Example usage
+            # module_name = 'mymodule'
+            # new_module = types.ModuleType(module_name)
+            # exec(pyCode, new_module.__dict__)
+            # mt = new_module.DataWriterModel(topic_name)
+            # mt.writeDataSignal.connect(self.threads[domain_id].write, Qt.ConnectionType.QueuedConnection)
+            # mt.write_vehicles_Vehicle("A cool string", 42, 43, "franz1", 1, 0.123456789, 0.2, 'x')
+
         logging.debug("try add endpoint ... DONE")
 
-    def toQml(self, theType, qmlCode, pyCode, pyCodeInner, prefix):
+    def toQml(self, theType, qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, prefix):
         if theType in self.structMembers:
             print("xxx",theType, self.structMembers[theType])
             isFirst = True
@@ -336,13 +373,16 @@ class DataWriterModel(QObject):
 
                     pyCode += f"            , {keyWithPrefix}: str\n"
 
-                    pyCodeInner += f"                "
+                    pyCodeInner += f"            "
                     if not isFirst:
                         pyCodeInner += ", "
+                        qmlCodeWrite += ", "
                     pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
                     isFirst = False
 
-                # tnteger
+                    qmlCodeWrite += f"id{keyWithPrefix}.text"
+
+                # integer
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[int"):
                     qmlCode += "            TextField {\n"
                     qmlCode += f"                id: id{keyWithPrefix}\n"
@@ -350,7 +390,15 @@ class DataWriterModel(QObject):
                     qmlCode += "            }\n"
 
                     pyCode += f"            , {keyWithPrefix}: int\n"
-                    pyCodeInner += f"                , {keyStructMem} = {keyWithPrefix}\n"
+
+                    pyCodeInner += f"            "
+                    if not isFirst:
+                        pyCodeInner += ", "
+                        qmlCodeWrite += ", "
+                    pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
+                    isFirst = False
+
+                    qmlCodeWrite += f"id{keyWithPrefix}.text"
 
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[float"):
                     qmlCode += "            TextField {\n"
@@ -360,11 +408,14 @@ class DataWriterModel(QObject):
 
                     pyCode += f"            , {keyWithPrefix}: float\n"
 
-                    pyCodeInner += f"                "
+                    pyCodeInner += f"            "
                     if not isFirst:
                         pyCodeInner += ", "
+                        qmlCodeWrite += ", "
                     pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
                     isFirst = False
+
+                    qmlCodeWrite += f"id{keyWithPrefix}.text"
 
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[typing.Sequence"):
                     qmlCode += "            Label {\n"
@@ -373,19 +424,30 @@ class DataWriterModel(QObject):
 
                     pyCode += f"            , {keyWithPrefix}: []\n"# TODO: for array probally a model is needed, or only qml model!
 
-                    pyCodeInner += f"                "
+                    pyCodeInner += f"            "
                     if not isFirst:
                         pyCodeInner += ", "
+                        qmlCodeWrite += ", "
                     pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
                     isFirst = False
 
+                    qmlCodeWrite += f"id{keyWithPrefix}.text"
+
                 # struct
                 elif str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
+
+                    if not isFirst:
+                        qmlCodeWrite += ", "
+                    isFirst = False
+
                     qmlCode += "            Item {}\n"
                     theType_strcut = str(self.structMembers[theType][keyStructMem])
                     pyCodeInner += f"                , {keyStructMem} = {theType_strcut}(\n"
-                    (qmlCode, pyCode, pyCodeInner) = self.toQml(str(self.structMembers[theType][keyStructMem]).replace(".", "::"), qmlCode, pyCode, pyCodeInner, keyWithPrefix)
-                    pyCodeInner += f"                )\n"
+                    pyCodeImport.add(theType_strcut.split('.')[0])
+                    (qmlCode, qmlCodeWrite, pyCode, pyCodeInner) = self.toQml(str(self.structMembers[theType][keyStructMem]).replace(".", "::"), qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, keyWithPrefix)
+                    pyCodeInner += f"            )\n"
+
+
 
                 # Unknown
                 else:
@@ -395,13 +457,16 @@ class DataWriterModel(QObject):
 
                     pyCode += f"            , {keyWithPrefix}\n"
 
-                    pyCodeInner += f"                "
+                    pyCodeInner += f"            "
                     if not isFirst:
                         pyCodeInner += ", "
+                        qmlCodeWrite += ", "
                     pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
                     isFirst = False
 
-            return (qmlCode, pyCode, pyCodeInner)
+                    qmlCodeWrite += "0"
+
+            return (qmlCode, qmlCodeWrite, pyCode, pyCodeInner)
 
     @Slot(str)
     def received_data(self, data: str):

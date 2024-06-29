@@ -126,10 +126,18 @@ class WorkerThread(QThread):
             elif EntityType(entity_type) == EntityType.WRITER:
                 publisher = Publisher(self.domain_participant)
                 writer = DataWriter(publisher, topic)
-                self.writerData["1"] = (publisher, writer)
+                self.writerData[topic_name] = (publisher, writer)
         except Exception as e:
             logging.error(f"Error creating reader {topic_name}: {e}")
         logging.info("Add endpoint ... DONE")
+
+    @Slot(object, object)
+    def write(self, topic_name, data):
+        logging.debug("Write data ...")
+        if topic_name in self.writerData:
+            (publisher, writer) = self.writerData[topic_name]
+            writer.write(data)
+        logging.debug("Write data ... DONE")
 
     def run(self):
         logging.info(f"Worker thread for domain({str(self.domain_id)}) ...")    
