@@ -112,6 +112,7 @@ jobs:
     - bash: |
         set -e -x
         ls -al
+        brew install create-dmg
         sh ./setup_dmg.sh 0.0.0
       name: cyclonedds_insight_build_dmg
       displayName: Build CycloneDDS-Insight-Dmg
