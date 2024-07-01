@@ -17,5 +17,6 @@ create-dmg \
   --icon "CycloneDDS Insight.app" 175 120 \
   --hide-extension "CycloneDDS Insight.app" \
   --app-drop-link 425 120 \
+  --no-internet-enable \
   "dist/$DMG_NAME" \
   "dist/dmg/"

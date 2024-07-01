@@ -100,35 +100,35 @@ jobs:
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Windows_NT')
       inputs:
-        targetPath: dist/cyclonedds-insight-0.0.0-win-x64.exe
-        artifactName: cyclonedds-insight-0.0.0-win-x64
+        targetPath: dist/cyclonedds-insight-0.0.0-windows-x64.exe
+        artifactName: cyclonedds-insight-0.0.0-windows-x64
 
-    # Ubuntu 20 Installer
+    # Ubuntu 20 Bundle
     - bash: |
         set -e -x
         ls -al
         cd dist
-        tar -czf cyclonedds-insight-0.0.0-ubuntu20-x64.tar.gz "CycloneDDS Insight"
+        tar -czf cyclonedds-insight-0.0.0-linux-x64.tar.gz "CycloneDDS Insight"
       name: cyclonedds_insight_build_lnx_tgz
       displayName: Build CycloneDDS-Insight-Tgz
       condition: eq(variables['Agent.OS'], 'Linux')
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Linux')
       inputs:
-        targetPath: dist/cyclonedds-insight-0.0.0-ubuntu20-x64.tar.gz
-        artifactName: cyclonedds-insight-0.0.0-ubuntu20-x64
+        targetPath: dist/cyclonedds-insight-0.0.0-linux-x64.tar.gz
+        artifactName: cyclonedds-insight-0.0.0-linux-x64
 
-    # Bundle MacOS App dmg
-    # - bash: |
-    #     set -e -x
-    #     ls -al
-    #     brew install create-dmg
-    #     sh ./setup_dmg.sh 0.0.0 x64
-    #   name: cyclonedds_insight_build_dmg
-    #   displayName: Build CycloneDDS-Insight-Dmg
-    #   condition: eq(variables['Agent.OS'], 'Darwin')
+    # MacOS Bundle
+    - bash: |
+        set -e -x
+        ls -al
+        brew install create-dmg
+        sh ./setup_dmg.sh 0.0.0 x64
+      name: cyclonedds_insight_build_dmg
+      displayName: Build CycloneDDS-Insight-Dmg
+      condition: eq(variables['Agent.OS'], 'Darwin')
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Darwin')
       inputs:
-        targetPath: "dist/CycloneDDS Insight.app"
-        artifactName: cyclonedds-insight-0.0.0-darwin
+        targetPath: "dist/cyclonedds-insight-0.0.0-darwin-x64.dmg"
+        artifactName: cyclonedds-insight-0.0.0-darwin-x64
