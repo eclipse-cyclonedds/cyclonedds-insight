@@ -13,7 +13,7 @@ trigger: [ '*' ]
 pr: [ '*' ]
 
 variables:
-  PY_VERSION: "3.8"
+  PY_VERSION: "3.9"
 
 jobs:
 - job: BuildCyclone
@@ -98,5 +98,4 @@ jobs:
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: dist/cyclonedds-insight-0.0.0-win-x64.exe
-        artifactName: cyclonedds-insight-0.0.0-win-x64
-
+        # artifactName: cyclonedds-insight-0.0.0-win-x64
