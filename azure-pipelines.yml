@@ -25,8 +25,8 @@ jobs:
         image: ubuntu-20.04
       'macOS_13_x64':
         image: macOS-13
-      #'Windows_Server_2019_x64':
-      #  image: windows-2019
+      'Windows_Server_2019_x64':
+        image: windows-2019
   steps:
     - task: UsePythonVersion@0
       displayName: Fetch Python
@@ -104,12 +104,20 @@ jobs:
         artifactName: cyclonedds-insight-0.0.0-win-x64
 
     # Ubuntu 20 Installer
+    - bash: |
+        set -e -x
+        ls -al
+        cd dist
+        tar -czf cyclonedds-insight-0.0.0-ubuntu20-x64.tar.gz "CycloneDDS Insight"
+      name: cyclonedds_insight_build_lnx_tgz
+      displayName: Build CycloneDDS-Insight-Dmg
+      condition: eq(variables['Agent.OS'], 'Linux')
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Linux')
       inputs:
         targetPath: dist/
         artifactName: cyclonedds-insight-0.0.0-ubuntu20-x64
-    
+
     # Bundle MacOS App dmg
     - bash: |
         set -e -x
