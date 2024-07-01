@@ -98,3 +98,4 @@ jobs:
       inputs:
         targetPath: dist/cyclonedds-insight-0.0.0-win-x64.exe
         artifactName: cyclonedds-insight-0.0.0-win-x64
+
