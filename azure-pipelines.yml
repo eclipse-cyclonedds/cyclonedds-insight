@@ -110,12 +110,12 @@ jobs:
         cd dist
         tar -czf cyclonedds-insight-0.0.0-ubuntu20-x64.tar.gz "CycloneDDS Insight"
       name: cyclonedds_insight_build_lnx_tgz
-      displayName: Build CycloneDDS-Insight-Dmg
+      displayName: Build CycloneDDS-Insight-Tgz
       condition: eq(variables['Agent.OS'], 'Linux')
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Linux')
       inputs:
-        targetPath: dist/
+        targetPath: dist/cyclonedds-insight-0.0.0-ubuntu20-x64.tar.gz
         artifactName: cyclonedds-insight-0.0.0-ubuntu20-x64
 
     # Bundle MacOS App dmg
