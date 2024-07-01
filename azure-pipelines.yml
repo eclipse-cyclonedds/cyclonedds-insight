@@ -21,8 +21,8 @@ jobs:
     vmImage: $(image)
   strategy:
     matrix:
-      #'Ubuntu_20.04_LTS_x64':
-      #  image: ubuntu-20.04
+      'Ubuntu_20.04_LTS_x64':
+        image: ubuntu-20.04
       'macOS_13_x64':
         image: macOS-13
       #'Windows_Server_2019_x64':
@@ -77,6 +77,8 @@ jobs:
         export PATH=$PATH:$CYCLONEDDS_HOME/bin
         python -m pip install -r ./requirements.txt && \
         pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && \
+        DYLD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
+        LD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
         pyinstaller main.spec --noconfirm --clean
       name: cyclonedds_insight_build
       displayName: Build CycloneDDS-Insight
