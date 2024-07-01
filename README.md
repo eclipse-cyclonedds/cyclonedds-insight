@@ -41,7 +41,7 @@ pyside6-rcc ./resources.qrc -o ./src/qrc_file.py &&\
 DYLD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
 pyinstaller main.spec --noconfirm --clean
 brew install create-dmg # only once
-sh ./setup_dmg.sh 0.0.0
+sh ./setup_dmg.sh 0.0.0 arm64
 ```
 
 ## How to build a Windows Executable / Installer

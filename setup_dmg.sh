@@ -1,7 +1,8 @@
 #!/bin/sh
 
 APP_VERSION=$1
-DMG_NAME=cyclonedds-insight-$APP_VERSION-darwin-arm64.dmg
+ARCH=$2
+DMG_NAME=cyclonedds-insight-$APP_VERSION-darwin-$ARCH.dmg
 
 mkdir -p dist/dmg
 rm -r dist/dmg/*

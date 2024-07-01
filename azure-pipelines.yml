@@ -113,7 +113,7 @@ jobs:
         set -e -x
         ls -al
         brew install create-dmg
-        sh ./setup_dmg.sh 0.0.0
+        sh ./setup_dmg.sh 0.0.0 x64
       name: cyclonedds_insight_build_dmg
       displayName: Build CycloneDDS-Insight-Dmg
       condition: eq(variables['Agent.OS'], 'Darwin')
@@ -121,4 +121,4 @@ jobs:
       condition: eq(variables['Agent.OS'], 'Darwin')
       inputs:
         targetPath: dist/cyclonedds-insight-0.0.0-darwin-x64.dmg
-        artifactName: cyclonedds-insight-0.0.0-mac-x64
+        artifactName: cyclonedds-insight-0.0.0-darwin-x64
