@@ -88,9 +88,10 @@ jobs:
       inputs:
         targetType: 'inline'
         script: 'choco install innosetup'
-    - bash: |
-        set -e -x
-        iscc.exe setup.iss /DTheAppVersion=0.0.0
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: 'iscc.exe setup.iss /DTheAppVersion=0.0.0'
       condition: eq(variables['Agent.OS'], 'Windows_NT')
       name: cyclonedds_insight_build_win_setup
       displayName: Build CycloneDDS-Insight
