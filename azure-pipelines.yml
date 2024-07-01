@@ -119,16 +119,16 @@ jobs:
         artifactName: cyclonedds-insight-0.0.0-ubuntu20-x64
 
     # Bundle MacOS App dmg
-    - bash: |
-        set -e -x
-        ls -al
-        brew install create-dmg
-        sh ./setup_dmg.sh 0.0.0 x64
-      name: cyclonedds_insight_build_dmg
-      displayName: Build CycloneDDS-Insight-Dmg
-      condition: eq(variables['Agent.OS'], 'Darwin')
+    # - bash: |
+    #     set -e -x
+    #     ls -al
+    #     brew install create-dmg
+    #     sh ./setup_dmg.sh 0.0.0 x64
+    #   name: cyclonedds_insight_build_dmg
+    #   displayName: Build CycloneDDS-Insight-Dmg
+    #   condition: eq(variables['Agent.OS'], 'Darwin')
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Darwin')
       inputs:
-        targetPath: dist/cyclonedds-insight-0.0.0-darwin-x64.dmg
-        artifactName: cyclonedds-insight-0.0.0-darwin-x64
+        targetPath: "dist/CycloneDDS Insight.app"
+        artifactName: cyclonedds-insight-0.0.0-darwin
