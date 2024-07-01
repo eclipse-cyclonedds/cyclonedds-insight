@@ -21,12 +21,12 @@ jobs:
     vmImage: $(image)
   strategy:
     matrix:
-      # 'Ubuntu_20.04_LTS':
-      #   image: ubuntu-20.04
-      # 'macOS_11':
-      #   image: macOS-11 #
-      'Windows_Server_2022_64_bit':
-        image: windows-2022
+      'Ubuntu_20.04_LTS_x64':
+        image: ubuntu-20.04
+      'macOS_13_x64':
+        image: macOS-13
+      'Windows_Server_2019_x64':
+        image: windows-2019
   steps:
     - task: UsePythonVersion@0
       displayName: Fetch Python
@@ -96,6 +96,7 @@ jobs:
       name: cyclonedds_insight_build_win_setup
       displayName: Build CycloneDDS-Insight
     - task: PublishPipelineArtifact@1
+      condition: eq(variables['Agent.OS'], 'Windows_NT')
       inputs:
         targetPath: dist/cyclonedds-insight-0.0.0-win-x64.exe
-        # artifactName: cyclonedds-insight-0.0.0-win-x64
+        artifactName: cyclonedds-insight-0.0.0-win-x64
