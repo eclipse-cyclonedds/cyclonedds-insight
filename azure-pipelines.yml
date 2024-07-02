@@ -1,19 +1,130 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+#
+# Copyright(c) 2024 Sven Trittler
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License v. 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0, or the Eclipse Distribution License
+# v. 1.0 which is available at
+# http://www.eclipse.org/org/documents/edl-v10.php.
+#
+# SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 
-trigger:
-- master
+trigger: [ '*' ]
+pr: [ '*' ]
 
-pool:
-  vmImage: ubuntu-latest
+variables:
+  PY_VERSION: "3.9"
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+jobs:
+- job: BuildInsight
+  pool:
+    vmImage: $(image)
+  strategy:
+    matrix:
+      'Ubuntu_20.04_LTS_x64':
+        image: ubuntu-20.04
+      'macOS_12_x64':
+        image: macOS-12
+      'Windows_Server_2019_x64':
+        image: windows-2019
+  steps:
+    - task: UsePythonVersion@0
+      displayName: Fetch Python
+      inputs:
+        versionSpec: $(PY_VERSION)
+    
+    # Build CycloneDDS
+    - bash: |
+        mkdir -p deps
+        cd deps
+        git clone https://github.com/eclipse-cyclonedds/cyclonedds.git --branch master
+      name: clone_cyclone
+      displayName: Clone the CycloneDDS repository
+    - bash: |
+        set -e -x
+        cd deps/cyclonedds
+        mkdir -p build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=./install \
+              -DENABLE_SSL=off -DENABLE_SECURITY=off ..
+        cmake --build . --config Release --target install --parallel
+      name: cyclonedds_build
+      displayName: Build CycloneDDS
+    
+    # Build CycloneDDS-Python
+    - bash: |
+        cd deps
+        git clone https://github.com/eclipse-cyclonedds/cyclonedds-python.git --branch master
+      name: clone_cyclone_python
+      displayName: Clone the CycloneDDS-Python repository
+    - bash: |
+        set -e -x
+        export CYCLONEDDS_HOME=$PWD/deps/cyclonedds/build/install
+        cd deps
+        cd cyclonedds-python
+        python -m pip install -e .
+      name: cyclonedds_python_build
+      displayName: Build CycloneDDS-Python
+    
+    # Build CycloneDDS-Insight
+    - bash: |
+        set -e -x
+        export CYCLONEDDS_HOME=$PWD/deps/cyclonedds/build/install
+        export CYCLONEDDS_PYTHON_HOME=$PWD/deps/cyclonedds-python
+        export PATH=$PATH:$CYCLONEDDS_HOME/bin
+        python -m pip install -r ./requirements.txt && \
+        pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && \
+        DYLD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
+        LD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
+        pyinstaller main.spec --noconfirm --clean
+      name: cyclonedds_insight_build
+      displayName: Build CycloneDDS-Insight
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+    # Build Windows Installer
+    - task: PowerShell@2
+      displayName: 'Inno setup download'
+      condition: eq(variables['Agent.OS'], 'Windows_NT')
+      inputs:
+        targetType: 'inline'
+        script: 'choco install innosetup'
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: 'iscc.exe setup.iss /DTheAppVersion=0.0.0'
+      condition: eq(variables['Agent.OS'], 'Windows_NT')
+      name: cyclonedds_insight_build_win_setup
+      displayName: Build CycloneDDS-Insight
+    - task: PublishPipelineArtifact@1
+      condition: eq(variables['Agent.OS'], 'Windows_NT')
+      inputs:
+        targetPath: dist/cyclonedds-insight-0.0.0-windows-x64.exe
+        artifactName: cyclonedds-insight-0.0.0-windows-x64
+
+    # Ubuntu 20 Bundle
+    - bash: |
+        set -e -x
+        cd dist
+        tar -czf cyclonedds-insight-0.0.0-linux-x64.tar.gz "CycloneDDS Insight"
+      name: cyclonedds_insight_build_lnx_tgz
+      displayName: Build CycloneDDS-Insight-Tgz
+      condition: eq(variables['Agent.OS'], 'Linux')
+    - task: PublishPipelineArtifact@1
+      condition: eq(variables['Agent.OS'], 'Linux')
+      inputs:
+        targetPath: dist/cyclonedds-insight-0.0.0-linux-x64.tar.gz
+        artifactName: cyclonedds-insight-0.0.0-linux-x64
+
+    # MacOS Bundle
+    - bash: |
+        set -e -x
+        brew install create-dmg
+        sh ./setup_dmg.sh 0.0.0 x64
+      name: cyclonedds_insight_build_dmg
+      displayName: Build CycloneDDS-Insight-Dmg
+      condition: eq(variables['Agent.OS'], 'Darwin')
+    - task: PublishPipelineArtifact@1
+      condition: eq(variables['Agent.OS'], 'Darwin')
+      inputs:
+        targetPath: "dist/cyclonedds-insight-0.0.0-darwin-x64.dmg"
+        artifactName: cyclonedds-insight-0.0.0-darwin-x64
