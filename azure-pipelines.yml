@@ -104,7 +104,7 @@ jobs:
         targetPath: dist/cyclonedds-insight-0.0.0-windows-x64.exe
         artifactName: cyclonedds-insight-0.0.0-windows-x64
 
-    # Ubuntu 20 Bundle
+    # Linux Bundle
     - bash: |
         set -e -x
         cd dist
