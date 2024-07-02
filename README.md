@@ -6,6 +6,12 @@
 
 # CycloneDDS Insight
 
+***Looking for binaries?***
+- The released App will be published under [Releases](https://github.com/eclipse-cyclonedds/cyclonedds-insight/releases)
+- The nightly master build can be downloaded [here](https://dev.azure.com/eclipse-cyclonedds/cyclonedds-insight/_build) under "published".
+
+## Overview
+
 A graphical tool to visualize the current DDS system.
 
 ![`cyclonedds insight`](res/images/cyclonedds-insight.png)
