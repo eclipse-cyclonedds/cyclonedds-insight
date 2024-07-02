@@ -40,7 +40,7 @@ class DatamodelModel(QAbstractListModel):
     newDataArrived = Signal(str)
     isLoadingSignal = Signal(bool)
 
-    def __init__(self, parent=QObject | None) -> None:
+    def __init__(self, parent=typing.Optional[QObject]) -> None:
         super().__init__()
         self.idlcWorker = None
         self.dataModelItems = {}
