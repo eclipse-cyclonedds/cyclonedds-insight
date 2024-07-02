@@ -28,10 +28,10 @@ jobs:
       'Windows_Server_2019_x64':
         image: windows-2019
   steps:
-    - task: UsePythonVersion@0
-      displayName: Fetch Python
-      inputs:
-        versionSpec: $(PY_VERSION)
+    #- task: UsePythonVersion@0
+    #  displayName: Fetch Python
+    #  inputs:
+    #    versionSpec: $(PY_VERSION)
     
     # Build CycloneDDS
     - bash: |
