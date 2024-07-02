@@ -123,8 +123,10 @@ jobs:
     # MacOS Bundle
     - bash: |
         set -e -x
-        brew install create-dmg
-        sh ./setup_dmg.sh 0.0.0 x64
+        mkdir -p dist/app
+        cd dist
+        cp -r "CycloneDDS Insight.app" app
+        tar -czf cyclonedds-insight-0.0.0-darwin-x64.tar.gz dist/app/*
       name: cyclonedds_insight_build_dmg
       displayName: Build CycloneDDS-Insight-Dmg
       condition: eq(variables['Agent.OS'], 'Darwin')
