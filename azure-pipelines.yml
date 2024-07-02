@@ -28,11 +28,16 @@ jobs:
       'Windows_Server_2019_x64':
         image: windows-2019
   steps:
-    #- task: UsePythonVersion@0
-    #  displayName: Fetch Python
-    #  inputs:
-    #    versionSpec: $(PY_VERSION)
-    
+
+    # Setup Python
+    - task: UsePythonVersion@0
+      displayName: Fetch Python
+      inputs:
+        versionSpec: $(PY_VERSION)
+        architecture: 'x64'
+    - script: python -m pip install --upgrade pip
+      displayName: 'Update pip'
+
     # Build CycloneDDS
     - bash: |
         mkdir -p deps
@@ -66,6 +71,7 @@ jobs:
         python -m pip install -e .
       name: cyclonedds_python_build
       displayName: Build CycloneDDS-Python
+      dependsOn: cyclonedds_build
     
     # Build CycloneDDS-Insight
     - bash: |
@@ -80,6 +86,7 @@ jobs:
         pyinstaller main.spec --noconfirm --clean
       name: cyclonedds_insight_build
       displayName: Build CycloneDDS-Insight
+      dependsOn: cyclonedds_python_build
 
     # Build Windows Installer
     - task: PowerShell@2
@@ -95,8 +102,10 @@ jobs:
       condition: eq(variables['Agent.OS'], 'Windows_NT')
       name: cyclonedds_insight_build_win_setup
       displayName: Build CycloneDDS-Insight
+      dependsOn: cyclonedds_insight_build
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Windows_NT')
+      dependsOn: cyclonedds_insight_build_win_setup
       inputs:
         targetPath: dist/cyclonedds-insight-0.0.0-windows-x64.exe
         artifactName: cyclonedds-insight-0.0.0-windows-x64
@@ -109,8 +118,10 @@ jobs:
       name: cyclonedds_insight_build_lnx_tgz
       displayName: Build CycloneDDS-Insight-Tgz
       condition: eq(variables['Agent.OS'], 'Linux')
+      dependsOn: cyclonedds_insight_build
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Linux')
+      dependsOn: cyclonedds_insight_build_lnx_tgz
       inputs:
         targetPath: dist/cyclonedds-insight-0.0.0-linux-x64.tar.gz
         artifactName: cyclonedds-insight-0.0.0-linux-x64
@@ -123,8 +134,10 @@ jobs:
       name: cyclonedds_insight_build_dmg
       displayName: Build CycloneDDS-Insight-Dmg
       condition: eq(variables['Agent.OS'], 'Darwin')
+      dependsOn: cyclonedds_insight_build
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Darwin')
+      dependsOn: cyclonedds_insight_build_dmg
       inputs:
         targetPath: "dist/cyclonedds-insight-0.0.0-darwin-x64.dmg"
         artifactName: cyclonedds-insight-0.0.0-darwin-x64
