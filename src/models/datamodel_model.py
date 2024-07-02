@@ -61,7 +61,7 @@ class DatamodelModel(QAbstractListModel):
 
         return None
 
-    def roleNames(self) -> dict[int, QByteArray]:
+    def roleNames(self) -> typing.Dict[int, QByteArray]:
         return {
             self.NameRole: b'name'
         }

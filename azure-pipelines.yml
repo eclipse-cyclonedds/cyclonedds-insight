@@ -12,8 +12,6 @@
 trigger: [ '*' ]
 pr: [ '*' ]
 
-variables:
-  PY_VERSION: "3.9"
 
 jobs:
 - job: BuildInsight
@@ -30,11 +28,11 @@ jobs:
   steps:
 
     # Setup Python
-    # - task: UsePythonVersion@0
-    #   displayName: Fetch Python
-    #   inputs:
-    #     versionSpec: $(PY_VERSION)
-    #     architecture: 'x64'
+    - task: UsePythonVersion@0
+      displayName: Fetch Python
+      inputs:
+        versionSpec: '3.9'
+        architecture: 'x64'
     - script: python -m pip install --upgrade pip
       displayName: 'Update pip'
 
@@ -126,9 +124,10 @@ jobs:
         mkdir -p dist/app
         cd dist
         cp -r "CycloneDDS Insight.app" app && \
-        tar -czf cyclonedds-insight-0.0.0-darwin-x64.tar.gz app/*
+        cd app && \
+        tar -czf cyclonedds-insight-0.0.0-darwin-x64.tar.gz "CycloneDDS Insight.app"
       name: cyclonedds_insight_build_dmg
-      displayName: Build CycloneDDS-Insight-Dmg
+      displayName: Bundle MacOs App
       condition: eq(variables['Agent.OS'], 'Darwin')
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Darwin')
