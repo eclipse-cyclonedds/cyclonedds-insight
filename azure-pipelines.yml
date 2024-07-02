@@ -125,7 +125,7 @@ jobs:
         set -e -x
         mkdir -p dist/app
         cd dist
-        cp -r "CycloneDDS Insight.app" app
+        cp -r "CycloneDDS Insight.app" app && \
         tar -czf cyclonedds-insight-0.0.0-darwin-x64.tar.gz app/*
       name: cyclonedds_insight_build_dmg
       displayName: Build CycloneDDS-Insight-Dmg
@@ -133,5 +133,5 @@ jobs:
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Darwin')
       inputs:
-        targetPath: "dist/cyclonedds-insight-0.0.0-darwin-x64.dmg"
+        targetPath: "dist/cyclonedds-insight-0.0.0-darwin-x64.tar.gz"
         artifactName: cyclonedds-insight-0.0.0-darwin-x64
