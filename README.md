@@ -8,7 +8,7 @@
 
 ***Looking for binaries?***
 - The released App will be published under [Releases](https://github.com/eclipse-cyclonedds/cyclonedds-insight/releases).
-- The nightly master build can be downloaded [here](https://dev.azure.com/eclipse-cyclonedds/cyclonedds-insight/_build) under "Nightly-Release" / "#Date.1" / "3 published".
+- The nightly master build can be downloaded [here](https://dev.azure.com/eclipse-cyclonedds/cyclonedds-insight/_build) under "Nightly-Release" / "#Date.Nr" / "3 published".
 
 ## Overview
 
