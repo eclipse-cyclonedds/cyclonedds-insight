@@ -121,15 +121,16 @@ jobs:
     # MacOS Bundle
     - bash: |
         set -e -x
-        mkdir -p dist/app
+        mkdir -p dist/bundle
         cd dist
-        cp -r "CycloneDDS Insight.app" app && \
-        tar -czf cyclonedds-insight-0.0.0-darwin-x64.tar.gz app/CycloneDDS\ Insight.app
-      name: cyclonedds_insight_build_dmg
+        cp -r "CycloneDDS Insight.app" bundle && \
+        cd bundle
+        tar -czf cyclonedds-insight-0.0.0-darwin-x64.tar.gz CycloneDDS\ Insight.app
+      name: cyclonedds_insight_build_bundle
       displayName: Bundle MacOs App
       condition: eq(variables['Agent.OS'], 'Darwin')
     - task: PublishPipelineArtifact@1
       condition: eq(variables['Agent.OS'], 'Darwin')
       inputs:
-        targetPath: "dist/cyclonedds-insight-0.0.0-darwin-x64.tar.gz"
+        targetPath: "dist/bundle/cyclonedds-insight-0.0.0-darwin-x64.tar.gz"
         artifactName: cyclonedds-insight-0.0.0-darwin-x64
