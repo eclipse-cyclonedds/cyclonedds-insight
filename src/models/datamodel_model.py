@@ -40,7 +40,7 @@ class DatamodelModel(QAbstractListModel):
     newDataArrived = Signal(str)
     isLoadingSignal = Signal(bool)
 
-    def __init__(self, parent=QObject | None) -> None:
+    def __init__(self, parent=typing.Optional[QObject]) -> None:
         super().__init__()
         self.idlcWorker = None
         self.dataModelItems = {}
@@ -61,7 +61,7 @@ class DatamodelModel(QAbstractListModel):
 
         return None
 
-    def roleNames(self) -> dict[int, QByteArray]:
+    def roleNames(self) -> typing.Dict[int, QByteArray]:
         return {
             self.NameRole: b'name'
         }

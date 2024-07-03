@@ -32,7 +32,7 @@ else:
 
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
-from PySide6.QtCore import qInstallMessageHandler, QUrl, QThread
+from PySide6.QtCore import qInstallMessageHandler, QUrl, QThread, qVersion
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtQuickControls2 import QQuickStyle
 import logging
@@ -62,6 +62,8 @@ if __name__ == "__main__":
 
     logging.info("Starting App ...")
     logging.debug(f"Application path: {APPLICATION_PATH}")
+    logging.debug(f"Python version: {str(sys.version)}")
+    logging.debug(f"Qt version: {qVersion()}")
 
     if sys.platform == "darwin":
         QQuickStyle.setStyle("macOS")
