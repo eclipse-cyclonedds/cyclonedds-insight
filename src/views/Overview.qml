@@ -71,11 +71,11 @@ SplitView {
                     width: implicitWidth + 20
                 }
                 TabButton {
-                    text: qsTr("Listener (Readers)")
+                    text: qsTr("Listener")
                     width: implicitWidth + 20
                 }
                 TabButton {
-                    text: qsTr("Tester (Writers)")
+                    text: qsTr("Tester")
                     width: implicitWidth + 20
                 }
             }

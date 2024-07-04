@@ -77,8 +77,10 @@ if __name__ == "__main__":
 
     rootItem = TreeNode("Root")
     treeModel = TreeModel(rootItem)
-    datamodelRepoModel = DatamodelModel()
-    testerModel = TesterModel()
+    threads = {}
+    datamodelRepoModel = DatamodelModel(threads)
+    testerModel = TesterModel(threads)
+    datamodelRepoModel.newWriterSignal.connect(testerModel.addWriter)
 
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("treeModel", treeModel)

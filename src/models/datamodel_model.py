@@ -42,13 +42,15 @@ class DatamodelModel(QAbstractListModel):
     newDataArrived = Signal(str)
     isLoadingSignal = Signal(bool)
 
-    def __init__(self, parent=QObject | None) -> None:
+    newWriterSignal = Signal(int, str, str, str, str)
+
+    def __init__(self, threads, parent=typing.Optional[QObject]) -> None:
         super().__init__()
         self.idlcWorker = None
         self.dataModelItems = {}
         self.structMembers = {}
         self.loaded_structs = {}
-        self.threads = {}
+        self.threads = threads
         self.app_data_dir = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
         self.datamodel_dir = os.path.join(self.app_data_dir, "datamodel")
         self.destination_folder_idl = os.path.join(self.datamodel_dir, "idl")
@@ -65,35 +67,13 @@ class DatamodelModel(QAbstractListModel):
 
         return None
 
-    def roleNames(self) -> dict[int, QByteArray]:
+    def roleNames(self) -> typing.Dict[int, QByteArray]:
         return {
             self.NameRole: b'name'
         }
 
     def rowCount(self, index: QModelIndex = QModelIndex()) -> int:
         return len(self.dataModelItems.keys())
-
-    def execute_command(self, command, cwd):
-        logging.debug("start executing command ...")
-        try:
-            # Run the command and capture stdout, stderr
-            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=cwd)
-            stdout, stderr = process.communicate()
-            logging.debug("command executed, eval result.")
-
-            # Check if there was an error
-            if process.returncode != 0:
-                logging.debug("Error occurred:")
-                logging.debug(stdout.decode("utf-8"))
-                logging.debug(stderr.decode("utf-8"))
-                return None
-
-            logging.debug("Command Done,")
-            logging.debug(stdout.decode("utf-8"))
-            logging.debug(stderr.decode("utf-8"))
-
-        except Exception as e:
-            logging.debug("An error occurred:", e)
 
     @Slot(list)
     def addUrls(self, urls):
@@ -213,14 +193,12 @@ class DatamodelModel(QAbstractListModel):
                 if sId not in self.dataModelItems:
                     self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
                     self.dataModelItems[sId] = DataModelItem(sId, [module.__name__, cls.__name__])
+                    self.structMembers[sId] = self.get_struct_members(cls)
                     self.endInsertRows()
 
     @Slot(int, str, str, str, str, str, int)
     def addReader(self, domain_id, topic_name, topic_type, q_own, q_dur, q_rel, entityType):
         logging.debug(f"try add endpoint {str(domain_id)} {str(topic_name)} {str(topic_type)} {str(q_own)} {str(q_dur)} {str(q_rel)} {str(entityType)}")
-
-
-
 
         if topic_type in self.dataModelItems:
             module_type = importlib.import_module(self.dataModelItems[topic_type].parts[0])
@@ -271,6 +249,7 @@ Rectangle {
     id: settingsViewId
     anchors.fill: parent
     color: rootWindow.isDarkMode ? "black" : "white"
+    property string mId: ""
 
     ScrollView {
         anchors.fill: parent
@@ -304,7 +283,7 @@ class DataWriterModel(QObject):
 """
             pyCode += f"    @Slot(object, object, object, object, object)\n"
             topic_type_underscore = topic_type.replace("::", "_")
-            pyCode += f"    def write_{topic_type_underscore}(self\n"
+            pyCode += f"    def write(self\n"
 
             pyCodeInner = f"        logging.debug(\"Write {topic_type_underscore} ...\")\n"
             topic_type_dot: str = topic_type.replace("::", ".")
@@ -322,7 +301,8 @@ class DataWriterModel(QObject):
             qmlCode += "                text: qsTr(\"Write\")\n"
             qmlCode += "                onClicked: {\n"
             qmlCode += "                    console.log(\"write button pressed\")\n"
-            qmlCode += f"                    theModel.write_{topic_type_underscore}({qmlCodeWrite})\n"
+            qmlCode += f"                    var params = [{qmlCodeWrite}]\n"
+            qmlCode += "                    testerModel.write(mId, params)\n"
             qmlCode += "                }\n"
             qmlCode += "            }\n"
             qmlCode += "        }\n    }\n}"
@@ -334,6 +314,7 @@ class DataWriterModel(QObject):
             pyCode += "            ):\n"
 
             pyCodeInner += "        )\n"
+            pyCodeInner += "        print(data)\n"
             pyCodeInner += "        self.writeDataSignal.emit(self.topic_name, data)\n"
             pyCodeInner += f"        logging.debug(\"Write {topic_type_underscore} ... DONE\")\n"
             pyCode += pyCodeInner
@@ -342,6 +323,8 @@ class DataWriterModel(QObject):
             print(qmlCode)
             print("Py:")
             print(pyCode)
+
+            self.newWriterSignal.emit(domain_id, topic_name, topic_type, qmlCode, pyCode)
 
             # Example usage
             # module_name = 'mymodule'
@@ -354,6 +337,7 @@ class DataWriterModel(QObject):
         logging.debug("try add endpoint ... DONE")
 
     def toQml(self, theType, qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, prefix):
+        print("xxx",theType, self.structMembers)
         if theType in self.structMembers:
             print("xxx",theType, self.structMembers[theType])
             isFirst = True
@@ -398,7 +382,7 @@ class DataWriterModel(QObject):
                     pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
                     isFirst = False
 
-                    qmlCodeWrite += f"parseInt(id{keyWithPrefix}.text)"
+                    qmlCodeWrite += f"Math.floor(parseInt(id{keyWithPrefix}.text))"
 
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[float"):
                     qmlCode += "            TextField {\n"
@@ -467,6 +451,7 @@ class DataWriterModel(QObject):
                     qmlCodeWrite += "0"
 
             return (qmlCode, qmlCodeWrite, pyCode, pyCodeInner)
+
 
     @Slot(str)
     def received_data(self, data: str):

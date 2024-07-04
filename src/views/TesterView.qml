@@ -23,6 +23,16 @@ Rectangle {
     id: listenerTabId
     anchors.fill: parent
     color: rootWindow.isDarkMode ? Constants.darkOverviewBackground : Constants.lightOverviewBackground
+    property var component
+
+    Connections {
+        target: testerModel
+        function onShowQml(id, qmlCode) {
+            console.log("Show QML")
+            component = Qt.createQmlObject(qmlCode, contentRec);
+            component.mId = id
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -38,30 +48,35 @@ Rectangle {
                 implicitWidth: 1
             }
 
-            /*ComboBox { # TODO: in the next PR
-                //currentIndex: 0
-                //enabled: !libraryView.selectionActivated
+            Label {
+                text: "Select:"
+            }
+
+            ComboBox {
+                // currentIndex: 0
                 id: librariesCombobox
-                //width: parent.width * 0.6
                 Layout.preferredWidth: parent.width * 0.33
                 model: testerModel
-                displayText: "Select Writer"
                 Layout.fillWidth: true
-                //anchors.centerIn: parent
-                textRole: "text"
+                textRole: "name"
                 onCurrentIndexChanged: {
-                    console.log("onCurrentIndexChanged")
-                    //myLibraryModel.download(model.getIdByIndex(currentIndex))
+                    console.log("onCurrentIndexChanged", currentIndex)
+                    if (testerModel) {
+                        testerModel.showTester(currentIndex)
+                    }
                 }
-            }*/
+            }
 
-            Item {
+            /*Item {
                 implicitHeight: 1
                 Layout.fillWidth: true
-            }
+            }*/
             Button {
                 text: "Delete All Writers"
-                onClicked: datamodelRepoModel.deleteAllReaders()
+                onClicked: {
+                    component.destroy()
+                    testerModel.deleteAllWriters()
+                }
             }
             Item {
                 implicitHeight: 1
@@ -85,110 +100,6 @@ Rectangle {
 
             }*/
         
-        
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    var str = `
-import QtCore
-import QtQuick
-import QtQuick.Window
-import QtQuick.Controls
-import QtQuick.Layouts
-
-import org.eclipse.cyclonedds.insight
-
-Rectangle {
-    id: settingsViewId
-    anchors.fill: parent
-    color: rootWindow.isDarkMode ? "black" : "white"
-
-    ScrollView {
-        anchors.fill: parent
-
-        GridLayout {
-            columns: 2
-            anchors.fill: parent
-            anchors.margins: 10
-            rowSpacing: 10
-            columnSpacing: 10
-
-            Label {
-                text: "vehicles::Vehicle"
-                font.bold: true
-            }
-            Item {}
-            Label {
-                text: "name"
-            }
-            TextField {
-                id: idname
-            }
-            Label {
-                text: "x"
-            }
-            TextField {
-                id: idx
-                text: "0"
-            }
-            Label {
-                text: "y"
-            }
-            TextField {
-                id: idy
-                text: "0"
-            }
-            Label {
-                text: "ha"
-            }
-            Item {}
-            Label {
-                text: "franz"
-            }
-            TextField {
-                id: idhafranz
-            }
-            Label {
-                text: "z"
-            }
-            TextField {
-                id: idhaz
-                text: "0"
-            }
-            Label {
-                text: "b"
-            }
-            TextField {
-                id: idhab
-                text: "0.0"
-            }
-            Label {
-                text: "d"
-            }
-            TextField {
-                id: idhad
-                text: "0.0"
-            }
-            Label {
-                text: "c"
-            }
-            TextField {
-                id: idhac
-            }
-            Button {
-                text: qsTr("Write")
-                onClicked: {
-                    console.log("write button pressed")
-                    console.log(idname.text, parseInt(idx.text), parseInt(idy.text), idhafranz.text, parseInt(idhaz.text), parseFloat(idhab.text), parseFloat(idhad.text), idhac.text)
-                }
-            }
-        }
-    }
-}
-                    `;
-                    var component = Qt.createQmlObject(str, contentRec);
-                }
-            }
         }
     }
 }
