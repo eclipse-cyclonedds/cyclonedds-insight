@@ -72,17 +72,15 @@ class TesterModel(QAbstractListModel):
         return len(self.dataWriters.keys())
 
     @Slot(int, str, str, str, str)
-    def addWriter(self, domainId, topic_name, topic_type, qmlCode, pyCode):
+    def addWriter(self, id: str, domainId, topic_name, topic_type, qmlCode, pyCode):
         logging.info("AddWriter to TesterModel")
         self.beginResetModel()
 
-        id = str(uuid.uuid4())
-
-        module_name = id
+        module_name = f"m{id}"
         new_module = types.ModuleType(module_name)
         exec(pyCode, new_module.__dict__)
 
-        mt = new_module.DataWriterModel(topic_name)
+        mt = new_module.DataWriterModel(id)
         mt.writeDataSignal.connect(self.threads[domainId].write, Qt.ConnectionType.QueuedConnection)
         
         self.dataWriters[id] = (domainId, topic_name, topic_type, qmlCode, mt)
@@ -109,4 +107,6 @@ class TesterModel(QAbstractListModel):
     def deleteAllWriters(self):
         self.beginResetModel()
         self.dataWriters.clear()
+        for key in self.threads.keys():
+            self.threads[key].deleteAllWriters()
         self.endResetModel()

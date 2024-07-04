@@ -16,6 +16,7 @@ from enum import Enum
 from queue import Queue
 from PySide6.QtCore import QObject, Signal, Slot, QThread
 from dataclasses import dataclass
+import time
 from cyclonedds import core, domain, builtin
 from cyclonedds.util import duration
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
@@ -23,6 +24,7 @@ from cyclonedds.core import SampleState, ViewState, InstanceState
 from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
 from cyclonedds.pub import Publisher, DataWriter
+from threading import Lock
 
 from utils import EntityType
 
@@ -98,53 +100,73 @@ def builtin_observer(domain_id: int, queue: Queue, running):
 
 class WorkerThread(QThread):
 
-    data_emitted = Signal(str)
+    onData = Signal(str)
     
-    def __init__(self, domain_id, topic_name, topic_type, qos, entity_type: EntityType, parent=None):
+    def __init__(self, domain_id, parent=None):
         super().__init__(parent)
         self.domain_id = domain_id
-        self.topic_name = topic_name
-        self.topic_type = topic_type
-        self.entity_type = entity_type
-        self.qos = qos
-        self.running = True
+        self.domain_participant = None
+        self.running = False
         self.readerData = []
         self.writerData = {}
+        self.mutex = Lock()
+
+    def addEndpoint(self, id, topic_name, topic_type, qos, entity_type: EntityType):
+        while not self.running:
+            time.sleep(0.1)
+        with self.mutex:
+            print(id, topic_name, topic_type, qos, entity_type)
+            logging.info(f"Add endpoint {id} ...")
+            try:
+                topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
+
+                if EntityType(entity_type) == EntityType.READER:
+                    subscriber = Subscriber(self.domain_participant)
+                    reader = DataReader(subscriber, topic)
+                    readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
+                    self.waitset.attach(readCondition)
+                    self.readerData.append((id, topic, subscriber, reader, readCondition))
+
+                elif EntityType(entity_type) == EntityType.WRITER:
+                    publisher = Publisher(self.domain_participant)
+                    writer = DataWriter(publisher, topic)
+                    self.writerData[id] = (publisher, writer, topic_name)
+
+                logging.info("Add endpoint ... DONE")
+                return True
+
+            except Exception as e:
+                logging.error(f"Error creating reader {topic_name}: {e}")
+        return False
+
+    @Slot(str, object)
+    def write(self, id, data):
+        logging.debug(f"Write {id} {data}")
+        if id in self.writerData:
+            (_, writer, _) = self.writerData[id]
+            writer.write(data)
+            logging.debug("Write ... DONE")
+        else:
+            logging.warn(f"topic not known {data}")
 
     @Slot()
-    def receive_data(self, topic_name, topic_type, qos, entity_type: EntityType):
-        logging.info("Add endpoint ...")
-        try:
-            topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
+    def deleteAllWriters(self):
+        self.writerData.clear()
 
-            if EntityType(entity_type) == EntityType.READER:
-                subscriber = Subscriber(self.domain_participant)
-                reader = DataReader(subscriber, topic)
-                readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
-                self.waitset.attach(readCondition)
-                self.readerData.append((topic,subscriber, reader, readCondition))
-            elif EntityType(entity_type) == EntityType.WRITER:
-                publisher = Publisher(self.domain_participant)
-                writer = DataWriter(publisher, topic)
-                self.writerData[topic_name] = (publisher, writer)
-        except Exception as e:
-            logging.error(f"Error creating reader {topic_name}: {e}")
-        logging.info("Add endpoint ... DONE")
-
-    @Slot(object, object)
-    def write(self, topic_name, data):
-        logging.debug("Write data ...")
-        if topic_name in self.writerData:
-            (publisher, writer) = self.writerData[topic_name]
-            writer.write(data)
-        logging.debug("Write data ... DONE")
+    @Slot()
+    def deleteAllReaders(self):
+        print("deleteAllReaders")
+        for _, _, _, _, readCondition in self.readerData:
+            self.waitset.detach(readCondition)
+        self.readerData.clear()
 
     def run(self):
-        logging.info(f"Worker thread for domain({str(self.domain_id)}) ...")    
-
-        self.domain_participant = domain.DomainParticipant(self.domain_id)
-        self.waitset = core.WaitSet(self.domain_participant)
-        self.receive_data(self.topic_name, self.topic_type, self.qos, self.entity_type)
+        with self.mutex:
+            logging.info(f"Worker thread for domain({str(self.domain_id)}) ...")    
+            self.running = True
+            self.domain_participant = domain.DomainParticipant(self.domain_id)
+            self.waitset = core.WaitSet(self.domain_participant)
+            logging.info(f"Worker thread is set up domain({str(self.domain_id)})")
 
         while self.running:
             amount_triggered = 0
@@ -155,9 +177,9 @@ class WorkerThread(QThread):
             if amount_triggered == 0:
                 continue
 
-            for (_, _, readItem, condItem) in self.readerData:
+            for (_, _, _, readItem, condItem) in self.readerData:
                 for sample in readItem.take(condition=condItem):
-                    self.data_emitted.emit(f"[{str(datetime.datetime.now().isoformat())}]  -  {str(sample)}")
+                    self.onData.emit(f"[{str(datetime.datetime.now().isoformat())}]  -  {str(sample)}")
 
         logging.info(f"Worker thread for domain({str(self.domain_id)}) ... DONE")
 

@@ -102,7 +102,7 @@ if __name__ == "__main__":
     logging.info("qt ... DONE")
 
     logging.info("Clean up ...")
-    datamodelRepoModel.deleteAllReaders()
+    datamodelRepoModel.shutdownEndpoints()
     data.join_observer()
     worker_thread.quit()
     worker_thread.wait()

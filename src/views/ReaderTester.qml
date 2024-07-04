@@ -121,7 +121,7 @@ Popup {
             Button {
                 text: readerTesterDiaId.entityType === 3 ? qsTr("Create Reader") : qsTr("Create Writer")
                 onClicked: {
-                    datamodelRepoModel.addReader(
+                    datamodelRepoModel.addEndpoint(
                         readerDomainIdSpinBox.value,
                         topicNameTextFieldId.text,
                         topicType,

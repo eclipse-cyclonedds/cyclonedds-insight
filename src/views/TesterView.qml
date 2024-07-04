@@ -28,7 +28,9 @@ Rectangle {
     Connections {
         target: testerModel
         function onShowQml(id, qmlCode) {
-            console.log("Show QML")
+            if (component) {
+                component.destroy()
+            }
             component = Qt.createQmlObject(qmlCode, contentRec);
             component.mId = id
         }
@@ -53,28 +55,24 @@ Rectangle {
             }
 
             ComboBox {
-                // currentIndex: 0
                 id: librariesCombobox
                 Layout.preferredWidth: parent.width * 0.33
                 model: testerModel
                 Layout.fillWidth: true
                 textRole: "name"
                 onCurrentIndexChanged: {
-                    console.log("onCurrentIndexChanged", currentIndex)
                     if (testerModel) {
                         testerModel.showTester(currentIndex)
                     }
                 }
             }
 
-            /*Item {
-                implicitHeight: 1
-                Layout.fillWidth: true
-            }*/
             Button {
                 text: "Delete All Writers"
                 onClicked: {
-                    component.destroy()
+                    if (component) {
+                        component.destroy()
+                    }
                     testerModel.deleteAllWriters()
                 }
             }
@@ -91,15 +89,7 @@ Rectangle {
             Layout.fillHeight: true
             Layout.margins: 3
 
-            /*Flickable {
-                id: scrollView
-                anchors.fill: parent
-                boundsBehavior: Flickable.StopAtBounds
-                interactive: true
-                ScrollBar.vertical: ScrollBar {}
-
-            }*/
-        
+            // Content will be inserted in this element
         }
     }
 }

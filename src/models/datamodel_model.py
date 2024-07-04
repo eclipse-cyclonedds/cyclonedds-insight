@@ -21,6 +21,7 @@ import types
 import inspect
 from pathlib import Path
 import subprocess
+import uuid
 import glob
 from dataclasses import dataclass
 import typing
@@ -42,7 +43,7 @@ class DatamodelModel(QAbstractListModel):
     newDataArrived = Signal(str)
     isLoadingSignal = Signal(bool)
 
-    newWriterSignal = Signal(int, str, str, str, str)
+    newWriterSignal = Signal(str, int, str, str, str, str)
 
     def __init__(self, threads, parent=typing.Optional[QObject]) -> None:
         super().__init__()
@@ -197,8 +198,10 @@ class DatamodelModel(QAbstractListModel):
                     self.endInsertRows()
 
     @Slot(int, str, str, str, str, str, int)
-    def addReader(self, domain_id, topic_name, topic_type, q_own, q_dur, q_rel, entityType):
+    def addEndpoint(self, domain_id, topic_name, topic_type, q_own, q_dur, q_rel, entityType):
         logging.debug(f"try add endpoint {str(domain_id)} {str(topic_name)} {str(topic_type)} {str(q_own)} {str(q_dur)} {str(q_rel)} {str(entityType)}")
+
+        id = "m" + str(uuid.uuid4()).replace("-", "_")
 
         if topic_type in self.dataModelItems:
             module_type = importlib.import_module(self.dataModelItems[topic_type].parts[0])
@@ -228,12 +231,14 @@ class DatamodelModel(QAbstractListModel):
             elif q_rel == "DDS_RELIABILITY_RELIABLE":
                 qos += Qos(Policy.Reliability.Reliable(max_blocking_time=duration(seconds=1)))
 
-            if domain_id in self.threads:
-                self.threads[domain_id].receive_data(topic_name, class_type, qos, entityType)
-            else:
-                self.threads[domain_id] = WorkerThread(domain_id, topic_name, class_type, qos, entityType)
-                self.threads[domain_id].data_emitted.connect(self.received_data, Qt.ConnectionType.QueuedConnection)
+            if domain_id not in self.threads:
+                self.threads[domain_id] = WorkerThread(domain_id)
+                self.threads[domain_id].onData.connect(self.onData, Qt.ConnectionType.QueuedConnection)
                 self.threads[domain_id].start()
+
+
+            if not self.threads[domain_id].addEndpoint(id, topic_name, class_type, qos, entityType):
+                return
 
         if entityType == 4:
             qmlCode = """
@@ -249,8 +254,9 @@ Rectangle {
     id: settingsViewId
     anchors.fill: parent
     color: rootWindow.isDarkMode ? "black" : "white"
-    property string mId: ""
-
+"""
+            qmlCode += f"    property string mId: \"{id}\"\n"
+            qmlCode += """
     ScrollView {
         anchors.fill: parent
 
@@ -276,10 +282,10 @@ class DataWriterModel(QObject):
 
     writeDataSignal = Signal(object, object)
 
-    def __init__(self, topic_name):
+    def __init__(self, id):
         super().__init__()
-        logging.debug(f"Construct DataWriterModel {topic_name}")
-        self.topic_name = topic_name
+        logging.debug(f"Construct DataWriterModel {id}")
+        self.id = id
 """
             pyCode += f"    @Slot(object, object, object, object, object)\n"
             topic_type_underscore = topic_type.replace("::", "_")
@@ -315,16 +321,16 @@ class DataWriterModel(QObject):
 
             pyCodeInner += "        )\n"
             pyCodeInner += "        print(data)\n"
-            pyCodeInner += "        self.writeDataSignal.emit(self.topic_name, data)\n"
+            pyCodeInner += "        self.writeDataSignal.emit(self.id, data)\n"
             pyCodeInner += f"        logging.debug(\"Write {topic_type_underscore} ... DONE\")\n"
             pyCode += pyCodeInner
 
-            print("Qml:")
-            print(qmlCode)
-            print("Py:")
-            print(pyCode)
+            logging.debug("Qml:")
+            logging.debug(qmlCode)
+            logging.debug("Py:")
+            logging.debug(pyCode)
 
-            self.newWriterSignal.emit(domain_id, topic_name, topic_type, qmlCode, pyCode)
+            self.newWriterSignal.emit(id, domain_id, topic_name, topic_type, qmlCode, pyCode)
 
             # Example usage
             # module_name = 'mymodule'
@@ -452,19 +458,21 @@ class DataWriterModel(QObject):
 
             return (qmlCode, qmlCodeWrite, pyCode, pyCodeInner)
 
-
     @Slot(str)
-    def received_data(self, data: str):
+    def onData(self, data: str):
         self.newDataArrived.emit(data)
 
     @Slot()
     def deleteAllReaders(self):
         for key in list(self.threads.keys()):
-            if self.threads[key]:
-                self.threads[key].stop()
-                self.threads[key].wait()
-        self.threads.clear()
+            self.threads[key].deleteAllReaders()
 
+    @Slot()
+    def shutdownEndpoints(self):
+        for key in list(self.threads.keys()):
+            self.threads[key].stop()
+            self.threads[key].wait()
+        self.threads.clear()
 
 class IdlcWorkerThread(QThread):
 
