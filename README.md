@@ -6,6 +6,12 @@
 
 # CycloneDDS Insight
 
+***Looking for binaries?***
+- The released App will be published under [Releases](https://github.com/eclipse-cyclonedds/cyclonedds-insight/releases).
+- The nightly master build can be downloaded [here](https://dev.azure.com/eclipse-cyclonedds/cyclonedds-insight/_build) under "Nightly-Release" / "#Date.Nr" / "3 published".
+
+## Overview
+
 A graphical tool to visualize the current DDS system.
 
 ![`cyclonedds insight`](res/images/cyclonedds-insight.png)
@@ -41,7 +47,7 @@ pyside6-rcc ./resources.qrc -o ./src/qrc_file.py &&\
 DYLD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
 pyinstaller main.spec --noconfirm --clean
 brew install create-dmg # only once
-sh ./setup_dmg.sh 0.0.0
+sh ./setup_dmg.sh 0.0.0 arm64
 ```
 
 ## How to build a Windows Executable / Installer
