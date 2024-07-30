@@ -25,9 +25,9 @@ from dds_data import DataEndpoint
 from utils import EntityType
 
 
-HOSTNAMES     = ["__Hostname",    "dds.sys_info.hostname"]
+HOSTNAMES     = ["__Hostname",    "dds.sys_info.hostname", "fastdds.physical_data.host"]
 PROCESS_NAMES = ["__ProcessName", "dds.sys_info.executable_filepath"]
-PIDS          = ["__Pid",         "dds.sys_info.process_id"]
+PIDS          = ["__Pid",         "dds.sys_info.process_id", "fastdds.physical_data.process"]
 ADDRESSES     = ["__NetworkAddresses"]
 
 
