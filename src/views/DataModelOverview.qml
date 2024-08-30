@@ -112,7 +112,7 @@ Rectangle {
                     Menu {
                         id: contextMenu
                         MenuItem {
-                            text: "Create Reader (Listener)"
+                            text: "Subscribe ..."
                             onTriggered: {
                                 readerTesterDialogId.setType(name)
                                 readerTesterDialogId.setEntityType(3)
@@ -120,7 +120,7 @@ Rectangle {
                             }
                         }
                         MenuItem {
-                            text: "Create Writer (Tester)"
+                            text: "Publish ..."
                             onTriggered: {
                                 readerTesterDialogId.setType(name)
                                 readerTesterDialogId.setEntityType(4)

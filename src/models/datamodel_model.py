@@ -43,7 +43,7 @@ class DatamodelModel(QAbstractListModel):
     newDataArrived = Signal(str)
     isLoadingSignal = Signal(bool)
 
-    newWriterSignal = Signal(str, int, str, str, str, str)
+    newWriterSignal = Signal(str, int, str, str, str, str, str)
 
     def __init__(self, threads, parent=typing.Optional[QObject]) -> None:
         super().__init__()
@@ -256,6 +256,13 @@ Rectangle {
     color: rootWindow.isDarkMode ? "black" : "white"
 """
             qmlCode += f"    property string mId: \"{id}\"\n"
+
+            usc = topic_type.replace("::", "_")
+            qmlCode += "M" + usc
+            qmlCode += " {\n"
+            qmlCode += f"    id: {usc}\n"
+            qmlCode += "}\n"
+
             qmlCode += """
     ScrollView {
         anchors.fill: parent
@@ -287,28 +294,30 @@ class DataWriterModel(QObject):
         logging.debug(f"Construct DataWriterModel {id}")
         self.id = id
 """
-            pyCode += f"    @Slot(object, object, object, object, object)\n"
-            topic_type_underscore = topic_type.replace("::", "_")
-            pyCode += f"    def write(self\n"
+            pyCode += f"    @Slot(QObject)\n"
+            pyCode += f"    def writeObj(self, value):\n"
+            pyCode += f"        logging.debug(\"Write value: \" + str(type(value)))\n"
+            pyCode += f"        self.writeDataSignal.emit(self.id, value.toDdsObj())\n\n"
 
-            pyCodeInner = f"        logging.debug(\"Write {topic_type_underscore} ...\")\n"
+            topic_type_underscore = topic_type.replace("::", "_")
+
             topic_type_dot: str = topic_type.replace("::", ".")
-            pyCodeInner += f"        data = {topic_type_dot}(\n"
 
             pyCodeImport = set()
             pyCodeImport.add(topic_type_dot.split('.')[0])
 
             qmlCodeWrite = ""
-
+            pyCodeInner = ""
             (qmlCode, qmlCodeWrite, pyCode, pyCodeInner) = self.toQml(topic_type, qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, "")
+
+
 
             # Qml-Code
             qmlCode += "            Button {\n"
             qmlCode += "                text: qsTr(\"Write\")\n"
             qmlCode += "                onClicked: {\n"
             qmlCode += "                    console.log(\"write button pressed\")\n"
-            qmlCode += f"                    var params = [{qmlCodeWrite}]\n"
-            qmlCode += "                    testerModel.write(mId, params)\n"
+            qmlCode += f"                    testerModel.writeObj(mId, {usc})\n"
             qmlCode += "                }\n"
             qmlCode += "            }\n"
             qmlCode += "        }\n    }\n}"
@@ -317,20 +326,20 @@ class DataWriterModel(QObject):
             for imp in pyCodeImport:
                 imp_str += f"import {imp}\n"
             pyCode = imp_str + pyCode
-            pyCode += "            ):\n"
 
-            pyCodeInner += "        )\n"
-            pyCodeInner += "        print(data)\n"
-            pyCodeInner += "        self.writeDataSignal.emit(self.id, data)\n"
-            pyCodeInner += f"        logging.debug(\"Write {topic_type_underscore} ... DONE\")\n"
-            pyCode += pyCodeInner
 
             logging.debug("Qml:")
             logging.debug(qmlCode)
             logging.debug("Py:")
             logging.debug(pyCode)
+            logging.debug("New:")
+            pyStrucCode = imp_str
+            pyStrucCode += "from PySide6.QtCore import QObject, Property, Slot, Signal\nfrom PySide6.QtQml import qmlRegisterType\n"
+            pyStrucCode += f"\n"
+            pyStrucCode = self.toPyStructs(topic_type, pyStrucCode)
+            logging.debug(pyStrucCode)
 
-            self.newWriterSignal.emit(id, domain_id, topic_name, topic_type, qmlCode, pyCode)
+            self.newWriterSignal.emit(id, domain_id, topic_name, topic_type, qmlCode, pyCode, pyStrucCode)
 
             # Example usage
             # module_name = 'mymodule'
@@ -342,11 +351,84 @@ class DataWriterModel(QObject):
 
         logging.debug("try add endpoint ... DONE")
 
-    def toQml(self, theType, qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, prefix):
-        print("xxx",theType, self.structMembers)
+    def toPyStructs(self, theType, code):
+        print("CODE xxx",theType, self.structMembers)
+
         if theType in self.structMembers:
             print("xxx",theType, self.structMembers[theType])
-            isFirst = True
+            typeUnderscore = theType.replace("::", "_")
+            typeDot = theType.replace("::", ".")
+            code += f"class M{typeUnderscore}(QObject):\n"
+            code += "    def __init__(self"
+            for keyStructMem in self.structMembers[theType].keys():
+                code += f", {keyStructMem} = None"
+            code += "):\n"
+
+            code += "        super().__init__()\n"
+            for keyStructMem in self.structMembers[theType].keys():
+                code += f"        self._{keyStructMem} = {keyStructMem}\n"
+
+            for keyStructMem in self.structMembers[theType].keys():
+                code += "\n"
+                if self.structMembers[theType][keyStructMem] == str or str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[str"):
+                    code += "    @Property(str)\n"
+                elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[int"):
+                    code += "    @Property(int)\n"
+                elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[float"):
+                    code += "    @Property(float)\n"
+                elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[typing.Sequence"):
+                    code += f"    @Property('QVariantList', notify={keyStructMem}Changed)\n"
+                elif str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
+                    code += f"    @Property(QObject, constant=False)\n"
+                    pass
+                else:
+                    logging.warn("unkown type")
+
+                code += f"    def {keyStructMem}(self, value):\n"
+                code += f"        return self._{keyStructMem}\n\n"
+
+                code += f"    @{keyStructMem}.setter\n"
+                code += f"    def {keyStructMem}(self, value):\n"
+                code += f"        print(\"SETTER CALLED {keyStructMem}\", value)\n"
+                code += f"        self._{keyStructMem} = value\n\n"
+
+            # Convert to DDS-Type
+            code += f"    def toDdsObj(self):\n"
+            code += f"        return {typeDot}("
+            theFir = True
+            for keyStructMem in self.structMembers[theType].keys():
+                if theFir:
+                    theFir = False
+                else:
+                    code += ", "
+
+                if str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
+                    code += f"{keyStructMem} = self._{keyStructMem}.toDdsObj()"
+                    pass
+                else:
+                    code += f"{keyStructMem} = self._{keyStructMem}"
+
+                #code += "\n"
+
+            code += ")\n"
+
+            code += f"\nqmlRegisterType(M{typeUnderscore}, \"org.eclipse.cyclonedds.insight\", 1, 0, \"M{typeUnderscore}\")"
+            for keyStructMem in self.structMembers[theType].keys():
+                if str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
+                    theType_strcut = str(self.structMembers[theType][keyStructMem])
+                    usc = theType_strcut.replace("::", "_").replace(".", "_")                    
+                    code += f"\nqmlRegisterType(M{usc}, \"org.eclipse.cyclonedds.insight\", 1, 0, \"M{usc}\")"
+
+                    code = f"import {usc}\n" + code
+
+        return code
+
+    def toQml(self, theType: str, qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, prefix):
+        print("xxx",theType, self.structMembers)
+        theTypeUnderSc = theType.replace("::", "_")
+        if theType in self.structMembers:
+            print("xxx",theType, self.structMembers[theType])
+
             for keyStructMem in self.structMembers[theType].keys():
                 qmlCode += "            Label {\n"
                 qmlCode += "                text: " + "\"" + keyStructMem + "\"\n"
@@ -359,102 +441,77 @@ class DataWriterModel(QObject):
                 if self.structMembers[theType][keyStructMem] == str or str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[str"):
                     qmlCode += "            TextField {\n"
                     qmlCode += f"                id: id{keyWithPrefix}\n"
+                    qmlCode += f"                onTextChanged: {theTypeUnderSc}.{keyStructMem} = text\n"
                     qmlCode += "            }\n"
-
-                    pyCode += f"            , {keyWithPrefix}: str\n"
-
-                    pyCodeInner += f"            "
-                    if not isFirst:
-                        pyCodeInner += ", "
-                        qmlCodeWrite += ", "
-                    pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
-                    isFirst = False
-
-                    qmlCodeWrite += f"id{keyWithPrefix}.text"
 
                 # integer
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[int"):
                     qmlCode += "            TextField {\n"
                     qmlCode += f"                id: id{keyWithPrefix}\n"
                     qmlCode += f"                text: \"0\"\n"
+                    qmlCode += f"                onTextChanged: {theTypeUnderSc}.{keyStructMem} = Math.floor(parseInt(text))\n"
                     qmlCode += "            }\n"
-
-                    pyCode += f"            , {keyWithPrefix}: int\n"
-
-                    pyCodeInner += f"            "
-                    if not isFirst:
-                        pyCodeInner += ", "
-                        qmlCodeWrite += ", "
-                    pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
-                    isFirst = False
-
-                    qmlCodeWrite += f"Math.floor(parseInt(id{keyWithPrefix}.text))"
 
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[float"):
                     qmlCode += "            TextField {\n"
                     qmlCode += f"                id: id{keyWithPrefix}\n"
                     qmlCode += f"                text: \"0.0\"\n"
+                    qmlCode += f"                onTextChanged: {theTypeUnderSc}.{keyStructMem} = parseFloat(text)\n"
                     qmlCode += "            }\n"
-
-                    pyCode += f"            , {keyWithPrefix}: float\n"
-
-                    pyCodeInner += f"            "
-                    if not isFirst:
-                        pyCodeInner += ", "
-                        qmlCodeWrite += ", "
-                    pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
-                    isFirst = False
-
-                    qmlCodeWrite += f"parseFloat(id{keyWithPrefix}.text)"
 
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[typing.Sequence"):
-                    qmlCode += "            Label {\n"
-                    qmlCode += "                text: " + "\"Listtype TBD\"\n"
-                    qmlCode += "            }\n"
+                    #qmlCode += "            Label {\n"
+                    #qmlCode += "                text: " + "\"Listtype TBD\"\n"
+                    #qmlCode += "            }\n"
 
-                    pyCode += f"            , {keyWithPrefix}: []\n"# TODO: for array probally a model is needed, or only qml model!
+                    qmlCode += "ListModel {\n"
+                    qmlCode += "    id: fruitModel\n"
+                    qmlCode += "    ListElement {\n"
+                    qmlCode += "        name: \"Apple\"\n"
+                    qmlCode += "        cost: 2.45\n"
+                    qmlCode += "    }\n"
+                    qmlCode += "}\n"
+                    qmlCode += "Row {\n"
 
-                    pyCodeInner += f"            "
-                    if not isFirst:
-                        pyCodeInner += ", "
-                        qmlCodeWrite += ", "
-                    pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
-                    isFirst = False
-
-                    qmlCodeWrite += f"id{keyWithPrefix}.text"
+                    qmlCode += "ListView {\n"
+                    #qmlCode += "anchors.fill: parent\n"
+                    qmlCode += "    width: 100\n"
+                    qmlCode += "    height: 100\n"
+                    qmlCode += "    model: fruitModel\n"
+                    qmlCode += "    delegate: Item {\n"
+                    qmlCode += "        Label {\n"
+                    qmlCode += "            text: name\n"
+                    qmlCode += "        }\n"
+                    qmlCode += "    }\n"
+                    qmlCode += "}\n"
+                    qmlCode += "Button {\n"
+                    qmlCode += "    text: \"+\"\n"
+                    qmlCode += "}\n"
+                    qmlCode += "Button {\n"
+                    qmlCode += "    text: \"-\"\n"
+                    qmlCode += "}\n"
+                    qmlCode += "}\n"
 
                 # struct
                 elif str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
 
-                    if not isFirst:
-                        qmlCodeWrite += ", "
-                    isFirst = False
-
                     qmlCode += "            Item {}\n"
                     theType_strcut = str(self.structMembers[theType][keyStructMem])
-                    pyCodeInner += f"                , {keyStructMem} = {theType_strcut}(\n"
+
+                    usc = theType_strcut.replace("::", "_").replace(".", "_")
+                    qmlCode += "M" + usc
+                    qmlCode += " {\n"
+                    qmlCode += f"    id: {usc}\n"
+                    qmlCode += "}\n"
+
                     pyCodeImport.add(theType_strcut.split('.')[0])
                     (qmlCode, qmlCodeWrite, pyCode, pyCodeInner) = self.toQml(str(self.structMembers[theType][keyStructMem]).replace(".", "::"), qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, keyWithPrefix)
-                    pyCodeInner += f"            )\n"
-
-
 
                 # Unknown
                 else:
                     qmlCode += "            Label {\n"
                     qmlCode += "                text: " + "\"Unknown Datatype\"\n"
                     qmlCode += "            }\n"
-
-                    pyCode += f"            , {keyWithPrefix}\n"
-
-                    pyCodeInner += f"            "
-                    if not isFirst:
-                        pyCodeInner += ", "
-                        qmlCodeWrite += ", "
-                    pyCodeInner += f"{keyStructMem} = {keyWithPrefix}\n"
-                    isFirst = False
-
-                    qmlCodeWrite += "0"
 
             return (qmlCode, qmlCodeWrite, pyCode, pyCodeInner)
 

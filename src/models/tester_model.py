@@ -71,14 +71,18 @@ class TesterModel(QAbstractListModel):
     def rowCount(self, index: QModelIndex = QModelIndex()) -> int:
         return len(self.dataWriters.keys())
 
-    @Slot(int, str, str, str, str)
-    def addWriter(self, id: str, domainId, topic_name, topic_type, qmlCode, pyCode):
+    @Slot(int, str, str, str, str, str)
+    def addWriter(self, id: str, domainId, topic_name, topic_type, qmlCode, pyCode, pyStrucCode):
         logging.info("AddWriter to TesterModel")
         self.beginResetModel()
 
         module_name = f"m{id}"
         new_module = types.ModuleType(module_name)
         exec(pyCode, new_module.__dict__)
+
+        module_name_structs = f"ms{id}"
+        new_module_structs = types.ModuleType(module_name_structs)
+        exec(pyStrucCode, new_module_structs.__dict__)
 
         mt = new_module.DataWriterModel(id)
         mt.writeDataSignal.connect(self.threads[domainId].write, Qt.ConnectionType.QueuedConnection)
@@ -102,6 +106,12 @@ class TesterModel(QAbstractListModel):
         if mId in self.dataWriters:
             (_, _, _, _, mt) = self.dataWriters[mId]
             mt.write(*params)
+
+    @Slot(str, QObject)
+    def writeObj(self, mId, value):
+        if mId in self.dataWriters:
+            (_, _, _, _, mt) = self.dataWriters[mId]
+            mt.writeObj(value)
 
     @Slot()
     def deleteAllWriters(self):
