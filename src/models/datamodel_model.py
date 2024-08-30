@@ -43,7 +43,7 @@ class DatamodelModel(QAbstractListModel):
     newDataArrived = Signal(str)
     isLoadingSignal = Signal(bool)
 
-    newWriterSignal = Signal(str, int, str, str, str, str, str)
+    newWriterSignal = Signal(str, int, str, str, str, str)
 
     def __init__(self, threads, parent=typing.Optional[QObject]) -> None:
         super().__init__()
@@ -56,6 +56,7 @@ class DatamodelModel(QAbstractListModel):
         self.datamodel_dir = os.path.join(self.app_data_dir, "datamodel")
         self.destination_folder_idl = os.path.join(self.datamodel_dir, "idl")
         self.destination_folder_py = os.path.join(self.datamodel_dir, "py")
+        self.destination_folder_qtmodels = os.path.join(self.datamodel_dir, "qtmodels")
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> typing.Any:
         if not index.isValid():
@@ -137,6 +138,23 @@ class DatamodelModel(QAbstractListModel):
         submodules = [name for name in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, name))]
         for submodule in submodules:
             self.import_module_and_nested(submodule)
+
+        model_dir = QDir(self.destination_folder_qtmodels)
+        if not model_dir.exists():
+            QDir().mkdir(self.destination_folder_qtmodels)
+        sys.path.insert(0, self.destination_folder_qtmodels)
+
+        for struct in self.structMembers:
+            undscore = struct.replace("::", "_")
+            topic_type_dot: str = struct.replace("::", ".")
+
+            pyStrucCode = "import " + topic_type_dot.split('.')[0] + "\n"
+            pyStrucCode += "from PySide6.QtCore import QObject, Property, Slot, Signal\n"
+            pyStrucCode += "from PySide6.QtQml import qmlRegisterType\n"
+            pyStrucCode += "\n"
+            pyStrucCode = self.toPyStructs(struct, pyStrucCode)
+            with open(f"{self.destination_folder_qtmodels}/M{undscore}.py", "w") as structFile:
+                structFile.write(pyStrucCode)
 
         print("self.structMembers", self.structMembers)
 
@@ -258,10 +276,11 @@ Rectangle {
             qmlCode += f"    property string mId: \"{id}\"\n"
 
             usc = topic_type.replace("::", "_")
-            qmlCode += "M" + usc
+            qmlCode += "\n"
+            qmlCode += "    M" + usc
             qmlCode += " {\n"
-            qmlCode += f"    id: {usc}\n"
-            qmlCode += "}\n"
+            qmlCode += f"        id: {usc}\n"
+            qmlCode += "    }\n"
 
             qmlCode += """
     ScrollView {
@@ -293,6 +312,7 @@ class DataWriterModel(QObject):
         super().__init__()
         logging.debug(f"Construct DataWriterModel {id}")
         self.id = id
+
 """
             pyCode += f"    @Slot(QObject)\n"
             pyCode += f"    def writeObj(self, value):\n"
@@ -308,9 +328,7 @@ class DataWriterModel(QObject):
 
             qmlCodeWrite = ""
             pyCodeInner = ""
-            (qmlCode, qmlCodeWrite, pyCode, pyCodeInner) = self.toQml(topic_type, qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, "")
-
-
+            (qmlCode, qmlCodeWrite, pyCode, pyCodeInner) = self.toQml(topic_type, qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, "", 0)
 
             # Qml-Code
             qmlCode += "            Button {\n"
@@ -320,7 +338,9 @@ class DataWriterModel(QObject):
             qmlCode += f"                    testerModel.writeObj(mId, {usc})\n"
             qmlCode += "                }\n"
             qmlCode += "            }\n"
-            qmlCode += "        }\n    }\n}"
+            qmlCode += "        }\n"
+            qmlCode += "    }\n"
+            qmlCode += "}\n"
 
             imp_str = ""
             for imp in pyCodeImport:
@@ -332,14 +352,8 @@ class DataWriterModel(QObject):
             logging.debug(qmlCode)
             logging.debug("Py:")
             logging.debug(pyCode)
-            logging.debug("New:")
-            pyStrucCode = imp_str
-            pyStrucCode += "from PySide6.QtCore import QObject, Property, Slot, Signal\nfrom PySide6.QtQml import qmlRegisterType\n"
-            pyStrucCode += f"\n"
-            pyStrucCode = self.toPyStructs(topic_type, pyStrucCode)
-            logging.debug(pyStrucCode)
 
-            self.newWriterSignal.emit(id, domain_id, topic_name, topic_type, qmlCode, pyCode, pyStrucCode)
+            self.newWriterSignal.emit(id, domain_id, topic_name, topic_type, qmlCode, pyCode)
 
             # Example usage
             # module_name = 'mymodule'
@@ -384,7 +398,8 @@ class DataWriterModel(QObject):
                 else:
                     logging.warn("unkown type")
 
-                code += f"    def {keyStructMem}(self, value):\n"
+                code += f"    def {keyStructMem}(self):\n"
+                code += f"        print(\"Getter called {keyStructMem}\")\n"
                 code += f"        return self._{keyStructMem}\n\n"
 
                 code += f"    @{keyStructMem}.setter\n"
@@ -417,13 +432,12 @@ class DataWriterModel(QObject):
                 if str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
                     theType_strcut = str(self.structMembers[theType][keyStructMem])
                     usc = theType_strcut.replace("::", "_").replace(".", "_")                    
-                    code += f"\nqmlRegisterType(M{usc}, \"org.eclipse.cyclonedds.insight\", 1, 0, \"M{usc}\")"
-
-                    code = f"import {usc}\n" + code
+                    #code += f"\nqmlRegisterType(M{usc}, \"org.eclipse.cyclonedds.insight\", 1, 0, \"M{usc}\")"
+                    code = f"import M{usc}\n" + code
 
         return code
 
-    def toQml(self, theType: str, qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, prefix):
+    def toQml(self, theType: str, qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, prefix, padding):
         print("xxx",theType, self.structMembers)
         theTypeUnderSc = theType.replace("::", "_")
         if theType in self.structMembers:
@@ -432,6 +446,7 @@ class DataWriterModel(QObject):
             for keyStructMem in self.structMembers[theType].keys():
                 qmlCode += "            Label {\n"
                 qmlCode += "                text: " + "\"" + keyStructMem + "\"\n"
+                qmlCode += f"                leftPadding: {str(padding)}\n"
                 qmlCode += "            }\n"
                 print(str(self.structMembers[theType][keyStructMem]))
 
@@ -499,13 +514,13 @@ class DataWriterModel(QObject):
                     theType_strcut = str(self.structMembers[theType][keyStructMem])
 
                     usc = theType_strcut.replace("::", "_").replace(".", "_")
-                    qmlCode += "M" + usc
+                    qmlCode += "\n            M" + usc
                     qmlCode += " {\n"
-                    qmlCode += f"    id: {usc}\n"
-                    qmlCode += "}\n"
+                    qmlCode += f"                id: {usc}\n"
+                    qmlCode += "            }\n\n"
 
                     pyCodeImport.add(theType_strcut.split('.')[0])
-                    (qmlCode, qmlCodeWrite, pyCode, pyCodeInner) = self.toQml(str(self.structMembers[theType][keyStructMem]).replace(".", "::"), qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, keyWithPrefix)
+                    (qmlCode, qmlCodeWrite, pyCode, pyCodeInner) = self.toQml(str(self.structMembers[theType][keyStructMem]).replace(".", "::"), qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, keyWithPrefix, padding + 10)
 
                 # Unknown
                 else:

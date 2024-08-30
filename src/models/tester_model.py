@@ -72,7 +72,7 @@ class TesterModel(QAbstractListModel):
         return len(self.dataWriters.keys())
 
     @Slot(int, str, str, str, str, str)
-    def addWriter(self, id: str, domainId, topic_name, topic_type, qmlCode, pyCode, pyStrucCode):
+    def addWriter(self, id: str, domainId, topic_name, topic_type, qmlCode, pyCode):
         logging.info("AddWriter to TesterModel")
         self.beginResetModel()
 
@@ -80,9 +80,8 @@ class TesterModel(QAbstractListModel):
         new_module = types.ModuleType(module_name)
         exec(pyCode, new_module.__dict__)
 
-        module_name_structs = f"ms{id}"
-        new_module_structs = types.ModuleType(module_name_structs)
-        exec(pyStrucCode, new_module_structs.__dict__)
+        undsc = topic_type.replace("::", "_")
+        importlib.import_module(f"M{undsc}")
 
         mt = new_module.DataWriterModel(id)
         mt.writeDataSignal.connect(self.threads[domainId].write, Qt.ConnectionType.QueuedConnection)
