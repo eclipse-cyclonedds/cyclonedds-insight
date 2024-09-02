@@ -335,6 +335,12 @@ class DataWriterModel(QObject):
             qmlCode += "                text: qsTr(\"Write\")\n"
             qmlCode += "                onClicked: {\n"
             qmlCode += "                    console.log(\"write button pressed\")\n"
+
+            assignments = ""
+            assignments = self.getQmlAssignments(topic_type, assignments)
+            qmlCode += assignments
+
+
             qmlCode += f"                    testerModel.writeObj(mId, {usc})\n"
             qmlCode += "                }\n"
             qmlCode += "            }\n"
@@ -364,6 +370,29 @@ class DataWriterModel(QObject):
             # mt.write_vehicles_Vehicle("A cool string", 42, 43, "franz1", 1, 0.123456789, 0.2, 'x')
 
         logging.debug("try add endpoint ... DONE")
+
+
+    def getQmlAssignments(self, theType, code):
+        print("ASSIGN xxx",theType, self.structMembers)
+
+        if theType in self.structMembers:
+
+            realType_underscore = theType.replace("::", "_")
+
+            for keyStructMem in self.structMembers[theType].keys():
+                code += "\n"
+                if str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[typing.Sequence"):
+                    pass
+                elif str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
+                    theType_strcut = str(self.structMembers[theType][keyStructMem])
+                    usc = theType_strcut.replace("::", "_").replace(".", "_")
+
+                    code = f"{realType_underscore}.{keyStructMem} = {usc}\n" + code
+                    code = self.getQmlAssignments(str(self.structMembers[theType][keyStructMem]).replace(".", "::"), code)
+                else:
+                    logging.warn("unkown type")
+
+        return code
 
     def toPyStructs(self, theType, code):
         print("CODE xxx",theType, self.structMembers)
