@@ -12,6 +12,7 @@
 
 import sys
 import os
+import platform
 
 # Execution before first import of cyclonedds
 if getattr(sys, 'frozen', False):
@@ -21,6 +22,9 @@ if getattr(sys, 'frozen', False):
     # provided by the app bundle
     if "CYCLONEDDS_HOME" in os.environ:
         del os.environ["CYCLONEDDS_HOME"]
+    if platform.system() == "Linux":
+        # https://bugreports.qt.io/browse/QTBUG-114635
+        os.environ["QT_QPA_PLATFORM"] = "xcb" 
 else:
     APPLICATION_PATH = os.path.dirname(os.path.abspath(__file__))
     # In non-bundle mode we need the path to idlc executable
