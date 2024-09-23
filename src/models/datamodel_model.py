@@ -195,8 +195,8 @@ class DatamodelModel(QAbstractListModel):
                     self.dataModelItems[sId] = DataModelItem(sId, [module.__name__, cls.__name__])
                     self.endInsertRows()
 
-    @Slot(int, str, str, str, str, str)
-    def addReader(self, domain_id, topic_name, topic_type, q_own, q_dur, q_rel):
+    @Slot(int, str, str, str, str, str, bool, bool, list)
+    def addReader(self, domain_id, topic_name, topic_type, q_own, q_dur, q_rel, q_xcdr1, q_xcdr2, parititons):
         logging.debug("try add reader" + str(domain_id) + str(topic_name) + str(topic_type) + str(q_own) + str(q_dur) + str(q_rel))
 
         if topic_type in self.dataModelItems:
@@ -226,6 +226,12 @@ class DatamodelModel(QAbstractListModel):
                 qos += Qos(Policy.Reliability.BestEffort)
             elif q_rel == "DDS_RELIABILITY_RELIABLE":
                 qos += Qos(Policy.Reliability.Reliable(max_blocking_time=duration(seconds=1)))
+
+            if q_xcdr1 or q_xcdr2:
+                qos += Qos(Policy.DataRepresentation(use_cdrv0_representation=q_xcdr1, use_xcdrv2_representation=q_xcdr2))
+
+            if len(parititons) > 0:
+                qos += Qos(Policy.Partition(partitions=parititons))
 
             if domain_id in self.threads:
                 self.threads[domain_id].receive_data(topic_name, class_type, qos)
