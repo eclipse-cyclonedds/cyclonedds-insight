@@ -28,7 +28,7 @@ import typing
 from dds_service import WorkerThread
 from cyclonedds.core import Qos, Policy
 from cyclonedds.util import duration
-
+import typing
 
 @dataclass
 class DataModelItem:
@@ -470,7 +470,7 @@ class DataWriterModel(QObject):
         print("xxx",theType, self.structMembers)
         theTypeUnderSc = theType.replace("::", "_")
         if theType in self.structMembers:
-            print("xxx",theType, self.structMembers[theType])
+            print("xxx",theType, self.structMembers[theType], str(type(self.structMembers[theType])))
 
             for keyStructMem in self.structMembers[theType].keys():
                 qmlCode += "            Label {\n"
@@ -481,6 +481,9 @@ class DataWriterModel(QObject):
 
                 keyWithPrefix: str = prefix + keyStructMem
     
+                ano: typing.Annotated = self.structMembers[theType][keyStructMem]
+                print("LOOOOKKKKK HEREEEEEE", typing.get_args(ano), typing.get_origin(ano))
+
                 # string
                 if self.structMembers[theType][keyStructMem] == str or str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[str"):
                     qmlCode += "            TextField {\n"
@@ -504,16 +507,14 @@ class DataWriterModel(QObject):
                     qmlCode += "            }\n"
 
                 elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[typing.Sequence"):
-                    #qmlCode += "            Label {\n"
-                    #qmlCode += "                text: " + "\"Listtype TBD\"\n"
-                    #qmlCode += "            }\n"
+
+                    print("YYYYYYYYYYY", keyStructMem, self.structMembers[theType][keyStructMem], str(type(self.structMembers[theType][keyStructMem])))
+
+                    theType_strcut = str(self.structMembers[theType][keyStructMem])
+                    usc = theType_strcut.replace("::", "_").replace(".", "_")
 
                     qmlCode += "ListModel {\n"
-                    qmlCode += "    id: fruitModel\n"
-                    qmlCode += "    ListElement {\n"
-                    qmlCode += "        name: \"Apple\"\n"
-                    qmlCode += "        cost: 2.45\n"
-                    qmlCode += "    }\n"
+                    qmlCode += f"    id: {usc}\n"
                     qmlCode += "}\n"
                     qmlCode += "Row {\n"
 
@@ -521,11 +522,19 @@ class DataWriterModel(QObject):
                     #qmlCode += "anchors.fill: parent\n"
                     qmlCode += "    width: 100\n"
                     qmlCode += "    height: 100\n"
-                    qmlCode += "    model: fruitModel\n"
+                    qmlCode += f"    model: {usc}\n"
                     qmlCode += "    delegate: Item {\n"
-                    qmlCode += "        Label {\n"
-                    qmlCode += "            text: name\n"
-                    qmlCode += "        }\n"
+
+                    inner = str(self.structMembers[theType][keyStructMem]).replace("typing.Annotated[typing.Sequence",  "", 1)
+
+
+
+                    
+                    # inner  = inner.replace(".", "::")
+                    print("THE INNER:::::", inner)
+
+                    (qmlCode, qmlCodeWrite, pyCode, pyCodeInner) = self.toQml(inner, qmlCode, qmlCodeWrite, pyCode, pyCodeInner, pyCodeImport, keyWithPrefix, padding + 10)
+
                     qmlCode += "    }\n"
                     qmlCode += "}\n"
                     qmlCode += "Button {\n"
