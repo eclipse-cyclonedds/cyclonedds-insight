@@ -35,7 +35,9 @@ bins.append((f"{cyclonedds_python_home}/cyclonedds/_idlpy.*", '.'))
 if platform.system() == 'Windows':
     bins.append((f"{cyclonedds_home}/bin/*.dll", '.'))
     bins.append((f"{cyclonedds_home}/bin/idlc.exe", '.'))
-elif platform.system() == 'Darwin' or platform.system() == 'Linux':
+elif platform.system() == 'Darwin':
+    bins.append((f"{cyclonedds_home}/bin/idlc", '.'))
+elif platform.system() == 'Linux':
     bins.append((f"{cyclonedds_home}/bin/idlc", '.'))
     bins.append((f"{cyclonedds_home}/lib/*.so*", '.'))
 
