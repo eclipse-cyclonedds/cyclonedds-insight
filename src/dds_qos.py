@@ -311,7 +311,7 @@ def partition_patmatch_p(pat, name):
 def partitions_match_default(x):
     if qos.Policy.Partition not in x or len(x[qos.Policy.Partition].partitions) == 0:
         return True
-    for i in range(len(x.partition)):
+    for i in range(len(x[qos.Policy.Partition].partitions)):
         if partition_patmatch_p(x[qos.Policy.Partition].partitions[i], ""):
             return True
     return False
