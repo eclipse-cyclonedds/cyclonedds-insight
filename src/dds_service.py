@@ -113,7 +113,7 @@ class WorkerThread(QThread):
         logging.info("Add reader")
         try:
             topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
-            subscriber = Subscriber(self.domain_participant)
+            subscriber = Subscriber(self.domain_participant, qos=qos)
             reader = DataReader(subscriber, topic)
             readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
             self.waitset.attach(readCondition)
