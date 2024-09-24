@@ -114,7 +114,7 @@ class WorkerThread(QThread):
         try:
             topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
             subscriber = Subscriber(self.domain_participant, qos=qos)
-            reader = DataReader(subscriber, topic)
+            reader = DataReader(subscriber, topic, qos=qos)
             readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
             self.waitset.attach(readCondition)
 
