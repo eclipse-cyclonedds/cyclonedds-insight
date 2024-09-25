@@ -84,6 +84,7 @@ if __name__ == "__main__":
     engine.rootContext().setContextProperty("treeModel", treeModel)
     engine.rootContext().setContextProperty("datamodelRepoModel", datamodelRepoModel)
     engine.rootContext().setContextProperty("CYCLONEDDS_URI", os.getenv("CYCLONEDDS_URI", "<not set>"))
+    engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_VERSION", "0.0.0")
     qmlRegisterType(EndpointModel, "org.eclipse.cyclonedds.insight", 1, 0, "EndpointModel")
 
     engine.load(QUrl("qrc:/src/views/main.qml"))

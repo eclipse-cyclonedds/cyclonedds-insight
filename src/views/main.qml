@@ -15,6 +15,7 @@ import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import Qt.labs.platform
 
 import org.eclipse.cyclonedds.insight
 
@@ -29,6 +30,23 @@ ApplicationWindow {
     property bool isDarkMode: false
 
     header: HeaderToolBar {}
+
+    MenuBar {
+        id: menuBar
+
+        Menu {
+            title: "CycloneDDS Insight"
+
+            MenuItem {
+                text: "About"
+                onTriggered: aboutWindow.visible = true
+            }
+        }
+    }
+
+    AboutWindow {
+        id: aboutWindow
+    }
 
     SystemPalette {
         id: mySysPalette

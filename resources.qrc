@@ -35,5 +35,6 @@
         <file>src/views/ReaderTester.qml</file>
         <file>src/views/ListenerView.qml</file>
         <file>src/views/LoadingView.qml</file>
+        <file>src/views/AboutWindow.qml</file>
     </qresource>
 </RCC>
