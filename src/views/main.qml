@@ -15,7 +15,7 @@ import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import Qt.labs.platform
+import Qt.labs.platform as LabPlatform
 
 import org.eclipse.cyclonedds.insight
 
@@ -31,15 +31,29 @@ ApplicationWindow {
 
     header: HeaderToolBar {}
 
-    MenuBar {
-        id: menuBar
+    Loader {
+        id: nativeMenuBarLoader
+        anchors.centerIn: parent
+        sourceComponent: nativeMenuBarComponent
+        active: Qt.platform.os === "osx"
+    }
 
-        Menu {
-            title: "CycloneDDS Insight"
+    Component {
+        id: nativeMenuBarComponent
+        LabPlatform.MenuBar {
+            id: menuBar
 
-            MenuItem {
-                text: "About"
-                onTriggered: aboutWindow.visible = true
+            LabPlatform.Menu {
+                title: "Help"
+
+                LabPlatform.MenuItem {
+                    text: "About"
+                    onTriggered: aboutWindow.visible = true
+                }
+                LabPlatform.MenuItem {
+                    text: "Settings"
+                    onTriggered: layout.currentIndex = 0
+                }
             }
         }
     }
