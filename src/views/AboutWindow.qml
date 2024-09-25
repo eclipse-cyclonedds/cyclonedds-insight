@@ -19,12 +19,17 @@ import org.eclipse.cyclonedds.insight
 
 Window {
     id: aboutWindow
-    width: 500
-    height: 200
-    minimumWidth: 500
-    minimumHeight: 200
-    maximumWidth: 500
-    maximumHeight: 200
+
+    property int aboutWidth: 500
+    property int aboutHeight: 200
+
+    width: aboutWidth
+    height: aboutHeight
+    minimumWidth: aboutWidth
+    minimumHeight: aboutHeight
+    maximumWidth: aboutWidth
+    maximumHeight: aboutHeight
+
     title: "About CycloneDDS Insight"
     visible: false
     flags: Qt.Dialog

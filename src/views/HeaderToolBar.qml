@@ -46,7 +46,7 @@ ToolBar {
             text: "\u2630"
             onClicked: menu.open()
             flat: true
-            font.pixelSize: 20
+            font.pixelSize: 15
 
             Menu {
                 id: menu
