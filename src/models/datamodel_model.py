@@ -207,7 +207,7 @@ class DatamodelModel(QAbstractListModel):
         writer_life_autodispose,
         reader_life_nowriter_delay, reader_life_disposed, transport_prio,
         limit_max_samples, limit_max_instances, limit_max_samples_per_instance,
-        timebased_filter_time, ignore_local,
+        timebased_filter_time_sec, ignore_local,
         user_data, group_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value):
 
         logging.debug("try add reader" + str(domain_id) + str(topic_name) + str(topic_type) + str(q_own) + str(q_dur) + str(q_rel))
@@ -296,7 +296,7 @@ class DatamodelModel(QAbstractListModel):
             qos += Qos(Policy.TransportPriority(transport_prio))
             qos += Qos(Policy.ResourceLimits(
                 max_samples=limit_max_samples, max_instances=limit_max_instances, max_samples_per_instance=limit_max_samples_per_instance))
-            qos += Qos(Policy.TimeBasedFilter(filter_time=timebased_filter_time))
+            qos += Qos(Policy.TimeBasedFilter(filter_time=duration(seconds=timebased_filter_time_sec)))
 
             if ignore_local == "Nothing":
                 qos += Qos(Policy.IgnoreLocal.Nothing)
