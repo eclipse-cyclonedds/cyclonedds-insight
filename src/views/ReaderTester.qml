@@ -97,13 +97,26 @@ Popup {
             }
 
             Label {
-                text: "Ownership"
+                text: "Reliability"
                 font.bold: true
             }
-            ComboBox {
-                id: ownershipComboId
-                model: ["DDS_OWNERSHIP_SHARED", "DDS_OWNERSHIP_EXCLUSIVE"]
-                width: readerTesterDiaId.width - 30
+            Column {
+                ComboBox {
+                    id: reliabilityComboId
+                    model: ["DDS_RELIABILITY_BEST_EFFORT", "DDS_RELIABILITY_RELIABLE"]
+                    width: readerTesterDiaId.width - 30
+                }
+                Row {
+                    visible: reliabilityComboId.currentText === "DDS_RELIABILITY_RELIABLE" 
+                    Label {
+                        text: "max_blocking_time in milliseconds: "
+                    }
+                    SpinBox {
+                        id: reliabilitySpinBox
+                        to: 1e9
+                        value: 100
+                    }
+                }
             }
 
             Label {
@@ -117,12 +130,12 @@ Popup {
             }
 
             Label {
-                text: "Reliability"
+                text: "Ownership"
                 font.bold: true
             }
             ComboBox {
-                id: reliabilityComboId
-                model: ["DDS_RELIABILITY_BEST_EFFORT", "DDS_RELIABILITY_RELIABLE"]
+                id: ownershipComboId
+                model: ["DDS_OWNERSHIP_SHARED", "DDS_OWNERSHIP_EXCLUSIVE"]
                 width: readerTesterDiaId.width - 30
             }
 
@@ -209,6 +222,405 @@ Popup {
                     }
                 }
             }
+
+            Label {
+                text: "TypeConsistency"
+                font.bold: true
+            }
+            Column {
+                ComboBox {
+                    id: typeConsistencyComboId
+                    model: ["AllowTypeCoercion", "DisallowTypeCoercion"]
+                    width: readerTesterDiaId.width - 30
+                }
+                Column {
+                    visible: typeConsistencyComboId.currentText === "AllowTypeCoercion"
+                    Row {
+                        CheckBox {
+                            id: allowTypeCoercion_ignore_sequence_bounds
+                            checked: true
+                            text: qsTr("ignore_sequence_bounds")
+                        }
+                        CheckBox {
+                            id: allowTypeCoercion_ignore_string_bounds
+                            checked: true
+                            text: qsTr("ignore_string_bounds")
+                        }
+                        CheckBox {
+                            id: allowTypeCoercion_ignore_member_names
+                            checked: true
+                            text: qsTr("ignore_member_names")
+                        }
+                    }
+                    Row {
+                        CheckBox {
+                            id: allowTypeCoercion_prevent_type_widening
+                            checked: false
+                            text: qsTr("prevent_type_widening")
+                        }
+                        CheckBox {
+                            id: allowTypeCoercion_force_type_validation
+                            checked: false
+                            text: qsTr("force_type_validation")
+                        }
+                    }
+                }
+
+                CheckBox {
+                    id: disallowTypeCoercionForce_type_validationCheckbox
+                    checked: false
+                    text: qsTr("force_type_validation")
+                    visible: typeConsistencyComboId.currentText === "DisallowTypeCoercion" 
+                }
+            }
+
+            Label {
+                text: "History"
+                font.bold: true
+            }
+            Row {
+                ComboBox {
+                    id: historyComboId
+                    model: ["KeepLast", "KeepAll"]
+                    width: readerTesterDiaId.width - 30
+                }
+                SpinBox {
+                    id: keepLastSpinBox
+                    to: 1e9
+                    value: 1
+                    enabled: historyComboId.currentText === "KeepLast"
+                }
+            }
+
+            Label {
+                text: "DestinationOrder"
+                font.bold: true
+            }
+            ComboBox {
+                id: destinationOrderComboId
+                model: ["ByReceptionTimestamp", "BySourceTimestamp"]
+                width: readerTesterDiaId.width - 30
+            }
+
+            Label {
+                text: "Liveliness"
+                font.bold: true
+            }
+            Column {
+                ComboBox {
+                    id: livelinessComboId
+                    model: ["Automatic", "ManualByParticipant", "ManualByTopic"]
+                    width: readerTesterDiaId.width - 30
+                }
+                Row {
+                    Label {
+                        text: "Seconds: "
+                    }
+                    SpinBox {
+                        id: livelinessSpinBox
+                        to: 1e9
+                        value: 1
+                        enabled: !livelinessCheckbox.checked
+                    }
+                    CheckBox {
+                        id: livelinessCheckbox
+                        checked: true
+                        text: qsTr("infinite")
+                    }
+                }
+            }
+
+            Label {
+                text: "Lifespan"
+                font.bold: true
+            }
+            Row {
+                Label {
+                    text: "Seconds: "
+                }
+                SpinBox {
+                    id: lifespanSpinBox
+                    to: 1e9
+                    value: 2
+                    enabled: !lifespanCheckbox.checked
+                }
+                CheckBox {
+                    id: lifespanCheckbox
+                    checked: true
+                    text: qsTr("infinite")
+                }
+            }
+
+            Label {
+                text: "Deadline"
+                font.bold: true
+            }
+            Row {
+                Label {
+                    text: "Seconds: "
+                }
+                SpinBox {
+                    id: deadlineSpinBox
+                    to: 1e9
+                    value: 2
+                    enabled: !deadlineCheckbox.checked
+                }
+                CheckBox {
+                    id: deadlineCheckbox
+                    checked: true
+                    text: qsTr("infinite")
+                }
+            }
+
+            Label {
+                text: "LatencyBudget"
+                font.bold: true
+            }
+            Row {
+                Label {
+                    text: "Seconds: "
+                }
+                SpinBox {
+                    id: latencyBudgetSpinBox
+                    to: 1e9
+                    value: 2
+                    enabled: !latencyBudgetCheckbox.checked
+                }
+                CheckBox {
+                    id: latencyBudgetCheckbox
+                    checked: true
+                    text: qsTr("infinite")
+                }
+            }
+
+            Label {
+                text: "OwnershipStrength"
+                font.bold: true
+            }
+            SpinBox {
+                id: ownershipStrengthSpinBox
+                to: 1e9
+                value: 0
+            }
+
+            Label {
+                text: "PresentationAccessScope"
+                font.bold: true
+            }
+            Column {
+                ComboBox {
+                    id: presentationAccessScopeComboId
+                    model: ["Instance", "Topic", "Group"]
+                    width: readerTesterDiaId.width - 30
+                }
+                Row {
+                    CheckBox {
+                        id: coherent_accessCheckbox
+                        checked: false
+                        text: qsTr("coherent_access")
+                    }
+                    CheckBox {
+                        id: ordered_accessCheckbox
+                        checked: false
+                        text: qsTr("ordered_access")
+                    }
+                }
+            }
+            Label {
+                text: "WriterDataLifecycle"
+                font.bold: true
+            }
+            CheckBox {
+                id: writerDataLifecycleCheckbox
+                checked: true
+                text: qsTr("autodispose")
+            }
+
+            Label {
+                text: "ReaderDataLifecycle"
+                font.bold: true
+            }
+            Column {
+                Row {
+                    Label {
+                        text: "autopurge_nowriter_samples_delay in minutes: "
+                    }
+                    SpinBox {
+                        id: autopurge_nowriter_samples_delaySpinBox
+                        to: 1e9
+                        value: 1
+                        enabled: !autopurge_nowriter_samples_delayCheckbox.checked
+                    }
+                    CheckBox {
+                        id: autopurge_nowriter_samples_delayCheckbox
+                        checked: true
+                        text: qsTr("infinite")
+                    }
+                }
+                Row {
+                    Label {
+                        text: "autopurge_disposed_samples_delay in minutes: "
+                    }
+                    SpinBox {
+                        id: autopurge_disposed_samples_delaySpinBox
+                        to: 1e9
+                        value: 1
+                        enabled: !autopurge_disposed_samples_delaySpinBoxCheckbox.checked
+                    }
+                    CheckBox {
+                        id: autopurge_disposed_samples_delaySpinBoxCheckbox
+                        checked: true
+                        text: qsTr("infinite")
+                    }
+                }
+
+            }
+
+            Label {
+                text: "TransportPriority"
+                font.bold: true
+            }
+            SpinBox {
+                id: transportPrioritySpinBox
+                to: 1e9
+                value: 0
+            }
+            
+            Label {
+                text: "ResourceLimits"
+                font.bold: true
+            }
+            Column {
+                Row {
+                    Label {
+                        text: "max_samples"
+                    }
+                    SpinBox {
+                        id: max_samplesSpinBox
+                        from: -1
+                        to: 1e9
+                        value: -1
+                    }
+                }
+                Row {
+                    Label {
+                        text: "max_instances"
+                    }
+                    SpinBox {
+                        id: max_instancesSpinBox
+                        from: -1
+                        to: 1e9
+                        value: -1
+                    }
+                }
+                Row {
+                    Label {
+                        text: "max_samples_per_instance"
+                    }
+                    SpinBox {
+                        id: max_samples_per_instanceSpinBox
+                        from: -1
+                        to: 1e9
+                        value: -1
+                    }
+                }
+            }
+
+            Label {
+                text: "TimeBasedFilter"
+                font.bold: true
+            }
+            Row {
+                Label {
+                    text: "filter_fn in seconds: "
+                }
+                SpinBox {
+                    id: timeBasedFilterSpinBox
+                    to: 1e9
+                    value: 0
+                }
+            }
+
+            Label {
+                text: "IgnoreLocal"
+                font.bold: true
+            }
+            ComboBox {
+                id: ignoreLocalComboId
+                model: ["Nothing", "Participant", "Process"]
+                width: readerTesterDiaId.width - 30
+            }
+
+            Label {
+                text: "Userdata"
+                font.bold: true
+            }
+            TextField {
+                leftPadding: 10
+                id: userdataField
+                placeholderText: "Enter Userdata"
+                text: ""
+            }
+
+            Label {
+                text: "Groupdata"
+                font.bold: true
+            }
+            TextField {
+                leftPadding: 10
+                id: groupdataField
+                placeholderText: "Enter Groupdata"
+                text: ""
+            }
+
+            Label {
+                text: "EntityName"
+                font.bold: true
+            }
+            TextField {
+                leftPadding: 10
+                id: entityNameField
+                placeholderText: "Enter EntityName"
+                text: ""
+            }
+
+            Label {
+                text: "Property"
+                font.bold: true
+            }
+            Row {
+                TextField {
+                    leftPadding: 10
+                    id: propertyKeyField
+                    placeholderText: "Enter key"
+                    text: ""
+                }
+                TextField {
+                    leftPadding: 10
+                    id: propertyValueField
+                    placeholderText: "Enter value"
+                    text: ""
+                }
+            }
+
+            Label {
+                text: "BinaryProperty"
+                font.bold: true
+            }
+            Row {
+                TextField {
+                    leftPadding: 10
+                    id: binaryPropertyKeyField
+                    placeholderText: "Enter key"
+                    text: ""
+                }
+                TextField {
+                    leftPadding: 10
+                    id: binaryPropertyValueField
+                    placeholderText: "Enter value"
+                    text: ""
+                }
+            }
         }
     }
 
@@ -234,9 +646,45 @@ Popup {
                     ownershipComboId.currentText,
                     durabilityComboId.currentText,
                     reliabilityComboId.currentText,
+                    reliabilitySpinBox.value,
                     dataReprXcdr1Checkbox.checked,
                     dataReprXcdr2Checkbox.checked,
-                    partitions
+                    partitions,
+                    typeConsistencyComboId.currentText,
+                    allowTypeCoercion_ignore_sequence_bounds.checked,
+                    allowTypeCoercion_ignore_string_bounds.checked,
+                    allowTypeCoercion_ignore_member_names.checked,
+                    allowTypeCoercion_prevent_type_widening.checked,
+                    allowTypeCoercion_force_type_validation.checked,
+                    disallowTypeCoercionForce_type_validationCheckbox.checked,
+                    historyComboId.currentText,
+                    keepLastSpinBox.value,
+                    destinationOrderComboId.currentText,
+                    livelinessComboId.currentText,
+                    livelinessCheckbox.checked ? -1 : livelinessSpinBox.value,
+                    lifespanCheckbox.checked ? -1 : lifespanSpinBox.value,
+                    deadlineCheckbox.checked ? -1 : deadlineSpinBox.value,
+                    latencyBudgetCheckbox.checked ? -1 : latencyBudgetSpinBox.value,
+                    ownershipStrengthSpinBox.value,
+                    presentationAccessScopeComboId.currentText,
+                    coherent_accessCheckbox.checked,
+                    ordered_accessCheckbox.checked,
+                    writerDataLifecycleCheckbox.checked,
+                    autopurge_nowriter_samples_delayCheckbox.checked ? -1 : autopurge_nowriter_samples_delaySpinBox.value,
+                    autopurge_disposed_samples_delaySpinBoxCheckbox.checked ? -1 : autopurge_disposed_samples_delaySpinBox.value,
+                    transportPrioritySpinBox.value,
+                    max_samplesSpinBox.value,
+                    max_instancesSpinBox.value,
+                    max_samples_per_instanceSpinBox.value,
+                    timeBasedFilterSpinBox.value,
+                    ignoreLocalComboId.currentText,
+                    userdataField.text,
+                    groupdataField.text,
+                    entityNameField.text,
+                    propertyKeyField.text,
+                    propertyValueField.text,
+                    binaryPropertyKeyField.text,
+                    binaryPropertyValueField.text
                 )
                 readerTesterDiaId.close()
             }
