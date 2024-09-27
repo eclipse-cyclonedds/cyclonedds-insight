@@ -20,7 +20,7 @@ import org.eclipse.cyclonedds.insight
 Window {
     id: aboutWindow
 
-    property int aboutWidth: 500
+    property int aboutWidth: 550
     property int aboutHeight: 200
 
     width: aboutWidth
@@ -64,6 +64,12 @@ Window {
                 spacing: 10
 
                 Label {
+                    text: "Eclipse Cyclone DDS™"
+                    font.pixelSize: 10
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                Label {
                     text: "CycloneDDS Insight"
                     font.pixelSize: 25
                     font.bold: true
@@ -76,10 +82,9 @@ Window {
                     horizontalAlignment: Text.AlignHCenter
                 }
 
-                Text {
-                    text: "© 2024 Eclipse Cyclone DDS™"
+                Label {
+                    text: "Thanks to all contributors of the Eclipse Cyclone DDS project ❤️"
                     font.pixelSize: 10
-                    color: "#888888"
                     horizontalAlignment: Text.AlignHCenter
                 }
             }
