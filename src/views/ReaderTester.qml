@@ -383,12 +383,12 @@ Popup {
                 SpinBox {
                     id: latencyBudgetSpinBox
                     to: 1e9
-                    value: 2
+                    value: 0
                     enabled: !latencyBudgetCheckbox.checked
                 }
                 CheckBox {
                     id: latencyBudgetCheckbox
-                    checked: true
+                    checked: false
                     text: qsTr("infinite")
                 }
             }
