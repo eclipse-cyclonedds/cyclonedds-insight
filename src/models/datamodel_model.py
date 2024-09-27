@@ -329,11 +329,6 @@ class DatamodelModel(QAbstractListModel):
                 max_instances=durserv_max_instances,
                 max_samples_per_instance=durserv_max_samples_per_instance))
 
-            if history == "KeepAll":
-                qos += Qos(Policy.History.KeepAll)
-            elif history == "KeepLast":
-                qos += Qos(Policy.History.KeepLast(history_keep_last_nr))
-
             logging.debug(f"add reader with qos: {str(qos)}")
 
             if domain_id in self.threads:
