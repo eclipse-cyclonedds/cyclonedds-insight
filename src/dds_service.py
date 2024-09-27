@@ -23,6 +23,7 @@ from cyclonedds.core import SampleState, ViewState, InstanceState
 from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
 
+from dds_qos import dds_qos_policy_id
 from utils import EntityType
 
 IGNORE_TOPICS = ["DCPSParticipant", "DCPSPublication", "DCPSSubscription"]
@@ -95,12 +96,52 @@ def builtin_observer(domain_id: int, queue: Queue, running):
     logging.info(f"builtin_observer({domain_id}) ... DONE")
 
 
+class DdsListener(core.Listener):
+
+    def on_inconsistent_topic(self, reader, status):
+        logging.warning("on_inconsistent_topic")
+        
+    def on_liveliness_lost(self, writer, status):
+        logging.debug("on_liveliness_lost")
+
+    def on_liveliness_changed(self, reader, status):
+        logging.debug("on_liveliness_changed")
+
+    def on_offered_deadline_missed(self, writer, status):
+        logging.warning("on_offered_deadline_missed")
+
+    def on_offered_incompatible_qos(self, writer, status):
+        logging.warning("on_offered_incompatible_qos")
+
+    def on_data_on_readers(self, subscriber):
+        logging.debug("on_data_on_readers")
+
+    def on_sample_lost(self, writer, status):
+        logging.warning("on_sample_lost")
+
+    def on_sample_rejected(self, reader, status):
+        logging.warning("on_sample_rejected")
+
+    def on_requested_deadline_missed(self, reader,status):
+        logging.warning("on_sample_rejected")
+
+    def on_requested_incompatible_qos(self, reader, status):
+        logging.warning(f"on_requested_incompatible_qos: {dds_qos_policy_id(status.last_policy_id).name}")
+
+    def on_publication_matched(self, writer, status):
+        logging.debug("on_publication_matched")
+
+    def on_subscription_matched(self, reader, status):
+        logging.debug("on_subscription_matched")
+
+
 class WorkerThread(QThread):
 
     data_emitted = Signal(str)
     
     def __init__(self, domain_id, topic_name, topic_type, qos, parent=None):
         super().__init__(parent)
+        self.listener = DdsListener()
         self.domain_id = domain_id
         self.topic_name = topic_name
         self.topic_type = topic_type
@@ -114,7 +155,7 @@ class WorkerThread(QThread):
         try:
             topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
             subscriber = Subscriber(self.domain_participant, qos=qos)
-            reader = DataReader(subscriber, topic, qos=qos)
+            reader = DataReader(subscriber, topic, qos=qos, listener=self.listener)
             readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
             self.waitset.attach(readCondition)
 

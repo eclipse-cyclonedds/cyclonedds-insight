@@ -160,10 +160,13 @@ Rectangle {
                                     id: mouseAreaEndpointWriter
                                     anchors.fill: parent
                                     hoverEnabled: true
-                                    onClicked: {
+                                    onClicked: (mouse) => {
                                         if (writerEndpDetailWindow.visible) {
                                             writerEndpDetailWindow.raise()
                                         } else {
+                                            var globalPosition = mouseAreaEndpointWriter.mapToGlobal(mouse.x, mouse.y)
+                                            writerEndpDetailWindow.x = globalPosition.x - writerEndpDetailWindow.width / 2
+                                            writerEndpDetailWindow.y = globalPosition.y
                                             writerEndpDetailWindow.visible = true
                                         }
                                     }
@@ -258,10 +261,13 @@ Rectangle {
                                     id: mouseAreaEndpointReader
                                     anchors.fill: parent
                                     hoverEnabled: true
-                                    onClicked: {
+                                    onClicked: (mouse) => {
                                         if (readerEndpDetailWindow.visible) {
                                             readerEndpDetailWindow.raise()
                                         } else {
+                                            var globalPosition = mouseAreaEndpointReader.mapToGlobal(mouse.x, mouse.y)
+                                            readerEndpDetailWindow.x = globalPosition.x - readerEndpDetailWindow.width / 2
+                                            readerEndpDetailWindow.y = globalPosition.y
                                             readerEndpDetailWindow.visible = true
                                         }
                                     }

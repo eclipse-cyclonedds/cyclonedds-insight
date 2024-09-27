@@ -195,7 +195,7 @@ class DatamodelModel(QAbstractListModel):
                     self.dataModelItems[sId] = DataModelItem(sId, [module.__name__, cls.__name__])
                     self.endInsertRows()
 
-    @Slot(int, str, str, str, str, str, int, bool, bool, list, str, bool, bool, bool, bool, bool, bool, str, int, str, str, int, int, int, int, int, str, bool, bool, bool, int, int, int, int, int, int, int, str, str, str, str, str, str, str, str)
+    @Slot(int, str, str, str, str, str, int, bool, bool, list, str, bool, bool, bool, bool, bool, bool, str, int, str, str, int, int, int, int, int, str, bool, bool, bool, int, int, int, int, int, int, int, str, str, str, str, str, str, str, str, int, str, int, int, int, int)
     def addReader(self, domain_id, topic_name, topic_type,
         q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, parititons,
         type_consis, ig_seq_bnds, ig_str_bnds, ign_mem_nam, prev_ty_wide, fore_type_vali, fore_type_vali_allow,
@@ -208,9 +208,11 @@ class DatamodelModel(QAbstractListModel):
         reader_life_nowriter_delay, reader_life_disposed, transport_prio,
         limit_max_samples, limit_max_instances, limit_max_samples_per_instance,
         timebased_filter_time_sec, ignore_local,
-        user_data, group_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value):
+        user_data, group_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value,
+        durserv_cleanup_delay_minutes, durserv_history, durserv_history_keep_last_nr,
+        durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance):
 
-        logging.debug("try add reader" + str(domain_id) + str(topic_name) + str(topic_type) + str(q_own) + str(q_dur) + str(q_rel))
+        logging.debug("try add reader" + str(domain_id) + " " + str(topic_name) + " " + str(topic_type))
 
         if topic_type in self.dataModelItems:
             module_type = importlib.import_module(self.dataModelItems[topic_type].parts[0])
@@ -320,6 +322,19 @@ class DatamodelModel(QAbstractListModel):
             if bin_prop_name and bin_prop_value:
                 qos += Qos(Policy.BinaryProperty(key=bin_prop_name, value=bin_prop_value.encode('utf-8')))
 
+            qos += Qos(Policy.DurabilityService(
+                cleanup_delay=duration(minutes=durserv_cleanup_delay_minutes) if durserv_cleanup_delay_minutes >= 0 else duration(infinite=True),
+                history=Policy.History.KeepLast(durserv_history_keep_last_nr) if durserv_history == "KeepLast" else Policy.History.KeepAll,
+                max_samples=durserv_max_samples,
+                max_instances=durserv_max_instances,
+                max_samples_per_instance=durserv_max_samples_per_instance))
+
+            if history == "KeepAll":
+                qos += Qos(Policy.History.KeepAll)
+            elif history == "KeepLast":
+                qos += Qos(Policy.History.KeepLast(history_keep_last_nr))
+
+            logging.debug(f"add reader with qos: {str(qos)}")
 
             if domain_id in self.threads:
                 self.threads[domain_id].receive_data(topic_name, class_type, qos)
