@@ -160,6 +160,13 @@ Rectangle {
                                     id: mouseAreaEndpointWriter
                                     anchors.fill: parent
                                     hoverEnabled: true
+                                    onClicked: {
+                                        if (writerEndpDetailWindow.visible) {
+                                            writerEndpDetailWindow.raise()
+                                        } else {
+                                            writerEndpDetailWindow.visible = true
+                                        }
+                                    }
                                     onEntered: {
                                         writerRec.showTooltip = true
                                     }
@@ -181,6 +188,11 @@ Rectangle {
                                         border.width: 1
                                         color: rootWindow.isDarkMode ? Constants.darkCardBackgroundColor : Constants.lightCardBackgroundColor
                                     }
+                                }
+                                EndpointDetailWindow {
+                                    id: writerEndpDetailWindow
+                                    title: "Writer " + endpoint_key
+                                    endpointText: writerTooltip.text
                                 }
                             }
                         }
@@ -246,6 +258,13 @@ Rectangle {
                                     id: mouseAreaEndpointReader
                                     anchors.fill: parent
                                     hoverEnabled: true
+                                    onClicked: {
+                                        if (readerEndpDetailWindow.visible) {
+                                            readerEndpDetailWindow.raise()
+                                        } else {
+                                            readerEndpDetailWindow.visible = true
+                                        }
+                                    }
                                     onEntered: {
                                         readerRec.showTooltip = true
                                     }
@@ -267,6 +286,11 @@ Rectangle {
                                         border.width: 1
                                         color: rootWindow.isDarkMode ? Constants.darkCardBackgroundColor : Constants.lightCardBackgroundColor
                                     }
+                                }
+                                EndpointDetailWindow {
+                                    id: readerEndpDetailWindow
+                                    title: "Reader " + endpoint_key
+                                    endpointText: readerTooltip.text
                                 }
                             }
                         }
