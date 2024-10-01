@@ -107,3 +107,17 @@ def setupLogger(log_level = logging.DEBUG):
 
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
+
+def getBuildInfoGitHashShort() -> str:
+    try:
+        from build_info import CYCLONEDDS_INSIGHT_GIT_HASH_SHORT
+        return CYCLONEDDS_INSIGHT_GIT_HASH_SHORT
+    except ModuleNotFoundError:
+        return "n/a"
+
+def getBuildInfoGitBranch() -> str:
+    try:
+        from build_info import CYCLONEDDS_INSIGHT_GIT_BRANCH
+        return CYCLONEDDS_INSIGHT_GIT_BRANCH
+    except ModuleNotFoundError:
+        return "n/a"
