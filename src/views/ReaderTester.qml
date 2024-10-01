@@ -278,17 +278,23 @@ Popup {
                 text: "History"
                 font.bold: true
             }
-            Row {
+            Column {
                 ComboBox {
                     id: historyComboId
                     model: ["KeepLast", "KeepAll"]
                     width: readerTesterDiaId.width - 30
                 }
-                SpinBox {
-                    id: keepLastSpinBox
-                    to: 1e9
-                    value: 1
-                    enabled: historyComboId.currentText === "KeepLast"
+                Row {
+                    Label {
+                        text: "depth"
+                        visible: historyComboId.currentText === "KeepLast"
+                    }
+                    SpinBox {
+                        id: keepLastSpinBox
+                        to: 1e9
+                        value: 1
+                        visible: historyComboId.currentText === "KeepLast"
+                    }
                 }
             }
 
@@ -383,12 +389,12 @@ Popup {
                 SpinBox {
                     id: latencyBudgetSpinBox
                     to: 1e9
-                    value: 2
+                    value: 0
                     enabled: !latencyBudgetCheckbox.checked
                 }
                 CheckBox {
                     id: latencyBudgetCheckbox
-                    checked: true
+                    checked: false
                     text: qsTr("infinite")
                 }
             }
@@ -621,6 +627,89 @@ Popup {
                     text: ""
                 }
             }
+
+            Label {
+                text: "DurabilityService"
+                font.bold: true
+            }
+            Column {
+                Row {
+                    Label {
+                        text: "cleanup_delay in minutes: "
+                    }
+                    SpinBox {
+                        id: cleanup_delaySpinBox
+                        to: 1e9
+                        value: 0
+                        enabled: !cleanup_delayCheckbox.checked
+                    }
+                    CheckBox {
+                        id: cleanup_delayCheckbox
+                        checked: false
+                        text: qsTr("infinite")
+                    }
+                }
+                Column {
+                    Label {
+                        text: "History"
+                    }
+                    Column {
+                        ComboBox {
+                            id: durabilityServiceHistoryComboId
+                            model: ["KeepLast", "KeepAll"]
+                            width: readerTesterDiaId.width - 30
+                        }
+                        Row {
+                            Label {
+                                text: "depth"
+                                enabled: durabilityServiceHistoryComboId.currentText === "KeepLast"
+                            }
+                            SpinBox {
+                                id: durabilityServiceKeepLastSpinBox
+                                to: 1e9
+                                value: 1
+                                enabled: durabilityServiceHistoryComboId.currentText === "KeepLast"
+                            }
+                        }
+                    }
+                    Row {
+                        Label {
+                            text: "max_samples"
+                        }
+                        SpinBox {
+                            id: durabilityServiceMaxSamplesSpinBox
+                            to: 1e9
+                            from: -1
+                            value: -1
+                        }
+                    }
+                    Row {
+                        Label {
+                            text: "max_instances"
+                        }
+                        SpinBox {
+                            id: durabilityServiceMaxInstancesSpinBox
+                            to: 1e9
+                            from: -1
+                            value: -1
+                        }
+                    }
+                    Row {
+                        Label {
+                            text: "max_samples_per_instance"
+                        }
+                        SpinBox {
+                            id: durabilityServiceMaxSamplesPerInstanceSpinBox
+                            to: 1e9
+                            from: -1
+                            value: -1
+                        }
+                    }
+                }
+            }
+
+
+
         }
     }
 
@@ -684,7 +773,13 @@ Popup {
                     propertyKeyField.text,
                     propertyValueField.text,
                     binaryPropertyKeyField.text,
-                    binaryPropertyValueField.text
+                    binaryPropertyValueField.text,
+                    cleanup_delayCheckbox.checked ? -1 : cleanup_delaySpinBox.value,
+                    durabilityServiceHistoryComboId.currentText,
+                    durabilityServiceKeepLastSpinBox.value,
+                    durabilityServiceMaxSamplesSpinBox.value,
+                    durabilityServiceMaxInstancesSpinBox.value,
+                    durabilityServiceMaxSamplesPerInstanceSpinBox.value
                 )
                 readerTesterDiaId.close()
             }

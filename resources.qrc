@@ -20,6 +20,7 @@
         <file>res/images/spinning.gif</file>
 
         <!-- source files -->
+        <file>src/views/EndpointDetailWindow.qml</file>
         <file>src/views/main.qml</file>
         <file>src/views/AddDomainView.qml</file>
         <file>src/views/Constants.qml</file>
