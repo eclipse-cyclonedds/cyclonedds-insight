@@ -15,6 +15,7 @@ import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import Qt.labs.platform as LabPlatform
 
 import org.eclipse.cyclonedds.insight
 
@@ -29,6 +30,37 @@ ApplicationWindow {
     property bool isDarkMode: false
 
     header: HeaderToolBar {}
+
+    Loader {
+        id: nativeMenuBarLoader
+        anchors.centerIn: parent
+        sourceComponent: nativeMenuBarComponent
+        active: Qt.platform.os === "osx"
+    }
+
+    Component {
+        id: nativeMenuBarComponent
+        LabPlatform.MenuBar {
+            id: menuBar
+
+            LabPlatform.Menu {
+                title: "Help"
+
+                LabPlatform.MenuItem {
+                    text: "About"
+                    onTriggered: aboutWindow.visible = true
+                }
+                LabPlatform.MenuItem {
+                    text: "Settings"
+                    onTriggered: layout.currentIndex = 0
+                }
+            }
+        }
+    }
+
+    AboutWindow {
+        id: aboutWindow
+    }
 
     SystemPalette {
         id: mySysPalette
