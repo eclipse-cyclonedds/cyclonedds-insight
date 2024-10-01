@@ -9,10 +9,14 @@
 #
 # SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 
-
 trigger: [ '*' ]
 pr: [ '*' ]
 
+variables:
+  ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/') }}:
+    GIT_BRANCH: $[ replace(variables['Build.SourceBranch'], 'refs/heads/', '') ]
+  ${{ if startsWith(variables['Build.SourceBranch'], 'refs/pull/') }}:
+    GIT_BRANCH: $[ replace(variables['System.PullRequest.TargetBranch'], 'refs/heads/', '') ]
 
 jobs:
 - job: BuildInsight
