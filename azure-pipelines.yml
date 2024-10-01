@@ -16,7 +16,7 @@ variables:
   ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/') }}:
     GIT_BRANCH: $[ replace(variables['Build.SourceBranch'], 'refs/heads/', '') ]
   ${{ if startsWith(variables['Build.SourceBranch'], 'refs/pull/') }}:
-    GIT_BRANCH: $[ replace(variables['System.PullRequest.TargetBranch'], 'refs/heads/', '') ]
+    GIT_BRANCH: $[ replace(variables['System.PullRequest.SourceBranch'], 'refs/pull/', '') ]
 
 jobs:
 - job: BuildInsight
