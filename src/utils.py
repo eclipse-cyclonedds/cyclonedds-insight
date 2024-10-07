@@ -131,8 +131,8 @@ def getBuildInfoGitBranch() -> str:
 
 def getBuildPipelineId() -> str:
     try:
-        from build_info import BUILD_PIPELINE_ID
-        return BUILD_PIPELINE_ID
+        from build_info import CYCLONEDDS_INSIGHT_BUILD_PIPELINE_ID
+        return CYCLONEDDS_INSIGHT_BUILD_PIPELINE_ID
     except ModuleNotFoundError:
         return "19"
 
