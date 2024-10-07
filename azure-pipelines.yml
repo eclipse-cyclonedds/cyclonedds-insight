@@ -13,10 +13,12 @@ trigger: [ '*' ]
 pr: [ '*' ]
 
 variables:
+  BUILD_PIPELINE_ID: "$(System.DefinitionId)"
+  BUILD_ID: "$(Build.BuildId)"
   ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/') }}:
-    GIT_BRANCH: $[ replace(variables['Build.SourceBranch'], 'refs/heads/', '') ]
+    GIT_BRANCH: "$(Build.SourceBranch)"
   ${{ if startsWith(variables['Build.SourceBranch'], 'refs/pull/') }}:
-    GIT_BRANCH: $[ replace(variables['System.PullRequest.SourceBranch'], 'refs/pull/', '') ]
+    GIT_BRANCH: "$(System.PullRequest.SourceBranch)"
 
 jobs:
 - job: BuildInsight

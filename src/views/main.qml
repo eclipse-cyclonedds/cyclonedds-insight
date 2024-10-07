@@ -54,12 +54,20 @@ ApplicationWindow {
                     text: "Settings"
                     onTriggered: layout.currentIndex = 0
                 }
+                LabPlatform.MenuItem {
+                    text: "Check for Updates"
+                    onTriggered: checkForUpdatesWindow.visible = true
+                }
             }
         }
     }
 
     AboutWindow {
         id: aboutWindow
+    }
+
+    CheckForUpdates {
+        id: checkForUpdatesWindow
     }
 
     SystemPalette {

@@ -77,7 +77,7 @@ Window {
                 }
 
                 Label {
-                    text: "Version: " + CYCLONEDDS_INSIGHT_VERSION + " (" + CYCLONEDDS_INSIGHT_GIT_HASH_SHORT + "-" +  CYCLONEDDS_INSIGHT_GIT_BRANCH + ")"
+                    text: "Version: " + CYCLONEDDS_INSIGHT_VERSION + " (" + CYCLONEDDS_INSIGHT_GIT_HASH_SHORT + ")"
                     font.pixelSize: 15
                     horizontalAlignment: Text.AlignHCenter
                 }

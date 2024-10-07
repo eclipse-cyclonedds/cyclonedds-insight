@@ -115,9 +115,30 @@ def getBuildInfoGitHashShort() -> str:
     except ModuleNotFoundError:
         return "n/a"
 
+def getBuildInfoGitHash() -> str:
+    try:
+        from build_info import CYCLONEDDS_INSIGHT_GIT_HASH
+        return CYCLONEDDS_INSIGHT_GIT_HASH
+    except ModuleNotFoundError:
+        return "n/a"
+
 def getBuildInfoGitBranch() -> str:
     try:
         from build_info import CYCLONEDDS_INSIGHT_GIT_BRANCH
         return CYCLONEDDS_INSIGHT_GIT_BRANCH
     except ModuleNotFoundError:
         return "n/a"
+
+def getBuildPipelineId() -> str:
+    try:
+        from build_info import BUILD_PIPELINE_ID
+        return BUILD_PIPELINE_ID
+    except ModuleNotFoundError:
+        return "19"
+
+def getBuildId() -> str:
+    try:
+        from build_info import CYCLONEDDS_INSIGHT_BUILD_ID
+        return CYCLONEDDS_INSIGHT_BUILD_ID
+    except ModuleNotFoundError:
+        return "0"
