@@ -28,8 +28,8 @@ jobs:
     matrix:
       'Ubuntu_20.04_LTS_x64':
         image: ubuntu-20.04
-      'macOS_12_x64':
-        image: macOS-12
+      'macOS_13_x64':
+        image: macOS-13
       'Windows_Server_2019_x64':
         image: windows-2019
   steps:
