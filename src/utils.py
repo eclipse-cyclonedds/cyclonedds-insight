@@ -11,7 +11,9 @@
 """
 
 from PySide6 import QtCore
-from PySide6.QtCore import QStandardPaths, QDir
+from PySide6.QtCore import QStandardPaths, QDir, QObject, Slot
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import Qt
 import logging
 from logging.handlers import RotatingFileHandler
 import os
@@ -142,3 +144,12 @@ def getBuildId() -> str:
         return CYCLONEDDS_INSIGHT_BUILD_ID
     except Exception:
         return "0"
+
+class QmlUtils(QObject):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    @Slot(int)
+    def setColorScheme(self, scheme):
+        QApplication.styleHints().setColorScheme(Qt.ColorScheme(scheme))

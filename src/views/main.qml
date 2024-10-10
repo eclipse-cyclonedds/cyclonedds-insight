@@ -15,7 +15,6 @@ import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import Qt.labs.platform as LabPlatform
 
 import org.eclipse.cyclonedds.insight
 
@@ -31,33 +30,22 @@ ApplicationWindow {
 
     header: HeaderToolBar {}
 
-    Loader {
-        id: nativeMenuBarLoader
-        anchors.centerIn: parent
-        sourceComponent: nativeMenuBarComponent
-        active: Qt.platform.os === "osx"
-    }
+    menuBar: MenuBar {
+        visible: Qt.platform.os === "osx"
+        Menu {
+            title: "Help"
 
-    Component {
-        id: nativeMenuBarComponent
-        LabPlatform.MenuBar {
-            id: menuBar
-
-            LabPlatform.Menu {
-                title: "Help"
-
-                LabPlatform.MenuItem {
-                    text: "About"
-                    onTriggered: aboutWindow.visible = true
-                }
-                LabPlatform.MenuItem {
-                    text: "Settings"
-                    onTriggered: layout.currentIndex = 0
-                }
-                LabPlatform.MenuItem {
-                    text: "Check for Updates"
-                    onTriggered: checkForUpdatesWindow.visible = true
-                }
+            MenuItem {
+                text: "About"
+                onTriggered: aboutWindow.visible = true
+            }
+            MenuItem {
+                text: "Settings"
+                onTriggered: layout.currentIndex = 0
+            }
+            MenuItem {
+                text: "Check for Updates"
+                onTriggered: checkForUpdatesWindow.visible = true
             }
         }
     }
@@ -128,10 +116,8 @@ ApplicationWindow {
         }
     }
 
-
     LoadingView {
         id: loadingViewId
         visible: false
     }
-
 }
