@@ -11,8 +11,17 @@
 """
 
 import os
+import sys
 import platform
+import importlib.util
 
+# Load version
+version_path = 'src/version.py'
+spec = importlib.util.spec_from_file_location("version", version_path)
+version = importlib.util.module_from_spec(spec)
+sys.modules["version"] = version
+spec.loader.exec_module(version)
+print("CycloneDDS Insight Version:", version.CYCLONEDDS_INSIGHT_VERSION)
 
 # CycloneDDS
 cyclonedds_home = os.getenv('CYCLONEDDS_HOME')
@@ -87,5 +96,5 @@ app = BUNDLE(coll,
     name='CycloneDDS Insight.app',
     icon='./res/images/icon.icns',
     bundle_identifier=None,
-    version='0.0.0'
+    version=str(version.CYCLONEDDS_INSIGHT_VERSION)
 )

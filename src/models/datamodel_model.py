@@ -197,7 +197,7 @@ class DatamodelModel(QAbstractListModel):
 
     @Slot(int, str, str, str, str, str, int, bool, bool, list, str, bool, bool, bool, bool, bool, bool, str, int, str, str, int, int, int, int, int, str, bool, bool, bool, int, int, int, int, int, int, int, str, str, str, str, str, str, str, str, int, str, int, int, int, int)
     def addReader(self, domain_id, topic_name, topic_type,
-        q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, parititons,
+        q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partitions,
         type_consis, ig_seq_bnds, ig_str_bnds, ign_mem_nam, prev_ty_wide, fore_type_vali, fore_type_vali_allow,
         history, history_keep_last_nr,
         destination_order,
@@ -242,8 +242,8 @@ class DatamodelModel(QAbstractListModel):
             elif q_rel == "DDS_RELIABILITY_RELIABLE":
                 qos += Qos(Policy.Reliability.Reliable(max_blocking_time=duration(milliseconds=q_rel_max_block_msec)))
 
-            if len(parititons) > 0:
-                qos += Qos(Policy.Partition(partitions=parititons))
+            if len(partitions) > 0:
+                qos += Qos(Policy.Partition(partitions=partitions))
 
             if q_xcdr1 or q_xcdr2:
                 qos += Qos(Policy.DataRepresentation(use_cdrv0_representation=q_xcdr1, use_xcdrv2_representation=q_xcdr2))

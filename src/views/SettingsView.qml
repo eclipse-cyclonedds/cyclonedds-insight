@@ -55,10 +55,37 @@ Rectangle {
             Label {
                 text: qsTr("Appearance:")
             }
-            RadioButton {
-                text: "Automatic (System)"
-                checked: true
-                checkable: false
+            Row {
+                RadioButton {
+                    text: "Automatic (System)"
+                    checked: true
+                    checkable: true
+                    onClicked: {
+                        if (checked) {
+                            qmlUtils.setColorScheme(0)
+                        }
+                    }
+                }
+                RadioButton {
+                    text: "Light"
+                    checked: false
+                    checkable: true
+                    onClicked: {
+                        if (checked) {
+                            qmlUtils.setColorScheme(1)
+                        }
+                    }
+                }
+                RadioButton {
+                    text: "Dark"
+                    checked: false
+                    checkable: true
+                    onClicked: {
+                        if (checked) {
+                            qmlUtils.setColorScheme(2)
+                        }
+                    }
+                }
             }
 
             Label {

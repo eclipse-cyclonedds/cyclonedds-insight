@@ -1,6 +1,6 @@
 ; The real version will be passed by command-line call
 #ifndef TheAppVersion
-#define TheAppVersion "0.0.0"
+#define TheAppVersion "unknown"
 #endif
 
 #define TheAppName "CycloneDDS Insight"

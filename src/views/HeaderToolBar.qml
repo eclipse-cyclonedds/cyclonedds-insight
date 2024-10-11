@@ -61,6 +61,10 @@ ToolBar {
                     onClicked: layout.currentIndex = 0
                 }
                 MenuItem {
+                    text: "Check for Updates"
+                    onTriggered: checkForUpdatesWindow.visible = true
+                }
+                MenuItem {
                     text: "About"
                     onClicked: aboutWindow.visible = true
                 }

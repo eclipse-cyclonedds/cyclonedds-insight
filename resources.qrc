@@ -37,5 +37,6 @@
         <file>src/views/ListenerView.qml</file>
         <file>src/views/LoadingView.qml</file>
         <file>src/views/AboutWindow.qml</file>
+        <file>src/views/CheckForUpdates.qml</file>
     </qresource>
 </RCC>

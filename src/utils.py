@@ -11,7 +11,9 @@
 """
 
 from PySide6 import QtCore
-from PySide6.QtCore import QStandardPaths, QDir
+from PySide6.QtCore import QStandardPaths, QDir, QObject, Slot
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import Qt
 import logging
 from logging.handlers import RotatingFileHandler
 import os
@@ -107,3 +109,47 @@ def setupLogger(log_level = logging.DEBUG):
 
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
+
+def getBuildInfoGitHashShort() -> str:
+    try:
+        from build_info import CYCLONEDDS_INSIGHT_GIT_HASH_SHORT
+        return CYCLONEDDS_INSIGHT_GIT_HASH_SHORT
+    except Exception:
+        return "n/a"
+
+def getBuildInfoGitHash() -> str:
+    try:
+        from build_info import CYCLONEDDS_INSIGHT_GIT_HASH
+        return CYCLONEDDS_INSIGHT_GIT_HASH
+    except Exception:
+        return "n/a"
+
+def getBuildInfoGitBranch() -> str:
+    try:
+        from build_info import CYCLONEDDS_INSIGHT_GIT_BRANCH
+        return CYCLONEDDS_INSIGHT_GIT_BRANCH
+    except Exception:
+        return "n/a"
+
+def getBuildPipelineId() -> str:
+    try:
+        from build_info import CYCLONEDDS_INSIGHT_BUILD_PIPELINE_ID
+        return CYCLONEDDS_INSIGHT_BUILD_PIPELINE_ID
+    except Exception:
+        return "19"
+
+def getBuildId() -> str:
+    try:
+        from build_info import CYCLONEDDS_INSIGHT_BUILD_ID
+        return CYCLONEDDS_INSIGHT_BUILD_ID
+    except Exception:
+        return "0"
+
+class QmlUtils(QObject):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    @Slot(int)
+    def setColorScheme(self, scheme):
+        QApplication.styleHints().setColorScheme(Qt.ColorScheme(scheme))

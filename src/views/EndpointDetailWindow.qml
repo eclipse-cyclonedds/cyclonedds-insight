@@ -25,7 +25,7 @@ Window {
     visible: false
     width: 650
     height: 450
-    flags: Qt.Dialog | Qt.WindowStaysOnTopHint
+    flags: Qt.Dialog | Qt.WindowStaysOnTopHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
 
     Rectangle {
         anchors.fill: parent
