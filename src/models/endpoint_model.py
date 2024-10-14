@@ -63,6 +63,7 @@ class EndpointModel(QAbstractItemModel):
         self.currentRequestId = str(uuid.uuid4())
         self.entity_type = EntityType.UNDEFINED
         self.topic_has_mismatch = False
+        self.topicTypes = []
 
         self.dds_data = dds_data.DdsData()
         # self to dds_data
@@ -216,6 +217,7 @@ class EndpointModel(QAbstractItemModel):
 
         self.beginInsertRows(QModelIndex(), row, row)
         self.endpoints[str(endpointData.endpoint.key)] = endpointData
+        self.topicTypes.append(endpointData.endpoint.type_name)
         self.endInsertRows()
 
         self.totalEndpointsSignal.emit(len(self.endpoints))
@@ -231,6 +233,7 @@ class EndpointModel(QAbstractItemModel):
         if str(endpoint_key) in self.endpoints:
             row = list(self.endpoints.keys()).index(endpoint_key)
             self.beginRemoveRows(QModelIndex(), row, row)
+            self.topicTypes.remove(self.endpoints[endpoint_key].endpoint.type_name)
             del self.endpoints[endpoint_key]
             self.endRemoveRows()
             self.totalEndpointsSignal.emit(len(self.endpoints))
@@ -265,3 +268,7 @@ class EndpointModel(QAbstractItemModel):
         for idx, _ in enumerate(list(self.endpoints.keys())):
             index = self.createIndex(idx, 0)
             self.dataChanged.emit(index, index, [self.EndpointHasQosMismatch, self.EndpointQosMismatchText])
+
+    @Slot(result=list)
+    def getAllTopicTypes(self):
+        return list(set(self.topicTypes))

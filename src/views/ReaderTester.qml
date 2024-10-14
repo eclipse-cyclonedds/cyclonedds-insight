@@ -31,14 +31,24 @@ Popup {
 
     property int domainId: 0
     property string topicType
+    property string topicName
+    property var topicTypeNameList: []
+    property string selectedTypeText: ""
 
     Component.onCompleted: {
-        console.log("Reader", readerTesterDiaId.topicType)
+        console.log("Reader", readerTesterDiaId.topicType, topicNameList)
     }
 
     function setType(topicType) {
-        topicNameTextFieldId.text = topicType.replace(/::/g, "_");
+        topicTypeNameList = []
+        topicName = topicType.replace(/::/g, "_");
         readerTesterDiaId.topicType = topicType
+    }
+
+    function setTypes(domain, name, typeList) {
+        readerTesterDiaId.domainId = domain
+        readerTesterDiaId.topicName = name
+        readerTesterDiaId.topicTypeNameList = typeList
     }
 
     ListModel {
@@ -83,8 +93,16 @@ Popup {
                 text: "Topic Type"
                 font.bold: true
             }
-            Label {
-                text: readerTesterDiaId.topicType
+            Column {
+                ComboBox {
+                    id: typeComboBox
+                    model: topicTypeNameList
+                    visible: topicTypeNameList.length !== 0
+                }
+                Label {
+                    text: readerTesterDiaId.topicType
+                    visible: topicTypeNameList.length === 0
+                }
             }
 
             Label {
@@ -93,6 +111,7 @@ Popup {
             }
             TextField {
                 id: topicNameTextFieldId
+                text: topicName
                 width: readerTesterDiaId.width - 40
             }
 
