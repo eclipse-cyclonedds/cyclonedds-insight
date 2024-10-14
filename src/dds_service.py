@@ -16,7 +16,7 @@ from enum import Enum
 from queue import Queue
 from PySide6.QtCore import QObject, Signal, Slot, QThread
 from dataclasses import dataclass
-from cyclonedds import core, domain, builtin
+from cyclonedds import core, domain, builtin, dynamic
 from cyclonedds.util import duration
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 from cyclonedds.core import SampleState, ViewState, InstanceState
@@ -29,6 +29,16 @@ from utils import EntityType
 IGNORE_TOPICS = ["DCPSParticipant", "DCPSPublication", "DCPSSubscription"]
 
 
+class DomainParticipantFactory:
+    _participants = {}
+
+    @classmethod
+    def get_participant(cls, domain_id):
+        if domain_id not in cls._participants:
+            cls._participants[domain_id] = domain.DomainParticipant(domain_id)
+        return cls._participants[domain_id]
+
+
 class BuiltInDataItem():
 
     def __init__(self):
@@ -38,10 +48,21 @@ class BuiltInDataItem():
         self.remove_endpoints = []
 
 
+def getDataType(domainId, endp):
+    try:
+        requestedDataType, _ = dynamic.get_types_for_typeid(
+            DomainParticipantFactory.get_participant(domainId), endp.type_id, duration(seconds=3))
+        return requestedDataType
+    except Exception as e:
+        logging.error(str(e))
+
+    return None
+
+
 def builtin_observer(domain_id: int, queue: Queue, running):
     logging.info(f"builtin_observer({domain_id}) ...")
 
-    domain_participant = domain.DomainParticipant(domain_id)
+    domain_participant = DomainParticipantFactory.get_participant(domain_id)
     waitset = core.WaitSet(domain_participant)
 
     rdp = builtin.BuiltinDataReader(domain_participant, builtin.BuiltinTopicDcpsParticipant)
@@ -166,7 +187,7 @@ class WorkerThread(QThread):
     def run(self):
         logging.info(f"Worker thread for domain({str(self.domain_id)}) ...")    
 
-        self.domain_participant = domain.DomainParticipant(self.domain_id)
+        self.domain_participant = DomainParticipantFactory.get_participant(self.domain_id)
         self.waitset = core.WaitSet(self.domain_participant)
         self.receive_data(self.topic_name, self.topic_type, self.qos)
 

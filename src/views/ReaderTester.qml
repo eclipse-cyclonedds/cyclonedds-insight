@@ -98,6 +98,9 @@ Popup {
                     id: typeComboBox
                     model: topicTypeNameList
                     visible: topicTypeNameList.length !== 0
+                    onCurrentTextChanged: {
+                        topicType = typeComboBox.currentText;
+                    }
                 }
                 Label {
                     text: readerTesterDiaId.topicType
