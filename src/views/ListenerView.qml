@@ -26,6 +26,8 @@ Rectangle {
 
     property bool autoScrollEnabled: true
     property string logCache: ""
+    property int maxLength: 10000
+    property int removeLength: 2500
 
     border.color : autoScrollEnabled ? "transparent" : "orange"
     border.width : 2
@@ -40,8 +42,8 @@ Rectangle {
         function onNewDataArrived(out) {
             if (autoScrollEnabled) {
                 listenerTextArea.append(out)
-                if (listenerTextArea.text.length >= 5000) {
-                    listenerTextArea.remove(0, 2500)
+                if (listenerTextArea.text.length >= listenerTabId.maxLength) {
+                    listenerTextArea.remove(0, removeLength)
                     listenerTextArea.insert(0, "Previous output was removed.\n")
                 }
             } else {
