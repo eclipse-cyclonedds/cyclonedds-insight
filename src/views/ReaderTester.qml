@@ -49,6 +49,7 @@ Popup {
         readerTesterDiaId.domainId = domain
         readerTesterDiaId.topicName = name
         readerTesterDiaId.topicTypeNameList = typeList
+        readerDomainIdSpinBox.value = domain
     }
 
     ListModel {
@@ -87,6 +88,7 @@ Popup {
                 editable: false
                 from: 0
                 to: 232
+                enabled: topicTypeNameList.length === 0
             }
 
             Label {
