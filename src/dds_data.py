@@ -361,7 +361,7 @@ class DdsData(QObject):
 
     @Slot(str, int, str, str)
     def requestDataType(self, requestId, domainId, topicType, topicName):
-        print("requestDataType", requestId, domainId, topicType, topicName)
+        logging.debug(f"requestDataType {requestId}, {domainId}, {topicType}, {topicName}")
         requestedDataType = None
         if domainId in self.the_domains:
             topic = self.the_domains[domainId].getTopic(topicName)
@@ -369,12 +369,11 @@ class DdsData(QObject):
                 endp = topic.getEndpointWithTypeId(topicType)
                 if endp:
                     requestedDataType = getDataType(domainId, endp.endpoint)
-                    print("FOund datatype: ", requestedDataType)
                 else:
-                    print("endpoint not found")
+                    logging.warning("endpoint not found")
             else:
-                print("topic not found")
+                logging.warning("topic not found")
         else:
-            print("domain not found")
+            logging.warning("domain not found")
 
         self.response_data_type_signal.emit(requestId, requestedDataType)
