@@ -93,6 +93,29 @@ Rectangle {
                     Layout.fillWidth: true
                 }
 
+                Button {
+                    text: "Create Reader (Listener)"
+                    onClicked: {
+                        var writerTypes = endpointWriterModel.getAllTopicTypes()
+                        var readerTypes = endpointReaderModel.getAllTopicTypes()
+                        var combinedArray = [];
+
+                        function addModelToCombinedArray(model) {
+                            var i = 0;
+                            while (i < model.length) {
+                                if (combinedArray.indexOf(model[i]) === -1) {
+                                    combinedArray.push(model[i]);
+                                }
+                                i++;
+                            }
+                        }
+                        addModelToCombinedArray(writerTypes);
+                        addModelToCombinedArray(readerTypes);
+                        readerTesterDialogId.setTypes(domainId, topicName, combinedArray);
+                        readerTesterDialogId.open();
+                    }
+                }
+
                 WarningTriangle {
                     id: warning_triangle
                     Layout.preferredHeight: 30

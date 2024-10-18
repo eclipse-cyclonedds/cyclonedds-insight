@@ -62,13 +62,9 @@ Rectangle {
                 Button {
                     text: "Clear"
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    onClicked: {
-                        console.log("Clear clicked")
-                        datamodelRepoModel.clear()
-                    }
+                    onClicked: clearDialog.open()
                 }
             }
-
         }
 
         ListView {
@@ -124,6 +120,18 @@ Rectangle {
                         }*/
                     }
                 }
+            }
+        }
+    }
+
+    MessageDialog {
+        id: clearDialog
+        title: qsTr("Alert");
+        text: qsTr("Sure to delete the datamodel?");
+        buttons: MessageDialog.Ok | MessageDialog.Cancel;
+        onButtonClicked: function (button, role) {
+            if (role === MessageDialog.AcceptRole || role === MessageDialog.YesRole) {
+                datamodelRepoModel.clear()
             }
         }
     }
