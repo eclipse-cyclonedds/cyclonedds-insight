@@ -145,6 +145,35 @@ def getBuildId() -> str:
     except Exception:
         return "0"
 
+def getBuildInfoCycloneGitHash() -> str:
+    try:
+        from build_info import CYCLONEDDS_GIT_HASH
+        return CYCLONEDDS_GIT_HASH
+    except Exception:
+        return "n/a"
+
+def getBuildInfoCycloneGitHashShort() -> str:
+    try:
+        from build_info import CYCLONEDDS_GIT_HASH_SHORT
+        return CYCLONEDDS_GIT_HASH_SHORT
+    except Exception:
+        return "n/a"
+
+def getBuildInfoCyclonePythonGitHash() -> str:
+    try:
+        from build_info import CYCLONEDDS_PYTHON_GIT_HASH
+        return CYCLONEDDS_PYTHON_GIT_HASH
+    except Exception:
+        return "n/a"
+
+def getBuildInfoCyclonePythonGitHashShort() -> str:
+    try:
+        from build_info import CYCLONEDDS_PYTHON_GIT_HASH_SHORT
+        return CYCLONEDDS_PYTHON_GIT_HASH_SHORT
+    except Exception:
+        return "n/a"
+
+
 class QmlUtils(QObject):
 
     def __init__(self, parent=None):

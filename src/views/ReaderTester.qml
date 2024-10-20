@@ -35,10 +35,6 @@ Popup {
     property var topicTypeNameList: []
     property string selectedTypeText: ""
 
-    Component.onCompleted: {
-        console.log("Reader", readerTesterDiaId.topicType, topicNameList)
-    }
-
     function setType(topicType) {
         topicTypeNameList = []
         topicName = topicType.replace(/::/g, "_");

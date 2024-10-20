@@ -20,8 +20,8 @@ import org.eclipse.cyclonedds.insight
 Window {
     id: aboutWindow
 
-    property int aboutWidth: 550
-    property int aboutHeight: 200
+    property int aboutWidth: 570
+    property int aboutHeight: 230
 
     width: aboutWidth
     height: aboutHeight
@@ -41,7 +41,7 @@ Window {
         anchors.fill: parent
 
         Rectangle {
-            Layout.preferredWidth: parent.width * 0.33
+            Layout.preferredWidth: parent.width * 0.30
             Layout.fillHeight: true
             color: rootWindow.isDarkMode ? Constants.darkOverviewBackground : Constants.lightOverviewBackground
 
@@ -55,7 +55,7 @@ Window {
         }
 
         Rectangle {
-            Layout.preferredWidth: parent.width * 0.67
+            Layout.preferredWidth: parent.width * 0.70
             Layout.fillHeight: true
             color: rootWindow.isDarkMode ? Constants.darkHeaderBackground : Constants.lightHeaderBackground
 
@@ -76,15 +76,72 @@ Window {
                     horizontalAlignment: Text.AlignHCenter
                 }
 
-                Label {
-                    text: "Version: " + CYCLONEDDS_INSIGHT_VERSION + " (" + CYCLONEDDS_INSIGHT_GIT_HASH_SHORT + ")"
-                    font.pixelSize: 15
-                    horizontalAlignment: Text.AlignHCenter
+                Row {
+                    Label {
+                        text: "Version " + CYCLONEDDS_INSIGHT_VERSION + " ("
+                        font.pixelSize: 15
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Label {
+                        text: CYCLONEDDS_INSIGHT_GIT_HASH_SHORT
+                        font.underline: true
+                        font.bold: false
+                        font.pixelSize: 15
+                        horizontalAlignment: Text.AlignHCenter
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Qt.openUrlExternally("https://github.com/eclipse-cyclonedds/cyclonedds-insight/commit/" + CYCLONEDDS_INSIGHT_GIT_HASH)
+                        }
+                    }
+                    Label {
+                        text: ")"
+                        font.pixelSize: 15
+                        horizontalAlignment: Text.AlignHCenter
+                    }
                 }
 
+                Row {
+                    Label {
+                        text: "Based on CycloneDDS-Python: "
+                        font.pixelSize: 10
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Label {
+                        text: CYCLONEDDS_PYTHON_GIT_HASH_SHORT
+                        font.underline: true
+                        font.bold: false
+                        font.pixelSize: 10
+                        horizontalAlignment: Text.AlignHCenter
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Qt.openUrlExternally("https://github.com/eclipse-cyclonedds/cyclonedds-python/commit/" + CYCLONEDDS_PYTHON_GIT_HASH)
+                        }
+                    }
+                }
+                Row {
+                    Label {
+                        text: "Based on CycloneDDS: " 
+                        font.pixelSize: 10
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Label {
+                        text: CYCLONEDDS_GIT_HASH_SHORT
+                        font.underline: true
+                        font.bold: false
+                        font.pixelSize: 10
+                        horizontalAlignment: Text.AlignHCenter
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Qt.openUrlExternally("https://github.com/eclipse-cyclonedds/cyclonedds/commit/" + CYCLONEDDS_GIT_HASH)
+                        }
+                    }
+                }
                 Label {
                     text: "Thanks to all contributors of the Eclipse Cyclone DDS project ❤️"
-                    font.pixelSize: 10
+                    font.pixelSize: 12
                     horizontalAlignment: Text.AlignHCenter
                 }
             }
