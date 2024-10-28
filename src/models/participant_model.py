@@ -12,14 +12,18 @@
 
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt
 from PySide6.QtCore import Signal, Slot
+from pathlib import Path
+import os
+from cyclonedds.builtin import DcpsParticipant
 import logging
 import dds_data
+from dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
 
 
-class TreeNode:
-    def __init__(self, data: str, is_domain=False, has_qos_mismatch=False, parent=None):
+class ParticipantTreeNode:
+    def __init__(self, data: DcpsParticipant, is_domain=False, has_qos_mismatch=False, parent=None):
         self.parentItem = parent
-        self.itemData = data
+        self.itemData: DcpsParticipant = data
         self.childItems = []
         self.is_domain = is_domain
         self.has_qos_mismatch = has_qos_mismatch
@@ -55,28 +59,26 @@ class TreeNode:
     def hasQosMismatch(self):
         return self.has_qos_mismatch
 
-class TreeModel(QAbstractItemModel):
+class ParticipantTreeModel(QAbstractItemModel):
 
     IsDomainRole = Qt.UserRole + 1
     DisplayRole = Qt.UserRole + 2
     HasQosMismatch = Qt.UserRole + 3
-    TotalTopics = Qt.UserRole + 4
+    TotalParticipants = Qt.UserRole + 4
 
     remove_domain_request_signal = Signal(int)
 
-    def __init__(self, rootItem: TreeNode, parent=None):
-        super(TreeModel, self).__init__(parent)
+    def __init__(self, rootItem: ParticipantTreeNode, parent=None):
+        super(ParticipantTreeModel, self).__init__(parent)
         self.rootItem = rootItem
 
         self.dds_data = dds_data.DdsData()
 
         # Connect to from dds_data to self
-        self.dds_data.new_topic_signal.connect(self.new_topic_slot, Qt.ConnectionType.QueuedConnection)
-        self.dds_data.remove_topic_signal.connect(self.remove_topic_slot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.new_participant_signal.connect(self.new_participant_slot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.removed_participant_signal.connect(self.removed_participant_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.new_domain_signal.connect(self.addDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_domain_signal.connect(self.removeDomain, Qt.ConnectionType.QueuedConnection)
-        self.dds_data.no_more_mismatch_in_topic_signal.connect(self.no_more_mismatch_in_topic_slot, Qt.ConnectionType.QueuedConnection)
-        self.dds_data.publish_mismatch_signal.connect(self.publish_mismatch_slot, Qt.ConnectionType.QueuedConnection)
 
         # Connect from self to dds_data
         self.remove_domain_request_signal.connect(self.dds_data.remove_domain, Qt.ConnectionType.QueuedConnection)
@@ -116,15 +118,19 @@ class TreeModel(QAbstractItemModel):
         if not index.isValid():
             return None
         item = index.internalPointer()
-        if role == Qt.DisplayRole:
-            return item.data()
         if role == self.DisplayRole:
-            return item.data(index)
+            if item.isDomain():
+                return item.data(index)
+            else:
+                p = item.data(index)
+                appNameWithPath = getProperty(p, PROCESS_NAMES)
+                appNameStem = Path(appNameWithPath.replace("\\", f"{os.path.sep}")).stem
+                return  appNameStem + ":" + getProperty(p, PIDS) + "@" + getProperty(p, HOSTNAMES) + " ("+ str(item.data(index).key) + ")"
         if role == self.IsDomainRole:
             return item.isDomain()
         if role == self.HasQosMismatch:
             return item.hasQosMismatch()
-        if role == self.TotalTopics:
+        if role == self.TotalParticipants:
             return item.childCount()
         return None
 
@@ -133,60 +139,38 @@ class TreeModel(QAbstractItemModel):
             self.DisplayRole: b'display',
             self.IsDomainRole: b'is_domain',
             self.HasQosMismatch: b'has_qos_mismatch',
-            self.TotalTopics: b'total_topics'
+            self.TotalParticipants: b'total_participants'
         }
 
     def flags(self, index):
         if not index.isValid():
             return Qt.NoItemFlags
-        return super(TreeModel, self).flags(index)
+        return super(ParticipantTreeModel, self).flags(index)
 
-    @Slot(int, str)
-    def new_topic_slot(self, domain_id, topic_name):
+    @Slot(int, DcpsParticipant)
+    def new_participant_slot(self, domain_id: int, participant: DcpsParticipant):
+        logging.debug("New Participant " +  str(participant))
+
         for idx in range(self.rootItem.childCount()):
-            child: TreeNode = self.rootItem.child(idx)
+            child: ParticipantTreeNode = self.rootItem.child(idx)
             if child.data(0) == str(domain_id):
                 parent_index = self.createIndex(idx, 0, child)
                 row_count = child.childCount()
                 self.beginInsertRows(parent_index, row_count, row_count)
-                topic_child = TreeNode(topic_name, False, False, child)
-                child.appendChild(topic_child)
+                participant_child = ParticipantTreeNode(participant, False, False, child)
+                child.appendChild(participant_child)
                 self.endInsertRows()
 
-    def set_qos_mismatch(self, domain_id: int, topic_name: str, has_mismatch: bool):
-        for idx in range(self.rootItem.childCount()):
-            child: TreeNode = self.rootItem.child(idx)
-            if child.data(0) == str(domain_id):
-                child.has_qos_mismatch = has_mismatch
-                index_domain = self.index(idx, 0)
-                self.dataChanged.emit(index_domain, index_domain, [self.HasQosMismatch])
-                for idx_child in range(child.childCount()):
-                    topic_child: TreeNode = child.child(idx_child)
-                    if topic_name == topic_child.data(0):
-                        topic_child.has_qos_mismatch = has_mismatch
-                        index1 = self.index(idx_child, 0, self.index(idx, 0))
-                        index2 = self.index(idx_child, self.columnCount()-1, self.index(idx, self.columnCount()-1))
-                        roles = [self.HasQosMismatch]
-                        self.dataChanged.emit(index1, index2, roles)
-
-    @Slot(int, str, list)
-    def publish_mismatch_slot(self, domain_id, topicName, mismatches):
-        if len(mismatches) > 0:
-            self.set_qos_mismatch(domain_id, topicName, True)
-
     @Slot(int, str)
-    def no_more_mismatch_in_topic_slot(self, domain_id, topic_name):
-        self.set_qos_mismatch(domain_id, topic_name, False)
+    def removed_participant_slot(self, domainId: int, participantKey: str):
+        logging.debug("Remove Participant " + participantKey)
 
-    @Slot(int, str)
-    def remove_topic_slot(self, domain_id, topic_name):
         for idx in range(self.rootItem.childCount()):
-            child: TreeNode = self.rootItem.child(idx)
-            if child.data(0) == str(domain_id):
-                found_topic_idx = -1
+            child: ParticipantTreeNode = self.rootItem.child(idx)
+            if child.data(0) == str(domainId):
                 for idx_topic in range(child.childCount()):
-                    child_topic: TreeNode = child.child(idx_topic)
-                    if child_topic.data(0) == str(topic_name):
+                    child_topic: ParticipantTreeNode = child.child(idx_topic)
+                    if str(child_topic.data(0).key) == str(participantKey):
                         self.beginRemoveRows(self.createIndex(idx, 0, child), idx_topic, idx_topic)
                         child.removeChild(idx_topic)
                         self.endRemoveRows()
@@ -195,12 +179,12 @@ class TreeModel(QAbstractItemModel):
     @Slot(int)
     def addDomain(self, domain_id):
         for idx in range(self.rootItem.childCount()):
-            child: TreeNode = self.rootItem.child(idx)
+            child: ParticipantTreeNode = self.rootItem.child(idx)
             if child.data(0) == str(domain_id):
                 return
 
         self.beginResetModel()
-        domainChild = TreeNode(str(domain_id), True, False, self.rootItem)
+        domainChild = ParticipantTreeNode(str(domain_id), True, False, self.rootItem)
         self.rootItem.appendChild(domainChild)
         self.endResetModel()
 
@@ -208,7 +192,7 @@ class TreeModel(QAbstractItemModel):
     def removeDomain(self, domain_id):
         dom_child_idx = -1
         for idx in range(self.rootItem.childCount()):
-            child: TreeNode = self.rootItem.child(idx)
+            child: ParticipantTreeNode = self.rootItem.child(idx)
             if child.data(0) == str(domain_id):
                 dom_child_idx = idx
                 break

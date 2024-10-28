@@ -25,13 +25,12 @@ ColumnLayout {
     RowLayout {
         spacing: 0
 
-        Label {
-            text: "Overview"
-            Layout.leftMargin: 10
-        }
-        Item {
+        ComboBox {
+            id: viewSelector
+            model: ["Topic View", "Participant View"]
             Layout.fillWidth: true
         }
+
         Button {
             id: addDomainButton
             text: "+"
@@ -85,10 +84,10 @@ ColumnLayout {
             }
         }
     }
-    
 
     TreeView {
         id: treeView
+        visible: viewSelector.currentIndex === 0
         Layout.fillWidth: true
         Layout.fillHeight: true
         Layout.leftMargin: 10
@@ -169,7 +168,7 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width - padding - x - 10
                 clip: true
-                text: model.is_domain ? "Domain " + model.display : model.display 
+                text: model.is_domain ? "Domain " + model.display + " (" + total_topics + " Topics)": model.display 
             }
 
             WarningTriangle {
@@ -184,5 +183,12 @@ ColumnLayout {
                 tooltipText: "Qos mismatch detected."
             }
         }
+    }
+
+    ParticipantsOverview {
+        visible: viewSelector.currentIndex === 1
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        Layout.leftMargin: 10
     }
 }

@@ -22,13 +22,8 @@ from typing import Optional, List
 
 import dds_data
 from dds_data import DataEndpoint
+from dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
 from utils import EntityType
-
-
-HOSTNAMES     = ["__Hostname",    "dds.sys_info.hostname", "fastdds.physical_data.host"]
-PROCESS_NAMES = ["__ProcessName", "dds.sys_info.executable_filepath"]
-PIDS          = ["__Pid",         "dds.sys_info.process_id", "fastdds.physical_data.process"]
-ADDRESSES     = ["__NetworkAddresses"]
 
 
 class EndpointModel(QAbstractItemModel):
@@ -86,17 +81,6 @@ class EndpointModel(QAbstractItemModel):
     def parent(self, index):
         return QModelIndex()
 
-    def getProperty(self, p: Optional[DcpsParticipant], names: List[str]):
-        propName: str = "Unknown"
-        if p is None:
-            return propName
-        for item in names:
-            if p.qos[core.Policy.Property(item, "Unknown")] is not None:
-                propName = str(p.qos[core.Policy.Property(item, "Unknown")].value)
-                if propName != "Unknown":
-                    break
-        return propName
-
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid() or not (0 <= index.row() < self.rowCount()):
             return None
@@ -127,14 +111,14 @@ class EndpointModel(QAbstractItemModel):
         elif role == self.TypeIdRole:
             return str(endp.type_id)
         elif role == self.HostnameRole:
-            return self.getProperty(p, HOSTNAMES)
+            return getProperty(p, HOSTNAMES)
         elif role == self.ProcessIdRole:
-            return self.getProperty(p, PIDS)
+            return getProperty(p, PIDS)
         elif role == self.ProcessNameRole:
-            appname: str = self.getProperty(p, PROCESS_NAMES)
+            appname: str = getProperty(p, PROCESS_NAMES)
             return Path(appname.replace("\\", f"{os.path.sep}")).stem
         elif role == self.AddressesRole:
-            return self.getProperty(p, ADDRESSES)
+            return getProperty(p, ADDRESSES)
         elif role == self.EndpointHasQosMismatch:
             if len(self.endpoints[endp_key].mismatches.keys()):
                 return True

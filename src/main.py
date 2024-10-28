@@ -44,6 +44,7 @@ import dds_data
 from models.overview_model import TreeModel, TreeNode
 from models.endpoint_model import EndpointModel
 from models.datamodel_model import DatamodelModel
+from models.participant_model import ParticipantTreeModel, ParticipantTreeNode
 import utils
 from version import CYCLONEDDS_INSIGHT_VERSION
 
@@ -87,11 +88,14 @@ if __name__ == "__main__":
 
     rootItem = TreeNode("Root")
     treeModel = TreeModel(rootItem)
+    participantRootItem = ParticipantTreeNode("Root")
+    participantModel = ParticipantTreeModel(participantRootItem)
     datamodelRepoModel = DatamodelModel()
     qmlUtils = utils.QmlUtils()
 
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("treeModel", treeModel)
+    engine.rootContext().setContextProperty("participantModel", participantModel)
     engine.rootContext().setContextProperty("datamodelRepoModel", datamodelRepoModel)
     engine.rootContext().setContextProperty("qmlUtils", qmlUtils)
     engine.rootContext().setContextProperty("CYCLONEDDS_URI", os.getenv("CYCLONEDDS_URI", "<not set>"))

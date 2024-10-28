@@ -38,5 +38,6 @@
         <file>src/views/LoadingView.qml</file>
         <file>src/views/AboutWindow.qml</file>
         <file>src/views/CheckForUpdates.qml</file>
+        <file>src/views/ParticipantsOverview.qml</file>
     </qresource>
 </RCC>
