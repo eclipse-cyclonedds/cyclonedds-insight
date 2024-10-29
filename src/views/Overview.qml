@@ -30,7 +30,6 @@ SplitView {
         implicitWidth: 350
         SplitView.minimumWidth: 50
         
-
         Rectangle {
             id: domainSplit
             color: rootWindow.isDarkMode ? Constants.darkOverviewBackground : Constants.lightOverviewBackground
@@ -38,7 +37,7 @@ SplitView {
             SplitView.minimumHeight: 50
             SplitView.fillHeight: true
 
-            TopicOverview {}
+            SideView {}
         }
 
         Rectangle {
@@ -48,12 +47,10 @@ SplitView {
             SplitView.minimumHeight: 50
             SplitView.preferredHeight: parent.height / 3
 
-            DataModelOverview {
-
-            }
+            DataModelOverview {}
         }
-
     }
+
     Rectangle {
         id: centerItem
         SplitView.minimumWidth: 50

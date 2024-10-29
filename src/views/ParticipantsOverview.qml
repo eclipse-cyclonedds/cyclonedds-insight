@@ -24,7 +24,7 @@ TreeView {
     clip: true
     ScrollBar.vertical: ScrollBar {}
     selectionModel: ItemSelectionModel {
-        id: treeSelection
+        id: treeSelectionParticipant
         onCurrentIndexChanged: {
             console.log("Selection changed to:", currentIndex);
             if (treeModel.getIsRowDomain(currentIndex)) {
@@ -98,7 +98,11 @@ TreeView {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - padding - x - 10
             clip: true
-            text: model.is_domain ? "Domain " + model.display + " (" + total_participants + " Participants)" : model.display 
+            text: model.is_domain ? "Domain " + model.display : model.display 
         }
+    }
+
+    function getCurrentIndex() {
+        return treeSelectionParticipant.currentIndex
     }
 }
