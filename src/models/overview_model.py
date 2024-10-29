@@ -60,7 +60,6 @@ class TreeModel(QAbstractItemModel):
     IsDomainRole = Qt.UserRole + 1
     DisplayRole = Qt.UserRole + 2
     HasQosMismatch = Qt.UserRole + 3
-    TotalTopics = Qt.UserRole + 4
 
     remove_domain_request_signal = Signal(int)
 
