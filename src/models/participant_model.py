@@ -184,6 +184,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                         break
 
                 if hostname_child is None:
+                    # Insert only if the hostname does not exist
                     self.beginInsertRows(parent_index, row_count, row_count)
                     hostname_child = ParticipantTreeNode(participant, DisplayLayerEnum.HOSTNAME, False, child)
                     child.appendChild(hostname_child)
@@ -192,13 +193,13 @@ class ParticipantTreeModel(QAbstractItemModel):
                 # Find or create the application node under the hostname node
                 app_child = None
                 for appChild in hostname_child.childItems:
-                    if getProperty(appChild.data(0), PROCESS_NAMES) == getProperty(participant, PROCESS_NAMES) and \
-                            getProperty(appChild.data(0), PIDS) == getProperty(participant, PIDS):
+                    if (getProperty(appChild.data(0), PROCESS_NAMES) == getProperty(participant, PROCESS_NAMES) and
+                            getProperty(appChild.data(0), PIDS) == getProperty(participant, PIDS)):
                         app_child = appChild
                         break
 
                 if app_child is None:
-                    hostname_index = self.createIndex(idx, 0, hostname_child)
+                    hostname_index = self.createIndex(hostname_child.row(), 0, hostname_child)
                     app_row_count = hostname_child.childCount()
 
                     self.beginInsertRows(hostname_index, app_row_count, app_row_count)
@@ -213,7 +214,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                 )
 
                 if not participant_exists:
-                    app_index = self.createIndex(idx, 0, app_child)
+                    app_index = self.createIndex(app_child.row(), 0, app_child)
                     participant_row_count = app_child.childCount()
 
                     self.beginInsertRows(app_index, participant_row_count, participant_row_count)
@@ -232,7 +233,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                 # Look for the hostname and app nodes
                 for hostname_idx in range(domain_child.childCount()):
                     hostname_child: ParticipantTreeNode = domain_child.child(hostname_idx)
-                    
+
                     for app_idx in range(hostname_child.childCount()):
                         app_child: ParticipantTreeNode = hostname_child.child(app_idx)
 
@@ -242,41 +243,44 @@ class ParticipantTreeModel(QAbstractItemModel):
 
                             if str(participant_child.data(0).key) == participantKey:
                                 # Found the participant; now remove it
-                                app_index = self.createIndex(app_idx, 0, app_child)
+                                app_index = self.createIndex(app_child.row(), 0, app_child)
                                 self.beginRemoveRows(app_index, part_idx, part_idx)
                                 app_child.removeChild(part_idx)
                                 self.endRemoveRows()
 
                                 # Clean up empty app or hostname nodes if they have no children
                                 if app_child.childCount() == 0:
-                                    hostname_index = self.createIndex(hostname_idx, 0, hostname_child)
+                                    hostname_index = self.createIndex(hostname_child.row(), 0, hostname_child)
                                     self.beginRemoveRows(hostname_index, app_idx, app_idx)
                                     hostname_child.removeChild(app_idx)
                                     self.endRemoveRows()
 
                                 if hostname_child.childCount() == 0:
-                                    domain_index = self.createIndex(idx, 0, domain_child)
+                                    domain_index = self.createIndex(domain_child.row(), 0, domain_child)
                                     self.beginRemoveRows(domain_index, hostname_idx, hostname_idx)
                                     domain_child.removeChild(hostname_idx)
                                     self.endRemoveRows()
 
                                 return  # Exit once the participant is removed
 
-
     @Slot(int)
-    def addDomain(self, domain_id):
+    def addDomain(self, domain_id: int):
+        # Check if the domain already exists
         for idx in range(self.rootItem.childCount()):
             child: ParticipantTreeNode = self.rootItem.child(idx)
             if child.data(0) == str(domain_id):
-                return
+                return  # Domain already exists, no need to add
 
-        self.beginResetModel()
+        # If domain does not exist, add it
+        row_count = self.rootItem.childCount()
+        self.beginInsertRows(QModelIndex(), row_count, row_count)
         domainChild = ParticipantTreeNode(str(domain_id), DisplayLayerEnum.DOMAIN, False, self.rootItem)
         self.rootItem.appendChild(domainChild)
-        self.endResetModel()
+        self.endInsertRows()
 
     @Slot(int)
-    def removeDomain(self, domain_id):
+    def removeDomain(self, domain_id: int):
+        # Locate the domain index to remove
         dom_child_idx = -1
         for idx in range(self.rootItem.childCount()):
             child: ParticipantTreeNode = self.rootItem.child(idx)
@@ -284,10 +288,11 @@ class ParticipantTreeModel(QAbstractItemModel):
                 dom_child_idx = idx
                 break
 
-        if  dom_child_idx != -1:
-            self.beginResetModel()
+        # If domain exists, remove it
+        if dom_child_idx != -1:
+            self.beginRemoveRows(QModelIndex(), dom_child_idx, dom_child_idx)
             self.rootItem.removeChild(dom_child_idx)
-            self.endResetModel()
+            self.endRemoveRows()
 
     @Slot(QModelIndex)
     def removeDomainRequest(self, indx):

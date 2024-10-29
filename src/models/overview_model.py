@@ -193,19 +193,23 @@ class TreeModel(QAbstractItemModel):
                         break
 
     @Slot(int)
-    def addDomain(self, domain_id):
+    def addDomain(self, domain_id: int):
+        # Check if the domain already exists
         for idx in range(self.rootItem.childCount()):
             child: TreeNode = self.rootItem.child(idx)
             if child.data(0) == str(domain_id):
-                return
+                return  # Domain already exists, no need to add
 
-        self.beginResetModel()
+        # Add new domain if it doesn't exist
+        row_count = self.rootItem.childCount()
+        self.beginInsertRows(QModelIndex(), row_count, row_count)
         domainChild = TreeNode(str(domain_id), True, False, self.rootItem)
         self.rootItem.appendChild(domainChild)
-        self.endResetModel()
+        self.endInsertRows()
 
     @Slot(int)
-    def removeDomain(self, domain_id):
+    def removeDomain(self, domain_id: int):
+        # Locate the domain index to remove
         dom_child_idx = -1
         for idx in range(self.rootItem.childCount()):
             child: TreeNode = self.rootItem.child(idx)
@@ -213,10 +217,11 @@ class TreeModel(QAbstractItemModel):
                 dom_child_idx = idx
                 break
 
-        if  dom_child_idx != -1:
-            self.beginResetModel()
+        # Remove the domain if it exists
+        if dom_child_idx != -1:
+            self.beginRemoveRows(QModelIndex(), dom_child_idx, dom_child_idx)
             self.rootItem.removeChild(dom_child_idx)
-            self.endResetModel()
+            self.endRemoveRows()
 
     @Slot(QModelIndex)
     def removeDomainRequest(self, indx):

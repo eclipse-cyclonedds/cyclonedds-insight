@@ -39,5 +39,6 @@
         <file>src/views/AboutWindow.qml</file>
         <file>src/views/CheckForUpdates.qml</file>
         <file>src/views/ParticipantsOverview.qml</file>
+        <file>src/views/SideView.qml</file>
     </qresource>
 </RCC>
