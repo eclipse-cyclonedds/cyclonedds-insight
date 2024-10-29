@@ -31,12 +31,11 @@ class DisplayLayerEnum(Enum):
 
 
 class ParticipantTreeNode:
-    def __init__(self, data: DcpsParticipant, layer=DisplayLayerEnum.ROOT, has_qos_mismatch=False, parent=None):
+    def __init__(self, data: DcpsParticipant, layer=DisplayLayerEnum.ROOT, parent=None):
         self.parentItem = parent
         self.itemData: DcpsParticipant = data
         self.childItems = []
         self.layer: DisplayLayerEnum = layer
-        self.has_qos_mismatch = has_qos_mismatch
 
     def appendChild(self, item):
         self.childItems.append(item)
@@ -66,15 +65,11 @@ class ParticipantTreeNode:
     def isDomain(self):
         return self.layer == DisplayLayerEnum.DOMAIN
 
-    def hasQosMismatch(self):
-        return self.has_qos_mismatch
 
 class ParticipantTreeModel(QAbstractItemModel):
 
     IsDomainRole = Qt.UserRole + 1
     DisplayRole = Qt.UserRole + 2
-    HasQosMismatch = Qt.UserRole + 3
-    TotalParticipants = Qt.UserRole + 4
 
     remove_domain_request_signal = Signal(int)
 
@@ -146,18 +141,12 @@ class ParticipantTreeModel(QAbstractItemModel):
                 return ""
         if role == self.IsDomainRole:
             return item.isDomain()
-        if role == self.HasQosMismatch:
-            return item.hasQosMismatch()
-        if role == self.TotalParticipants:
-            return item.childCount()
         return None
 
     def roleNames(self):
         return {
             self.DisplayRole: b'display',
             self.IsDomainRole: b'is_domain',
-            self.HasQosMismatch: b'has_qos_mismatch',
-            self.TotalParticipants: b'total_participants'
         }
 
     def flags(self, index):
@@ -186,7 +175,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                 if hostname_child is None:
                     # Insert only if the hostname does not exist
                     self.beginInsertRows(parent_index, row_count, row_count)
-                    hostname_child = ParticipantTreeNode(participant, DisplayLayerEnum.HOSTNAME, False, child)
+                    hostname_child = ParticipantTreeNode(participant, DisplayLayerEnum.HOSTNAME, child)
                     child.appendChild(hostname_child)
                     self.endInsertRows()
 
@@ -203,7 +192,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                     app_row_count = hostname_child.childCount()
 
                     self.beginInsertRows(hostname_index, app_row_count, app_row_count)
-                    app_child = ParticipantTreeNode(participant, DisplayLayerEnum.APP, False, hostname_child)
+                    app_child = ParticipantTreeNode(participant, DisplayLayerEnum.APP, hostname_child)
                     hostname_child.appendChild(app_child)
                     self.endInsertRows()
 
@@ -218,7 +207,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                     participant_row_count = app_child.childCount()
 
                     self.beginInsertRows(app_index, participant_row_count, participant_row_count)
-                    participant_child = ParticipantTreeNode(participant, DisplayLayerEnum.PARTICIPANT, False, app_child)
+                    participant_child = ParticipantTreeNode(participant, DisplayLayerEnum.PARTICIPANT, app_child)
                     app_child.appendChild(participant_child)
                     self.endInsertRows()
                 break
@@ -274,7 +263,7 @@ class ParticipantTreeModel(QAbstractItemModel):
         # If domain does not exist, add it
         row_count = self.rootItem.childCount()
         self.beginInsertRows(QModelIndex(), row_count, row_count)
-        domainChild = ParticipantTreeNode(str(domain_id), DisplayLayerEnum.DOMAIN, False, self.rootItem)
+        domainChild = ParticipantTreeNode(str(domain_id), DisplayLayerEnum.DOMAIN, self.rootItem)
         self.rootItem.appendChild(domainChild)
         self.endInsertRows()
 

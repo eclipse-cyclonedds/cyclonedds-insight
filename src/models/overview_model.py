@@ -124,16 +124,13 @@ class TreeModel(QAbstractItemModel):
             return item.isDomain()
         if role == self.HasQosMismatch:
             return item.hasQosMismatch()
-        if role == self.TotalTopics:
-            return item.childCount()
         return None
 
     def roleNames(self):
         return {
             self.DisplayRole: b'display',
             self.IsDomainRole: b'is_domain',
-            self.HasQosMismatch: b'has_qos_mismatch',
-            self.TotalTopics: b'total_topics'
+            self.HasQosMismatch: b'has_qos_mismatch'
         }
 
     def flags(self, index):
