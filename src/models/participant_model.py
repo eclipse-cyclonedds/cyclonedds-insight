@@ -18,14 +18,24 @@ from cyclonedds.builtin import DcpsParticipant
 import logging
 import dds_data
 from dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
+from enum import Enum
+
+
+class DisplayLayerEnum(Enum):
+    ROOT = 0
+    DOMAIN = 1
+    HOSTNAME = 2
+    APP = 3
+    PARTICIPANT = 4
+    TOPIC = 5
 
 
 class ParticipantTreeNode:
-    def __init__(self, data: DcpsParticipant, is_domain=False, has_qos_mismatch=False, parent=None):
+    def __init__(self, data: DcpsParticipant, layer=DisplayLayerEnum.ROOT, has_qos_mismatch=False, parent=None):
         self.parentItem = parent
         self.itemData: DcpsParticipant = data
         self.childItems = []
-        self.is_domain = is_domain
+        self.layer: DisplayLayerEnum = layer
         self.has_qos_mismatch = has_qos_mismatch
 
     def appendChild(self, item):
@@ -54,7 +64,7 @@ class ParticipantTreeNode:
         del self.childItems[row]
 
     def isDomain(self):
-        return self.is_domain
+        return self.layer == DisplayLayerEnum.DOMAIN
 
     def hasQosMismatch(self):
         return self.has_qos_mismatch
@@ -119,13 +129,21 @@ class ParticipantTreeModel(QAbstractItemModel):
             return None
         item = index.internalPointer()
         if role == self.DisplayRole:
-            if item.isDomain():
+
+            if item.layer == DisplayLayerEnum.DOMAIN:
                 return item.data(index)
-            else:
+            elif item.layer == DisplayLayerEnum.HOSTNAME:
+                p = item.data(index)
+                return getProperty(p, HOSTNAMES)
+            elif item.layer == DisplayLayerEnum.APP:
                 p = item.data(index)
                 appNameWithPath = getProperty(p, PROCESS_NAMES)
                 appNameStem = Path(appNameWithPath.replace("\\", f"{os.path.sep}")).stem
-                return  appNameStem + ":" + getProperty(p, PIDS) + "@" + getProperty(p, HOSTNAMES) + " ("+ str(item.data(index).key) + ")"
+                return  appNameStem + ":" + getProperty(p, PIDS)
+            elif item.layer == DisplayLayerEnum.PARTICIPANT:
+                return str(item.data(index).key)
+            else:
+                return ""
         if role == self.IsDomainRole:
             return item.isDomain()
         if role == self.HasQosMismatch:
@@ -149,32 +167,101 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(int, DcpsParticipant)
     def new_participant_slot(self, domain_id: int, participant: DcpsParticipant):
-        logging.debug("New Participant " +  str(participant))
+        logging.debug("New Participant " + str(participant))
 
+        # Look for the domain_id node under rootItem
         for idx in range(self.rootItem.childCount()):
             child: ParticipantTreeNode = self.rootItem.child(idx)
             if child.data(0) == str(domain_id):
                 parent_index = self.createIndex(idx, 0, child)
                 row_count = child.childCount()
-                self.beginInsertRows(parent_index, row_count, row_count)
-                participant_child = ParticipantTreeNode(participant, False, False, child)
-                child.appendChild(participant_child)
-                self.endInsertRows()
+
+                # Find or create the hostname node
+                hostname_child = None
+                for hostChild in child.childItems:
+                    if getProperty(hostChild.data(0), HOSTNAMES) == getProperty(participant, HOSTNAMES):
+                        hostname_child = hostChild
+                        break
+
+                if hostname_child is None:
+                    self.beginInsertRows(parent_index, row_count, row_count)
+                    hostname_child = ParticipantTreeNode(participant, DisplayLayerEnum.HOSTNAME, False, child)
+                    child.appendChild(hostname_child)
+                    self.endInsertRows()
+
+                # Find or create the application node under the hostname node
+                app_child = None
+                for appChild in hostname_child.childItems:
+                    if getProperty(appChild.data(0), PROCESS_NAMES) == getProperty(participant, PROCESS_NAMES) and \
+                            getProperty(appChild.data(0), PIDS) == getProperty(participant, PIDS):
+                        app_child = appChild
+                        break
+
+                if app_child is None:
+                    hostname_index = self.createIndex(idx, 0, hostname_child)
+                    app_row_count = hostname_child.childCount()
+
+                    self.beginInsertRows(hostname_index, app_row_count, app_row_count)
+                    app_child = ParticipantTreeNode(participant, DisplayLayerEnum.APP, False, hostname_child)
+                    hostname_child.appendChild(app_child)
+                    self.endInsertRows()
+
+                # Check if participant already exists under the app, and add if not
+                participant_exists = any(
+                    partChild.data(0).key == participant.key
+                    for partChild in app_child.childItems
+                )
+
+                if not participant_exists:
+                    app_index = self.createIndex(idx, 0, app_child)
+                    participant_row_count = app_child.childCount()
+
+                    self.beginInsertRows(app_index, participant_row_count, participant_row_count)
+                    participant_child = ParticipantTreeNode(participant, DisplayLayerEnum.PARTICIPANT, False, app_child)
+                    app_child.appendChild(participant_child)
+                    self.endInsertRows()
+                break
 
     @Slot(int, str)
     def removed_participant_slot(self, domainId: int, participantKey: str):
         logging.debug("Remove Participant " + participantKey)
 
         for idx in range(self.rootItem.childCount()):
-            child: ParticipantTreeNode = self.rootItem.child(idx)
-            if child.data(0) == str(domainId):
-                for idx_topic in range(child.childCount()):
-                    child_topic: ParticipantTreeNode = child.child(idx_topic)
-                    if str(child_topic.data(0).key) == str(participantKey):
-                        self.beginRemoveRows(self.createIndex(idx, 0, child), idx_topic, idx_topic)
-                        child.removeChild(idx_topic)
-                        self.endRemoveRows()
-                        break
+            domain_child: ParticipantTreeNode = self.rootItem.child(idx)
+            if domain_child.data(0) == str(domainId):
+                # Look for the hostname and app nodes
+                for hostname_idx in range(domain_child.childCount()):
+                    hostname_child: ParticipantTreeNode = domain_child.child(hostname_idx)
+                    
+                    for app_idx in range(hostname_child.childCount()):
+                        app_child: ParticipantTreeNode = hostname_child.child(app_idx)
+
+                        # Now, look for the participant node under the app node
+                        for part_idx in range(app_child.childCount()):
+                            participant_child: ParticipantTreeNode = app_child.child(part_idx)
+
+                            if str(participant_child.data(0).key) == participantKey:
+                                # Found the participant; now remove it
+                                app_index = self.createIndex(app_idx, 0, app_child)
+                                self.beginRemoveRows(app_index, part_idx, part_idx)
+                                app_child.removeChild(part_idx)
+                                self.endRemoveRows()
+
+                                # Clean up empty app or hostname nodes if they have no children
+                                if app_child.childCount() == 0:
+                                    hostname_index = self.createIndex(hostname_idx, 0, hostname_child)
+                                    self.beginRemoveRows(hostname_index, app_idx, app_idx)
+                                    hostname_child.removeChild(app_idx)
+                                    self.endRemoveRows()
+
+                                if hostname_child.childCount() == 0:
+                                    domain_index = self.createIndex(idx, 0, domain_child)
+                                    self.beginRemoveRows(domain_index, hostname_idx, hostname_idx)
+                                    domain_child.removeChild(hostname_idx)
+                                    self.endRemoveRows()
+
+                                return  # Exit once the participant is removed
+
 
     @Slot(int)
     def addDomain(self, domain_id):
@@ -184,7 +271,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                 return
 
         self.beginResetModel()
-        domainChild = ParticipantTreeNode(str(domain_id), True, False, self.rootItem)
+        domainChild = ParticipantTreeNode(str(domain_id), DisplayLayerEnum.DOMAIN, False, self.rootItem)
         self.rootItem.appendChild(domainChild)
         self.endResetModel()
 
