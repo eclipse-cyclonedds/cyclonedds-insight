@@ -167,7 +167,7 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(int, DcpsParticipant)
     def new_participant_slot(self, domain_id: int, participant: DcpsParticipant):
-        logging.debug("New Participant " + str(participant))
+        logging.debug("New Participant " + str(participant.key))
 
         # Look for the domain_id node under rootItem
         for idx in range(self.rootItem.childCount()):
