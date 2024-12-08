@@ -35,20 +35,28 @@ Popup {
             Layout.alignment: Qt.AlignHCenter
         }
 
-        SpinBox {
-            id: domainIdSpinBox
-            value: 1
-            editable: false
-            from: 0
-            to: 232
+        TextField {
+            id: domainIdTextField
+            text: "0"
+            validator: IntValidator {
+                bottom: 0
+                top: 232
+            }
+            focus: true
+            width: parent.width - 20
+            onTextChanged: {
+                if (domainIdTextField.text > 232) {
+                    domainIdTextField.text = 232
+                }
+            }
         }
         Row {
             Button {
                 id: addButton
                 text: qsTr("Add")
                 onClicked: {
-                    treeModel.addDomainRequest(parseInt(domainIdSpinBox.value))
-                    domainIdSpinBox.value += 1
+                    treeModel.addDomainRequest(parseInt(domainIdTextField.text))
+                    domainIdTextField.text = parseInt(domainIdTextField.text) + 1
                     close()
                 }
             }

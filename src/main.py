@@ -41,6 +41,7 @@ from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtQuickControls2 import QQuickStyle
 import logging
 import dds_data
+from dds_service import getConfiguredDomainIds
 from models.overview_model import TreeModel, TreeNode
 from models.endpoint_model import EndpointModel
 from models.datamodel_model import DatamodelModel
@@ -117,8 +118,14 @@ if __name__ == "__main__":
         logging.critical("Failed to load qml")
         sys.exit(-1)
 
-    # Add default domain
-    data.add_domain(0)
+    # Add all configured domains
+    domainIds = getConfiguredDomainIds()    
+    for domainId in domainIds:
+        data.add_domain(domainId)
+
+    # fallback
+    if len(domainIds) == 0:
+        data.add_domain(0)
 
     logging.info("qt ...")
     ret_code = app.exec()
