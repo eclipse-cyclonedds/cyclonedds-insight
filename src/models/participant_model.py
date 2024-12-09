@@ -28,6 +28,8 @@ class DisplayLayerEnum(Enum):
     APP = 3
     PARTICIPANT = 4
     TOPIC = 5
+    READER = 6
+    WRITER = 7
 
 
 class ParticipantTreeNode:
@@ -54,6 +56,7 @@ class ParticipantTreeNode:
 
     def parent(self):
         return self.parentItem
+
     def row(self):
         if self.parentItem:
             return self.parentItem.childItems.index(self)
@@ -62,14 +65,34 @@ class ParticipantTreeNode:
     def removeChild(self, row):
         del self.childItems[row]
 
+    def removeChildByChild(self, child):
+        if child in self.childItems:
+            index = self.childItems.index(child)  # Get the index of the child
+            del self.childItems[index]  # Remove the child at the index
+
     def isDomain(self):
         return self.layer == DisplayLayerEnum.DOMAIN
 
+    def isParticipant(self):
+        return self.layer == DisplayLayerEnum.PARTICIPANT
+
+    def isTopic(self):
+        return self.layer == DisplayLayerEnum.TOPIC
+
+    def isReader(self):
+        return self.layer == DisplayLayerEnum.READER
+
+    def isWriter(self):
+        return self.layer == DisplayLayerEnum.WRITER
 
 class ParticipantTreeModel(QAbstractItemModel):
 
-    IsDomainRole = Qt.UserRole + 1
+    DomainRole = Qt.UserRole + 1
     DisplayRole = Qt.UserRole + 2
+    ParticipantRole = Qt.UserRole + 3
+    TopicRole = Qt.UserRole + 4
+    ReaderRole = Qt.UserRole + 5
+    WriterRole = Qt.UserRole + 6
 
     remove_domain_request_signal = Signal(int)
 
@@ -84,6 +107,9 @@ class ParticipantTreeModel(QAbstractItemModel):
         self.dds_data.removed_participant_signal.connect(self.removed_participant_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.new_domain_signal.connect(self.addDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_domain_signal.connect(self.removeDomain, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.removed_endpoint_signal.connect(self.remove_endpoint_slot, Qt.ConnectionType.QueuedConnection)
+
+        self.dds_data.new_endpoint_signal.connect(self.new_endpoint_slot, Qt.ConnectionType.QueuedConnection)
 
         # Connect from self to dds_data
         self.remove_domain_request_signal.connect(self.dds_data.remove_domain, Qt.ConnectionType.QueuedConnection)
@@ -137,16 +163,32 @@ class ParticipantTreeModel(QAbstractItemModel):
                 return  appNameStem + ":" + getProperty(p, PIDS)
             elif item.layer == DisplayLayerEnum.PARTICIPANT:
                 return str(item.data(index).key)
+            elif item.layer == DisplayLayerEnum.TOPIC:
+                return str(item.data(index))
+            elif item.layer == DisplayLayerEnum.READER or item.layer == DisplayLayerEnum.WRITER:
+                return str(item.data(index))
             else:
                 return ""
-        if role == self.IsDomainRole:
+        if role == self.DomainRole:
             return item.isDomain()
+        elif role == self.TopicRole:
+            return item.isTopic()
+        elif role == self.ParticipantRole:
+            return item.isParticipant()
+        elif role == self.ReaderRole:
+            return item.isReader()
+        elif role == self.WriterRole:
+            return item.isWriter()
         return None
 
     def roleNames(self):
         return {
             self.DisplayRole: b'display',
-            self.IsDomainRole: b'is_domain',
+            self.DomainRole: b'is_domain',
+            self.TopicRole: b'is_topic',
+            self.ParticipantRole: b'is_participant',
+            self.ReaderRole: b'is_reader',
+            self.WriterRole: b'is_writer'
         }
 
     def flags(self, index):
@@ -286,7 +328,7 @@ class ParticipantTreeModel(QAbstractItemModel):
     @Slot(QModelIndex)
     def removeDomainRequest(self, indx):
         domainId = self.data(indx, role=self.DisplayRole)
-        isDomain = self.data(indx, role=self.IsDomainRole)
+        isDomain = self.data(indx, role=self.DomainRole)
         if domainId != None or isDomain == True:
             self.remove_domain_request_signal.emit(int(domainId))
 
@@ -296,22 +338,128 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(QModelIndex, result=bool)
     def getIsRowDomain(self, index: QModelIndex):
-        isDomain = self.data(index, role=self.IsDomainRole)
+        isDomain = self.data(index, role=self.DomainRole)
         return isDomain
+
+    @Slot(QModelIndex, result=bool)
+    def getIsTopic(self, index: QModelIndex):
+        isTopic = self.data(index, role=self.TopicRole)
+        return isTopic
+
 
     @Slot(QModelIndex, result=int)
     def getDomain(self, index: QModelIndex):
-        isDomain = self.data(index, role=self.IsDomainRole)
-        if not isDomain:
-            parentIndex = self.parent(index)
+        isDomain = self.data(index, role=self.DomainRole)
+        isTopic = self.data(index, role=self.TopicRole)
+        if isTopic:
+            parentIndex = self.parent(self.parent(self.parent(self.parent(index))))
             dom = self.data(parentIndex, role=self.DisplayRole)
             if dom:
                 return int(dom)
             return None
+        elif isDomain:
+            return int(self.data(index, role=self.DisplayRole))
 
-        return int(self.data(index, role=self.DisplayRole))
+        return None
 
     @Slot(QModelIndex, result=str)
     def getName(self, index: QModelIndex):
         display = self.data(index, role=self.DisplayRole)
         return str(display)
+
+
+    @Slot(str, int, dds_data.DataEndpoint)
+    def new_endpoint_slot(self, unkown: str, domain_id: int, participant: dds_data.DataEndpoint):
+
+        for idx in range(self.rootItem.childCount()):
+            domain_child: ParticipantTreeNode = self.rootItem.child(idx)
+            if domain_child.data(0) == str(domain_id):
+
+                # Look for the participant
+                for hostname_child in domain_child.childItems:
+                    for app_child in hostname_child.childItems:
+                        for participant_child in app_child.childItems:
+                            if participant_child.itemData.key == participant.endpoint.participant_key:
+                                # Add the topic under the participant
+                                topic_child = None
+                                for topic in participant_child.childItems:
+                                    if topic.itemData == participant.endpoint.topic_name:
+                                        topic_child = topic
+                                        break
+
+                                if topic_child is None:
+                                    part_index = self.createIndex(participant_child.row(), 0, participant_child)
+                                    topic_row = participant_child.childCount()
+                                    self.beginInsertRows(part_index, topic_row, topic_row)
+                                    topic_child = ParticipantTreeNode(participant.endpoint.topic_name, DisplayLayerEnum.TOPIC, participant_child)
+                                    participant_child.appendChild(topic_child)
+                                    self.endInsertRows()
+
+                                # Check if the endpoint already exists under the topic
+                                for endpoint in topic_child.childItems:
+                                    if endpoint.itemData == participant.endpoint.key:
+                                        return  # Skip adding duplicate endpoint
+
+                                # Add endpoint under topic
+                                topic_index = self.createIndex(topic_child.row(), 0, topic_child)
+                                endpoint_row = topic_child.childCount()
+                                self.beginInsertRows(topic_index, endpoint_row, endpoint_row)
+                                endpoint_child = ParticipantTreeNode(participant.endpoint.key, DisplayLayerEnum.READER if participant.isReader() else DisplayLayerEnum.WRITER,  topic_child)
+                                topic_child.appendChild(endpoint_child)
+                                self.endInsertRows()
+                                return
+
+    @Slot(int, str)
+    def remove_endpoint_slot(self, domain_id: int, endpoint_key: str):
+        for idx in range(self.rootItem.childCount()):
+            domain_child: ParticipantTreeNode = self.rootItem.child(idx)
+            if domain_child.data(0) == str(domain_id):
+                # Look for the endpoint in the tree
+                for hostname_child in domain_child.childItems:
+                    for app_child in hostname_child.childItems:
+                        for participant_child in app_child.childItems:
+                            for topic_child in participant_child.childItems:
+                                for endpoint_child in topic_child.childItems:
+                                    if str(endpoint_child.itemData) == endpoint_key:
+                                        # Found the endpoint, remove it
+                                        endpoint_index = self.createIndex(endpoint_child.row(), 0, endpoint_child)
+                                        self.beginRemoveRows(endpoint_index.parent(), endpoint_child.row(), endpoint_child.row())
+                                        topic_child.removeChildByChild(endpoint_child)
+                                        self.endRemoveRows()
+
+                                        # If the topic is now empty, remove the topic
+                                        if not topic_child.childItems:
+                                            topic_index = self.createIndex(topic_child.row(), 0, topic_child)
+                                            self.beginRemoveRows(topic_index.parent(), topic_child.row(), topic_child.row())
+                                            participant_child.removeChildByChild(topic_child)
+                                            self.endRemoveRows()
+
+                                        # If the participant has no topics, remove the participant
+                                        if not participant_child.childItems:
+                                            participant_index = self.createIndex(participant_child.row(), 0, participant_child)
+                                            self.beginRemoveRows(participant_index.parent(), participant_child.row(), participant_child.row())
+                                            app_child.removeChildByChild(participant_child)
+                                            self.endRemoveRows()
+
+                                        # If the app has no participants, remove the app
+                                        if not app_child.childItems:
+                                            app_index = self.createIndex(app_child.row(), 0, app_child)
+                                            self.beginRemoveRows(app_index.parent(), app_child.row(), app_child.row())
+                                            hostname_child.removeChildByChild(app_child)
+                                            self.endRemoveRows()
+
+                                        # If the hostname has no apps, remove the hostname
+                                        if not hostname_child.childItems:
+                                            hostname_index = self.createIndex(hostname_child.row(), 0, hostname_child)
+                                            self.beginRemoveRows(hostname_index.parent(), hostname_child.row(), hostname_child.row())
+                                            domain_child.removeChildByChild(hostname_child)
+                                            self.endRemoveRows()
+
+                                        # If the domain has no hostnames, remove the domain
+                                        if not domain_child.childItems:
+                                            domain_index = self.createIndex(domain_child.row(), 0, domain_child)
+                                            self.beginRemoveRows(domain_index.parent(), domain_child.row(), domain_child.row())
+                                            self.rootItem.removeChildByChild(domain_child)
+                                            self.endRemoveRows()
+
+                                        return
