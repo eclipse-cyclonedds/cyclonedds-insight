@@ -87,8 +87,8 @@ class ParticipantTreeNode:
 
 class ParticipantTreeModel(QAbstractItemModel):
 
-    DomainRole = Qt.UserRole + 1
-    DisplayRole = Qt.UserRole + 2
+    DisplayRole = Qt.UserRole + 1
+    DomainRole = Qt.UserRole + 2
     ParticipantRole = Qt.UserRole + 3
     TopicRole = Qt.UserRole + 4
     ReaderRole = Qt.UserRole + 5
@@ -292,7 +292,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                                     domain_child.removeChild(hostname_idx)
                                     self.endRemoveRows()
 
-                                return  # Exit once the participant is removed
+                                return
 
     @Slot(int)
     def addDomain(self, domain_id: int):
@@ -380,6 +380,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                     for app_child in hostname_child.childItems:
                         for participant_child in app_child.childItems:
                             if participant_child.itemData.key == participant.endpoint.participant_key:
+
                                 # Add the topic under the participant
                                 topic_child = None
                                 for topic in participant_child.childItems:
@@ -407,6 +408,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                                 endpoint_child = ParticipantTreeNode(participant.endpoint.key, DisplayLayerEnum.READER if participant.isReader() else DisplayLayerEnum.WRITER,  topic_child)
                                 topic_child.appendChild(endpoint_child)
                                 self.endInsertRows()
+
                                 return
 
     @Slot(int, str)
@@ -432,34 +434,6 @@ class ParticipantTreeModel(QAbstractItemModel):
                                             topic_index = self.createIndex(topic_child.row(), 0, topic_child)
                                             self.beginRemoveRows(topic_index.parent(), topic_child.row(), topic_child.row())
                                             participant_child.removeChildByChild(topic_child)
-                                            self.endRemoveRows()
-
-                                        # If the participant has no topics, remove the participant
-                                        if not participant_child.childItems:
-                                            participant_index = self.createIndex(participant_child.row(), 0, participant_child)
-                                            self.beginRemoveRows(participant_index.parent(), participant_child.row(), participant_child.row())
-                                            app_child.removeChildByChild(participant_child)
-                                            self.endRemoveRows()
-
-                                        # If the app has no participants, remove the app
-                                        if not app_child.childItems:
-                                            app_index = self.createIndex(app_child.row(), 0, app_child)
-                                            self.beginRemoveRows(app_index.parent(), app_child.row(), app_child.row())
-                                            hostname_child.removeChildByChild(app_child)
-                                            self.endRemoveRows()
-
-                                        # If the hostname has no apps, remove the hostname
-                                        if not hostname_child.childItems:
-                                            hostname_index = self.createIndex(hostname_child.row(), 0, hostname_child)
-                                            self.beginRemoveRows(hostname_index.parent(), hostname_child.row(), hostname_child.row())
-                                            domain_child.removeChildByChild(hostname_child)
-                                            self.endRemoveRows()
-
-                                        # If the domain has no hostnames, remove the domain
-                                        if not domain_child.childItems:
-                                            domain_index = self.createIndex(domain_child.row(), 0, domain_child)
-                                            self.beginRemoveRows(domain_index.parent(), domain_child.row(), domain_child.row())
-                                            self.rootItem.removeChildByChild(domain_child)
                                             self.endRemoveRows()
 
                                         return
