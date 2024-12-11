@@ -78,9 +78,6 @@ def qos_match(endpoint_reader, endpoint_writer) -> list:
     if destination_order_rd and destination_order_wr and destination_order_rd > destination_order_wr:
         mismatches.append(dds_qos_policy_id.DDS_DESTINATIONORDER_QOS_POLICY_ID)
 
-    if not partitions_match_p(endpoint_reader.qos, endpoint_writer.qos):
-        mismatches.append(dds_qos_policy_id.DDS_PARTITION_QOS_POLICY_ID)
-
     if qos.Policy.DataRepresentation in endpoint_reader.qos and qos.Policy.DataRepresentation in endpoint_writer.qos:
         if endpoint_writer.qos[qos.Policy.DataRepresentation].use_cdrv0_representation and endpoint_reader.qos[qos.Policy.DataRepresentation].use_cdrv0_representation:
             pass # ok - both using cdrv0
