@@ -151,7 +151,7 @@ Rectangle {
                         }
 
                         delegate: Item {
-                            height: 65
+                            height: 85
                             width: listViewWriter.width
 
                             Rectangle {
@@ -252,8 +252,9 @@ Rectangle {
                         }
 
                         delegate: Item {
-                            height: 65
+                            height: 85
                             width: listViewReader.width
+                            z: 10
 
                             Rectangle {
                                 anchors.fill: parent
@@ -261,25 +262,9 @@ Rectangle {
                                 border.color: endpoint_has_qos_mismatch ? Constants.warningColor : rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
                                 border.width: 0.5
                                 id: readerRec
+                                
                                 property bool showTooltip: false
 
-                                Column {
-                                    spacing: 0
-                                    padding: 10
-
-                                    Label {
-                                        text: endpoint_key
-                                        font.pixelSize: 14
-                                    }
-                                    Label {
-                                        text: endpoint_process_name + ":" + endpoint_process_id + "@" + endpoint_hostname
-                                        font.pixelSize: 12
-                                    }
-                                    Label {
-                                        text: addresses
-                                        font.pixelSize: 8
-                                    }
-                                }
                                 MouseArea {
                                     id: mouseAreaEndpointReader
                                     anchors.fill: parent
@@ -301,6 +286,77 @@ Rectangle {
                                         readerRec.showTooltip = false
                                     }
                                 }
+
+                                Column {
+                                    spacing: 0
+                                    padding: 10
+
+                                    Label {
+                                        text: endpoint_key
+                                        font.pixelSize: 14
+                                    }
+                                    Label {
+                                        text: endpoint_process_name + ":" + endpoint_process_id + "@" + endpoint_hostname
+                                        font.pixelSize: 12
+                                    }
+                                    Label {
+                                        text: addresses
+                                        font.pixelSize: 8
+                                    }
+                                    Item {
+                                        height: 5
+                                        width: 1
+                                    }
+                                    Flickable {
+                                        width: listViewReader.width - 20
+                                        contentWidth: rowContent.width
+                                        height: 20
+                                        clip: true
+
+                                        Row {
+                                            id: rowContent
+                                            spacing: 10
+                                            Repeater {
+                                                model: ["PartitionA", "PartitionB", "Partition*", "SomethingOtherDIfferent"]
+                                                Rectangle {
+                                                    z: 100
+                                                    height: 20
+                                                    radius: 5
+                                                    color: rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
+                                                    border.color: "black"
+                                                    border.width: 1
+                                                    width: textItem.width + 20
+
+                                                    Text {
+                                                        id: textItem
+                                                        anchors.centerIn: parent
+                                                        text: modelData
+                                                        font.pixelSize: 12
+                                                    }
+
+                                                    MouseArea {
+                                                        id: partitionMouseArea
+                                                        hoverEnabled: true
+                                                        
+                                                        anchors.fill: parent
+                                                        onPressed: {
+                                                        }
+                                                        onReleased: {
+                                                        }
+
+                                                        onClicked: (mouse) => {
+                                                            console.log("clicked partition " + modelData)
+                                                        }
+                                                        onEntered: {
+                                                            readerRec.showTooltip = true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                                 ToolTip {
                                     id: readerTooltip
                                     parent: readerRec
