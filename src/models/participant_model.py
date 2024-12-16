@@ -21,6 +21,12 @@ from dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
 from enum import Enum
 
 
+def getAppName(appNameWithPath, pid):
+    appNameStem = Path(appNameWithPath.replace("\\", f"{os.path.sep}")).stem
+    return  appNameStem + ":" + pid
+
+
+# defines what type is the current node
 class DisplayLayerEnum(Enum):
     ROOT = 0
     DOMAIN = 1
@@ -36,17 +42,17 @@ class ParticipantTreeNode:
     def __init__(self, data: DcpsParticipant, layer=DisplayLayerEnum.ROOT, parent=None):
         self.parentItem = parent
         self.itemData: DcpsParticipant = data
-        self.childItems = []
+        self.childMap = {}
         self.layer: DisplayLayerEnum = layer
 
-    def appendChild(self, item):
-        self.childItems.append(item)
+    def appendChild(self, key, item):
+        self.childMap[key] = item
 
     def child(self, row):
-        return self.childItems[row]
+        return list(self.childMap.values())[row]
 
     def childCount(self):
-        return len(self.childItems)
+        return len(list(self.childMap.keys()))
 
     def columnCount(self):
         return 1
@@ -59,16 +65,17 @@ class ParticipantTreeNode:
 
     def row(self):
         if self.parentItem:
-            return self.parentItem.childItems.index(self)
+            return list(self.parentItem.childMap.values()).index(self)
         return 0
 
     def removeChild(self, row):
-        del self.childItems[row]
+        del self.childMap[list(self.childMap.keys())[row]]
 
     def removeChildByChild(self, child):
-        if child in self.childItems:
-            index = self.childItems.index(child)  # Get the index of the child
-            del self.childItems[index]  # Remove the child at the index
+        vals = list(self.childMap.values())
+        if child in vals:
+            index = vals.index(child)
+            self.removeChild(index)
 
     def isDomain(self):
         return self.layer == DisplayLayerEnum.DOMAIN
@@ -87,12 +94,13 @@ class ParticipantTreeNode:
 
 class ParticipantTreeModel(QAbstractItemModel):
 
+    # Defines which variables of the model are avaiable in qml
     DisplayRole = Qt.UserRole + 1
-    DomainRole = Qt.UserRole + 2
-    ParticipantRole = Qt.UserRole + 3
-    TopicRole = Qt.UserRole + 4
-    ReaderRole = Qt.UserRole + 5
-    WriterRole = Qt.UserRole + 6
+    IsDomainRole = Qt.UserRole + 2
+    IsParticipantRole = Qt.UserRole + 3
+    IsTopicRole = Qt.UserRole + 4
+    IsReaderRole = Qt.UserRole + 5
+    IsWriterRole = Qt.UserRole + 6
 
     remove_domain_request_signal = Signal(int)
 
@@ -108,7 +116,6 @@ class ParticipantTreeModel(QAbstractItemModel):
         self.dds_data.new_domain_signal.connect(self.addDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_domain_signal.connect(self.removeDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_endpoint_signal.connect(self.remove_endpoint_slot, Qt.ConnectionType.QueuedConnection)
-
         self.dds_data.new_endpoint_signal.connect(self.new_endpoint_slot, Qt.ConnectionType.QueuedConnection)
 
         # Connect from self to dds_data
@@ -150,7 +157,6 @@ class ParticipantTreeModel(QAbstractItemModel):
             return None
         item = index.internalPointer()
         if role == self.DisplayRole:
-
             if item.layer == DisplayLayerEnum.DOMAIN:
                 return item.data(index)
             elif item.layer == DisplayLayerEnum.HOSTNAME:
@@ -158,9 +164,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                 return getProperty(p, HOSTNAMES)
             elif item.layer == DisplayLayerEnum.APP:
                 p = item.data(index)
-                appNameWithPath = getProperty(p, PROCESS_NAMES)
-                appNameStem = Path(appNameWithPath.replace("\\", f"{os.path.sep}")).stem
-                return  appNameStem + ":" + getProperty(p, PIDS)
+                return getAppName(getProperty(p, PROCESS_NAMES), getProperty(p, PIDS))
             elif item.layer == DisplayLayerEnum.PARTICIPANT:
                 return str(item.data(index).key)
             elif item.layer == DisplayLayerEnum.TOPIC:
@@ -169,26 +173,27 @@ class ParticipantTreeModel(QAbstractItemModel):
                 return str(item.data(index))
             else:
                 return ""
-        if role == self.DomainRole:
+        if role == self.IsDomainRole:
             return item.isDomain()
-        elif role == self.TopicRole:
+        elif role == self.IsTopicRole:
             return item.isTopic()
-        elif role == self.ParticipantRole:
+        elif role == self.IsParticipantRole:
             return item.isParticipant()
-        elif role == self.ReaderRole:
+        elif role == self.IsReaderRole:
             return item.isReader()
-        elif role == self.WriterRole:
+        elif role == self.IsWriterRole:
             return item.isWriter()
+
         return None
 
     def roleNames(self):
         return {
             self.DisplayRole: b'display',
-            self.DomainRole: b'is_domain',
-            self.TopicRole: b'is_topic',
-            self.ParticipantRole: b'is_participant',
-            self.ReaderRole: b'is_reader',
-            self.WriterRole: b'is_writer'
+            self.IsDomainRole: b'is_domain',
+            self.IsTopicRole: b'is_topic',
+            self.IsParticipantRole: b'is_participant',
+            self.IsReaderRole: b'is_reader',
+            self.IsWriterRole: b'is_writer'
         }
 
     def flags(self, index):
@@ -201,58 +206,45 @@ class ParticipantTreeModel(QAbstractItemModel):
         logging.debug("New Participant " + str(participant.key))
 
         # Look for the domain_id node under rootItem
-        for idx in range(self.rootItem.childCount()):
-            child: ParticipantTreeNode = self.rootItem.child(idx)
-            if child.data(0) == str(domain_id):
-                parent_index = self.createIndex(idx, 0, child)
-                row_count = child.childCount()
+        hostname = getProperty(participant, HOSTNAMES)
+        appName = getAppName(getProperty(participant, PROCESS_NAMES), getProperty(participant, PIDS))
 
-                # Find or create the hostname node
-                hostname_child = None
-                for hostChild in child.childItems:
-                    if getProperty(hostChild.data(0), HOSTNAMES) == getProperty(participant, HOSTNAMES):
-                        hostname_child = hostChild
-                        break
+        if domain_id in self.rootItem.childMap:
+            domain_child = self.rootItem.childMap[domain_id]
 
-                if hostname_child is None:
-                    # Insert only if the hostname does not exist
-                    self.beginInsertRows(parent_index, row_count, row_count)
-                    hostname_child = ParticipantTreeNode(participant, DisplayLayerEnum.HOSTNAME, child)
-                    child.appendChild(hostname_child)
-                    self.endInsertRows()
+            parent_index = self.createIndex(domain_child.row(), 0, domain_child)
+            row_count = domain_child.childCount()
 
-                # Find or create the application node under the hostname node
-                app_child = None
-                for appChild in hostname_child.childItems:
-                    if (getProperty(appChild.data(0), PROCESS_NAMES) == getProperty(participant, PROCESS_NAMES) and
-                            getProperty(appChild.data(0), PIDS) == getProperty(participant, PIDS)):
-                        app_child = appChild
-                        break
+            # Add hostname
+            if hostname in domain_child.childMap:
+                hostname_child = domain_child.childMap[hostname]
+            else:
+                self.beginInsertRows(parent_index, row_count, row_count)
+                hostname_child = ParticipantTreeNode(participant, DisplayLayerEnum.HOSTNAME, domain_child)
+                domain_child.appendChild(getProperty(participant, HOSTNAMES), hostname_child)
+                self.endInsertRows()
+        
+            # Add app
+            if appName in hostname_child.childMap:
+                app_child = hostname_child.childMap[appName]
+            else:
+                hostname_index = self.createIndex(hostname_child.row(), 0, hostname_child)
+                app_row_count = hostname_child.childCount()
 
-                if app_child is None:
-                    hostname_index = self.createIndex(hostname_child.row(), 0, hostname_child)
-                    app_row_count = hostname_child.childCount()
+                self.beginInsertRows(hostname_index, app_row_count, app_row_count)
+                app_child = ParticipantTreeNode(participant, DisplayLayerEnum.APP, hostname_child)
+                hostname_child.appendChild(appName, app_child)
+                self.endInsertRows()
 
-                    self.beginInsertRows(hostname_index, app_row_count, app_row_count)
-                    app_child = ParticipantTreeNode(participant, DisplayLayerEnum.APP, hostname_child)
-                    hostname_child.appendChild(app_child)
-                    self.endInsertRows()
+            # Add participant
+            if str(participant.key) not in app_child.childMap:
+                app_index = self.createIndex(app_child.row(), 0, app_child)
+                participant_row_count = app_child.childCount()
 
-                # Check if participant already exists under the app, and add if not
-                participant_exists = any(
-                    partChild.data(0).key == participant.key
-                    for partChild in app_child.childItems
-                )
-
-                if not participant_exists:
-                    app_index = self.createIndex(app_child.row(), 0, app_child)
-                    participant_row_count = app_child.childCount()
-
-                    self.beginInsertRows(app_index, participant_row_count, participant_row_count)
-                    participant_child = ParticipantTreeNode(participant, DisplayLayerEnum.PARTICIPANT, app_child)
-                    app_child.appendChild(participant_child)
-                    self.endInsertRows()
-                break
+                self.beginInsertRows(app_index, participant_row_count, participant_row_count)
+                participant_child = ParticipantTreeNode(participant, DisplayLayerEnum.PARTICIPANT, app_child)
+                app_child.appendChild(str(participant.key), participant_child)
+                self.endInsertRows()
 
     @Slot(int, str)
     def removed_participant_slot(self, domainId: int, participantKey: str):
@@ -296,21 +288,16 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(int)
     def addDomain(self, domain_id: int):
-        # Check if the domain already exists
-        for idx in range(self.rootItem.childCount()):
-            child: ParticipantTreeNode = self.rootItem.child(idx)
-            if child.data(0) == str(domain_id):
-                return  # Domain already exists, no need to add
-
-        # If domain does not exist, add it
-        row_count = self.rootItem.childCount()
-        self.beginInsertRows(QModelIndex(), row_count, row_count)
-        domainChild = ParticipantTreeNode(str(domain_id), DisplayLayerEnum.DOMAIN, self.rootItem)
-        self.rootItem.appendChild(domainChild)
-        self.endInsertRows()
+        if domain_id not in self.rootItem.childMap:
+            row_count = self.rootItem.childCount()
+            self.beginInsertRows(QModelIndex(), row_count, row_count)
+            domainChild = ParticipantTreeNode(str(domain_id), DisplayLayerEnum.DOMAIN, self.rootItem)
+            self.rootItem.appendChild(domain_id, domainChild)
+            self.endInsertRows()
 
     @Slot(int)
     def removeDomain(self, domain_id: int):
+
         # Locate the domain index to remove
         dom_child_idx = -1
         for idx in range(self.rootItem.childCount()):
@@ -328,7 +315,7 @@ class ParticipantTreeModel(QAbstractItemModel):
     @Slot(QModelIndex)
     def removeDomainRequest(self, indx):
         domainId = self.data(indx, role=self.DisplayRole)
-        isDomain = self.data(indx, role=self.DomainRole)
+        isDomain = self.data(indx, role=self.IsDomainRole)
         if domainId != None or isDomain == True:
             self.remove_domain_request_signal.emit(int(domainId))
 
@@ -338,19 +325,19 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(QModelIndex, result=bool)
     def getIsRowDomain(self, index: QModelIndex):
-        isDomain = self.data(index, role=self.DomainRole)
+        isDomain = self.data(index, role=self.IsDomainRole)
         return isDomain
 
     @Slot(QModelIndex, result=bool)
     def getIsTopic(self, index: QModelIndex):
-        isTopic = self.data(index, role=self.TopicRole)
+        isTopic = self.data(index, role=self.IsTopicRole)
         return isTopic
 
 
     @Slot(QModelIndex, result=int)
     def getDomain(self, index: QModelIndex):
-        isDomain = self.data(index, role=self.DomainRole)
-        isTopic = self.data(index, role=self.TopicRole)
+        isDomain = self.data(index, role=self.IsDomainRole)
+        isTopic = self.data(index, role=self.IsTopicRole)
         if isTopic:
             parentIndex = self.parent(self.parent(self.parent(self.parent(index))))
             dom = self.data(parentIndex, role=self.DisplayRole)
@@ -367,73 +354,64 @@ class ParticipantTreeModel(QAbstractItemModel):
         display = self.data(index, role=self.DisplayRole)
         return str(display)
 
-
     @Slot(str, int, dds_data.DataEndpoint)
     def new_endpoint_slot(self, unkown: str, domain_id: int, participant: dds_data.DataEndpoint):
 
-        for idx in range(self.rootItem.childCount()):
-            domain_child: ParticipantTreeNode = self.rootItem.child(idx)
-            if domain_child.data(0) == str(domain_id):
+        hostname = getProperty(participant.participant, HOSTNAMES)
+        appName = getAppName(getProperty(participant.participant, PROCESS_NAMES), getProperty(participant.participant, PIDS))
 
-                # Look for the participant
-                for hostname_child in domain_child.childItems:
-                    for app_child in hostname_child.childItems:
-                        for participant_child in app_child.childItems:
-                            if participant_child.itemData.key == participant.endpoint.participant_key:
+        if domain_id in self.rootItem.childMap:
+            domain_child = self.rootItem.childMap[domain_id]
+            if hostname in domain_child.childMap:
+                hostname_child = domain_child.childMap[hostname]
+                if appName in hostname_child.childMap:
+                    app_child = hostname_child.childMap[appName]
+                    if str(participant.participant.key) in app_child.childMap:
+                        participant_child = app_child.childMap[str(participant.participant.key)]
 
-                                # Add the topic under the participant
-                                topic_child = None
-                                for topic in participant_child.childItems:
-                                    if topic.itemData == participant.endpoint.topic_name:
-                                        topic_child = topic
-                                        break
+                        # Add or get topic
+                        if participant.endpoint.topic_name in participant_child.childMap:
+                            topic_child = participant_child.childMap[participant.endpoint.topic_name]
+                        else:
+                            part_index = self.createIndex(participant_child.row(), 0, participant_child)
+                            topic_row = participant_child.childCount()
+                            self.beginInsertRows(part_index, topic_row, topic_row)
+                            topic_child = ParticipantTreeNode(participant.endpoint.topic_name, DisplayLayerEnum.TOPIC, participant_child)
+                            participant_child.appendChild(participant.endpoint.topic_name, topic_child)
+                            self.endInsertRows()
 
-                                if topic_child is None:
-                                    part_index = self.createIndex(participant_child.row(), 0, participant_child)
-                                    topic_row = participant_child.childCount()
-                                    self.beginInsertRows(part_index, topic_row, topic_row)
-                                    topic_child = ParticipantTreeNode(participant.endpoint.topic_name, DisplayLayerEnum.TOPIC, participant_child)
-                                    participant_child.appendChild(topic_child)
-                                    self.endInsertRows()
-
-                                # Check if the endpoint already exists under the topic
-                                for endpoint in topic_child.childItems:
-                                    if endpoint.itemData == participant.endpoint.key:
-                                        return  # Skip adding duplicate endpoint
-
-                                # Add endpoint under topic
-                                topic_index = self.createIndex(topic_child.row(), 0, topic_child)
-                                endpoint_row = topic_child.childCount()
-                                self.beginInsertRows(topic_index, endpoint_row, endpoint_row)
-                                endpoint_child = ParticipantTreeNode(participant.endpoint.key, DisplayLayerEnum.READER if participant.isReader() else DisplayLayerEnum.WRITER,  topic_child)
-                                topic_child.appendChild(endpoint_child)
-                                self.endInsertRows()
-
-                                return
+                        # Add endpoint under topic
+                        if str(participant.endpoint.key) not in topic_child.childMap:
+                            topic_index = self.createIndex(topic_child.row(), 0, topic_child)
+                            endpoint_row = topic_child.childCount()
+                            self.beginInsertRows(topic_index, endpoint_row, endpoint_row)
+                            endpoint_child = ParticipantTreeNode(participant.endpoint.key, DisplayLayerEnum.READER if participant.isReader() else DisplayLayerEnum.WRITER,  topic_child)
+                            topic_child.appendChild(str(participant.endpoint.key), endpoint_child)
+                            self.endInsertRows()
 
     @Slot(int, str)
     def remove_endpoint_slot(self, domain_id: int, endpoint_key: str):
-        for idx in range(self.rootItem.childCount()):
-            domain_child: ParticipantTreeNode = self.rootItem.child(idx)
-            if domain_child.data(0) == str(domain_id):
-                # Look for the endpoint in the tree
-                for hostname_child in domain_child.childItems:
-                    for app_child in hostname_child.childItems:
-                        for participant_child in app_child.childItems:
-                            for topic_child in participant_child.childItems:
-                                for endpoint_child in topic_child.childItems:
-                                    if str(endpoint_child.itemData) == endpoint_key:
-                                        # Found the endpoint, remove it
-                                        endpoint_index = self.createIndex(endpoint_child.row(), 0, endpoint_child)
-                                        self.beginRemoveRows(endpoint_index.parent(), endpoint_child.row(), endpoint_child.row())
-                                        topic_child.removeChildByChild(endpoint_child)
-                                        self.endRemoveRows()
 
-                                        # If the topic is now empty, remove the topic
-                                        if not topic_child.childItems:
-                                            topic_index = self.createIndex(topic_child.row(), 0, topic_child)
-                                            self.beginRemoveRows(topic_index.parent(), topic_child.row(), topic_child.row())
-                                            participant_child.removeChildByChild(topic_child)
-                                            self.endRemoveRows()
+        if domain_id in self.rootItem.childMap:
+            domain_child = self.rootItem.childMap[domain_id]
+            for hostname_child in domain_child.childMap.values():
+                for app_child in hostname_child.childMap.values():
+                    for participant_child in app_child.childMap.values():
+                        for topic_child in participant_child.childMap.values():
 
-                                        return
+                            # Found the endpoint, remove it
+                            if endpoint_key in topic_child.childMap:
+                                endpoint_child = topic_child.childMap[endpoint_key]
+                                endpoint_index = self.createIndex(endpoint_child.row(), 0, endpoint_child)
+                                self.beginRemoveRows(endpoint_index.parent(), endpoint_child.row(), endpoint_child.row())
+                                topic_child.removeChildByChild(endpoint_child)
+                                self.endRemoveRows()
+
+                                # If the topic is now empty, remove the topic
+                                if not topic_child.childMap.values():
+                                    topic_index = self.createIndex(topic_child.row(), 0, topic_child)
+                                    self.beginRemoveRows(topic_index.parent(), topic_child.row(), topic_child.row())
+                                    participant_child.removeChildByChild(topic_child)
+                                    self.endRemoveRows()
+
+                                return
