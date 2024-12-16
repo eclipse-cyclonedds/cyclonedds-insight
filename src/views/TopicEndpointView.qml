@@ -150,6 +150,8 @@ Rectangle {
                             policy: ScrollBar.AsNeeded
                         }
 
+                        property int lastPartitionPressedIndex: -1
+
                         delegate: Item {
                             height: 85
                             width: listViewWriter.width
@@ -162,23 +164,8 @@ Rectangle {
                                 color: rootWindow.isDarkMode ? mouseAreaEndpointWriter.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : mouseAreaEndpointWriter.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
                                 border.color: endpoint_has_qos_mismatch ? Constants.warningColor : rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
                                 border.width: 0.5
-                                Column {
-                                    spacing: 0
-                                    padding: 10
 
-                                    Label {
-                                        text: endpoint_key
-                                        font.pixelSize: 14
-                                    }
-                                    Label {
-                                        text: endpoint_process_name + ":" + endpoint_process_id + "@" + endpoint_hostname
-                                        font.pixelSize: 12
-                                    }
-                                    Label {
-                                        text: addresses
-                                        font.pixelSize: 8
-                                    }
-                                }
+
                                 MouseArea {
                                     id: mouseAreaEndpointWriter
                                     anchors.fill: parent
@@ -200,6 +187,99 @@ Rectangle {
                                         writerRec.showTooltip = false
                                     }
                                 }
+
+                                Column {
+                                    spacing: 0
+                                    padding: 10
+
+                                    Label {
+                                        text: endpoint_key
+                                        font.pixelSize: 14
+                                    }
+                                    Label {
+                                        text: endpoint_process_name + ":" + endpoint_process_id + "@" + endpoint_hostname
+                                        font.pixelSize: 12
+                                    }
+                                    Label {
+                                        text: addresses
+                                        font.pixelSize: 8
+                                    }
+                                    Item {
+                                        height: 5
+                                        width: 1
+                                    }
+                                    Label {
+                                        text: "(No Partition)"
+                                        visible: partitions.length === 0
+                                        font.pixelSize: 12
+                                    }
+                                    Flickable {
+                                        width: listViewReader.width - 20
+                                        contentWidth: rowContent.width
+                                        height: 20
+                                        clip: true
+                                        visible: partitions.length !== 0
+
+                                        Row {
+                                            id: rowContent
+                                            spacing: 10
+                                            Repeater {
+                                                model: partitions
+                                                Rectangle {
+                                                    id: partitionRectangle
+                                                    property bool isMatching: false
+                                                    z: 100
+                                                    height: 20
+                                                    radius: 5
+                                                    color: isMatching ? "green" : rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
+                                                    border.color: isMatching ? "green" : "black"
+                                                    border.width: 1
+                                                    width: textItem.width + 20
+
+                                                    Connections {
+                                                        target: endpointWriterModel
+                                                        function onMatchedPartitionsSignal(matchedPartitionNames) {
+                                                            if (matchedPartitionNames.indexOf(modelData) !== -1) {
+                                                                partitionRectangle.isMatching = true
+                                                            } else {
+                                                                partitionRectangle.isMatching = false
+                                                            }
+                                                        }
+                                                    }
+
+                                                    Label {
+                                                        id: textItem
+                                                        anchors.centerIn: parent
+                                                        text: modelData
+                                                        font.pixelSize: 12
+                                                    }
+
+                                                    MouseArea {
+                                                        id: partitionMouseArea
+                                                        hoverEnabled: true
+                                                        
+                                                        anchors.fill: parent
+                                                        onPressed: {  
+
+                                                        }
+                                                        onReleased: {
+
+                                                        }
+
+                                                        onClicked: (mouse) => {
+                                                            endpointReaderModel.setSelectedPartition(modelData)
+                                                            endpointWriterModel.setSelectedPartition(modelData)
+                                                        }
+                                                        onEntered: {
+                                                            writerRec.showTooltip = true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                                 ToolTip {
                                     id: writerTooltip
                                     parent: writerRec
@@ -307,27 +387,48 @@ Rectangle {
                                         height: 5
                                         width: 1
                                     }
+                                    Label {
+                                        text: "(No Partition)"
+                                        visible: partitions.length === 0
+                                        font.pixelSize: 12
+                                    }
                                     Flickable {
                                         width: listViewReader.width - 20
                                         contentWidth: rowContent.width
                                         height: 20
                                         clip: true
+                                        visible: partitions.length !== 0
 
                                         Row {
                                             id: rowContent
                                             spacing: 10
                                             Repeater {
-                                                model: ["PartitionA", "PartitionB", "Partition*", "SomethingOtherDIfferent"]
+                                                model: partitions
                                                 Rectangle {
+                                                    id: partitionRectangle
+                                                    property bool isMatching: false
                                                     z: 100
                                                     height: 20
                                                     radius: 5
-                                                    color: rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
-                                                    border.color: "black"
+                                                    color: isMatching ? "green" : rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
+                                                    border.color: isMatching ? "green" : "black"
                                                     border.width: 1
                                                     width: textItem.width + 20
 
-                                                    Text {
+
+
+                                                    Connections {
+                                                        target: endpointReaderModel
+                                                        function onMatchedPartitionsSignal(matchedPartitionNames) {
+                                                            if (matchedPartitionNames.indexOf(modelData) !== -1) {
+                                                                partitionRectangle.isMatching = true
+                                                            } else {
+                                                                partitionRectangle.isMatching = false
+                                                            }
+                                                        }
+                                                    }
+
+                                                    Label {
                                                         id: textItem
                                                         anchors.centerIn: parent
                                                         text: modelData
@@ -345,7 +446,8 @@ Rectangle {
                                                         }
 
                                                         onClicked: (mouse) => {
-                                                            console.log("clicked partition " + modelData)
+                                                            endpointReaderModel.setSelectedPartition(modelData)
+                                                            endpointWriterModel.setSelectedPartition(modelData)
                                                         }
                                                         onEntered: {
                                                             readerRec.showTooltip = true

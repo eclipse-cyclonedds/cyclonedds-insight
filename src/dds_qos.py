@@ -306,23 +306,21 @@ def partition_patmatch_p(pat, name):
         return ddsi_patmatch(pat, name)
 
 def partitions_match_default(x):
-    if qos.Policy.Partition not in x or len(x[qos.Policy.Partition].partitions) == 0:
+    if len(x) == 0:
         return True
-    for i in range(len(x[qos.Policy.Partition].partitions)):
-        if partition_patmatch_p(x[qos.Policy.Partition].partitions[i], ""):
+    for i in x:
+        if partition_patmatch_p(i, ""):
             return True
     return False
 
 def partitions_match_p(a, b):
-    if (qos.Policy.Partition not in a) or len(a[qos.Policy.Partition].partitions) == 0:
+    if len(a) == 0:
         return partitions_match_default(b)
-    elif (qos.Policy.Partition not in b) or len(b[qos.Policy.Partition].partitions) == 0:
+    elif len(b) == 0:
         return partitions_match_default(a)
     else:
-        for i in range(len(a[qos.Policy.Partition].partitions)):
-            for j in range(len(b[qos.Policy.Partition].partitions)):
-                if (partition_patmatch_p(a[qos.Policy.Partition].partitions[i], b[qos.Policy.Partition].partitions[j]) or 
-                        partition_patmatch_p(b[qos.Policy.Partition].partitions[j], a[qos.Policy.Partition].partitions[i])):
+        for i in a:
+            for j in b:
+                if (partition_patmatch_p(i, j) or partition_patmatch_p(j, i)):
                     return True
         return False
-
