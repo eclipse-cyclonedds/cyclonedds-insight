@@ -22,8 +22,6 @@ from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 from cyclonedds.core import SampleState, ViewState, InstanceState
 from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
-import xml.etree.ElementTree as ET
-import os
 
 from dds_qos import dds_qos_policy_id
 from utils import EntityType
@@ -211,30 +209,3 @@ class WorkerThread(QThread):
     def stop(self):
         logging.info(f"Request to stop worker thread for domain({str(self.domain_id)})")
         self.running = False
-
-
-def getConfiguredDomainIds():
-
-    cycloneUriContent = os.getenv("CYCLONEDDS_URI", "")
-    if cycloneUriContent.startswith("file://"):
-        cycloneUriContent = cycloneUriContent.replace("file://", "")
-
-    try:
-        if os.path.isabs(cycloneUriContent) or os.path.exists(cycloneUriContent):
-            tree = ET.parse(cycloneUriContent)
-            root = tree.getroot()
-        else:
-            root = ET.fromstring(cycloneUriContent)
-    except:
-        return []
-
-    domain_ids = set()
-    for domain in root.findall("./{*}Domain"):
-        try:
-            domain_id = int(domain.get("Id", 0)) 
-        except:
-            domain_id = 0
-
-        domain_ids.add(domain_id)
-
-    return sorted(domain_ids)
