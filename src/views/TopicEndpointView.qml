@@ -210,7 +210,7 @@ Rectangle {
                                     }
                                     Label {
                                         text: "(No Partition)"
-                                        visible: partitions.length === 0
+                                        visible: has_partitions === false
                                         font.pixelSize: 12
                                     }
                                     Flickable {
@@ -218,7 +218,7 @@ Rectangle {
                                         contentWidth: rowContent.width
                                         height: 20
                                         clip: true
-                                        visible: partitions.length !== 0
+                                        visible: has_partitions === true
 
                                         Row {
                                             id: rowContent
@@ -227,48 +227,34 @@ Rectangle {
                                                 model: partitions
                                                 Rectangle {
                                                     id: partitionRectangle
-                                                    property bool isMatching: false
                                                     z: 100
                                                     height: 20
                                                     radius: 5
-                                                    color: isMatching ? "green" : rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
-                                                    border.color: isMatching ? "green" : "black"
+                                                    color: partition_matched ? "#009600" : rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
+                                                    border.color: partition_matched ? "#009600" : "black"
                                                     border.width: 1
                                                     width: textItem.width + 20
-
-                                                    Connections {
-                                                        target: endpointWriterModel
-                                                        function onMatchedPartitionsSignal(matchedPartitionNames) {
-                                                            if (matchedPartitionNames.indexOf(modelData) !== -1) {
-                                                                partitionRectangle.isMatching = true
-                                                            } else {
-                                                                partitionRectangle.isMatching = false
-                                                            }
-                                                        }
-                                                    }
 
                                                     Label {
                                                         id: textItem
                                                         anchors.centerIn: parent
-                                                        text: modelData
+                                                        text: partition_name
                                                         font.pixelSize: 12
                                                     }
 
                                                     MouseArea {
                                                         id: partitionMouseArea
                                                         hoverEnabled: true
-                                                        
+                                                        cursorShape: Qt.PointingHandCursor                                  
                                                         anchors.fill: parent
-                                                        onPressed: {  
-
-                                                        }
-                                                        onReleased: {
-
-                                                        }
-
                                                         onClicked: (mouse) => {
-                                                            endpointReaderModel.setSelectedPartition(modelData)
-                                                            endpointWriterModel.setSelectedPartition(modelData)
+                                                            if (partition_matched) {
+                                                                endpointReaderModel.clearPartitionMatching()
+                                                                endpointWriterModel.clearPartitionMatching()
+                                                            } else {
+                                                                endpointReaderModel.setSelectedPartition(partition_name)
+                                                                endpointWriterModel.setSelectedPartition(partition_name)
+                                                            }
                                                         }
                                                         onEntered: {
                                                             writerRec.showTooltip = true
@@ -389,7 +375,7 @@ Rectangle {
                                     }
                                     Label {
                                         text: "(No Partition)"
-                                        visible: partitions.length === 0
+                                        visible: has_partitions === false
                                         font.pixelSize: 12
                                     }
                                     Flickable {
@@ -397,7 +383,7 @@ Rectangle {
                                         contentWidth: rowContent.width
                                         height: 20
                                         clip: true
-                                        visible: partitions.length !== 0
+                                        visible: has_partitions === true
 
                                         Row {
                                             id: rowContent
@@ -406,48 +392,35 @@ Rectangle {
                                                 model: partitions
                                                 Rectangle {
                                                     id: partitionRectangle
-                                                    property bool isMatching: false
+        
                                                     z: 100
                                                     height: 20
                                                     radius: 5
-                                                    color: isMatching ? "green" : rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
-                                                    border.color: isMatching ? "green" : "black"
+                                                    color: partition_matched ? "#009600" : rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
+                                                    border.color: partition_matched ? "#009600" : "black"
                                                     border.width: 1
                                                     width: textItem.width + 20
-
-
-
-                                                    Connections {
-                                                        target: endpointReaderModel
-                                                        function onMatchedPartitionsSignal(matchedPartitionNames) {
-                                                            if (matchedPartitionNames.indexOf(modelData) !== -1) {
-                                                                partitionRectangle.isMatching = true
-                                                            } else {
-                                                                partitionRectangle.isMatching = false
-                                                            }
-                                                        }
-                                                    }
 
                                                     Label {
                                                         id: textItem
                                                         anchors.centerIn: parent
-                                                        text: modelData
+                                                        text: partition_name
                                                         font.pixelSize: 12
                                                     }
 
                                                     MouseArea {
                                                         id: partitionMouseArea
                                                         hoverEnabled: true
-                                                        
+                                                        cursorShape: Qt.PointingHandCursor
                                                         anchors.fill: parent
-                                                        onPressed: {
-                                                        }
-                                                        onReleased: {
-                                                        }
-
                                                         onClicked: (mouse) => {
-                                                            endpointReaderModel.setSelectedPartition(modelData)
-                                                            endpointWriterModel.setSelectedPartition(modelData)
+                                                            if (partition_matched) {
+                                                                endpointReaderModel.clearPartitionMatching()
+                                                                endpointWriterModel.clearPartitionMatching()
+                                                            } else {
+                                                                endpointReaderModel.setSelectedPartition(partition_name)
+                                                                endpointWriterModel.setSelectedPartition(partition_name)
+                                                            }
                                                         }
                                                         onEntered: {
                                                             readerRec.showTooltip = true

@@ -147,7 +147,11 @@ class DdsListener(core.Listener):
         logging.warning("on_sample_rejected")
 
     def on_requested_incompatible_qos(self, reader, status):
-        logging.warning(f"on_requested_incompatible_qos: {dds_qos_policy_id(status.last_policy_id).name}")
+        # QoS mismatches are not worthy of a warning (they should not have been a QoS in DDS in the first place)
+        # Most likely a mismatch is intended, otherwise there is no reason to use partitions.
+        # We show matching partitions inside the gui to be able to verify them.
+        if dds_qos_policy_id(status.last_policy_id) != dds_qos_policy_id.DDS_PARTITION_QOS_POLICY_ID:
+            logging.warning(f"on_requested_incompatible_qos: {dds_qos_policy_id(status.last_policy_id).name}")
 
     def on_publication_matched(self, writer, status):
         logging.debug("on_publication_matched")
