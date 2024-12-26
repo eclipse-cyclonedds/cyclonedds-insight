@@ -107,8 +107,7 @@ class EndpointModel(QAbstractItemModel):
     EndpointQosMismatchText = Qt.UserRole + 12
     AddressesRole = Qt.UserRole + 13
     PartitionsRole  = Qt.UserRole + 14
-    MatchedPartitionsRole  = Qt.UserRole + 15
-    HasPartitionsRole = Qt.UserRole + 16
+    HasPartitionsRole = Qt.UserRole + 15
 
     topicHasQosMismatchSignal = Signal(bool)
     totalEndpointsSignal = Signal(int)
@@ -256,6 +255,7 @@ class EndpointModel(QAbstractItemModel):
     @Slot()
     def clearPartitionMatching(self):
         self.selectedPartition = None
+        self.selectedPartitionEndpKey = ""
         for endp_key in list(self.endpoints.keys()):
             self.partitions[endp_key].clearMatching()
 
