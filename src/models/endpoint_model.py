@@ -32,6 +32,7 @@ class PartitionModel(QAbstractItemModel):
 
     PartitionNameRole = Qt.UserRole + 1
     PartitionMatchedRole = Qt.UserRole + 2
+    PartitionSelectedRole = Qt.UserRole + 3
 
     def __init__(self, parent=None):
         super(PartitionModel, self).__init__(parent)
@@ -55,35 +56,38 @@ class PartitionModel(QAbstractItemModel):
 
         row = index.row()
         partitionName = list(self.partitions.keys())[row]
-        matched = self.partitions[partitionName]
+        matched, selected = self.partitions[partitionName]
 
         if role == self.PartitionNameRole:
             return partitionName
         elif role == self.PartitionMatchedRole:
             return matched
+        elif role == self.PartitionSelectedRole:
+            return selected
 
         return None
 
     def roleNames(self):
         return {
             self.PartitionNameRole: b'partition_name',
-            self.PartitionMatchedRole: b'partition_matched'
+            self.PartitionMatchedRole: b'partition_matched',
+            self.PartitionSelectedRole: b'partition_selected',
         }
 
     def clearMatching(self):
         for partitionName in self.partitions.keys():
-            self.partitions[partitionName] = False
-            self.dataChanged.emit(self.index(list(self.partitions.keys()).index(partitionName), 0), self.index(list(self.partitions.keys()).index(partitionName), 0), [self.PartitionMatchedRole])
+            self.partitions[partitionName] = (False, False)
+            index = list(self.partitions.keys()).index(partitionName)
+            self.dataChanged.emit(self.index(index, 0), self.index(index, 0), [self.PartitionMatchedRole, self.PartitionSelectedRole])
 
-    def updatePartition(self, partitionName: str, matched: bool):
+    def updatePartition(self, partitionName: str, matched: bool, selected: bool):
+        self.partitions[partitionName] = (matched, selected)
         if partitionName in self.partitions:
-            self.partitions[partitionName] = matched
             idx = list(self.partitions.keys()).index(partitionName)
             index = self.createIndex(idx, 0)
-            self.dataChanged.emit(index, index, [self.PartitionMatchedRole])
+            self.dataChanged.emit(index, index, [self.PartitionMatchedRole, self.PartitionSelectedRole])
             return
         else:
-            self.partitions[partitionName] = matched
             self.beginInsertRows(QModelIndex(), len(self.partitions) - 1, len(self.partitions) - 1)
             self.endInsertRows()
 
@@ -120,6 +124,7 @@ class EndpointModel(QAbstractItemModel):
         self.endpoints = {}
         self.partitions = {}
         self.selectedPartition = None
+        self.selectedPartitionEndpKey: str = ""
         self.domain_id = -1
         self.topic_name = ""
         self.currentRequestId = str(uuid.uuid4())
@@ -237,14 +242,16 @@ class EndpointModel(QAbstractItemModel):
             if qos.Policy.Partition in endp.qos:
                 for i in range(len(endp.qos[qos.Policy.Partition].partitions)):
                     pat = str(endp.qos[qos.Policy.Partition].partitions[i])
+                    selected = False
                     if pat == self.selectedPartition:
                         matched = True
+                        selected = True if endp_key == self.selectedPartitionEndpKey else False
                     else:
                         if self.entity_type == EntityType.READER:
                             matched = partitions_match_p([pat], [self.selectedPartition])
                         else:
                             matched = partitions_match_p([self.selectedPartition], [pat])
-                    self.partitions[endp_key].updatePartition(pat, matched)
+                    self.partitions[endp_key].updatePartition(pat, matched, selected)
 
     @Slot()
     def clearPartitionMatching(self):
@@ -252,10 +259,11 @@ class EndpointModel(QAbstractItemModel):
         for endp_key in list(self.endpoints.keys()):
             self.partitions[endp_key].clearMatching()
 
-    @Slot(str)
-    def setSelectedPartition(self, partitionName: str):
-        logging.debug(f"set selected partition to {partitionName}")
+    @Slot(str, str)
+    def setSelectedPartition(self, partitionName: str, currentEndpKey: int):
+        logging.debug(f"set selected partition to {partitionName}, current endp-key: {currentEndpKey}")
         self.selectedPartition = partitionName
+        self.selectedPartitionEndpKey = currentEndpKey
         self.updateMatchedPartitions()
 
     @Slot(int, str, int)
@@ -270,6 +278,7 @@ class EndpointModel(QAbstractItemModel):
         self.topic_name = topic_name
         self.endpoints = {}
         self.partitions = {}
+        self.selectedPartitionEndpKey = ""
         self.selectedPartition = None
         self.currentRequestId = str(uuid.uuid4())
 
@@ -311,7 +320,7 @@ class EndpointModel(QAbstractItemModel):
         if qos.Policy.Partition in endpointData.endpoint.qos:
             for i in range(len(endpointData.endpoint.qos[qos.Policy.Partition].partitions)):
                 pat = str(endpointData.endpoint.qos[qos.Policy.Partition].partitions[i])
-                self.partitions[str(endpointData.endpoint.key)].updatePartition(pat, False)
+                self.partitions[str(endpointData.endpoint.key)].updatePartition(pat, False, False)
         self.endInsertRows()
 
         self.totalEndpointsSignal.emit(len(self.endpoints))
