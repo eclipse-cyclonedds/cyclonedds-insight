@@ -231,8 +231,8 @@ Rectangle {
                                                     height: 20
                                                     radius: 5
                                                     color: partition_matched ? "#009600" : rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
-                                                    border.color: partition_matched ? "#009600" : "black"
-                                                    border.width: 1
+                                                    border.color: partition_selected ? "orange" : partition_matched ? "#009600" : "black"
+                                                    border.width: partition_selected ? 2 : 1
                                                     width: textItem.width + 20
 
                                                     Label {
@@ -248,12 +248,12 @@ Rectangle {
                                                         cursorShape: Qt.PointingHandCursor                                  
                                                         anchors.fill: parent
                                                         onClicked: (mouse) => {
-                                                            if (partition_matched) {
+                                                            if (partition_selected) {
                                                                 endpointReaderModel.clearPartitionMatching()
                                                                 endpointWriterModel.clearPartitionMatching()
                                                             } else {
-                                                                endpointReaderModel.setSelectedPartition(partition_name)
-                                                                endpointWriterModel.setSelectedPartition(partition_name)
+                                                                endpointReaderModel.setSelectedPartition(partition_name, "")
+                                                                endpointWriterModel.setSelectedPartition(partition_name, endpoint_key)
                                                             }
                                                         }
                                                         onEntered: {
@@ -397,8 +397,8 @@ Rectangle {
                                                     height: 20
                                                     radius: 5
                                                     color: partition_matched ? "#009600" : rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
-                                                    border.color: partition_matched ? "#009600" : "black"
-                                                    border.width: 1
+                                                    border.color: partition_selected ? "orange" : partition_matched ? "#009600" : "black"
+                                                    border.width: partition_selected ? 2 : 1
                                                     width: textItem.width + 20
 
                                                     Label {
@@ -414,12 +414,12 @@ Rectangle {
                                                         cursorShape: Qt.PointingHandCursor
                                                         anchors.fill: parent
                                                         onClicked: (mouse) => {
-                                                            if (partition_matched) {
+                                                            if (partition_selected) {
                                                                 endpointReaderModel.clearPartitionMatching()
                                                                 endpointWriterModel.clearPartitionMatching()
                                                             } else {
-                                                                endpointReaderModel.setSelectedPartition(partition_name)
-                                                                endpointWriterModel.setSelectedPartition(partition_name)
+                                                                endpointReaderModel.setSelectedPartition(partition_name, endpoint_key)
+                                                                endpointWriterModel.setSelectedPartition(partition_name, "")
                                                             }
                                                         }
                                                         onEntered: {
