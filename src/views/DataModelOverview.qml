@@ -62,13 +62,9 @@ Rectangle {
                 Button {
                     text: "Clear"
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    onClicked: {
-                        console.log("Clear clicked")
-                        datamodelRepoModel.clear()
-                    }
+                    onClicked: clearDialog.open()
                 }
             }
-
         }
 
         ListView {
@@ -112,23 +108,33 @@ Rectangle {
                     Menu {
                         id: contextMenu
                         MenuItem {
-                            text: "Subscribe ..."
+                            text: "Create Reader (Listener)"
                             onTriggered: {
-                                readerTesterDialogId.setType(name)
-                                readerTesterDialogId.setEntityType(3)
+                                readerTesterDialogId.setType(name, 3)
                                 readerTesterDialogId.open()
                             }
                         }
                         MenuItem {
-                            text: "Publish ..."
+                            text: "Create Writer (Tester)"
                             onTriggered: {
-                                readerTesterDialogId.setType(name)
-                                readerTesterDialogId.setEntityType(4)
+                                readerTesterDialogId.setType(name, 4)
                                 readerTesterDialogId.open()
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    MessageDialog {
+        id: clearDialog
+        title: qsTr("Alert");
+        text: qsTr("Sure to delete the datamodel?");
+        buttons: MessageDialog.Ok | MessageDialog.Cancel;
+        onButtonClicked: function (button, role) {
+            if (role === MessageDialog.AcceptRole || role === MessageDialog.YesRole) {
+                datamodelRepoModel.clear()
             }
         }
     }

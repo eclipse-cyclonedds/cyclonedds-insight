@@ -22,13 +22,8 @@ from typing import Optional, List
 
 import dds_data
 from dds_data import DataEndpoint
+from dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
 from utils import EntityType
-
-
-HOSTNAMES     = ["__Hostname",    "dds.sys_info.hostname"]
-PROCESS_NAMES = ["__ProcessName", "dds.sys_info.executable_filepath"]
-PIDS          = ["__Pid",         "dds.sys_info.process_id"]
-ADDRESSES     = ["__NetworkAddresses"]
 
 
 class EndpointModel(QAbstractItemModel):
@@ -63,6 +58,7 @@ class EndpointModel(QAbstractItemModel):
         self.currentRequestId = str(uuid.uuid4())
         self.entity_type = EntityType.UNDEFINED
         self.topic_has_mismatch = False
+        self.topicTypes = []
 
         self.dds_data = dds_data.DdsData()
         # self to dds_data
@@ -84,17 +80,6 @@ class EndpointModel(QAbstractItemModel):
 
     def parent(self, index):
         return QModelIndex()
-
-    def getProperty(self, p: Optional[DcpsParticipant], names: List[str]):
-        propName: str = "Unknown"
-        if p is None:
-            return propName
-        for item in names:
-            if p.qos[core.Policy.Property(item, "Unknown")] is not None:
-                propName = str(p.qos[core.Policy.Property(item, "Unknown")].value)
-                if propName != "Unknown":
-                    break
-        return propName
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid() or not (0 <= index.row() < self.rowCount()):
@@ -126,14 +111,14 @@ class EndpointModel(QAbstractItemModel):
         elif role == self.TypeIdRole:
             return str(endp.type_id)
         elif role == self.HostnameRole:
-            return self.getProperty(p, HOSTNAMES)
+            return getProperty(p, HOSTNAMES)
         elif role == self.ProcessIdRole:
-            return self.getProperty(p, PIDS)
+            return getProperty(p, PIDS)
         elif role == self.ProcessNameRole:
-            appname: str = self.getProperty(p, PROCESS_NAMES)
+            appname: str = getProperty(p, PROCESS_NAMES)
             return Path(appname.replace("\\", f"{os.path.sep}")).stem
         elif role == self.AddressesRole:
-            return self.getProperty(p, ADDRESSES)
+            return getProperty(p, ADDRESSES)
         elif role == self.EndpointHasQosMismatch:
             if len(self.endpoints[endp_key].mismatches.keys()):
                 return True
@@ -216,6 +201,7 @@ class EndpointModel(QAbstractItemModel):
 
         self.beginInsertRows(QModelIndex(), row, row)
         self.endpoints[str(endpointData.endpoint.key)] = endpointData
+        self.topicTypes.append(endpointData.endpoint.type_name)
         self.endInsertRows()
 
         self.totalEndpointsSignal.emit(len(self.endpoints))
@@ -231,6 +217,7 @@ class EndpointModel(QAbstractItemModel):
         if str(endpoint_key) in self.endpoints:
             row = list(self.endpoints.keys()).index(endpoint_key)
             self.beginRemoveRows(QModelIndex(), row, row)
+            self.topicTypes.remove(self.endpoints[endpoint_key].endpoint.type_name)
             del self.endpoints[endpoint_key]
             self.endRemoveRows()
             self.totalEndpointsSignal.emit(len(self.endpoints))
@@ -265,3 +252,7 @@ class EndpointModel(QAbstractItemModel):
         for idx, _ in enumerate(list(self.endpoints.keys())):
             index = self.createIndex(idx, 0)
             self.dataChanged.emit(index, index, [self.EndpointHasQosMismatch, self.EndpointQosMismatchText])
+
+    @Slot(result=list)
+    def getAllTopicTypes(self):
+        return list(set(self.topicTypes))

@@ -17,10 +17,10 @@ import logging
 import time
 import copy
 from queue import Queue
-from typing import Dict, List
+from typing import Dict, List, Optional
 import gc
 
-from dds_service import builtin_observer
+from dds_service import builtin_observer, getDataType
 from dds_qos import qos_match, dds_qos_policy_id
 from utils import singleton, EntityType
 
@@ -115,6 +115,16 @@ class DataTopic:
 
         return list(dict.fromkeys(mism_endp_keys))
 
+    def getEndpointWithTypeId(self, topicTypeName) -> Optional[DataEndpoint]:
+        for endpKey in self.reader_endpoints.keys():
+            if self.reader_endpoints[endpKey].endpoint.type_name == topicTypeName:
+                if self.reader_endpoints[endpKey].endpoint.type_id:
+                    return self.reader_endpoints[endpKey]
+        for endpKey in self.writer_endpoints.keys():
+            if self.writer_endpoints[endpKey].endpoint.type_name == topicTypeName:
+                if self.writer_endpoints[endpKey].endpoint.type_id:
+                    return self.writer_endpoints[endpKey]
+
 class DataDomain:
     def __init__(self, domain_id: int, queue) -> None:
         self.domain_id = domain_id
@@ -156,13 +166,19 @@ class DataDomain:
         if key in self.participants:
             del self.participants[key]
 
-    def hash_topic(self, topicName: str) -> bool:
+    def has_topic(self, topicName: str) -> bool:
         return topicName in self.topics
 
     def get_topic_name(self, endpointKey: str) -> bool:
         if endpointKey in self.endpointToTopic:
             return self.endpointToTopic[endpointKey]
         return ""
+
+    def getTopic(self, topicName: str) -> Optional[DataTopic]:
+        if self.has_topic(topicName):
+            return self.topics[topicName]
+        else:
+            return None
 
     def getEndpoints(self, topicName: str, entity_type: EntityType):
         if topicName in self.topics:
@@ -235,6 +251,8 @@ class DdsData(QObject):
     new_participant_signal = Signal(int, DcpsParticipant)
     removed_participant_signal = Signal(int, str)
 
+    response_data_type_signal = Signal(str, object)
+
     no_more_mismatch_in_topic_signal = Signal(int, str)
     publish_mismatch_signal = Signal(int, str, list)
 
@@ -299,7 +317,7 @@ class DdsData(QObject):
         # logging.debug(f"Add endpoint domain: {domain_id}, key: {str(endpoint.key)}, entity: {entity_type}")
 
         if domain_id in self.the_domains:
-            topic_already_known = self.the_domains[domain_id].hash_topic(str(endpoint.topic_name))
+            topic_already_known = self.the_domains[domain_id].has_topic(str(endpoint.topic_name))
             dataEndp = DataEndpoint(endpoint, entity_type)
             self.the_domains[domain_id].add_endpoint(dataEndp)
 
@@ -325,7 +343,7 @@ class DdsData(QObject):
 
             self.removed_endpoint_signal.emit(domain_id, str(endpoint.key))
 
-            if not self.the_domains[domain_id].hash_topic(topicName):
+            if not self.the_domains[domain_id].has_topic(topicName):
                 #logging.info(f"Removed last endpointon topic, topic gone {topicName}")
                 self.remove_topic_signal.emit(domain_id, topicName)
             else:
@@ -340,3 +358,22 @@ class DdsData(QObject):
             endDict = self.the_domains[domain_id].getEndpoints(topic_name, entity_type)
             for key in endDict.keys():
                 self.new_endpoint_signal.emit(requestId, domain_id, copy.deepcopy(endDict[key]))
+
+    @Slot(str, int, str, str)
+    def requestDataType(self, requestId, domainId, topicType, topicName):
+        logging.debug(f"requestDataType {requestId}, {domainId}, {topicType}, {topicName}")
+        requestedDataType = None
+        if domainId in self.the_domains:
+            topic = self.the_domains[domainId].getTopic(topicName)
+            if topic:
+                endp = topic.getEndpointWithTypeId(topicType)
+                if endp:
+                    requestedDataType = getDataType(domainId, endp.endpoint)
+                else:
+                    logging.warning("endpoint not found")
+            else:
+                logging.warning("topic not found")
+        else:
+            logging.warning("domain not found")
+
+        self.response_data_type_signal.emit(requestId, requestedDataType)

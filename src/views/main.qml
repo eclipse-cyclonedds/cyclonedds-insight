@@ -30,6 +30,34 @@ ApplicationWindow {
 
     header: HeaderToolBar {}
 
+    menuBar: MenuBar {
+        visible: Qt.platform.os === "osx"
+        Menu {
+            title: "Help"
+
+            MenuItem {
+                text: "About"
+                onTriggered: aboutWindow.visible = true
+            }
+            MenuItem {
+                text: "Settings"
+                onTriggered: layout.currentIndex = 0
+            }
+            MenuItem {
+                text: "Check for Updates"
+                onTriggered: checkForUpdatesWindow.visible = true
+            }
+        }
+    }
+
+    AboutWindow {
+        id: aboutWindow
+    }
+
+    CheckForUpdates {
+        id: checkForUpdatesWindow
+    }
+
     SystemPalette {
         id: mySysPalette
         onDarkChanged: {
@@ -88,10 +116,8 @@ ApplicationWindow {
         }
     }
 
-
     LoadingView {
         id: loadingViewId
         visible: false
     }
-
 }

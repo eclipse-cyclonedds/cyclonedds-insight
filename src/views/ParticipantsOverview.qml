@@ -20,24 +20,21 @@ import org.eclipse.cyclonedds.insight
 
 TreeView {
     id: treeView
-    visible: viewSelector.currentIndex === 0
-    Layout.fillWidth: true
-    Layout.fillHeight: true
-    Layout.leftMargin: 10
+
     clip: true
     ScrollBar.vertical: ScrollBar {}
     selectionModel: ItemSelectionModel {
-        id: treeSelection
+        id: treeSelectionParticipant
         onCurrentIndexChanged: {
             console.log("Selection changed to:", currentIndex);
-            if (treeModel.getIsRowDomain(currentIndex)) {
-                stackView.clear()
+            if (participantModel.getIsTopic(currentIndex)) {
+                showTopicEndpointView(participantModel.getDomain(currentIndex), participantModel.getName(currentIndex))
             } else {
-                showTopicEndpointView(treeModel.getDomain(currentIndex), treeModel.getName(currentIndex))
+                stackView.clear()
             }
         }
     }
-    model: treeModel
+    model: participantModel
 
     delegate: Item {
         implicitWidth: domainSplit.width
@@ -101,24 +98,11 @@ TreeView {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - padding - x - 10
             clip: true
-            text: model.is_domain ? "Domain " + model.display : model.display 
-        }
-
-        WarningTriangle {
-            id: warning_triangle
-            visible: model.has_qos_mismatch
-            width: 15
-            height: 15
-            anchors.verticalCenter: label.verticalCenter
-            anchors.right: model.is_domain ? label.right : label.left
-            anchors.margins: 5
-            enableTooltip: true
-            tooltipText: "Qos mismatch detected."
+            text: model.is_domain ? "Domain " + model.display : model.is_reader ? "Reader: " + model.display : model.is_writer ? "Writer: " + model.display : model.is_participant ? "Participant: " + model.display : model.display 
         }
     }
 
     function getCurrentIndex() {
-        return treeSelection.currentIndex
+        return treeSelectionParticipant.currentIndex
     }
 }
-

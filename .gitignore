@@ -2,6 +2,7 @@
 cyclonedds/__library__.py
 src/qrc_file.py
 deps/*
+build_info.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

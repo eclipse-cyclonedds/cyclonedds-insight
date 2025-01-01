@@ -42,15 +42,32 @@ ToolBar {
             Layout.fillWidth: true
         }
         ToolButton {
-            text: "Home"
-            onClicked: {
-                layout.currentIndex = 1
-            }
-        }
-        ToolButton {
-            text: "Settings"
-            onClicked: {
-                layout.currentIndex = 0
+            id: menuButton
+            text: "\u2630"
+            onClicked: menu.open()
+            flat: true
+            font.pixelSize: 15
+
+            Menu {
+                id: menu
+                y: menuButton.height
+
+                MenuItem {
+                    text: "Home"
+                    onClicked: layout.currentIndex = 1
+                }
+                MenuItem {
+                    text: "Settings"
+                    onClicked: layout.currentIndex = 0
+                }
+                MenuItem {
+                    text: "Check for Updates"
+                    onTriggered: checkForUpdatesWindow.visible = true
+                }
+                MenuItem {
+                    text: "About"
+                    onClicked: aboutWindow.visible = true
+                }
             }
         }
     }

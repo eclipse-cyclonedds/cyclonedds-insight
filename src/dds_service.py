@@ -17,7 +17,7 @@ from queue import Queue
 from PySide6.QtCore import QObject, Signal, Slot, QThread
 from dataclasses import dataclass
 import time
-from cyclonedds import core, domain, builtin
+from cyclonedds import core, domain, builtin, dynamic
 from cyclonedds.util import duration
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 from cyclonedds.core import SampleState, ViewState, InstanceState
@@ -26,9 +26,20 @@ from cyclonedds.sub import Subscriber, DataReader
 from cyclonedds.pub import Publisher, DataWriter
 from threading import Lock
 
+from dds_qos import dds_qos_policy_id
 from utils import EntityType
 
 IGNORE_TOPICS = ["DCPSParticipant", "DCPSPublication", "DCPSSubscription"]
+
+
+class DomainParticipantFactory:
+    _participants = {}
+
+    @classmethod
+    def get_participant(cls, domain_id):
+        if domain_id not in cls._participants:
+            cls._participants[domain_id] = domain.DomainParticipant(domain_id)
+        return cls._participants[domain_id]
 
 
 class BuiltInDataItem():
@@ -40,10 +51,21 @@ class BuiltInDataItem():
         self.remove_endpoints = []
 
 
+def getDataType(domainId, endp):
+    try:
+        requestedDataType, _ = dynamic.get_types_for_typeid(
+            DomainParticipantFactory.get_participant(domainId), endp.type_id, duration(seconds=3))
+        return requestedDataType
+    except Exception as e:
+        logging.error(str(e))
+
+    return None
+
+
 def builtin_observer(domain_id: int, queue: Queue, running):
     logging.info(f"builtin_observer({domain_id}) ...")
 
-    domain_participant = domain.DomainParticipant(domain_id)
+    domain_participant = DomainParticipantFactory.get_participant(domain_id)
     waitset = core.WaitSet(domain_participant)
 
     rdp = builtin.BuiltinDataReader(domain_participant, builtin.BuiltinTopicDcpsParticipant)
@@ -98,15 +120,60 @@ def builtin_observer(domain_id: int, queue: Queue, running):
     logging.info(f"builtin_observer({domain_id}) ... DONE")
 
 
+class DdsListener(core.Listener):
+
+    def on_inconsistent_topic(self, reader, status):
+        logging.warning("on_inconsistent_topic")
+        
+    def on_liveliness_lost(self, writer, status):
+        logging.debug("on_liveliness_lost")
+
+    def on_liveliness_changed(self, reader, status):
+        logging.debug("on_liveliness_changed")
+
+    def on_offered_deadline_missed(self, writer, status):
+        logging.warning("on_offered_deadline_missed")
+
+    def on_offered_incompatible_qos(self, writer, status):
+        logging.warning("on_offered_incompatible_qos")
+
+    def on_data_on_readers(self, subscriber):
+        logging.debug("on_data_on_readers")
+
+    def on_sample_lost(self, writer, status):
+        logging.warning("on_sample_lost")
+
+    def on_sample_rejected(self, reader, status):
+        logging.warning("on_sample_rejected")
+
+    def on_requested_deadline_missed(self, reader,status):
+        logging.warning("on_sample_rejected")
+
+    def on_requested_incompatible_qos(self, reader, status):
+        logging.warning(f"on_requested_incompatible_qos: {dds_qos_policy_id(status.last_policy_id).name}")
+
+    def on_publication_matched(self, writer, status):
+        logging.debug("on_publication_matched")
+
+    def on_subscription_matched(self, reader, status):
+        logging.debug("on_subscription_matched")
+
+
 class WorkerThread(QThread):
 
     onData = Signal(str)
     
-    def __init__(self, domain_id, parent=None):
+    def __init__(self, id, domain_id, topic_name, topic_type, qos, entityType, parent=None):
         super().__init__(parent)
+        self.listener = DdsListener()
         self.domain_id = domain_id
         self.domain_participant = None
+        self.topic_name = topic_name
+        self.topic_type = topic_type
+        self.qos = qos
+        self.id = id
         self.running = False
+        self.entityType = entityType
         self.readerData = []
         self.writerData = {}
         self.mutex = Lock()
@@ -149,9 +216,51 @@ class WorkerThread(QThread):
         else:
             logging.warn(f"topic not known {data}")
 
-    @Slot()
+    
     def deleteAllWriters(self):
         self.writerData.clear()
+
+    # @Slot(str, str, object)
+    # def receive_data(self, topic_name, topic_type, qos):
+    #     logging.info("Add reader")
+    #     try:
+    #         topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
+    #         subscriber = Subscriber(self.domain_participant, qos=qos)
+    #         reader = DataReader(subscriber, topic, qos=qos, listener=self.listener)
+    #         readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
+    #         self.waitset.attach(readCondition)
+    #         self.readerData.append((topic,subscriber, reader, readCondition))
+    #     except Exception as e:
+    #         logging.error(f"Error creating reader {topic_name}: {e}")
+
+    @Slot()
+    def receive_data(self, id, topic_name, topic_type, qos, entity_type: int):
+        while not self.running:
+            time.sleep(0.1)
+        with self.mutex:
+            print(id, topic_name, topic_type, qos, entity_type)
+            logging.info(f"Add endpoint {id} ...")
+            try:
+                topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
+
+                if EntityType(entity_type) == EntityType.READER:
+                    subscriber = Subscriber(self.domain_participant)
+                    reader = DataReader(subscriber, topic)
+                    readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
+                    self.waitset.attach(readCondition)
+                    self.readerData.append((id, topic, subscriber, reader, readCondition))
+
+                elif EntityType(entity_type) == EntityType.WRITER:
+                    publisher = Publisher(self.domain_participant)
+                    writer = DataWriter(publisher, topic)
+                    self.writerData[id] = (publisher, writer, topic_name)
+
+                logging.info("Add endpoint ... DONE")
+                return True
+
+            except Exception as e:
+                logging.error(f"Error creating reader {topic_name}: {e}")
+        return False
 
     @Slot()
     def deleteAllReaders(self):
@@ -164,9 +273,12 @@ class WorkerThread(QThread):
         with self.mutex:
             logging.info(f"Worker thread for domain({str(self.domain_id)}) ...")    
             self.running = True
-            self.domain_participant = domain.DomainParticipant(self.domain_id)
+            self.domain_participant = DomainParticipantFactory.get_participant(self.domain_id)
             self.waitset = core.WaitSet(self.domain_participant)
             logging.info(f"Worker thread is set up domain({str(self.domain_id)})")
+
+  
+        self.receive_data(self.id, self.topic_name, self.topic_type, self.qos, self.entityType)
 
         while self.running:
             amount_triggered = 0

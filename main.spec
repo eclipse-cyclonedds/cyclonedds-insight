@@ -11,8 +11,17 @@
 """
 
 import os
+import sys
 import platform
+import importlib.util
 
+# Load version
+version_path = 'src/version.py'
+spec = importlib.util.spec_from_file_location("version", version_path)
+version = importlib.util.module_from_spec(spec)
+sys.modules["version"] = version
+spec.loader.exec_module(version)
+print("CycloneDDS Insight Version:", version.CYCLONEDDS_INSIGHT_VERSION)
 
 # CycloneDDS
 cyclonedds_home = os.getenv('CYCLONEDDS_HOME')
@@ -35,8 +44,11 @@ bins.append((f"{cyclonedds_python_home}/cyclonedds/_idlpy.*", '.'))
 if platform.system() == 'Windows':
     bins.append((f"{cyclonedds_home}/bin/*.dll", '.'))
     bins.append((f"{cyclonedds_home}/bin/idlc.exe", '.'))
-elif platform.system() == 'Darwin' or platform.system() == 'Linux':
+elif platform.system() == 'Darwin':
     bins.append((f"{cyclonedds_home}/bin/idlc", '.'))
+elif platform.system() == 'Linux':
+    bins.append((f"{cyclonedds_home}/bin/idlc", '.'))
+    bins.append((f"{cyclonedds_home}/lib/*.so*", '.'))
 
 a = Analysis(
     ['src/main.py'],
@@ -84,5 +96,5 @@ app = BUNDLE(coll,
     name='CycloneDDS Insight.app',
     icon='./res/images/icon.icns',
     bundle_identifier=None,
-    version='0.0.0'
+    version=str(version.CYCLONEDDS_INSIGHT_VERSION)
 )

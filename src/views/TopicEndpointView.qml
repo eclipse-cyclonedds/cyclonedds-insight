@@ -93,6 +93,29 @@ Rectangle {
                     Layout.fillWidth: true
                 }
 
+                Button {
+                    text: "Create Reader (Listener)"
+                    onClicked: {
+                        var writerTypes = endpointWriterModel.getAllTopicTypes()
+                        var readerTypes = endpointReaderModel.getAllTopicTypes()
+                        var combinedArray = [];
+
+                        function addModelToCombinedArray(model) {
+                            var i = 0;
+                            while (i < model.length) {
+                                if (combinedArray.indexOf(model[i]) === -1) {
+                                    combinedArray.push(model[i]);
+                                }
+                                i++;
+                            }
+                        }
+                        addModelToCombinedArray(writerTypes);
+                        addModelToCombinedArray(readerTypes);
+                        readerTesterDialogId.setTypes(domainId, topicName, combinedArray, 3);
+                        readerTesterDialogId.open();
+                    }
+                }
+
                 WarningTriangle {
                     id: warning_triangle
                     Layout.preferredHeight: 30
@@ -160,6 +183,16 @@ Rectangle {
                                     id: mouseAreaEndpointWriter
                                     anchors.fill: parent
                                     hoverEnabled: true
+                                    onClicked: (mouse) => {
+                                        if (writerEndpDetailWindow.visible) {
+                                            writerEndpDetailWindow.raise()
+                                        } else {
+                                            var globalPosition = mouseAreaEndpointWriter.mapToGlobal(mouse.x, mouse.y)
+                                            writerEndpDetailWindow.x = globalPosition.x - writerEndpDetailWindow.width / 2
+                                            writerEndpDetailWindow.y = globalPosition.y
+                                            writerEndpDetailWindow.visible = true
+                                        }
+                                    }
                                     onEntered: {
                                         writerRec.showTooltip = true
                                     }
@@ -181,6 +214,11 @@ Rectangle {
                                         border.width: 1
                                         color: rootWindow.isDarkMode ? Constants.darkCardBackgroundColor : Constants.lightCardBackgroundColor
                                     }
+                                }
+                                EndpointDetailWindow {
+                                    id: writerEndpDetailWindow
+                                    title: "Writer " + endpoint_key
+                                    endpointText: writerTooltip.text
                                 }
                             }
                         }
@@ -246,6 +284,16 @@ Rectangle {
                                     id: mouseAreaEndpointReader
                                     anchors.fill: parent
                                     hoverEnabled: true
+                                    onClicked: (mouse) => {
+                                        if (readerEndpDetailWindow.visible) {
+                                            readerEndpDetailWindow.raise()
+                                        } else {
+                                            var globalPosition = mouseAreaEndpointReader.mapToGlobal(mouse.x, mouse.y)
+                                            readerEndpDetailWindow.x = globalPosition.x - readerEndpDetailWindow.width / 2
+                                            readerEndpDetailWindow.y = globalPosition.y
+                                            readerEndpDetailWindow.visible = true
+                                        }
+                                    }
                                     onEntered: {
                                         readerRec.showTooltip = true
                                     }
@@ -267,6 +315,11 @@ Rectangle {
                                         border.width: 1
                                         color: rootWindow.isDarkMode ? Constants.darkCardBackgroundColor : Constants.lightCardBackgroundColor
                                     }
+                                }
+                                EndpointDetailWindow {
+                                    id: readerEndpDetailWindow
+                                    title: "Reader " + endpoint_key
+                                    endpointText: readerTooltip.text
                                 }
                             }
                         }
