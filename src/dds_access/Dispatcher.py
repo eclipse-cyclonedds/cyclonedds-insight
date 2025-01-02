@@ -12,38 +12,20 @@
 
 import logging
 import datetime
-from enum import Enum
-from queue import Queue
-from PySide6.QtCore import QObject, Signal, Slot, QThread
-from dataclasses import dataclass
-import time
-from cyclonedds import core, domain, builtin, dynamic
+from PySide6.QtCore import Signal, Slot, QThread
+from cyclonedds import core
 from cyclonedds.util import duration
-from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 from cyclonedds.core import SampleState, ViewState, InstanceState
 from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
 from cyclonedds.pub import Publisher, DataWriter
 from dds_access.DdsListener import DdsListener
 from threading import Lock
-
-
 from dds_access.DomainParticipantFactory import DomainParticipantFactory
 from utils import EntityType
 
 
-def getDataType(domainId, endp):
-    with DomainParticipantFactory.get_participant(domainId) as participant:
-        try:
-            requestedDataType, _ = dynamic.get_types_for_typeid(participant, endp.type_id, duration(seconds=3))
-            return requestedDataType
-        except Exception as e:
-            logging.error(str(e))
-
-    return None
-
-
-class WorkerThread(QThread):
+class DispatcherThread(QThread):
 
     onData = Signal(str)
     
@@ -91,34 +73,29 @@ class WorkerThread(QThread):
 
     @Slot()
     def addEndpoint(self, id: str, topic_name: str, topic_type, qos, entity_type: EntityType):
-        while not self.running:
-            time.sleep(0.1)
-        with self.mutex:
-            print(id, topic_name, topic_type, qos, entity_type)
-            logging.info(f"Add endpoint {id} ...")
-            try:
-                topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
+        logging.info(f"Add endpoint {id} ...")
+        print(id, topic_name, topic_type, qos, entity_type)
+        try:
+            topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
 
-                if entity_type == EntityType.READER:
-                    subscriber = Subscriber(self.domain_participant, qos=qos)
-                    reader = DataReader(subscriber, topic, qos=qos)
-                    readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
-                    self.guardCondition.set(True)
-                    self.waitset.attach(readCondition)
-                    self.guardCondition.set(False)
-                    self.readerData.append((id, topic, subscriber, reader, readCondition))
+            if entity_type == EntityType.READER:
+                subscriber = Subscriber(self.domain_participant, qos=qos)
+                reader = DataReader(subscriber, topic, qos=qos)
+                readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
+                self.guardCondition.set(True)
+                self.waitset.attach(readCondition)
+                self.guardCondition.set(False)
+                self.readerData.append((id, topic, subscriber, reader, readCondition))
 
-                elif entity_type == EntityType.WRITER:
-                    publisher = Publisher(self.domain_participant, qos=qos)
-                    writer = DataWriter(publisher, topic, qos=qos)
-                    self.writerData[id] = (publisher, writer, topic_name)
+            elif entity_type == EntityType.WRITER:
+                publisher = Publisher(self.domain_participant, qos=qos)
+                writer = DataWriter(publisher, topic, qos=qos)
+                self.writerData[id] = (publisher, writer, topic_name)
 
-                logging.info("Add endpoint ... DONE")
-                return True
+            logging.info("Add endpoint ... DONE")
 
-            except Exception as e:
-                logging.error(f"Error creating endpoint {topic_name}: {e}")
-        return False
+        except Exception as e:
+            logging.error(f"Error creating endpoint {topic_name}: {e}")
 
     def run(self):
         with DomainParticipantFactory.get_participant(self.domain_id) as domain_participant:

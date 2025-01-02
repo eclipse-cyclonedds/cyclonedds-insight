@@ -23,7 +23,7 @@ import subprocess
 import glob
 from dataclasses import dataclass
 import typing
-from dds_access.dds_service import WorkerThread
+from dds_access.Dispatcher import DispatcherThread
 from cyclonedds.core import Qos, Policy
 from cyclonedds.util import duration
 import types

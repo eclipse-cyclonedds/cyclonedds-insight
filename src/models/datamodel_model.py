@@ -13,12 +13,9 @@
 from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, QByteArray
 from PySide6.QtCore import QObject, Signal, Slot
 import logging
-import os
-import sys
 import typing
 import uuid
-
-from dds_access.dds_service import WorkerThread
+from dds_access.Dispatcher import DispatcherThread
 from dds_access.dds_data import DdsData
 from cyclonedds.core import Qos, Policy
 from cyclonedds.util import duration
@@ -281,7 +278,7 @@ class DatamodelModel(QAbstractListModel):
         if domainId in self.threads:
             self.threads[domainId].addEndpoint(id, topicName, dataType, qos, entityType)
         else:
-            self.threads[domainId] = WorkerThread(id, domainId, topicName, dataType, qos, entityType)
+            self.threads[domainId] = DispatcherThread(id, domainId, topicName, dataType, qos, entityType)
             self.threads[domainId].onData.connect(self.onData, Qt.ConnectionType.QueuedConnection)
             self.threads[domainId].start()
 

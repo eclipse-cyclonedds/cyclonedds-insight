@@ -16,10 +16,9 @@ import sys
 import importlib
 from pathlib import Path
 from PySide6.QtCore import Slot, QDir
-from PySide6.QtCore import QThread, Signal, QModelIndex, QFile, QProcess, QStandardPaths
+from PySide6.QtCore import QThread, Signal, QStandardPaths
 from PySide6.QtCore import QObject
 import inspect
-import glob
 from utils import delete_folder
 from dds_access.Idlc import IdlcWorkerThread
 from dataclasses import dataclass
