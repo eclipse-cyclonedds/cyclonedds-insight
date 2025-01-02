@@ -20,8 +20,9 @@ from queue import Queue
 from typing import Dict, List, Optional
 import gc
 
-from dds_service import builtin_observer, getDataType
-from dds_qos import qos_match, dds_qos_policy_id
+from dds_access.dds_service import getDataType
+from dds_access.BuiltInObserver import builtin_observer
+from dds_access.dds_qos import qos_match, dds_qos_policy_id
 from utils import singleton, EntityType
 
 

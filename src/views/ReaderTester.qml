@@ -750,7 +750,7 @@ Popup {
         anchors.margins: 10
 
         Button {
-            text: readerTesterDiaId.entityType === 3 ? qsTr("Create Reader") : qsTr("Create Writer")
+            text: readerTesterDiaId.entityType === 3 ? qsTr("Create Reader (Listener)") : qsTr("Create Writer (Tester)")
             onClicked: {
                 var partitions = [];
                 for (var i = 0; i < partitionModel.count; i++) {

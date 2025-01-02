@@ -94,7 +94,7 @@ Rectangle {
                 }
 
                 Button {
-                    text: "Create Reader (Listener)"
+                    text: "Create Reader"
                     onClicked: {
                         var writerTypes = endpointWriterModel.getAllTopicTypes()
                         var readerTypes = endpointReaderModel.getAllTopicTypes()
@@ -112,6 +112,29 @@ Rectangle {
                         addModelToCombinedArray(writerTypes);
                         addModelToCombinedArray(readerTypes);
                         readerTesterDialogId.setTypes(domainId, topicName, combinedArray, 3);
+                        readerTesterDialogId.open();
+                    }
+                }
+
+                Button {
+                    text: "Create Writer"
+                    onClicked: {
+                        var writerTypes = endpointWriterModel.getAllTopicTypes()
+                        var readerTypes = endpointReaderModel.getAllTopicTypes()
+                        var combinedArray = [];
+
+                        function addModelToCombinedArray(model) {
+                            var i = 0;
+                            while (i < model.length) {
+                                if (combinedArray.indexOf(model[i]) === -1) {
+                                    combinedArray.push(model[i]);
+                                }
+                                i++;
+                            }
+                        }
+                        addModelToCombinedArray(writerTypes);
+                        addModelToCombinedArray(readerTypes);
+                        readerTesterDialogId.setTypes(domainId, topicName, combinedArray, 4);
                         readerTesterDialogId.open();
                     }
                 }

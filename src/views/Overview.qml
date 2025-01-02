@@ -68,11 +68,11 @@ SplitView {
                     width: implicitWidth + 20
                 }
                 TabButton {
-                    text: qsTr("Listener")
+                    text: qsTr("Tester")
                     width: implicitWidth + 20
                 }
                 TabButton {
-                    text: qsTr("Tester")
+                    text: qsTr("Listener")
                     width: implicitWidth + 20
                 }
             }
@@ -95,14 +95,14 @@ SplitView {
                     }
                 }
                 Item {
-                    id: listenerTab
-
-                    ListenerView {}
-                }
-                Item {
                     id: testerTab
 
                     TesterView {}
+                }
+                Item {
+                    id: listenerTab
+
+                    ListenerView {}
                 }
             }
         }

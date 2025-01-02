@@ -40,8 +40,8 @@ from PySide6.QtCore import qInstallMessageHandler, QUrl, QThread, qVersion
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtQuickControls2 import QQuickStyle
 import logging
-import dds_data
-from dds_utils import getConfiguredDomainIds
+from dds_access import dds_data
+from dds_access.dds_utils import getConfiguredDomainIds
 from models.overview_model import TreeModel, TreeNode
 from models.endpoint_model import EndpointModel
 from models.datamodel_model import DatamodelModel

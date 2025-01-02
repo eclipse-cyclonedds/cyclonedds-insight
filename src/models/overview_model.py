@@ -13,7 +13,7 @@
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt
 from PySide6.QtCore import Signal, Slot
 import logging
-import dds_data
+from dds_access import dds_data
 
 
 class TreeNode:
