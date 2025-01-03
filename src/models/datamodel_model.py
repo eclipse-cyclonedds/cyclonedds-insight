@@ -271,8 +271,6 @@ class DatamodelModel(QAbstractListModel):
     def createEndpoint(self, domainId: int, topicName: str, dataType, qos, entityType: EntityType, topic_type):
         logging.debug(f"add endpoint with qos: {str(qos)}")
 
-        print("----------->>>>>>>><", domainId, topicName, dataType, qos, entityType, topic_type)
-
         id = "m" + str(uuid.uuid4()).replace("-", "_")
 
         if domainId in self.threads:

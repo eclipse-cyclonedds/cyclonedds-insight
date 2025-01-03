@@ -242,28 +242,41 @@ class DataTreeModel(QAbstractItemModel):
     def getDotPath(self, item):
         dotName = item.itemName
         parent = item.parentItem
+        count = 0
+
+        def findArrayPosition(itemX, count):
+            path = ""
+            countScope = 0
+            while itemX is not None and itemX.parentItem is not None:
+                if itemX.parentItem.role == self.IsArrayRole:
+                    countScope += 1
+                    if count == countScope:
+                        pos = itemX.parentItem.childItems.index(itemX)
+                        path = f"[{pos}]" + path
+                itemX = itemX.parentItem
+            return path
+
         while parent is not None:
             if parent.parentItem is not None:
-                if parent.role == self.IsArrayElementRole:
-                    pass
-                elif parent.role == self.IsArrayRole:
-                    def findArrayPosition(item):
-                        if item.parentItem is None:
-                            return ""
-                        if item.parentItem.role == self.IsArrayRole:
-                            pos = item.parentItem.childItems.index(item)
-                            return f"[{pos}]"
-                        return findArrayPosition(item.parentItem)
-                    array_position = findArrayPosition(item)
+                if parent.role == self.IsArrayRole:
+                    count += 1
+                    array_position = findArrayPosition(item, count)
                     dotName = parent.itemName + array_position + "." + dotName
+                elif parent.role == self.IsArrayElementRole:
+                    pass
                 else:
                     dotName = parent.itemName + "." + dotName
-                parent = parent.parentItem
             else:
                 break
 
+            parent = parent.parentItem
+
+        print("dotName", dotName)
+
+        # Split the final dotName into attributes and remove empty parts
         attrs = re.split(r'\.|\[|\]', dotName)
-        attrs = [attr for attr in attrs if attr]
+        attrs = [attr for attr in attrs if attr] # remove emtpy parts
+        #attrs = attrs[1:] # remove root
 
         return attrs, parent
 
@@ -276,7 +289,7 @@ class DataTreeModel(QAbstractItemModel):
 
             self.beginRemoveRows(self.index(parentX.row(), 0), item.row(), item.row())
 
-            attrs, parent = self.getDotPath(item)
+            attrs, parent = self.getDotPath(item)            
             obj = parent.dataType
             for attr in attrs[:-1]:
                 if attr.isdigit():
