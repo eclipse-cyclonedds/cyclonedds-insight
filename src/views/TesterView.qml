@@ -218,7 +218,7 @@ Rectangle {
                         validator: DoubleValidator {}
                         onTextChanged: {
                             if (dataTreeModel) {
-                                if (model.is_int) {
+                                if (model.is_float) {
                                     dataTreeModel.setData(treeView.index(row, column), parseFloat(inputFieldFloat.text))
                                 }
                             }

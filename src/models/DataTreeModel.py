@@ -173,8 +173,6 @@ class DataTreeModel(QAbstractItemModel):
                     item.itemValue = float(value)
                 except:
                     item.itemValue = 0.0
-                if item.itemValue != item.itemValue:
-                    item.itemValue = None
             elif item.role == self.IsIntRole:
                 try:
                     item.itemValue = int(value)
@@ -197,7 +195,10 @@ class DataTreeModel(QAbstractItemModel):
                     obj = getattr(obj, attr)
 
             print("set data", obj, attrs[-1], item.itemValue, attrs)
-            setattr(obj, attrs[-1], item.itemValue)
+            if isinstance(obj, list):
+                obj[int(attrs[-1])] = item.itemValue
+            else:
+                setattr(obj, attrs[-1], item.itemValue)
 
     @Slot()
     def printTree(self):
@@ -218,15 +219,22 @@ class DataTreeModel(QAbstractItemModel):
             item.appendChild(node)
 
             seqenceObj = copy.deepcopy(node.parentItem.dataType)
+            print("the cild items:", node.childItems)
             attrs, parent = self.getDotPath(node.childItems[0])
-            print("attrs", attrs, seqenceObj)
+            print("attrs DDDDDDDDDDDDDD", attrs, seqenceObj)
+            if attrs[-1].isdigit():
+                attrs.append(None)
             obj = parent.dataType
             for attr in attrs[:-1]:
+                print("cur attr", attr)
                 if attr.isdigit():
                     if len(obj) <= int(attr):
+                        print("append", attr)
                         obj.append(seqenceObj)
+                    print("after append", attr)
                     obj = obj[int(attr)]
                 else:
+                    print("do here", attr)
                     obj = getattr(obj, attr)
 
             self.endInsertRows()

@@ -295,8 +295,15 @@ class DataModelHandler(QObject):
             initializedObj = module(*initList)
             print("thing----->>>>", initializedObj)
         else:
-            logging.warning(f"Unknown type: {topicType}")
-            initializedObj = None
+            if self.isInt(topicType):
+                return 0
+            elif self.isFloat(topicType):
+                return 0.0
+            elif self.isStr(topicType):
+                return ""
+            else:
+                logging.warning(f"Unknown type: {topicType}")
+                initializedObj = None
 
         return initializedObj
 
@@ -544,7 +551,7 @@ class DataWriterModel(QObject):
         return str(theType).startswith("typing.Annotated[float")
     
     def isStr(self, theType):
-        return theType == str or str(theType).startswith("typing.Annotated[str")
+        return theType == str or str(theType).startswith("typing.Annotated[str") or theType == "str"
     
     def isSequence(self, theType):
         return str(theType).startswith("typing.Annotated[typing.Sequence")
