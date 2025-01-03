@@ -23,6 +23,7 @@ from utils import delete_folder
 from dds_access.Idlc import IdlcWorkerThread
 from dataclasses import dataclass
 import typing
+from models.DataTreeModel import DataTreeModel, DataTreeNode
 
 
 @dataclass
@@ -39,7 +40,7 @@ class DataModelHandler(QObject):
     endInsertModuleSignal: Signal = Signal()
 
     def __init__(self, parent=typing.Optional[QObject]):
-        super().__init__(parent)
+        super().__init__()
 
         self.idlcWorker = None
         self.idlcWorker = None
@@ -264,7 +265,49 @@ class DataModelHandler(QObject):
 
         return code
 
+    def getInitializedDataObj(self, topicType):
+        """Returns an default initialized object of the given type"""
+
+        if topicType.replace(".", "::") in self.structMembers:
+            topicType = topicType.replace(".", "::")
+
+        if topicType in self.structMembers:
+            initList = []
+            for k in self.structMembers[topicType].keys():
+                currentTypeName = self.structMembers[topicType][k]
+                if self.isSequence(currentTypeName):
+                    initList.append([])
+                elif self.isInt(currentTypeName):
+                    initList.append(0)
+                elif self.isFloat(currentTypeName):
+                    initList.append(0.0)
+                elif self.isStr(currentTypeName):
+                    initList.append("")
+                elif self.isStruct(currentTypeName):
+                    initList.append(self.getInitializedDataObj(currentTypeName))
+
+            topic_type_dot: str = topicType.replace("::", ".")
+            moduleNameToImport = topic_type_dot.split('.')[0]
+            module = importlib.import_module(moduleNameToImport)
+            for part in topic_type_dot.split('.')[1:]:
+                module = getattr(module, part)
+            print(module)
+            initializedObj = module(*initList)
+            print("thing----->>>>", initializedObj)
+        else:
+            logging.warning(f"Unknown type: {topicType}")
+            initializedObj = None
+
+        return initializedObj
+
+    def getRootNode(self, topic_type):
+        rootNode = DataTreeNode("root", topic_type, DataTreeModel.IsStructRole)
+        rootNode.dataType = self.getInitializedDataObj(topic_type)
+        return self.toNode(topic_type, rootNode)
+
     def getCode(self, id, topic_type):
+            
+            return "", ""
             
 
             qmlCode = """
@@ -493,3 +536,92 @@ class DataWriterModel(QObject):
                     qmlCode += "            }\n"
 
             return (qmlCode, qmlCodeWrite, pyCode, pyCodeInner)
+
+    def isInt(self, theType):
+        return str(theType).startswith("typing.Annotated[int")
+
+    def isFloat(self, theType):
+        return str(theType).startswith("typing.Annotated[float")
+    
+    def isStr(self, theType):
+        return theType == str or str(theType).startswith("typing.Annotated[str")
+    
+    def isSequence(self, theType):
+        return str(theType).startswith("typing.Annotated[typing.Sequence")
+    
+    def isStruct(self, theType):
+        return str(theType).replace(".", "::") in self.structMembers
+
+    def isBasic(self, theType):
+        return self.isInt(theType) or self.isFloat(theType) or self.isStr(theType)
+    
+    def isPredefined(self, theType):
+        return self.isBasic(theType) or self.isStruct(theType) or self.isSequence(theType)
+
+    def toNode(self, theType: str, rootNode):
+        print("xxx",theType, self.structMembers)
+
+        if theType.replace(".", "::") in self.structMembers:
+            theType = theType.replace(".", "::")
+
+        if theType in self.structMembers:
+            print("xxx",theType, self.structMembers[theType], str(type(self.structMembers[theType])))
+
+            for keyStructMem in self.structMembers[theType].keys():
+
+                tt = str(self.structMembers[theType][keyStructMem]).replace(".", "::")
+    
+                ano: typing.Annotated = self.structMembers[theType][keyStructMem]
+                print("LOOOOKKKKK HEREEEEEE", typing.get_args(ano), typing.get_origin(ano))
+
+                # string
+                if self.isStr(self.structMembers[theType][keyStructMem]):
+                    rootNode.appendChild(DataTreeNode(keyStructMem, tt, DataTreeModel.IsStrRole, parent=rootNode))
+
+                # integer
+                elif self.isInt(self.structMembers[theType][keyStructMem]):
+                    rootNode.appendChild(DataTreeNode(keyStructMem, tt, DataTreeModel.IsIntRole, parent=rootNode))
+
+                # float
+                elif self.isFloat(self.structMembers[theType][keyStructMem]):
+                    rootNode.appendChild(DataTreeNode(keyStructMem, tt, DataTreeModel.IsFloatRole, parent=rootNode))
+
+                # sequence
+                elif self.isSequence(self.structMembers[theType][keyStructMem]):
+                    arrayRootNode = DataTreeNode(keyStructMem, tt,DataTreeModel.IsArrayRole, parent=rootNode)
+
+                    inner = str(self.structMembers[theType][keyStructMem]).replace("typing.Annotated[typing.Sequence[",  "", 1)
+                    inner = inner[:inner.rfind("], sequence[")]
+
+                    # inner  = inner.replace(".", "::")
+                    print("THE INNER:::::", inner)
+
+                    if inner.startswith("ForwardRef('"):
+                        inner = inner.replace("ForwardRef('", "")
+                        inner = inner[:-2]
+
+                    arrayRootNode.dataType = []
+                    arrayRootNode.itemArrayTypeName = inner
+
+                    rootNode.appendChild(arrayRootNode)
+
+                # struct
+                elif self.isStruct(self.structMembers[theType][keyStructMem]):
+                    
+                    subRootNode = DataTreeNode(keyStructMem, tt, DataTreeModel.IsStructRole, parent=rootNode)
+                    subRootNode.dataType = self.getInitializedDataObj(str(self.structMembers[theType][keyStructMem]).replace(".", "::"))
+                    self.toNode(str(self.structMembers[theType][keyStructMem]).replace(".", "::"), subRootNode)
+                    rootNode.appendChild(subRootNode)
+
+                # Unknown
+                else:
+                    logging.error(f"Unknown Datatype: {str(self.structMembers[theType][keyStructMem])}")
+
+        elif self.isInt(theType):
+            rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsIntRole, parent=rootNode))
+        elif self.isFloat(theType):
+            rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsFloatRole, parent=rootNode))
+        elif self.isStr(theType):
+            rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsStrRole, parent=rootNode))
+
+        return rootNode

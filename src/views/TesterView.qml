@@ -24,6 +24,7 @@ Rectangle {
     anchors.fill: parent
     color: rootWindow.isDarkMode ? Constants.darkOverviewBackground : Constants.lightOverviewBackground
     property var component
+    property var dataTreeModel: null
 
     Connections {
         target: testerModel
@@ -62,7 +63,7 @@ Rectangle {
                 textRole: "name"
                 onCurrentIndexChanged: {
                     if (testerModel) {
-                        testerModel.showTester(currentIndex)
+                        dataTreeModel = testerModel.getTreeModel(currentIndex)
                     }
                 }
             }
@@ -74,6 +75,12 @@ Rectangle {
                         component.destroy()
                     }
                     testerModel.deleteAllWriters()
+                }
+            }
+            Button {
+                text: "Print tree"
+                onClicked: {
+                    dataTreeModel.printTree()
                 }
             }
             Item {
@@ -89,7 +96,151 @@ Rectangle {
             Layout.fillHeight: true
             Layout.margins: 3
 
+            TreeView {
+                id: treeView
+                model: dataTreeModel
+                anchors.fill: parent
+                clip: true
+                ScrollBar.vertical: ScrollBar {}
+                selectionModel: ItemSelectionModel {
+                    id: treeSelectionParticipant
+                    onCurrentIndexChanged: {
+                        // console.log("Selection changed to:", currentIndex)
+                    }
+                }
+                delegate: Item {
+                    implicitWidth: contentRec.width
+                    implicitHeight: label.implicitHeight * 1.5
+
+                    readonly property real indentation: 20
+                    readonly property real padding: 5
+
+                    // Assigned to by TreeView:
+                    required property TreeView treeView
+                    required property bool isTreeNode
+                    required property bool expanded
+                    required property int hasChildren
+                    required property int depth
+                    required property int row
+                    required property int column
+                    required property bool current
+
+                    property Animation indicatorAnimation: NumberAnimation {
+                        target: indicator
+                        property: "rotation"
+                        from: expanded ? 0 : 90
+                        to: expanded ? 90 : 0
+                        duration: 100
+                        easing.type: Easing.OutQuart
+                    }
+                    TableView.onPooled: indicatorAnimation.complete()
+                    TableView.onReused: if (current) indicatorAnimation.start()
+                    onExpandedChanged: {
+                        indicator.rotation = expanded ? 90 : 0
+                    }
+
+                    Rectangle {
+                        id: background
+                        anchors.fill: parent
+                        visible: row === treeView.currentRow
+                        color: rootWindow.isDarkMode ? Constants.darkSelectionBackground : Constants.lightSelectionBackground
+                        opacity: 0.3
+                    }
+
+                    Label {
+                        id: indicator
+                        x: padding + (depth * indentation)
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: isTreeNode && hasChildren
+                        text: "▶"
+
+                        TapHandler {
+                            onSingleTapped: {
+                                let index = treeView.index(row, column)
+                                treeView.selectionModel.setCurrentIndex(index, ItemSelectionModel.NoUpdate)
+                                treeView.toggleExpanded(row)
+                            }
+                        }
+                    }
+                    Label {
+                        id: label
+                        x: padding + (isTreeNode ? (depth + 1) * indentation : 0)
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - padding - x - 10
+                        clip: true
+                        text: model.display + " (" + model.type_name + ")"
+                    }
+                    TextField {
+                        id: inputFieldStr
+                        visible: model.is_str
+                        text: ""
+                        placeholderText: "Enter text"
+                        anchors.right: label.right
+                        readOnly: false
+                        onTextChanged: {
+                            dataTreeModel.setData(treeView.index(row, column), inputFieldStr.text)
+                        }
+                        Component.onCompleted: {
+                            //dataTreeModel.setData(treeView.index(row, column), inputFieldStr.text)
+                        }
+                    }
+                    TextField {
+                        id: inputFieldInt
+                        visible: model.is_int
+                        text: "0"
+                        anchors.right: label.right
+                        readOnly: false
+                        validator: IntValidator {}
+                        onTextChanged: {
+                            dataTreeModel.setData(treeView.index(row, column), parseInt(inputFieldInt.text))
+                        }
+                        Component.onCompleted: {
+                            //dataTreeModel.setData(treeView.index(row, column), parseInt(inputFieldInt.text))
+                        }
+                    }
+                    TextField {
+                        id: inputFieldFloat
+                        visible: model.is_float
+                        text: "0.0"
+                        anchors.right: label.right
+                        readOnly: false
+                        validator: DoubleValidator {}
+                        onTextChanged: {
+                            dataTreeModel.setData(treeView.index(row, column), parseFloat(inputFieldFloat.text))
+                        }
+                        Component.onCompleted: {
+                            //dataTreeModel.setData(treeView.index(row, column), parseFloat(inputFieldFloat.text))
+                        }
+                    }
+                    Button {
+                        visible: model.is_array
+                        anchors.right: label.right
+                        text: "+"
+                        onClicked: {
+                            testerModel.addArrayItem(librariesCombobox.currentIndex ,treeView.index(row, column))
+                        }
+                    }
+                    Button {
+                        visible: model.is_array_element
+                        anchors.right: label.right
+                        text: "-"
+                        onClicked: {
+                            testerModel.removeArrayItem(librariesCombobox.currentIndex, treeView.index(row, column))
+                        }
+                    }
+                }
+            }
+
             // Content will be inserted in this element
+        }
+
+        Button {
+            text: "Write"
+            visible: dataTreeModel !== null
+            onClicked: {
+                console.log("Write Button clicked")
+                testerModel.writeData(librariesCombobox.currentIndex)
+            }
         }
     }
 }

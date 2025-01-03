@@ -33,9 +33,9 @@ class DatamodelModel(QAbstractListModel):
 
     newWriterSignal = Signal(str, int, str, str, str, str)
 
-    def __init__(self, threads, parent=typing.Optional[QObject]) -> None:
+    def __init__(self, threads, dataModelHandler, parent=typing.Optional[QObject]) -> None:
         super().__init__()
-        self.dataModelHandler: DataModelHandler = DataModelHandler(self)
+        self.dataModelHandler: DataModelHandler = dataModelHandler
         self.dataModelHandler.isLoadingSignal.connect(self.moduleHanlderIsLoading)
         self.dataModelHandler.beginInsertModuleSignal.connect(self.beginInsertModule)
         self.dataModelHandler.endInsertModuleSignal.connect(self.endInsertModule)

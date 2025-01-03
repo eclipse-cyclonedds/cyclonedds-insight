@@ -28,6 +28,7 @@ from cyclonedds.core import Qos, Policy
 from cyclonedds.util import duration
 import types
 from PySide6.QtQml import qmlRegisterType
+from models.DataTreeModel import DataTreeModel, DataTreeNode
 
 @dataclass
 class DataModelItem:
@@ -38,56 +39,80 @@ class DataModelItem:
 class TesterModel(QAbstractListModel):
 
     NameRole = Qt.UserRole + 1
-
-    newDataArrived = Signal(str)
-    isLoadingSignal = Signal(bool)
+    DataModelRole = Qt.UserRole + 2
 
     showQml = Signal(str, str)
 
-    def __init__(self, threads, parent=QObject | None) -> None:
+    writeDataSignal = Signal(str, object)
+
+    def __init__(self, threads, dataModelHandler, parent=QObject()):
         super().__init__()
+        self.dataModelHandler = dataModelHandler
         self.dataWriters = {}
         self.threads = threads
 
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> typing.Any:
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
         if not index.isValid():
             return None
         row = index.row()
 
-        (domainId, topic_name, _, _, _) = self.dataWriters[list(self.dataWriters.keys())[row]]
+        (domainId, topic_name, _, _, _, dataModel) = self.dataWriters[list(self.dataWriters.keys())[row]]
 
         if role == self.NameRole:
             return f"Domain Id: {str(domainId)}, Topic Name: {topic_name}"
-        elif False:
-            pass
+        if role == self.DataModelRole:
+            return dataModel
 
         return None
 
     def roleNames(self) -> dict[int, QByteArray]:
         return {
-            self.NameRole: b'name'
+            self.NameRole: b'name',
+            self.DataModelRole: b'dataModel'
         }
 
     def rowCount(self, index: QModelIndex = QModelIndex()) -> int:
         return len(self.dataWriters.keys())
 
+    @Slot(int, result=DataTreeModel)
+    def getTreeModel(self, currentIndex: int) -> DataTreeModel:
+        if currentIndex < 0:
+            return
+        mId = list(self.dataWriters.keys())[int(currentIndex)]
+        (_, _, _, _, _, dataTreeModel) = self.dataWriters[mId]
+        return dataTreeModel
+
     @Slot(int, str, str, str, str, str)
     def addWriter(self, id: str, domainId, topic_name, topic_type, qmlCode, pyCode):
         logging.info("AddWriter to TesterModel")
+
         self.beginResetModel()
 
-        module_name = f"m{id}"
-        new_module = types.ModuleType(module_name)
-        exec(pyCode, new_module.__dict__)
+        self.writeDataSignal.connect(self.threads[domainId].write, Qt.ConnectionType.QueuedConnection)
 
-        undsc = topic_type.replace("::", "_")
-        importlib.import_module(f"M{undsc}")
+        rootNode = self.dataModelHandler.getRootNode(topic_type)
+        dataTreeModel = DataTreeModel(rootNode, parent=self)
+        self.dataWriters[id] = (domainId, topic_name, topic_type, qmlCode, None, dataTreeModel)
 
-        mt = new_module.DataWriterModel(id)
-        mt.writeDataSignal.connect(self.threads[domainId].write, Qt.ConnectionType.QueuedConnection)
-        
-        self.dataWriters[id] = (domainId, topic_name, topic_type, qmlCode, mt)
         self.endResetModel()
+
+    @Slot(int, QModelIndex)
+    def addArrayItem(self, currentIndex: int, currentTreeIndex: QModelIndex):
+        logging.debug("Add Array Item")
+        mId = list(self.dataWriters.keys())[int(currentIndex)]
+        (_, _, topic_type, _, _, dataTreeModel) = self.dataWriters[mId]
+        if currentTreeIndex.isValid():
+            item: DataTreeNode = currentTreeIndex.internalPointer()
+            if item.itemArrayTypeName:
+                itemNode = self.dataModelHandler.toNode(item.itemArrayTypeName, DataTreeNode("", "Array Element", DataTreeModel.IsArrayElementRole, parent=item))
+                dataTreeModel.addArrayItem(currentTreeIndex, itemNode)
+
+    @Slot(int, QModelIndex)
+    def removeArrayItem(self, currentIndex: int, currentTreeIndex: QModelIndex):
+        logging.debug("Remove Array Item")
+        mId = list(self.dataWriters.keys())[int(currentIndex)]
+        (_, _, topic_type, _, _, dataTreeModel) = self.dataWriters[mId]
+        dataTreeModel.removeArrayItem(currentTreeIndex)
 
     @Slot(int)
     def showTester(self, currentIndex: int):
@@ -95,22 +120,15 @@ class TesterModel(QAbstractListModel):
             return
         logging.debug(f"Show Tester {str(currentIndex)}")
         mId = list(self.dataWriters.keys())[int(currentIndex)]
-        (domainId, topic_name, topic_type, qmlCode, mt) = self.dataWriters[mId]
+        (domainId, topic_name, topic_type, qmlCode, mt, _) = self.dataWriters[mId]
         self.showQml.emit(mId, qmlCode)
 
-    @Slot(str, list)
-    def write(self, mId, params):
-        logging.debug("call write")
-        print(*params)
-        if mId in self.dataWriters:
-            (_, _, _, _, mt) = self.dataWriters[mId]
-            mt.write(*params)
-
-    @Slot(str, QObject)
-    def writeObj(self, mId, value):
-        if mId in self.dataWriters:
-            (_, _, _, _, mt) = self.dataWriters[mId]
-            mt.writeObj(value)
+    @Slot(int)
+    def writeData(self, currentIndex: int):
+        logging.debug(f"Write Data {str(currentIndex)}")
+        mId = list(self.dataWriters.keys())[int(currentIndex)]
+        (_, _, _, _, _, dataTreeModel) = self.dataWriters[mId]
+        self.writeDataSignal.emit(mId, dataTreeModel.getDataObj())
 
     @Slot()
     def deleteAllWriters(self):

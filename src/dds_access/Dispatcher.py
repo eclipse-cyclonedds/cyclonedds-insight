@@ -48,13 +48,11 @@ class DispatcherThread(QThread):
 
     @Slot(str, object)
     def write(self, id, data):
-        logging.debug(f"Write {id} {data}")
         if id in self.writerData:
+            logging.debug(f"Write {id} {data}")
             (_, writer, _) = self.writerData[id]
             writer.write(data)
             logging.debug("Write ... DONE")
-        else:
-            logging.warning(f"topic not known {data}")
 
     @Slot()
     def deleteAllWriters(self):
