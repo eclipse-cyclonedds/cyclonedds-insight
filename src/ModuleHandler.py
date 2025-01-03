@@ -51,7 +51,6 @@ class DataModelHandler(QObject):
         self.datamodel_dir = os.path.join(self.app_data_dir, "datamodel")
         self.destination_folder_idl = os.path.join(self.datamodel_dir, "idl")
         self.destination_folder_py = os.path.join(self.datamodel_dir, "py")
-        self.destination_folder_qtmodels = os.path.join(self.datamodel_dir, "qtmodels")
 
     def count(self) -> int:
         return len(self.dataModelItems.keys())
@@ -115,23 +114,6 @@ class DataModelHandler(QObject):
         submodules = [name for name in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, name))]
         for submodule in submodules:
             self.import_module_and_nested(submodule)
-
-        model_dir = QDir(self.destination_folder_qtmodels)
-        if not model_dir.exists():
-            QDir().mkdir(self.destination_folder_qtmodels)
-        sys.path.insert(0, self.destination_folder_qtmodels)
-
-        for struct in self.structMembers:
-            undscore = struct.replace("::", "_")
-            topic_type_dot: str = struct.replace("::", ".")
-
-            pyStrucCode = "import " + topic_type_dot.split('.')[0] + "\n"
-            pyStrucCode += "from PySide6.QtCore import QObject, Property, Slot, Signal\n"
-            pyStrucCode += "from PySide6.QtQml import qmlRegisterType\n"
-            pyStrucCode += "\n"
-            pyStrucCode = self.toPyStructs(struct, pyStrucCode)
-            with open(f"{self.destination_folder_qtmodels}/M{undscore}.py", "w") as structFile:
-                structFile.write(pyStrucCode)
 
         print("self.structMembers", self.structMembers)
 
@@ -293,7 +275,7 @@ class DataModelHandler(QObject):
                 module = getattr(module, part)
             print(module)
             initializedObj = module(*initList)
-            print("thing----->>>>", initializedObj)
+            print("initializedObj----->>>>", initializedObj)
         else:
             if self.isInt(topicType):
                 return 0

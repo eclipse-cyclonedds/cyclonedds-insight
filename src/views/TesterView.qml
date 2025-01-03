@@ -168,7 +168,7 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width - padding - x - 10
                         clip: true
-                        text: model.display + " (" + model.type_name + ")"
+                        text: model.display + display_hint
                     }
                     TextField {
                         id: inputFieldStr

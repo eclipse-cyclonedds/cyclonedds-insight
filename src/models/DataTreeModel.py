@@ -57,7 +57,8 @@ class DataTreeNode:
 
     def row(self):
         if self.parentItem:
-            return self.parentItem.childItems.index(self)
+            if self in self.parentItem.childItems:
+                return self.parentItem.childItems.index(self)
         return 0
 
 
@@ -74,6 +75,7 @@ class DataTreeModel(QAbstractItemModel):
     IsArrayElementRole = Qt.UserRole + 9
     TypeNameRole = Qt.UserRole + 10
     ValueRole = Qt.UserRole + 11
+    DisplayHintRole = Qt.UserRole + 12
 
     def __init__(self, rootItem: DataTreeNode, parent=None):
         super(DataTreeModel, self).__init__(parent)
@@ -117,7 +119,12 @@ class DataTreeModel(QAbstractItemModel):
         item = index.internalPointer()
 
         if role == self.DisplayRole:
-            return item.itemName
+            if item.itemName:
+                return item.itemName
+            elif item.role == self.IsArrayElementRole:
+                return ""
+            else:
+                return "value"
         elif role == self.TypeNameRole:
             return item.itemTypeName
         elif role == self.IsFloatRole:
@@ -145,6 +152,11 @@ class DataTreeModel(QAbstractItemModel):
                 return "0.0"
             elif item.role == self.IsStrRole:
                 return ""
+        elif role == self.DisplayHintRole:
+            if item.role == self.IsArrayElementRole:
+                return f"[{item.parentItem.childItems.index(item)}]"
+            else:
+                return ""
 
         return None
 
@@ -160,7 +172,8 @@ class DataTreeModel(QAbstractItemModel):
             self.IsUnionRole: b'is_union',
             self.IsArrayElementRole: b'is_array_element',
             self.TypeNameRole: b'type_name',
-            self.ValueRole: b'value'
+            self.ValueRole: b'value',
+            self.DisplayHintRole: b'display_hint'
         }
 
     @Slot(QModelIndex, result=str)
