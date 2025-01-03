@@ -196,8 +196,13 @@ Rectangle {
                         text: dataTreeModel !== null ? dataTreeModel.getData(treeView.index(row, column)) : "0"
                         anchors.right: label.right
                         readOnly: false
-                        validator: IntValidator {}
+                        validator: RegularExpressionValidator {
+                            regularExpression: /^[+-]?\d+$/
+                        }
                         onTextChanged: {
+                            if (!inputFieldInt.text) {
+                                inputFieldInt.text = "0"
+                            }
                             if (dataTreeModel) {
                                 if (model.is_int) {
                                     dataTreeModel.setData(treeView.index(row, column), parseInt(inputFieldInt.text))
@@ -215,8 +220,13 @@ Rectangle {
                         text: dataTreeModel !== null ? dataTreeModel.getData(treeView.index(row, column)) : "0.0"
                         anchors.right: label.right
                         readOnly: false
-                        validator: DoubleValidator {}
+                        validator: RegularExpressionValidator {
+                            regularExpression: /^[+-]?(\d+(\.\d*)?|\.\d+)$/
+                        }
                         onTextChanged: {
+                            if (!inputFieldFloat.text) {
+                                inputFieldFloat.text = "0.0"
+                            }
                             if (dataTreeModel) {
                                 if (model.is_float) {
                                     dataTreeModel.setData(treeView.index(row, column), parseFloat(inputFieldFloat.text))
