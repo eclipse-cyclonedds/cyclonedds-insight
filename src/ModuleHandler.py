@@ -257,6 +257,7 @@ class DataModelHandler(QObject):
             initList = []
             for k in self.structMembers[topicType].keys():
                 currentTypeName = self.structMembers[topicType][k]
+                print("----------->>>>>>>>>>>", currentTypeName)
                 if self.isSequence(currentTypeName):
                     initList.append([])
                 elif self.isInt(currentTypeName):
@@ -265,6 +266,8 @@ class DataModelHandler(QObject):
                     initList.append(0.0)
                 elif self.isStr(currentTypeName):
                     initList.append("")
+                elif self.isBool(currentTypeName):
+                    initList.append(False)
                 elif self.isStruct(currentTypeName):
                     initList.append(self.getInitializedDataObj(currentTypeName))
 
@@ -273,7 +276,7 @@ class DataModelHandler(QObject):
             module = importlib.import_module(moduleNameToImport)
             for part in topic_type_dot.split('.')[1:]:
                 module = getattr(module, part)
-            print(module)
+            print(module, initList)
             initializedObj = module(*initList)
             print("initializedObj----->>>>", initializedObj)
         else:
@@ -281,6 +284,8 @@ class DataModelHandler(QObject):
                 return 0
             elif self.isFloat(topicType):
                 return 0.0
+            elif self.isBool(topicType):
+                return False
             elif self.isStr(topicType):
                 return ""
             else:
@@ -303,6 +308,10 @@ class DataModelHandler(QObject):
     def isStr(self, theType):
         return theType == str or str(theType).startswith("typing.Annotated[str") or theType == "str"
     
+    def isBool(self, theType):
+        print("isBool", theType)
+        return theType == bool or str(theType).startswith("typing.Annotated[bool") or theType == "bool"
+
     def isSequence(self, theType):
         return str(theType).startswith("typing.Annotated[typing.Sequence")
     
@@ -310,7 +319,7 @@ class DataModelHandler(QObject):
         return str(theType).replace(".", "::") in self.structMembers
 
     def isBasic(self, theType):
-        return self.isInt(theType) or self.isFloat(theType) or self.isStr(theType)
+        return self.isInt(theType) or self.isFloat(theType) or self.isStr(theType) or self.isBool(theType)
     
     def isPredefined(self, theType):
         return self.isBasic(theType) or self.isStruct(theType) or self.isSequence(theType)
@@ -342,6 +351,9 @@ class DataModelHandler(QObject):
                 # float
                 elif self.isFloat(self.structMembers[theType][keyStructMem]):
                     rootNode.appendChild(DataTreeNode(keyStructMem, tt, DataTreeModel.IsFloatRole, parent=rootNode))
+
+                elif self.isBool(self.structMembers[theType][keyStructMem]):
+                    rootNode.appendChild(DataTreeNode(keyStructMem, tt, DataTreeModel.IsBoolRole, parent=rootNode))
 
                 # sequence
                 elif self.isSequence(self.structMembers[theType][keyStructMem]):
@@ -380,5 +392,7 @@ class DataModelHandler(QObject):
             rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsFloatRole, parent=rootNode))
         elif self.isStr(theType):
             rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsStrRole, parent=rootNode))
+        elif self.isBool(theType):
+            rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsBoolRole, parent=rootNode))
 
         return rootNode

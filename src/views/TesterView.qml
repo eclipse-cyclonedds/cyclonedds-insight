@@ -223,6 +223,20 @@ Rectangle {
                             }
                         }
                     }
+                    Switch {
+                        id: toggleSwitch
+                        visible: model.is_bool
+                        enabled: model.is_bool
+                        anchors.right: label.right
+                        checked: model.value !== undefined ? (model.value === "true" || model.value === "True") : false
+                        onCheckedChanged: {
+                            if (dataTreeModel) {
+                                if (model.is_bool) {
+                                    dataTreeModel.setData(treeView.index(row, column), toggleSwitch.checked)
+                                }
+                            }
+                        }
+                    }
                     Button {
                         visible: model.is_array
                         anchors.right: label.right

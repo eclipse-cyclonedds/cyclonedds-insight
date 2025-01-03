@@ -76,6 +76,7 @@ class DataTreeModel(QAbstractItemModel):
     TypeNameRole = Qt.UserRole + 10
     ValueRole = Qt.UserRole + 11
     DisplayHintRole = Qt.UserRole + 12
+    IsBoolRole = Qt.UserRole + 13
 
     def __init__(self, rootItem: DataTreeNode, parent=None):
         super(DataTreeModel, self).__init__(parent)
@@ -133,6 +134,8 @@ class DataTreeModel(QAbstractItemModel):
             return item.role == self.IsIntRole
         elif role == self.IsStrRole:
             return item.role == self.IsStrRole
+        elif role == self.IsBoolRole:
+            return item.role == self.IsBoolRole
         elif role == self.IsArrayRole:
             return item.role == self.IsArrayRole
         elif role == self.IsStructRole:
@@ -173,21 +176,9 @@ class DataTreeModel(QAbstractItemModel):
             self.IsArrayElementRole: b'is_array_element',
             self.TypeNameRole: b'type_name',
             self.ValueRole: b'value',
-            self.DisplayHintRole: b'display_hint'
+            self.DisplayHintRole: b'display_hint',
+            self.IsBoolRole: b'is_bool'
         }
-
-    @Slot(QModelIndex, result=str)
-    def getData(self, index):
-        #logging.debug("getData" + str(index))
-        if index.isValid():
-            item = index.internalPointer()
-            if item.itemValue is not None:
-                return str(item.itemValue)
-            elif item.role == self.IsIntRole:
-                return "0"
-            elif item.role == self.IsFloatRole:
-                return "0.0"
-        return ""
 
     @Slot(QModelIndex, str)
     def setData(self, index, value):
@@ -203,6 +194,8 @@ class DataTreeModel(QAbstractItemModel):
                     item.itemValue = int(value)
                 except:
                     item.itemValue = 0
+            elif item.role == self.IsBoolRole:
+                item.itemValue = True if value == "true" else False
             elif item.role == self.IsStrRole:
                 item.itemValue = str(value)
             elif item.role == self.IsArrayRole:
