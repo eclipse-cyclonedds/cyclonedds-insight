@@ -173,12 +173,17 @@ Rectangle {
                     TextField {
                         id: inputFieldStr
                         visible: model.is_str
-                        text: ""
+                        enabled: model.is_str
+                        text: dataTreeModel !== null ? dataTreeModel.getData(treeView.index(row, column)) : ""
                         placeholderText: "Enter text"
                         anchors.right: label.right
                         readOnly: false
                         onTextChanged: {
-                            dataTreeModel.setData(treeView.index(row, column), inputFieldStr.text)
+                            if (dataTreeModel) {
+                                if (model.is_str) {
+                                    dataTreeModel.setData(treeView.index(row, column), inputFieldStr.text)
+                                }
+                            }
                         }
                         Component.onCompleted: {
                             //dataTreeModel.setData(treeView.index(row, column), inputFieldStr.text)
@@ -187,12 +192,17 @@ Rectangle {
                     TextField {
                         id: inputFieldInt
                         visible: model.is_int
-                        text: "0"
+                        enabled: model.is_int
+                        text: dataTreeModel !== null ? dataTreeModel.getData(treeView.index(row, column)) : "0"
                         anchors.right: label.right
                         readOnly: false
                         validator: IntValidator {}
                         onTextChanged: {
-                            dataTreeModel.setData(treeView.index(row, column), parseInt(inputFieldInt.text))
+                            if (dataTreeModel) {
+                                if (model.is_int) {
+                                    dataTreeModel.setData(treeView.index(row, column), parseInt(inputFieldInt.text))
+                                }
+                            }
                         }
                         Component.onCompleted: {
                             //dataTreeModel.setData(treeView.index(row, column), parseInt(inputFieldInt.text))
@@ -201,12 +211,17 @@ Rectangle {
                     TextField {
                         id: inputFieldFloat
                         visible: model.is_float
-                        text: "0.0"
+                        enabled: model.is_float
+                        text: dataTreeModel !== null ? dataTreeModel.getData(treeView.index(row, column)) : "0.0"
                         anchors.right: label.right
                         readOnly: false
                         validator: DoubleValidator {}
                         onTextChanged: {
-                            dataTreeModel.setData(treeView.index(row, column), parseFloat(inputFieldFloat.text))
+                            if (dataTreeModel) {
+                                if (model.is_int) {
+                                    dataTreeModel.setData(treeView.index(row, column), parseFloat(inputFieldFloat.text))
+                                }
+                            }
                         }
                         Component.onCompleted: {
                             //dataTreeModel.setData(treeView.index(row, column), parseFloat(inputFieldFloat.text))

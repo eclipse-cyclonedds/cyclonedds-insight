@@ -50,6 +50,7 @@ class TesterModel(QAbstractListModel):
         self.dataModelHandler = dataModelHandler
         self.dataWriters = {}
         self.threads = threads
+        self.alreadyConnectedDomains = []
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
         if not index.isValid():
@@ -88,7 +89,9 @@ class TesterModel(QAbstractListModel):
 
         self.beginResetModel()
 
-        self.writeDataSignal.connect(self.threads[domainId].write, Qt.ConnectionType.QueuedConnection)
+        if domainId not in self.alreadyConnectedDomains:
+            self.writeDataSignal.connect(self.threads[domainId].write, Qt.ConnectionType.QueuedConnection)
+            self.alreadyConnectedDomains.append(domainId)
 
         rootNode = self.dataModelHandler.getRootNode(topic_type)
         dataTreeModel = DataTreeModel(rootNode, parent=self)

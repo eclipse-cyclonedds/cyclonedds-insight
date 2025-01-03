@@ -600,7 +600,7 @@ class DataWriterModel(QObject):
                         inner = inner.replace("ForwardRef('", "")
                         inner = inner[:-2]
 
-                    arrayRootNode.dataType = []
+                    arrayRootNode.dataType = self.getInitializedDataObj(inner)
                     arrayRootNode.itemArrayTypeName = inner
 
                     rootNode.appendChild(arrayRootNode)

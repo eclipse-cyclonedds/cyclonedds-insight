@@ -11,6 +11,8 @@
 """
 
 import logging
+import re
+import copy
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt
 from PySide6.QtCore import Signal, Slot
 
@@ -32,6 +34,14 @@ class DataTreeNode:
 
     def child(self, row):
         return self.childItems[row]
+
+    def arrayPosition(self, index: QModelIndex):
+        if not index.isValid():
+            return -1
+        item = index.internalPointer()
+        if item.parentItem and item.parentItem.role == self.IsArrayRole:
+            return item.parentItem.childItems.index(item)
+        return -1
 
     def childCount(self):
         return len(self.childItems)
@@ -142,6 +152,18 @@ class DataTreeModel(QAbstractItemModel):
             self.TypeNameRole: b'type_name'
         }
 
+    @Slot(QModelIndex, result=str)
+    def getData(self, index):
+        if index.isValid():
+            item = index.internalPointer()
+            if item.itemValue is not None:
+                return str(item.itemValue)
+            elif item.role == self.IsIntRole:
+                return "0"
+            elif item.role == self.IsFloatRole:
+                return "0.0"
+        return ""
+
     @Slot(QModelIndex, str)
     def setData(self, index, value):
         if index.isValid():
@@ -151,31 +173,30 @@ class DataTreeModel(QAbstractItemModel):
                     item.itemValue = float(value)
                 except:
                     item.itemValue = 0.0
+                if item.itemValue != item.itemValue:
+                    item.itemValue = None
             elif item.role == self.IsIntRole:
                 try:
                     item.itemValue = int(value)
                 except:
                     item.itemValue = 0
             elif item.role == self.IsStrRole:
-                item.itemValue = value
+                item.itemValue = str(value)
+            elif item.role == self.IsArrayRole:
+                return
+            elif item.role == self.IsStructRole:
+                return
 
-            dotName = item.itemName
-            parent = item.parentItem
-            while parent is not None:
-                if parent.parentItem is not None:
-                    #if parent.role != self.IsArrayElementRole:
-                    dotName = parent.itemName + "." + dotName
-                    parent = parent.parentItem
-                else:
-                    break
-
-            print("dotName", dotName)
-            attrs = dotName.split('.')
+            attrs, parent = self.getDotPath(item)
+            print("attrs", attrs)
             obj = parent.dataType
             for attr in attrs[:-1]:
-                obj = getattr(obj, attr)
+                if attr.isdigit():
+                    obj = obj[int(attr)]
+                else:
+                    obj = getattr(obj, attr)
 
-            print("set data", obj, attrs[-1], item.itemValue,attrs)
+            print("set data", obj, attrs[-1], item.itemValue, attrs)
             setattr(obj, attrs[-1], item.itemValue)
 
     @Slot()
@@ -194,21 +215,72 @@ class DataTreeModel(QAbstractItemModel):
             item: DataTreeNode= index.internalPointer()
             self.beginInsertRows(index, item.childCount(), item.childCount())
             node.parentItem = item
-            # node.itemName = str(item.childCount()) # TODO: Find solution to show array index
-
-
-
             item.appendChild(node)
+
+            seqenceObj = copy.deepcopy(node.parentItem.dataType)
+            attrs, parent = self.getDotPath(node.childItems[0])
+            print("attrs", attrs, seqenceObj)
+            obj = parent.dataType
+            for attr in attrs[:-1]:
+                if attr.isdigit():
+                    if len(obj) <= int(attr):
+                        obj.append(seqenceObj)
+                    obj = obj[int(attr)]
+                else:
+                    obj = getattr(obj, attr)
+
             self.endInsertRows()
+
+    def getDotPath(self, item):
+        dotName = item.itemName
+        parent = item.parentItem
+        while parent is not None:
+            if parent.parentItem is not None:
+                if parent.role == self.IsArrayElementRole:
+                    pass
+                elif parent.role == self.IsArrayRole:
+                    def findArrayPosition(item):
+                        if item.parentItem is None:
+                            return ""
+                        if item.parentItem.role == self.IsArrayRole:
+                            pos = item.parentItem.childItems.index(item)
+                            return f"[{pos}]"
+                        return findArrayPosition(item.parentItem)
+                    array_position = findArrayPosition(item)
+                    dotName = parent.itemName + array_position + "." + dotName
+                else:
+                    dotName = parent.itemName + "." + dotName
+                parent = parent.parentItem
+            else:
+                break
+
+        attrs = re.split(r'\.|\[|\]', dotName)
+        attrs = [attr for attr in attrs if attr]
+
+        return attrs, parent
 
     @Slot(QModelIndex)
     def removeArrayItem(self, index: QModelIndex):
         logging.debug("Remove array item")
         if index.isValid():
             item: DataTreeNode = index.internalPointer()
-            parent = item.parent()
-            self.beginRemoveRows(self.index(parent.row(), 0), item.row(), item.row())
-            parent.childItems.remove(item)
+            parentX = item.parent()
+
+            self.beginRemoveRows(self.index(parentX.row(), 0), item.row(), item.row())
+
+            attrs, parent = self.getDotPath(item)
+            obj = parent.dataType
+            for attr in attrs[:-1]:
+                if attr.isdigit():
+                    obj = obj[int(attr)]
+                else:
+                    obj = getattr(obj, attr)
+
+            if attrs[-1].isdigit():
+                del obj[int(attrs[-1])]
+
+            parentX.childItems.remove(item)
+
             self.endRemoveRows()
 
     def getDataObj(self):
