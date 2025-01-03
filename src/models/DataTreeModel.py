@@ -73,6 +73,7 @@ class DataTreeModel(QAbstractItemModel):
     IsUnionRole = Qt.UserRole + 8
     IsArrayElementRole = Qt.UserRole + 9
     TypeNameRole = Qt.UserRole + 10
+    ValueRole = Qt.UserRole + 11
 
     def __init__(self, rootItem: DataTreeNode, parent=None):
         super(DataTreeModel, self).__init__(parent)
@@ -135,6 +136,15 @@ class DataTreeModel(QAbstractItemModel):
             return item.role == self.IsUnionRole
         elif role == self.IsArrayElementRole:
             return item.role == self.IsArrayElementRole
+        elif role == self.ValueRole:
+            if item.itemValue is not None:
+                return str(item.itemValue)
+            elif item.role == self.IsIntRole:
+                return "0"
+            elif item.role == self.IsFloatRole:
+                return "0.0"
+            elif item.role == self.IsStrRole:
+                return ""
 
         return None
 
@@ -149,11 +159,13 @@ class DataTreeModel(QAbstractItemModel):
             self.IsEnumRole: b'is_enum',
             self.IsUnionRole: b'is_union',
             self.IsArrayElementRole: b'is_array_element',
-            self.TypeNameRole: b'type_name'
+            self.TypeNameRole: b'type_name',
+            self.ValueRole: b'value'
         }
 
     @Slot(QModelIndex, result=str)
     def getData(self, index):
+        #logging.debug("getData" + str(index))
         if index.isValid():
             item = index.internalPointer()
             if item.itemValue is not None:
@@ -186,7 +198,6 @@ class DataTreeModel(QAbstractItemModel):
                 return
 
             attrs, parent = self.getDotPath(item)
-            print("attrs", attrs)
             obj = parent.dataType
             for attr in attrs[:-1]:
                 if attr.isdigit():
@@ -194,7 +205,6 @@ class DataTreeModel(QAbstractItemModel):
                 else:
                     obj = getattr(obj, attr)
 
-            print("set data", obj, attrs[-1], item.itemValue, attrs)
             if isinstance(obj, list):
                 obj[int(attrs[-1])] = item.itemValue
             else:
@@ -219,22 +229,16 @@ class DataTreeModel(QAbstractItemModel):
             item.appendChild(node)
 
             seqenceObj = copy.deepcopy(node.parentItem.dataType)
-            print("the cild items:", node.childItems)
             attrs, parent = self.getDotPath(node.childItems[0])
-            print("attrs DDDDDDDDDDDDDD", attrs, seqenceObj)
             if attrs[-1].isdigit():
                 attrs.append(None)
             obj = parent.dataType
             for attr in attrs[:-1]:
-                print("cur attr", attr)
                 if attr.isdigit():
                     if len(obj) <= int(attr):
-                        print("append", attr)
                         obj.append(seqenceObj)
-                    print("after append", attr)
                     obj = obj[int(attr)]
                 else:
-                    print("do here", attr)
                     obj = getattr(obj, attr)
 
             self.endInsertRows()
@@ -271,12 +275,8 @@ class DataTreeModel(QAbstractItemModel):
 
             parent = parent.parentItem
 
-        print("dotName", dotName)
-
-        # Split the final dotName into attributes and remove empty parts
         attrs = re.split(r'\.|\[|\]', dotName)
-        attrs = [attr for attr in attrs if attr] # remove emtpy parts
-        #attrs = attrs[1:] # remove root
+        attrs = [attr for attr in attrs if attr]
 
         return attrs, parent
 

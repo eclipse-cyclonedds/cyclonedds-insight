@@ -174,7 +174,7 @@ Rectangle {
                         id: inputFieldStr
                         visible: model.is_str
                         enabled: model.is_str
-                        text: dataTreeModel !== null ? dataTreeModel.getData(treeView.index(row, column)) : ""
+                        text: model.value !== undefined ? model.value : ""
                         placeholderText: "Enter text"
                         anchors.right: label.right
                         readOnly: false
@@ -190,16 +190,14 @@ Rectangle {
                         id: inputFieldInt
                         visible: model.is_int
                         enabled: model.is_int
-                        text: dataTreeModel !== null ? dataTreeModel.getData(treeView.index(row, column)) : "0"
+                        text: model.value !== undefined ? model.value : "0"
                         anchors.right: label.right
                         readOnly: false
                         validator: RegularExpressionValidator {
                             regularExpression: /^[+-]?\d+$/
                         }
                         onTextChanged: {
-                            if (!inputFieldInt.text) {
-                                inputFieldInt.text = "0"
-                            }
+
                             if (dataTreeModel) {
                                 if (model.is_int) {
                                     dataTreeModel.setData(treeView.index(row, column), parseInt(inputFieldInt.text))
@@ -211,16 +209,13 @@ Rectangle {
                         id: inputFieldFloat
                         visible: model.is_float
                         enabled: model.is_float
-                        text: dataTreeModel !== null ? dataTreeModel.getData(treeView.index(row, column)) : "0.0"
+                        text: model.value !== undefined ? model.value : "0.0"
                         anchors.right: label.right
                         readOnly: false
                         validator: RegularExpressionValidator {
                             regularExpression: /^[+-]?(\d+(\.\d*)?|\.\d+)$/
                         }
                         onTextChanged: {
-                            if (!inputFieldFloat.text) {
-                                inputFieldFloat.text = "0.0"
-                            }
                             if (dataTreeModel) {
                                 if (model.is_float) {
                                     dataTreeModel.setData(treeView.index(row, column), parseFloat(inputFieldFloat.text))
