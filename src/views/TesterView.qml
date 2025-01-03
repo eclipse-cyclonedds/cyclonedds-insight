@@ -185,9 +185,6 @@ Rectangle {
                                 }
                             }
                         }
-                        Component.onCompleted: {
-                            //dataTreeModel.setData(treeView.index(row, column), inputFieldStr.text)
-                        }
                     }
                     TextField {
                         id: inputFieldInt
@@ -209,9 +206,6 @@ Rectangle {
                                 }
                             }
                         }
-                        Component.onCompleted: {
-                            //dataTreeModel.setData(treeView.index(row, column), parseInt(inputFieldInt.text))
-                        }
                     }
                     TextField {
                         id: inputFieldFloat
@@ -232,9 +226,6 @@ Rectangle {
                                     dataTreeModel.setData(treeView.index(row, column), parseFloat(inputFieldFloat.text))
                                 }
                             }
-                        }
-                        Component.onCompleted: {
-                            //dataTreeModel.setData(treeView.index(row, column), parseFloat(inputFieldFloat.text))
                         }
                     }
                     Button {

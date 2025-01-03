@@ -282,16 +282,8 @@ class DatamodelModel(QAbstractListModel):
             self.threads[domainId].onData.connect(self.onData, Qt.ConnectionType.QueuedConnection)
             self.threads[domainId].start()
 
+        # Add to Tester tab
         if entityType == EntityType.WRITER:
-            pyCode, qmlCode = self.dataModelHandler.getCode(id, topic_type)
-            self.newWriterSignal.emit(id, domainId, topicName, topic_type, qmlCode, pyCode)
-
-            # Example usage
-            # module_name = 'mymodule'
-            # new_module = types.ModuleType(module_name)
-            # exec(pyCode, new_module.__dict__)
-            # mt = new_module.DataWriterModel(topicName)
-            # mt.writeDataSignal.connect(self.threads[domain_id].write, Qt.ConnectionType.QueuedConnection)
-            # mt.write_vehicles_Vehicle("A cool string", 42, 43, "franz1", 1, 0.123456789, 0.2, 'x')
+            self.newWriterSignal.emit(id, domainId, topicName, topic_type, "", "")
 
         logging.debug("try add endpoint ... DONE")
