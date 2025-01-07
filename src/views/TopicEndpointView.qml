@@ -173,8 +173,10 @@ Rectangle {
                             policy: ScrollBar.AsNeeded
                         }
 
+                        property int lastPartitionPressedIndex: -1
+
                         delegate: Item {
-                            height: 65
+                            height: 85
                             width: listViewWriter.width
 
                             Rectangle {
@@ -185,23 +187,8 @@ Rectangle {
                                 color: rootWindow.isDarkMode ? mouseAreaEndpointWriter.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : mouseAreaEndpointWriter.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
                                 border.color: endpoint_has_qos_mismatch ? Constants.warningColor : rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
                                 border.width: 0.5
-                                Column {
-                                    spacing: 0
-                                    padding: 10
 
-                                    Label {
-                                        text: endpoint_key
-                                        font.pixelSize: 14
-                                    }
-                                    Label {
-                                        text: endpoint_process_name + ":" + endpoint_process_id + "@" + endpoint_hostname
-                                        font.pixelSize: 12
-                                    }
-                                    Label {
-                                        text: addresses
-                                        font.pixelSize: 8
-                                    }
-                                }
+
                                 MouseArea {
                                     id: mouseAreaEndpointWriter
                                     anchors.fill: parent
@@ -223,6 +210,85 @@ Rectangle {
                                         writerRec.showTooltip = false
                                     }
                                 }
+
+                                Column {
+                                    spacing: 0
+                                    padding: 10
+
+                                    Label {
+                                        text: endpoint_key
+                                        font.pixelSize: 14
+                                    }
+                                    Label {
+                                        text: endpoint_process_name + ":" + endpoint_process_id + "@" + endpoint_hostname
+                                        font.pixelSize: 12
+                                    }
+                                    Label {
+                                        text: addresses
+                                        font.pixelSize: 8
+                                    }
+                                    Item {
+                                        height: 5
+                                        width: 1
+                                    }
+                                    Label {
+                                        text: "(No Partition)"
+                                        visible: has_partitions === false
+                                        font.pixelSize: 12
+                                    }
+                                    Flickable {
+                                        width: listViewReader.width - 20
+                                        contentWidth: rowContent.width
+                                        height: 20
+                                        clip: true
+                                        visible: has_partitions === true
+
+                                        Row {
+                                            id: rowContent
+                                            spacing: 10
+                                            Repeater {
+                                                model: partitions
+                                                Rectangle {
+                                                    id: partitionRectangle
+                                                    z: 100
+                                                    height: 20
+                                                    radius: 5
+                                                    color: partition_matched ? "#009600" : rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
+                                                    border.color: partition_selected ? "orange" : partition_matched ? "#009600" : "black"
+                                                    border.width: partition_selected ? 2 : 1
+                                                    width: textItem.width + 20
+
+                                                    Label {
+                                                        id: textItem
+                                                        anchors.centerIn: parent
+                                                        text: partition_name
+                                                        font.pixelSize: 12
+                                                    }
+
+                                                    MouseArea {
+                                                        id: partitionMouseArea
+                                                        hoverEnabled: true
+                                                        cursorShape: Qt.PointingHandCursor                                  
+                                                        anchors.fill: parent
+                                                        onClicked: (mouse) => {
+                                                            if (partition_selected) {
+                                                                endpointReaderModel.clearPartitionMatching()
+                                                                endpointWriterModel.clearPartitionMatching()
+                                                            } else {
+                                                                endpointReaderModel.setSelectedPartition(partition_name, "")
+                                                                endpointWriterModel.setSelectedPartition(partition_name, endpoint_key)
+                                                            }
+                                                        }
+                                                        onEntered: {
+                                                            writerRec.showTooltip = true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                                 ToolTip {
                                     id: writerTooltip
                                     parent: writerRec
@@ -275,8 +341,9 @@ Rectangle {
                         }
 
                         delegate: Item {
-                            height: 65
+                            height: 85
                             width: listViewReader.width
+                            z: 10
 
                             Rectangle {
                                 anchors.fill: parent
@@ -284,25 +351,9 @@ Rectangle {
                                 border.color: endpoint_has_qos_mismatch ? Constants.warningColor : rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
                                 border.width: 0.5
                                 id: readerRec
+                                
                                 property bool showTooltip: false
 
-                                Column {
-                                    spacing: 0
-                                    padding: 10
-
-                                    Label {
-                                        text: endpoint_key
-                                        font.pixelSize: 14
-                                    }
-                                    Label {
-                                        text: endpoint_process_name + ":" + endpoint_process_id + "@" + endpoint_hostname
-                                        font.pixelSize: 12
-                                    }
-                                    Label {
-                                        text: addresses
-                                        font.pixelSize: 8
-                                    }
-                                }
                                 MouseArea {
                                     id: mouseAreaEndpointReader
                                     anchors.fill: parent
@@ -324,6 +375,86 @@ Rectangle {
                                         readerRec.showTooltip = false
                                     }
                                 }
+
+                                Column {
+                                    spacing: 0
+                                    padding: 10
+
+                                    Label {
+                                        text: endpoint_key
+                                        font.pixelSize: 14
+                                    }
+                                    Label {
+                                        text: endpoint_process_name + ":" + endpoint_process_id + "@" + endpoint_hostname
+                                        font.pixelSize: 12
+                                    }
+                                    Label {
+                                        text: addresses
+                                        font.pixelSize: 8
+                                    }
+                                    Item {
+                                        height: 5
+                                        width: 1
+                                    }
+                                    Label {
+                                        text: "(No Partition)"
+                                        visible: has_partitions === false
+                                        font.pixelSize: 12
+                                    }
+                                    Flickable {
+                                        width: listViewReader.width - 20
+                                        contentWidth: rowContent.width
+                                        height: 20
+                                        clip: true
+                                        visible: has_partitions === true
+
+                                        Row {
+                                            id: rowContent
+                                            spacing: 10
+                                            Repeater {
+                                                model: partitions
+                                                Rectangle {
+                                                    id: partitionRectangle
+        
+                                                    z: 100
+                                                    height: 20
+                                                    radius: 5
+                                                    color: partition_matched ? "#009600" : rootWindow.isDarkMode ? partitionMouseArea.pressed ? Constants.darkPressedColor : Constants.darkCardBackgroundColor : partitionMouseArea.pressed ? Constants.lightPressedColor : Constants.lightCardBackgroundColor
+                                                    border.color: partition_selected ? "orange" : partition_matched ? "#009600" : "black"
+                                                    border.width: partition_selected ? 2 : 1
+                                                    width: textItem.width + 20
+
+                                                    Label {
+                                                        id: textItem
+                                                        anchors.centerIn: parent
+                                                        text: partition_name
+                                                        font.pixelSize: 12
+                                                    }
+
+                                                    MouseArea {
+                                                        id: partitionMouseArea
+                                                        hoverEnabled: true
+                                                        cursorShape: Qt.PointingHandCursor
+                                                        anchors.fill: parent
+                                                        onClicked: (mouse) => {
+                                                            if (partition_selected) {
+                                                                endpointReaderModel.clearPartitionMatching()
+                                                                endpointWriterModel.clearPartitionMatching()
+                                                            } else {
+                                                                endpointReaderModel.setSelectedPartition(partition_name, endpoint_key)
+                                                                endpointWriterModel.setSelectedPartition(partition_name, "")
+                                                            }
+                                                        }
+                                                        onEntered: {
+                                                            readerRec.showTooltip = true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                                 ToolTip {
                                     id: readerTooltip
                                     parent: readerRec

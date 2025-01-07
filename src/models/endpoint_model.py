@@ -13,6 +13,7 @@
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt, Slot, Signal, QThread
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 from cyclonedds import core
+from cyclonedds import qos
 import logging
 import os
 from pathlib import Path
@@ -23,8 +24,72 @@ from typing import Optional, List
 from dds_access import dds_data
 from dds_access.dds_data import DataEndpoint
 from dds_access.dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
+from dds_access.dds_qos import partitions_match_p
 from utils import EntityType
 
+
+class PartitionModel(QAbstractItemModel):
+
+    PartitionNameRole = Qt.UserRole + 1
+    PartitionMatchedRole = Qt.UserRole + 2
+    PartitionSelectedRole = Qt.UserRole + 3
+
+    def __init__(self, parent=None):
+        super(PartitionModel, self).__init__(parent)
+        self.partitions = {}
+
+    def index(self, row, column, parent=QModelIndex()):
+        return self.createIndex(row, column)
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self.partitions)
+
+    def columnCount(self, index):
+        return 0
+
+    def parent(self, index):
+        return QModelIndex()
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid() or not (0 <= index.row() < self.rowCount()):
+            return None
+
+        row = index.row()
+        partitionName = list(self.partitions.keys())[row]
+        matched, selected = self.partitions[partitionName]
+
+        if role == self.PartitionNameRole:
+            return partitionName
+        elif role == self.PartitionMatchedRole:
+            return matched
+        elif role == self.PartitionSelectedRole:
+            return selected
+
+        return None
+
+    def roleNames(self):
+        return {
+            self.PartitionNameRole: b'partition_name',
+            self.PartitionMatchedRole: b'partition_matched',
+            self.PartitionSelectedRole: b'partition_selected',
+        }
+
+    def clearMatching(self):
+        for partitionName in self.partitions.keys():
+            self.partitions[partitionName] = (False, False)
+            index = list(self.partitions.keys()).index(partitionName)
+            self.dataChanged.emit(self.index(index, 0), self.index(index, 0), [self.PartitionMatchedRole, self.PartitionSelectedRole])
+
+    def updatePartition(self, partitionName: str, matched: bool, selected: bool):
+        self.partitions[partitionName] = (matched, selected)
+        if partitionName in self.partitions:
+            idx = list(self.partitions.keys()).index(partitionName)
+            index = self.createIndex(idx, 0)
+            self.dataChanged.emit(index, index, [self.PartitionMatchedRole, self.PartitionSelectedRole])
+            return
+        else:
+            self.beginInsertRows(QModelIndex(), len(self.partitions) - 1, len(self.partitions) - 1)
+            self.endInsertRows()
 
 class EndpointModel(QAbstractItemModel):
 
@@ -41,6 +106,8 @@ class EndpointModel(QAbstractItemModel):
     EndpointHasQosMismatch = Qt.UserRole + 11
     EndpointQosMismatchText = Qt.UserRole + 12
     AddressesRole = Qt.UserRole + 13
+    PartitionsRole  = Qt.UserRole + 14
+    HasPartitionsRole = Qt.UserRole + 15
 
     topicHasQosMismatchSignal = Signal(bool)
     totalEndpointsSignal = Signal(int)
@@ -48,11 +115,15 @@ class EndpointModel(QAbstractItemModel):
     requestEndpointsSignal = Signal(str, int, str, EntityType)
     requestMismatchesSignal = Signal(str, int, str)
 
+
     def __init__(self, parent=None):
         super(EndpointModel, self).__init__(parent)
         logging.debug(f"New instance EndpointModel: {str(self)} id: {id(self)}")
 
         self.endpoints = {}
+        self.partitions = {}
+        self.selectedPartition = None
+        self.selectedPartitionEndpKey: str = ""
         self.domain_id = -1
         self.topic_name = ""
         self.currentRequestId = str(uuid.uuid4())
@@ -136,6 +207,10 @@ class EndpointModel(QAbstractItemModel):
                         qos_mm_txt += "\n"
                 qos_mm_txt = qos_mm_txt.replace("dds_qos_policy_id.", "")
             return qos_mm_txt
+        elif role == self.PartitionsRole:
+            return self.partitions[endp_key]
+        elif role == self.HasPartitionsRole:
+            return self.partitions[endp_key].rowCount() > 0
 
         return None
 
@@ -153,8 +228,43 @@ class EndpointModel(QAbstractItemModel):
             self.ProcessNameRole: b'endpoint_process_name',
             self.EndpointHasQosMismatch: b'endpoint_has_qos_mismatch',
             self.EndpointQosMismatchText: b'endpoint_qos_mismatch_text',
-            self.AddressesRole: b'addresses'
+            self.AddressesRole: b'addresses',
+            self.PartitionsRole: b'partitions',
+            self.HasPartitionsRole: b'has_partitions',
         }
+
+    def updateMatchedPartitions(self):
+        if self.selectedPartition is None:
+            return
+        for endp_key in list(self.endpoints.keys()):
+            endp: DcpsEndpoint = self.endpoints[endp_key].endpoint
+            if qos.Policy.Partition in endp.qos:
+                for i in range(len(endp.qos[qos.Policy.Partition].partitions)):
+                    pat = str(endp.qos[qos.Policy.Partition].partitions[i])
+                    selected = False
+                    if pat == self.selectedPartition:
+                        matched = True
+                        selected = True if endp_key == self.selectedPartitionEndpKey else False
+                    else:
+                        if self.entity_type == EntityType.READER:
+                            matched = partitions_match_p([pat], [self.selectedPartition])
+                        else:
+                            matched = partitions_match_p([self.selectedPartition], [pat])
+                    self.partitions[endp_key].updatePartition(pat, matched, selected)
+
+    @Slot()
+    def clearPartitionMatching(self):
+        self.selectedPartition = None
+        self.selectedPartitionEndpKey = ""
+        for endp_key in list(self.endpoints.keys()):
+            self.partitions[endp_key].clearMatching()
+
+    @Slot(str, str)
+    def setSelectedPartition(self, partitionName: str, currentEndpKey: int):
+        logging.debug(f"set selected partition to {partitionName}, current endp-key: {currentEndpKey}")
+        self.selectedPartition = partitionName
+        self.selectedPartitionEndpKey = currentEndpKey
+        self.updateMatchedPartitions()
 
     @Slot(int, str, int)
     def setDomainId(self, domain_id: int, topic_name: str, entity_type: int):
@@ -167,6 +277,9 @@ class EndpointModel(QAbstractItemModel):
         self.entity_type = EntityType(entity_type)
         self.topic_name = topic_name
         self.endpoints = {}
+        self.partitions = {}
+        self.selectedPartitionEndpKey = ""
+        self.selectedPartition = None
         self.currentRequestId = str(uuid.uuid4())
 
         self.endResetModel()
@@ -182,6 +295,7 @@ class EndpointModel(QAbstractItemModel):
             return
         if self.topic_name != endpointData.endpoint.topic_name:
             return
+
         if (endpointData.isReader() and EntityType.WRITER == self.entity_type) or (endpointData.isWriter() and EntityType.READER == self.entity_type):
             if len(endpointData.mismatches.keys()) > 0:
                 for mismKey in endpointData.mismatches.keys():
@@ -202,12 +316,20 @@ class EndpointModel(QAbstractItemModel):
         self.beginInsertRows(QModelIndex(), row, row)
         self.endpoints[str(endpointData.endpoint.key)] = endpointData
         self.topicTypes.append(endpointData.endpoint.type_name)
+        self.partitions[str(endpointData.endpoint.key)] = PartitionModel(self)
+        if qos.Policy.Partition in endpointData.endpoint.qos:
+            for i in range(len(endpointData.endpoint.qos[qos.Policy.Partition].partitions)):
+                pat = str(endpointData.endpoint.qos[qos.Policy.Partition].partitions[i])
+                self.partitions[str(endpointData.endpoint.key)].updatePartition(pat, False, False)
         self.endInsertRows()
 
         self.totalEndpointsSignal.emit(len(self.endpoints))
 
         if len(endpointData.mismatches.keys()) > 0:
             self.topicHasQosMismatchSignal.emit(True)
+
+        if self.selectedPartition is not None:
+            self.updateMatchedPartitions()
 
     @Slot(int, str)
     def remove_endpoint_slot(self, domain_id, endpoint_key):
