@@ -42,9 +42,9 @@ class DataModelHandler(QObject):
     def __init__(self, parent=typing.Optional[QObject]):
         super().__init__()
 
-        self.idlcWorker = None
-        self.idlcWorker = None
-        self.dataModelItems = {}
+        self.idlcWorker: typing.Optional[IdlcWorkerThread] = None
+        self.allTypes = {}
+        self.topLevelTypes = {}
         self.structMembers = {}
         self.loaded_structs = {}
         self.app_data_dir = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
@@ -53,20 +53,19 @@ class DataModelHandler(QObject):
         self.destination_folder_py = os.path.join(self.datamodel_dir, "py")
 
     def count(self) -> int:
-        return len(self.dataModelItems.keys())
+        return len(self.topLevelTypes.keys())
 
     def hasType(self, topicType: str) -> bool:
-        return topicType in self.dataModelItems
+        return topicType in self.topLevelTypes
 
     def getType(self, topicTypeStr: str):
-        module_type = importlib.import_module(self.dataModelItems[topicTypeStr].parts[0])
-        class_type = getattr(module_type, self.dataModelItems[topicTypeStr].parts[1])
+        module_type = importlib.import_module(self.topLevelTypes[topicTypeStr].parts[0])
+        class_type = getattr(module_type, self.topLevelTypes[topicTypeStr].parts[1])
         return module_type, class_type
 
     def getName(self, index: int):
-        if index < len(list(self.dataModelItems.keys())):
-            return str(list(self.dataModelItems.keys())[index])
-
+        if index < len(list(self.topLevelTypes.keys())):
+            return str(list(self.topLevelTypes.keys())[index])
         return None
 
     def addUrls(self, urls):
@@ -89,7 +88,9 @@ class DataModelHandler(QObject):
 
     def clear(self):
         delete_folder(self.datamodel_dir)
-        self.dataModelItems.clear()
+        self.topLevelTypes.clear()
+        self.structMembers.clear()
+        self.allTypes.clear()
 
     def loadModules(self):
         logging.debug("")
@@ -125,13 +126,19 @@ class DataModelHandler(QObject):
                 try:
                     cls = getattr(module, type_name)
                     if inspect.isclass(cls):
-                        if not self.has_nested_annotation(cls) and not self.is_enum(cls):
-                            sId: str = f"{module_name}::{cls.__name__}".replace(".", "::")
-                            if sId not in self.dataModelItems:
-                                self.beginInsertModuleSignal.emit(self.count())
-                                self.dataModelItems[sId] = DataModelItem(sId, [module_name, cls.__name__])
-                                self.structMembers[sId] = self.get_struct_members(cls)
-                                self.endInsertModuleSignal.emit()
+                        sId: str = f"{module_name}::{cls.__name__}".replace(".", "::")
+                        if sId not in self.topLevelTypes:
+                            if not self.has_nested_annotation(cls) and not self.is_enum(cls):
+                                    self.beginInsertModuleSignal.emit(self.count())
+                                    self.topLevelTypes[sId] = DataModelItem(sId, [module_name, cls.__name__])
+                                    
+                                    self.endInsertModuleSignal.emit()
+                            else:
+                                pass
+
+                        self.structMembers[sId] = self.get_struct_members(cls)
+                        self.allTypes[sId] = cls
+
                     elif inspect.ismodule(cls):
                         self.import_module_and_nested(cls.__name__)
                 except Exception as e:
@@ -139,12 +146,14 @@ class DataModelHandler(QObject):
         except Exception as e:
             logging.error(f"Error importing {module_name}: {e}")
 
+        print("allTypes", self.allTypes)
+        print("structMembers", self.structMembers)
 
     def has_nested_annotation(self, cls):
         return 'nested' in getattr(cls, '__idl_annotations__', {})
 
     def is_enum(self, cls):
-        return getattr(cls, '__doc__', None) == "An enumeration."
+        return hasattr(cls, "__idl_enum_default_value__")
 
     def print_class_attributes(self, cls):
         logging.debug(f"Attributes of class {cls.__name__}:")
@@ -154,13 +163,16 @@ class DataModelHandler(QObject):
     def add_idl_without_module(self, module):
         classes = [getattr(module, name) for name in dir(module) if isinstance(getattr(module, name), type)]
         for cls in classes:
+            sId: str = f"{module.__name__}::{cls.__name__}"
             if not self.has_nested_annotation(cls) and "(IdlStruct" in str(cls):
-                sId: str = f"{module.__name__}::{cls.__name__}"
-                if sId not in self.dataModelItems:
+                
+                if sId not in self.topLevelTypes:
                     self.beginInsertModuleSignal.emit(self.count())
-                    self.dataModelItems[sId] = DataModelItem(sId, [module.__name__, cls.__name__])
-                    self.structMembers[sId] = self.get_struct_members(cls)
+                    self.topLevelTypes[sId] = DataModelItem(sId, [module.__name__, cls.__name__])
                     self.endInsertModuleSignal.emit()
+
+            self.structMembers[sId] = self.get_struct_members(cls)
+            self.allTypes[sId] = cls
 
     def get_struct_membersX(self, cls):
         return {name: type_ for name, type_ in cls.__annotations__.items()}
@@ -175,92 +187,20 @@ class DataModelHandler(QObject):
                 members[name] = type_
         return members
 
-    def toPyStructs(self, theType, code):
-        print("CODE xxx",theType, self.structMembers)
-
-        if theType in self.structMembers:
-            print("xxx",theType, self.structMembers[theType])
-            typeUnderscore = theType.replace("::", "_")
-            typeDot = theType.replace("::", ".")
-            code += f"class M{typeUnderscore}(QObject):\n"
-            code += "    def __init__(self"
-            for keyStructMem in self.structMembers[theType].keys():
-                code += f", {keyStructMem} = None"
-            code += "):\n"
-
-            code += "        super().__init__()\n"
-            for keyStructMem in self.structMembers[theType].keys():
-                code += f"        self._{keyStructMem} = {keyStructMem}\n"
-
-            for keyStructMem in self.structMembers[theType].keys():
-                code += "\n"
-                if self.structMembers[theType][keyStructMem] == str or str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[str"):
-                    code += "    @Property(str)\n"
-                elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[int"):
-                    code += "    @Property(int)\n"
-                elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[float"):
-                    code += "    @Property(float)\n"
-                elif str(self.structMembers[theType][keyStructMem]).startswith("typing.Annotated[typing.Sequence"):
-                    code += f"    @Property('QVariantList', notify={keyStructMem}Changed)\n"
-                elif str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
-                    code += f"    @Property(QObject, constant=False)\n"
-                    pass
-                else:
-                    logging.warn("unkown type")
-
-                code += f"    def {keyStructMem}(self):\n"
-                code += f"        print(\"Getter called {keyStructMem}\")\n"
-                code += f"        return self._{keyStructMem}\n\n"
-
-                code += f"    @{keyStructMem}.setter\n"
-                code += f"    def {keyStructMem}(self, value):\n"
-                code += f"        print(\"SETTER CALLED {keyStructMem}\", value)\n"
-                code += f"        self._{keyStructMem} = value\n\n"
-
-            # Convert to DDS-Type
-            code += f"    def toDdsObj(self):\n"
-            code += f"        return {typeDot}("
-            theFir = True
-            for keyStructMem in self.structMembers[theType].keys():
-                if theFir:
-                    theFir = False
-                else:
-                    code += ", "
-
-                if str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
-                    code += f"{keyStructMem} = self._{keyStructMem}.toDdsObj()"
-                    pass
-                else:
-                    code += f"{keyStructMem} = self._{keyStructMem}"
-
-                #code += "\n"
-
-            code += ")\n"
-
-            code += f"\nqmlRegisterType(M{typeUnderscore}, \"org.eclipse.cyclonedds.insight\", 1, 0, \"M{typeUnderscore}\")"
-            for keyStructMem in self.structMembers[theType].keys():
-                if str(self.structMembers[theType][keyStructMem]).replace(".", "::") in self.structMembers:
-                    theType_strcut = str(self.structMembers[theType][keyStructMem])
-                    usc = theType_strcut.replace("::", "_").replace(".", "_")                    
-                    #code += f"\nqmlRegisterType(M{usc}, \"org.eclipse.cyclonedds.insight\", 1, 0, \"M{usc}\")"
-                    code = f"import M{usc}\n" + code
-
-        return code
-
     def getInitializedDataObj(self, topicType):
         """Returns an default initialized object of the given type"""
 
         if topicType.replace(".", "::") in self.structMembers:
             topicType = topicType.replace(".", "::")
 
-        if topicType in self.structMembers:
+        if topicType in self.allTypes:
             initList = []
             for k in self.structMembers[topicType].keys():
                 currentTypeName = self.structMembers[topicType][k]
                 print("----------->>>>>>>>>>>", currentTypeName)
                 if self.isSequence(currentTypeName):
                     initList.append([])
-                elif self.isInt(currentTypeName):
+                elif self.isInt(currentTypeName) or self.isEnum(currentTypeName):
                     initList.append(0)
                 elif self.isFloat(currentTypeName):
                     initList.append(0.0)
@@ -280,7 +220,7 @@ class DataModelHandler(QObject):
             initializedObj = module(*initList)
             print("initializedObj----->>>>", initializedObj)
         else:
-            if self.isInt(topicType):
+            if self.isInt(topicType) or self.isEnum(topicType):
                 return 0
             elif self.isFloat(topicType):
                 return 0.0
@@ -305,6 +245,18 @@ class DataModelHandler(QObject):
     def isFloat(self, theType):
         return str(theType).startswith("typing.Annotated[float")
     
+    def isEnum(self, theType):
+        smiCol = str(theType).replace(".", "::")
+        if smiCol in self.allTypes:
+            return self.is_enum(self.allTypes[smiCol])
+        return False
+
+    def getEnumItemNames(self, theType):
+        smiCol = str(theType).replace(".", "::")
+        if smiCol in self.allTypes:
+            return getattr(self.allTypes[smiCol], "_member_names_")
+        return []
+
     def isStr(self, theType):
         return theType == str or str(theType).startswith("typing.Annotated[str") or theType == "str"
     
@@ -352,8 +304,15 @@ class DataModelHandler(QObject):
                 elif self.isFloat(self.structMembers[theType][keyStructMem]):
                     rootNode.appendChild(DataTreeNode(keyStructMem, tt, DataTreeModel.IsFloatRole, parent=rootNode))
 
+                # bool
                 elif self.isBool(self.structMembers[theType][keyStructMem]):
                     rootNode.appendChild(DataTreeNode(keyStructMem, tt, DataTreeModel.IsBoolRole, parent=rootNode))
+
+                # enum
+                elif self.isEnum(self.structMembers[theType][keyStructMem]):
+                    node = DataTreeNode(keyStructMem, tt, DataTreeModel.IsEnumRole, parent=rootNode)
+                    node.enumItemNames = self.getEnumItemNames(self.structMembers[theType][keyStructMem])
+                    rootNode.appendChild(node)
 
                 # sequence
                 elif self.isSequence(self.structMembers[theType][keyStructMem]):
@@ -384,7 +343,7 @@ class DataModelHandler(QObject):
 
                 # Unknown
                 else:
-                    logging.error(f"Unknown Datatype: {str(self.structMembers[theType][keyStructMem])}")
+                    logging.error(f"Unknown Datatype: {theType} {keyStructMem} {str(self.structMembers[theType][keyStructMem])}")
 
         elif self.isInt(theType):
             rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsIntRole, parent=rootNode))
@@ -394,5 +353,9 @@ class DataModelHandler(QObject):
             rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsStrRole, parent=rootNode))
         elif self.isBool(theType):
             rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsBoolRole, parent=rootNode))
+        elif self.isEnum(theType):
+            node = DataTreeNode("", theType, DataTreeModel.IsEnumRole, parent=rootNode)
+            node.enumItemNames = self.getEnumItemNames(theType)
+            rootNode.appendChild(node)
 
         return rootNode

@@ -28,6 +28,7 @@ class DataTreeNode:
         self.itemValue = None
         self.role = role
         self.dataType = None
+        self.enumItemNames = []
 
     def appendChild(self, child):
         self.childItems.append(child)
@@ -155,6 +156,8 @@ class DataTreeModel(QAbstractItemModel):
                 return "0.0"
             elif item.role == self.IsStrRole:
                 return ""
+            elif item.role == self.IsEnumRole:
+                return 0
         elif role == self.DisplayHintRole:
             if item.role == self.IsArrayElementRole:
                 return f"[{item.parentItem.childItems.index(item)}]"
@@ -182,6 +185,7 @@ class DataTreeModel(QAbstractItemModel):
 
     @Slot(QModelIndex, str)
     def setData(self, index, value):
+        print("setData", index, value)
         if index.isValid():
             item = index.internalPointer()
             if item.role == self.IsFloatRole:
@@ -189,7 +193,7 @@ class DataTreeModel(QAbstractItemModel):
                     item.itemValue = float(value)
                 except:
                     item.itemValue = 0.0
-            elif item.role == self.IsIntRole:
+            elif item.role == self.IsIntRole or item.role == self.IsEnumRole:
                 try:
                     item.itemValue = int(value)
                 except:
@@ -224,6 +228,20 @@ class DataTreeModel(QAbstractItemModel):
                 printNode(child, indent + 2)
 
         printNode(self.rootItem)
+
+    @Slot(QModelIndex, result=bool)
+    def getIsEnum(self, index):
+        if index.isValid():
+            item: DataTreeNode= index.internalPointer()
+            return item.role == self.IsEnumRole
+        return False
+
+    @Slot(QModelIndex, result=list)
+    def getEnumModel(self, index):
+        if index.isValid():
+            item: DataTreeNode= index.internalPointer()
+            return item.enumItemNames
+        return []
 
     @Slot(QModelIndex, DataTreeNode)
     def addArrayItem(self, index: QModelIndex, node: DataTreeNode):

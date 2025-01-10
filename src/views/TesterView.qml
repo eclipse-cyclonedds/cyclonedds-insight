@@ -237,12 +237,26 @@ Rectangle {
                             }
                         }
                     }
+
+                    ComboBox {
+                        id: enumCombo
+                        visible: dataTreeModel !== null ? dataTreeModel.getIsEnum(treeView.index(row, column)) : false
+                        enabled: dataTreeModel !== null ? dataTreeModel.getIsEnum(treeView.index(row, column)) : false
+                        model: dataTreeModel !== null ? dataTreeModel.getEnumModel(treeView.index(row, column)) : []
+                        anchors.right: label.right
+                        onCurrentIndexChanged: {
+                            if (dataTreeModel) {
+                                dataTreeModel.setData(treeView.index(row, column), enumCombo.currentIndex)
+                            }
+                        }
+                    }
+                    
                     Button {
                         visible: model.is_array
                         anchors.right: label.right
                         text: "+"
                         onClicked: {
-                            testerModel.addArrayItem(librariesCombobox.currentIndex ,treeView.index(row, column))
+                            testerModel.addArrayItem(librariesCombobox.currentIndex, treeView.index(row, column))
                         }
                     }
                     Button {

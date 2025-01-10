@@ -20,7 +20,7 @@ from dds_access.dds_data import DdsData
 from cyclonedds.core import Qos, Policy
 from cyclonedds.util import duration
 from utils import EntityType
-from ModuleHandler import DataModelHandler
+from module_handler import DataModelHandler
 
 
 class DatamodelModel(QAbstractListModel):
