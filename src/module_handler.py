@@ -20,7 +20,7 @@ from PySide6.QtCore import QThread, Signal, QStandardPaths
 from PySide6.QtCore import QObject
 import inspect
 from utils import delete_folder
-from dds_access.Idlc import IdlcWorkerThread
+from dds_access.idlc import IdlcWorkerThread
 from dataclasses import dataclass
 import typing
 from models.data_tree_model import DataTreeModel, DataTreeNode

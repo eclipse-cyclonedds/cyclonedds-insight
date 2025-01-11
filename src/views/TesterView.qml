@@ -66,6 +66,11 @@ Rectangle {
                         dataTreeModel = testerModel.getTreeModel(currentIndex)
                     }
                 }
+                onCountChanged: {
+                    if (librariesCombobox.count > 0 && librariesCombobox.currentIndex === -1) {
+                        librariesCombobox.currentIndex = 0;
+                    }
+                }
             }
 
             Button {
