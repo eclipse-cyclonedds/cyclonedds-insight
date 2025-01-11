@@ -166,7 +166,7 @@ Rectangle {
                         id: label
                         x: padding + (isTreeNode ? (depth + 1) * indentation : 0)
                         anchors.verticalCenter: parent.verticalCenter
-                        width: parent.width - padding - x - 10
+                        width: implicitWidth
                         clip: true
                         text: model.display + display_hint
                     }
@@ -176,7 +176,9 @@ Rectangle {
                         enabled: model.is_str
                         text: model.value !== undefined ? model.value : ""
                         placeholderText: "Enter text"
-                        anchors.right: label.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: label.right
+                        anchors.leftMargin: 5
                         readOnly: false
                         onTextChanged: {
                             if (dataTreeModel) {
@@ -191,7 +193,9 @@ Rectangle {
                         visible: model.is_int
                         enabled: model.is_int
                         text: model.value !== undefined ? model.value : "0"
-                        anchors.right: label.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: label.right
+                        anchors.leftMargin: 5
                         readOnly: false
                         validator: RegularExpressionValidator {
                             regularExpression: /^[+-]?\d+$/
@@ -210,7 +214,9 @@ Rectangle {
                         visible: model.is_float
                         enabled: model.is_float
                         text: model.value !== undefined ? model.value : "0.0"
-                        anchors.right: label.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: label.right
+                        anchors.leftMargin: 5
                         readOnly: false
                         validator: RegularExpressionValidator {
                             regularExpression: /^[+-]?(\d+(\.\d*)?|\.\d+)$/
@@ -227,7 +233,9 @@ Rectangle {
                         id: toggleSwitch
                         visible: model.is_bool
                         enabled: model.is_bool
-                        anchors.right: label.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: label.right
+                        anchors.leftMargin: 5
                         checked: model.value !== undefined ? (model.value === "true" || model.value === "True") : false
                         onCheckedChanged: {
                             if (dataTreeModel) {
@@ -243,7 +251,9 @@ Rectangle {
                         visible: dataTreeModel !== null ? dataTreeModel.getIsEnum(treeView.index(row, column)) : false
                         enabled: dataTreeModel !== null ? dataTreeModel.getIsEnum(treeView.index(row, column)) : false
                         model: dataTreeModel !== null ? dataTreeModel.getEnumModel(treeView.index(row, column)) : []
-                        anchors.right: label.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: label.right
+                        anchors.leftMargin: 5
                         onCurrentIndexChanged: {
                             if (dataTreeModel) {
                                 dataTreeModel.setData(treeView.index(row, column), enumCombo.currentIndex)
@@ -253,7 +263,9 @@ Rectangle {
                     
                     Button {
                         visible: model.is_array
-                        anchors.right: label.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: label.right
+                        anchors.leftMargin: 5
                         text: "+"
                         onClicked: {
                             testerModel.addArrayItem(librariesCombobox.currentIndex, treeView.index(row, column))
@@ -261,7 +273,9 @@ Rectangle {
                     }
                     Button {
                         visible: model.is_array_element
-                        anchors.right: label.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: label.right
+                        anchors.leftMargin: 5
                         text: "-"
                         onClicked: {
                             testerModel.removeArrayItem(librariesCombobox.currentIndex, treeView.index(row, column))

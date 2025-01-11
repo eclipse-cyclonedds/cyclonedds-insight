@@ -15,7 +15,7 @@ from cyclonedds.builtin import DcpsParticipant
 from cyclonedds import core, dynamic
 from cyclonedds import core
 from cyclonedds.util import duration
-from dds_access.DomainParticipantFactory import DomainParticipantFactory
+from dds_access.domain_participant_factory import DomainParticipantFactory
 import logging
 import xml.etree.ElementTree as ET
 import os

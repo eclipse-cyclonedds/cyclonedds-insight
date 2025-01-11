@@ -19,9 +19,9 @@ from cyclonedds.core import SampleState, ViewState, InstanceState
 from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
 from cyclonedds.pub import Publisher, DataWriter
-from dds_access.DdsListener import DdsListener
+from dds_access.dds_listener import DdsListener
 from threading import Lock
-from dds_access.DomainParticipantFactory import DomainParticipantFactory
+from dds_access.domain_participant_factory import DomainParticipantFactory
 from utils import EntityType
 
 

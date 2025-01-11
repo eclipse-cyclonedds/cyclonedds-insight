@@ -23,12 +23,12 @@ import subprocess
 import glob
 from dataclasses import dataclass
 import typing
-from dds_access.Dispatcher import DispatcherThread
+from dds_access.dispatcher import DispatcherThread
 from cyclonedds.core import Qos, Policy
 from cyclonedds.util import duration
 import types
 from PySide6.QtQml import qmlRegisterType
-from models.DataTreeModel import DataTreeModel, DataTreeNode
+from models.data_tree_model import DataTreeModel, DataTreeNode
 
 @dataclass
 class DataModelItem:

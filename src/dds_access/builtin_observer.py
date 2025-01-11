@@ -15,7 +15,7 @@ import logging
 from queue import Queue
 from cyclonedds import core, builtin
 from cyclonedds.util import duration
-from dds_access.DomainParticipantFactory import DomainParticipantFactory
+from dds_access.domain_participant_factory import DomainParticipantFactory
 from utils import EntityType
 
 

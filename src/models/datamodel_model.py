@@ -15,7 +15,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 import logging
 import typing
 import uuid
-from dds_access.Dispatcher import DispatcherThread
+from dds_access.dispatcher import DispatcherThread
 from dds_access.dds_data import DdsData
 from cyclonedds.core import Qos, Policy
 from cyclonedds.util import duration
