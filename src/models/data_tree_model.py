@@ -40,7 +40,7 @@ class DataTreeNode:
         if not index.isValid():
             return -1
         item = index.internalPointer()
-        if item.parentItem and item.parentItem.role == self.IsArrayRole:
+        if item.parentItem and (item.parentItem.role == self.IsSequenceRole or item.parentItem.role == self.IsArrayRole):
             return item.parentItem.childItems.index(item)
         return -1
 
@@ -69,15 +69,17 @@ class DataTreeModel(QAbstractItemModel):
     IsFloatRole = Qt.UserRole + 2
     IsIntRole = Qt.UserRole + 3
     IsStrRole = Qt.UserRole + 4
-    IsArrayRole = Qt.UserRole + 5
+    IsSequenceRole = Qt.UserRole + 5
     IsStructRole = Qt.UserRole + 6
     IsEnumRole = Qt.UserRole + 7
     IsUnionRole = Qt.UserRole + 8
-    IsArrayElementRole = Qt.UserRole + 9
+    IsSequenceElementRole = Qt.UserRole + 9
     TypeNameRole = Qt.UserRole + 10
     ValueRole = Qt.UserRole + 11
     DisplayHintRole = Qt.UserRole + 12
     IsBoolRole = Qt.UserRole + 13
+    IsOptionalRole = Qt.UserRole + 14
+    IsArrayRole = Qt.UserRole + 15
 
     def __init__(self, rootItem: DataTreeNode, parent=None):
         super(DataTreeModel, self).__init__(parent)
@@ -123,7 +125,7 @@ class DataTreeModel(QAbstractItemModel):
         if role == self.DisplayRole:
             if item.itemName:
                 return item.itemName
-            elif item.role == self.IsArrayElementRole:
+            elif item.role == self.IsSequenceElementRole:
                 return ""
             else:
                 return "value"
@@ -137,16 +139,20 @@ class DataTreeModel(QAbstractItemModel):
             return item.role == self.IsStrRole
         elif role == self.IsBoolRole:
             return item.role == self.IsBoolRole
+        elif role == self.IsSequenceRole:
+            return item.role == self.IsSequenceRole
         elif role == self.IsArrayRole:
             return item.role == self.IsArrayRole
         elif role == self.IsStructRole:
             return item.role == self.IsStructRole
+        elif role == self.IsOptionalRole:
+            return item.role == self.IsOptionalRole
         elif role == self.IsEnumRole:
             return item.role == self.IsEnumRole
         elif role == self.IsUnionRole:
             return item.role == self.IsUnionRole
-        elif role == self.IsArrayElementRole:
-            return item.role == self.IsArrayElementRole
+        elif role == self.IsSequenceElementRole:
+            return item.role == self.IsSequenceElementRole
         elif role == self.ValueRole:
             if item.itemValue is not None:
                 return str(item.itemValue)
@@ -159,7 +165,7 @@ class DataTreeModel(QAbstractItemModel):
             elif item.role == self.IsEnumRole:
                 return 0
         elif role == self.DisplayHintRole:
-            if item.role == self.IsArrayElementRole:
+            if item.role == self.IsSequenceElementRole:
                 return f"[{item.parentItem.childItems.index(item)}]"
             else:
                 return ""
@@ -172,15 +178,17 @@ class DataTreeModel(QAbstractItemModel):
             self.IsFloatRole: b'is_float',
             self.IsIntRole: b'is_int',
             self.IsStrRole: b'is_str',
-            self.IsArrayRole: b'is_array',
+            self.IsSequenceRole: b'is_sequence',
             self.IsStructRole: b'is_struct',
             self.IsEnumRole: b'is_enum',
             self.IsUnionRole: b'is_union',
-            self.IsArrayElementRole: b'is_array_element',
+            self.IsSequenceElementRole: b'is_sequence_element',
             self.TypeNameRole: b'type_name',
             self.ValueRole: b'value',
             self.DisplayHintRole: b'display_hint',
-            self.IsBoolRole: b'is_bool'
+            self.IsBoolRole: b'is_bool',
+            self.IsArrayRole: b'is_array',
+            self.IsOptionalRole: b'is_optional',
         }
 
     @Slot(QModelIndex, str)
@@ -202,6 +210,8 @@ class DataTreeModel(QAbstractItemModel):
                 item.itemValue = True if value == "true" else False
             elif item.role == self.IsStrRole:
                 item.itemValue = str(value)
+            elif item.role == self.IsSequenceRole:
+                return
             elif item.role == self.IsArrayRole:
                 return
             elif item.role == self.IsStructRole:
@@ -215,6 +225,10 @@ class DataTreeModel(QAbstractItemModel):
                 else:
                     obj = getattr(obj, attr)
 
+            if obj is None or item.itemValue is None:
+                print("WARNINGGGGGGGG !!!")
+                return
+
             if isinstance(obj, list):
                 obj[int(attrs[-1])] = item.itemValue
             else:
@@ -223,7 +237,7 @@ class DataTreeModel(QAbstractItemModel):
     @Slot()
     def printTree(self):
         def printNode(node, indent=0):
-            print(' ' * indent + str(node.itemName) + " " + str(node.itemValue), node.dataType)
+            print(' ' * indent + str(node.itemName) + " " + str(node.itemValue), node.dataType, node.role)
             for child in node.childItems:
                 printNode(child, indent + 2)
 
@@ -253,7 +267,10 @@ class DataTreeModel(QAbstractItemModel):
             item.appendChild(node)
 
             seqenceObj = copy.deepcopy(node.parentItem.dataType)
+            print("seqenceObj !!!", seqenceObj)
+            print("childitems", node.childItems)
             attrs, parent = self.getDotPath(node.childItems[0])
+            print("Add-array-item", attrs, parent)
             if attrs[-1].isdigit():
                 attrs.append(None)
             obj = parent.dataType
@@ -276,7 +293,7 @@ class DataTreeModel(QAbstractItemModel):
             path = ""
             countScope = 0
             while itemX is not None and itemX.parentItem is not None:
-                if itemX.parentItem.role == self.IsArrayRole:
+                if itemX.parentItem.role == self.IsSequenceRole or itemX.parentItem.role == self.IsArrayRole:
                     countScope += 1
                     if count == countScope:
                         pos = itemX.parentItem.childItems.index(itemX)
@@ -286,11 +303,11 @@ class DataTreeModel(QAbstractItemModel):
 
         while parent is not None:
             if parent.parentItem is not None:
-                if parent.role == self.IsArrayRole:
+                if parent.role == self.IsSequenceRole or parent.role == self.IsArrayRole:
                     count += 1
                     array_position = findArrayPosition(item, count)
                     dotName = parent.itemName + array_position + "." + dotName
-                elif parent.role == self.IsArrayElementRole:
+                elif parent.role == self.IsSequenceElementRole:
                     pass
                 else:
                     dotName = parent.itemName + "." + dotName
@@ -301,6 +318,8 @@ class DataTreeModel(QAbstractItemModel):
 
         attrs = re.split(r'\.|\[|\]', dotName)
         attrs = [attr for attr in attrs if attr]
+
+        print("attrs", attrs)
 
         return attrs, parent
 

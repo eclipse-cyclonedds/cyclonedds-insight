@@ -267,7 +267,7 @@ Rectangle {
                     }
                     
                     Button {
-                        visible: model.is_array
+                        visible: model.is_sequence || model.is_array
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: label.right
                         anchors.leftMargin: 5
@@ -277,7 +277,7 @@ Rectangle {
                         }
                     }
                     Button {
-                        visible: model.is_array_element
+                        visible: model.is_sequence_element
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: label.right
                         anchors.leftMargin: 5

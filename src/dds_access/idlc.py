@@ -85,6 +85,10 @@ class IdlcWorkerThread(QThread):
 
             arguments.append("-o")
             arguments.append(os.path.normpath(self.destination_folder_py))
+            arguments.append("-I")
+            arguments.append(os.path.normpath(self.destination_folder_idl))
+            arguments.append("-f")
+            arguments.append("case-sensitive")
             arguments.append(os.path.normpath(destination_file))
 
             command = os.path.normpath(f"{application_path}/idlc")

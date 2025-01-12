@@ -35,7 +35,6 @@ class DataModelItem:
 class DataModelHandler(QObject):
 
     isLoadingSignal: Signal = Signal(bool)
-    
     beginInsertModuleSignal: Signal = Signal(int)
     endInsertModuleSignal: Signal = Signal()
 
@@ -43,15 +42,16 @@ class DataModelHandler(QObject):
         super().__init__()
 
         self.idlcWorker: typing.Optional[IdlcWorkerThread] = None
+        self.app_data_dir: str = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+        self.datamodel_dir: str = os.path.join(self.app_data_dir, "datamodel")
+        self.destination_folder_idl: str = os.path.join(self.datamodel_dir, "idl")
+        self.destination_folder_py: str = os.path.join(self.datamodel_dir, "py")
+
         self.allTypes = {}
         self.topLevelTypes = {}
         self.structMembers = {}
         self.loaded_structs = {}
         self.customTypes = {}
-        self.app_data_dir = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
-        self.datamodel_dir = os.path.join(self.app_data_dir, "datamodel")
-        self.destination_folder_idl = os.path.join(self.datamodel_dir, "idl")
-        self.destination_folder_py = os.path.join(self.datamodel_dir, "py")
 
     def count(self) -> int:
         return len(self.topLevelTypes.keys())
@@ -91,7 +91,9 @@ class DataModelHandler(QObject):
         delete_folder(self.datamodel_dir)
         self.topLevelTypes.clear()
         self.structMembers.clear()
+        self.loaded_structs.clear()
         self.allTypes.clear()
+        self.customTypes.clear()
 
     def loadModules(self):
         logging.debug("")
@@ -117,7 +119,7 @@ class DataModelHandler(QObject):
         for submodule in submodules:
             self.import_module_and_nested(submodule)
 
-        print("self.structMembers", self.structMembers)
+       # print("self.structMembers", self.structMembers)
 
     def import_module_and_nested(self, module_name):
         try:
@@ -132,7 +134,6 @@ class DataModelHandler(QObject):
                             if not self.has_nested_annotation(cls) and not self.is_enum(cls):
                                     self.beginInsertModuleSignal.emit(self.count())
                                     self.topLevelTypes[sId] = DataModelItem(sId, [module_name, cls.__name__])
-                                    
                                     self.endInsertModuleSignal.emit()
                             else:
                                 pass
@@ -157,10 +158,10 @@ class DataModelHandler(QObject):
         except Exception as e:
             logging.error(f"Error importing {module_name}: {e}")
 
-        print("allTypes", self.allTypes)
-        print("structMembers", self.structMembers)
-        print("allTypeDefs", self.customTypes)
-        print("DONE")
+        #print("allTypes", self.allTypes)
+        #print("structMembers", self.structMembers)
+        #print("allTypeDefs", self.customTypes)
+        #print("DONE")
 
     def has_nested_annotation(self, cls):
         return 'nested' in getattr(cls, '__idl_annotations__', {})
@@ -208,10 +209,11 @@ class DataModelHandler(QObject):
             for k in self.structMembers[topicType].keys():
                 currentTypeName = self.structMembers[topicType][k]
                 print("----------->>>>>>>>>>>", currentTypeName)
-                
                 realType = self.getRealType(currentTypeName)
                 print("xxxxxxxxREAL.", realType)
-                if self.isSequence(realType):
+                if self.isArray(realType):
+                    initList.append([]) # TODO fix size
+                elif self.isSequence(realType):
                     initList.append([])
                 elif self.isInt(realType) or self.isEnum(realType):
                     initList.append(0)
@@ -225,6 +227,8 @@ class DataModelHandler(QObject):
                     initList.append(None)
                 elif self.isStruct(realType):
                     initList.append(self.getInitializedDataObj(realType))
+                elif self.isOptional(realType):
+                    initList.append(None)                    
 
             topic_type_dot: str = topicType.replace("::", ".")
             moduleNameToImport = topic_type_dot.split('.')[0]
@@ -257,10 +261,6 @@ class DataModelHandler(QObject):
         return self.toNode(topic_type, rootNode)
 
     def isInt(self, theType):
-
-        print("INT?", type(theType))
-
-
         return str(theType).startswith("typing.Annotated[int")
 
     def isFloat(self, theType):
@@ -273,11 +273,15 @@ class DataModelHandler(QObject):
         return False
 
     def isUnion(self, theType):
-        if hasattr(theType, "__metadata__"):
-            if len(theType.__metadata__) > 0:
-                if isinstance(theType, cyclonedds.idl.types.case):
-                    logging.warning("Unions are currently not supported.")
-                    return True
+        if isinstance(theType, cyclonedds.idl.types.case):
+            logging.warning("Unions are currently not supported.")
+            return True
+        return False
+
+    def isOptional(self, theType):
+        if hasattr(theType, "__origin__"):
+            if theType.__origin__ is typing.Union:
+                return True
         return False
 
     def getEnumItemNames(self, theType):
@@ -287,13 +291,13 @@ class DataModelHandler(QObject):
         return []
 
     def isStr(self, theType):
-        return theType == str or str(theType).startswith("typing.Annotated[str") or theType == "str"
+        return theType == str or str(theType).startswith("typing.Annotated[str") or theType == "str" or theType == "<class 'str'>"
     
     def isBool(self, theType):
         return theType == bool or str(theType).startswith("typing.Annotated[bool") or theType == "bool"
 
-    def isSequence(self, theType):
-        print("IS-SEQUENDE", theType)
+    def isArray(self, theType):
+        print("IS-ARRAY", theType, type(theType))
 
         smiCol = str(theType).replace(".", "::")
         print("SMI: ", smiCol)
@@ -303,11 +307,42 @@ class DataModelHandler(QObject):
                 if len(cls.__metadata__) > 0:
                     _type = cls.__metadata__[0]
                     print("cls:", type(cls), type(_type))
-                    if isinstance(_type, cyclonedds.idl.types.sequence):
-                        print("HEREREREEEEEEEEEEE", _type.subtype)
+                    if isinstance(_type, cyclonedds.idl.types.array):
                         return True
+        elif hasattr(theType, "__metadata__"):
+            if len(theType.__metadata__) > 0:
+                _type = theType.__metadata__[0]
+                if isinstance(_type, cyclonedds.idl.types.array):
+                    return True
 
-        return str(theType).startswith("typing.Annotated[typing.Sequence")
+        return False
+
+    def getMetaDataType(self, theType):
+        if hasattr(theType, "__metadata__"):
+            if len(theType.__metadata__) > 0:
+                _type = theType.__metadata__[0]
+                print("theType:", type(theType), type(_type), theType.__metadata__[0])
+                return _type
+        return None
+
+    def isSequence(self, theType):
+        print("IS-SEQUENDE", theType, type(theType))
+
+        smiCol = str(theType).replace(".", "::")
+        if smiCol in self.customTypes:
+            cls = self.customTypes[smiCol]
+            if hasattr(cls, "__metadata__"):
+                if len(cls.__metadata__) > 0:
+                    _type = cls.__metadata__[0]
+                    if isinstance(_type, cyclonedds.idl.types.sequence):
+                        return True
+        elif hasattr(theType, "__metadata__"):
+            if len(theType.__metadata__) > 0:
+                _type = theType.__metadata__[0]
+                print("theType:", type(theType), type(_type))
+                if isinstance(_type, cyclonedds.idl.types.sequence):
+                    return True
+        return False
 
     def isStruct(self, theType):
         return str(theType).replace(".", "::") in self.structMembers
@@ -316,7 +351,7 @@ class DataModelHandler(QObject):
         return self.isInt(theType) or self.isFloat(theType) or self.isStr(theType) or self.isBool(theType)
     
     def isPredefined(self, theType):
-        return self.isBasic(theType) or self.isStruct(theType) or self.isSequence(theType)
+        return self.isBasic(theType) or self.isStruct(theType) or self.isSequence(theType) or self.isArray(theType)
 
     def toNode(self, theType: str, rootNode):
         print("xxx",theType, self.structMembers)
@@ -363,24 +398,53 @@ class DataModelHandler(QObject):
                     node = DataTreeNode(keyStructMem, tt, DataTreeModel.IsUnionRole, parent=rootNode)
                     rootNode.appendChild(node)
 
-                # sequence
-                elif self.isSequence(realType):
+                elif self.isArray(realType):
                     arrayRootNode = DataTreeNode(keyStructMem, tt,DataTreeModel.IsArrayRole, parent=rootNode)
+                    metaType = self.getMetaDataType(realType)
+                    innerType = metaType.subtype
+                    print("ARRAYYYYY", innerType)
+                    if hasattr(innerType, "__idl_typename__"):
+                        inner = innerType.__idl_typename__
+                    else:
+                        inner = str(innerType)
+                    arrayLength = metaType.length
 
-                    inner = str(realType).replace("typing.Annotated[typing.Sequence[",  "", 1)
-                    inner = inner[:inner.rfind("], sequence[")]
+                    print("ARRAYYYYY", inner)
 
-                    # inner  = inner.replace(".", "::")
-                    print("THE INNER:::::", inner)
+                    arrayRootNode.dataType = self.getInitializedDataObj(str(inner))
+                    arrayRootNode.itemArrayTypeName = str(inner)
 
-                    if inner.startswith("ForwardRef('"):
-                        inner = inner.replace("ForwardRef('", "")
-                        inner = inner[:-2]
-
-                    arrayRootNode.dataType = self.getInitializedDataObj(inner)
-                    arrayRootNode.itemArrayTypeName = inner
+                    #for _ in range(arrayLength):
+                    #    # TODO: add real datatypes to root node with the dds obj
+                    #    arrElem = DataTreeNode("", "Array Element", DataTreeModel.IsSequenceElementRole, parent=arrayRootNode)
+                    #    itemNode = self.toNode(arrayRootNode.itemArrayTypeName, arrElem)
+                    #    arrayRootNode.appendChild(itemNode)
 
                     rootNode.appendChild(arrayRootNode)
+
+                # sequence
+                elif self.isSequence(realType):
+                    seqRootNode = DataTreeNode(keyStructMem, tt,DataTreeModel.IsSequenceRole, parent=rootNode)
+
+                    metaType = self.getMetaDataType(realType)
+
+                    innerType = metaType.subtype
+                    print("seq-dict", str(innerType), innerType)
+                    if hasattr(innerType, "__idl_typename__"):
+                        inner = innerType.__idl_typename__
+                    else:
+                        inner = str(innerType)
+                    maxLength = metaType.max_length
+
+                    print("INNER:::::::", inner, maxLength)
+
+                    seqRootNode.dataType = self.getInitializedDataObj(str(inner))
+                    seqRootNode.itemArrayTypeName = str(inner)
+
+                    rootNode.appendChild(seqRootNode)
+
+                elif self.isOptional(realType):
+                    rootNode.appendChild(DataTreeNode(keyStructMem, tt, DataTreeModel.IsBoolRole, parent=rootNode))
 
                 # struct
                 elif self.isStruct(realType):

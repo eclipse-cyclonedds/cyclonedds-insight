@@ -30,7 +30,6 @@ class DatamodelModel(QAbstractListModel):
     newDataArrived = Signal(str)
     isLoadingSignal = Signal(bool)
     requestDataType = Signal(str, int, str, str)
-
     newWriterSignal = Signal(str, int, str, str, str, str)
 
     def __init__(self, threads, dataModelHandler, parent=typing.Optional[QObject]) -> None:
