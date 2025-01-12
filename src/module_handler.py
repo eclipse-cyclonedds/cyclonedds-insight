@@ -444,9 +444,9 @@ class DataModelHandler(QObject):
                         inner = innerType.__idl_typename__
                     else:
                         inner = str(innerType)
-                    maxLength = metaType.max_length
+                    seqRootNode.maxElements = metaType.max_length
 
-                    print("INNER:::::::", inner, maxLength)
+                    print("INNER:::::::", inner)
 
                     seqRootNode.dataType = self.getInitializedDataObj(str(inner))
                     seqRootNode.itemArrayTypeName = str(inner)

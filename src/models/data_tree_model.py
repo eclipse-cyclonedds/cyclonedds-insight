@@ -29,6 +29,7 @@ class DataTreeNode:
         self.role = role
         self.dataType = None
         self.enumItemNames = []
+        self.maxElements = 0
 
     def appendChild(self, child):
         self.childItems.append(child)
@@ -81,6 +82,7 @@ class DataTreeModel(QAbstractItemModel):
     IsOptionalRole = Qt.UserRole + 14
     IsArrayRole = Qt.UserRole + 15
     IsArrayElementRole = Qt.UserRole + 16
+    IsExpandable = Qt.UserRole + 17
 
     def __init__(self, rootItem: DataTreeNode, parent=None):
         super(DataTreeModel, self).__init__(parent)
@@ -172,7 +174,10 @@ class DataTreeModel(QAbstractItemModel):
                 return f"[{item.parentItem.childItems.index(item)}]"
             else:
                 return ""
-
+        elif role == self.IsExpandable:
+            if item.role == self.IsSequenceRole:
+                return True if item.maxElements > item.childCount() else False
+            return False
         return None
 
     def roleNames(self):
@@ -193,6 +198,7 @@ class DataTreeModel(QAbstractItemModel):
             self.IsArrayRole: b'is_array',
             self.IsOptionalRole: b'is_optional',
             self.IsArrayElementRole: b'is_array_element',
+            self.IsExpandable: b'is_expandable',
         }
 
     @Slot(QModelIndex, str)
@@ -264,7 +270,7 @@ class DataTreeModel(QAbstractItemModel):
     @Slot(QModelIndex, DataTreeNode)
     def addArrayItem(self, index: QModelIndex, node: DataTreeNode):
         logging.debug("Add array item")
-        if index.isValid():
+        if index.isValid() and node.parentItem.maxElements > node.parentItem.childCount():
             item: DataTreeNode= index.internalPointer()
             self.beginInsertRows(index, item.childCount(), item.childCount())
             node.parentItem = item

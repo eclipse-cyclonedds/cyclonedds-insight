@@ -267,7 +267,7 @@ Rectangle {
                     }
 
                     Button {
-                        visible: model.is_sequence
+                        visible: model.is_expandable
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: label.right
                         anchors.leftMargin: 5
