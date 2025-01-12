@@ -80,6 +80,7 @@ class DataTreeModel(QAbstractItemModel):
     IsBoolRole = Qt.UserRole + 13
     IsOptionalRole = Qt.UserRole + 14
     IsArrayRole = Qt.UserRole + 15
+    IsArrayElementRole = Qt.UserRole + 16
 
     def __init__(self, rootItem: DataTreeNode, parent=None):
         super(DataTreeModel, self).__init__(parent)
@@ -125,7 +126,7 @@ class DataTreeModel(QAbstractItemModel):
         if role == self.DisplayRole:
             if item.itemName:
                 return item.itemName
-            elif item.role == self.IsSequenceElementRole:
+            elif item.role == self.IsSequenceElementRole or item.role == self.IsArrayElementRole:
                 return ""
             else:
                 return "value"
@@ -153,6 +154,8 @@ class DataTreeModel(QAbstractItemModel):
             return item.role == self.IsUnionRole
         elif role == self.IsSequenceElementRole:
             return item.role == self.IsSequenceElementRole
+        elif role == self.IsArrayElementRole:
+            return item.role == self.IsArrayElementRole
         elif role == self.ValueRole:
             if item.itemValue is not None:
                 return str(item.itemValue)
@@ -165,7 +168,7 @@ class DataTreeModel(QAbstractItemModel):
             elif item.role == self.IsEnumRole:
                 return 0
         elif role == self.DisplayHintRole:
-            if item.role == self.IsSequenceElementRole:
+            if item.role == self.IsSequenceElementRole or item.role == self.IsArrayElementRole:
                 return f"[{item.parentItem.childItems.index(item)}]"
             else:
                 return ""
@@ -189,6 +192,7 @@ class DataTreeModel(QAbstractItemModel):
             self.IsBoolRole: b'is_bool',
             self.IsArrayRole: b'is_array',
             self.IsOptionalRole: b'is_optional',
+            self.IsArrayElementRole: b'is_array_element',
         }
 
     @Slot(QModelIndex, str)
@@ -307,7 +311,7 @@ class DataTreeModel(QAbstractItemModel):
                     count += 1
                     array_position = findArrayPosition(item, count)
                     dotName = parent.itemName + array_position + "." + dotName
-                elif parent.role == self.IsSequenceElementRole:
+                elif parent.role == self.IsSequenceElementRole or parent.role == self.IsArrayElementRole:
                     pass
                 else:
                     dotName = parent.itemName + "." + dotName

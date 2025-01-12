@@ -212,7 +212,17 @@ class DataModelHandler(QObject):
                 realType = self.getRealType(currentTypeName)
                 print("xxxxxxxxREAL.", realType)
                 if self.isArray(realType):
-                    initList.append([]) # TODO fix size
+                    arrayDefaultValues = []
+                    metaType = self.getMetaDataType(realType)
+                    innerType = metaType.subtype
+                    if hasattr(innerType, "__idl_typename__"):
+                        inner = innerType.__idl_typename__
+                    else:
+                        inner = str(innerType)
+                    arrayLength = metaType.length
+                    for _ in range(arrayLength):
+                        arrayDefaultValues.append(self.getInitializedDataObj(str(inner)))
+                    initList.append(arrayDefaultValues)
                 elif self.isSequence(realType):
                     initList.append([])
                 elif self.isInt(realType) or self.isEnum(realType):
@@ -414,11 +424,11 @@ class DataModelHandler(QObject):
                     arrayRootNode.dataType = self.getInitializedDataObj(str(inner))
                     arrayRootNode.itemArrayTypeName = str(inner)
 
-                    #for _ in range(arrayLength):
-                    #    # TODO: add real datatypes to root node with the dds obj
-                    #    arrElem = DataTreeNode("", "Array Element", DataTreeModel.IsSequenceElementRole, parent=arrayRootNode)
-                    #    itemNode = self.toNode(arrayRootNode.itemArrayTypeName, arrElem)
-                    #    arrayRootNode.appendChild(itemNode)
+                    for _ in range(arrayLength):
+                        # TODO: add real datatypes to root node with the dds obj
+                        arrElem = DataTreeNode("", "Array Element", DataTreeModel.IsArrayElementRole, parent=arrayRootNode)
+                        itemNode = self.toNode(arrayRootNode.itemArrayTypeName, arrElem)
+                        arrayRootNode.appendChild(itemNode)
 
                     rootNode.appendChild(arrayRootNode)
 

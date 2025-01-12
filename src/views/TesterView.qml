@@ -265,9 +265,9 @@ Rectangle {
                             }
                         }
                     }
-                    
+
                     Button {
-                        visible: model.is_sequence || model.is_array
+                        visible: model.is_sequence
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: label.right
                         anchors.leftMargin: 5
