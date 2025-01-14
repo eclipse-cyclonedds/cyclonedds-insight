@@ -323,6 +323,8 @@ class DataTreeModel(QAbstractItemModel):
                 setattr(obj, attrs[-1], seqenceObj)
 
             self.endInsertRows()
+
+            self.dataChanged.emit(index, index, [DataTreeModel.IsExpandable])
         else:
             logging.warning("Failed to insert array item")
 
