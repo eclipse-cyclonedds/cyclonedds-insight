@@ -107,7 +107,10 @@ class TesterModel(QAbstractListModel):
         if currentTreeIndex.isValid():
             item: DataTreeNode = currentTreeIndex.internalPointer()
             if item.itemArrayTypeName:
-                itemNode = self.dataModelHandler.toNode(item.itemArrayTypeName, DataTreeNode("", "Array Element", DataTreeModel.IsSequenceElementRole, parent=item))
+                targetRole = DataTreeModel.IsSequenceElementRole
+                if item.role == DataTreeModel.IsOptionalRole:
+                    targetRole = DataTreeModel.IsOptionalElementRole
+                itemNode = self.dataModelHandler.toNode(item.itemArrayTypeName, DataTreeNode("", "", targetRole, parent=item))
                 dataTreeModel.addArrayItem(currentTreeIndex, itemNode)
 
     @Slot(int, QModelIndex)

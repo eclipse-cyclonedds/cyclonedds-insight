@@ -277,7 +277,7 @@ Rectangle {
                         }
                     }
                     Button {
-                        visible: model.is_sequence_element
+                        visible: model.is_sequence_element || model.is_optional_element
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: label.right
                         anchors.leftMargin: 5

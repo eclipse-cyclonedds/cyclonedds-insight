@@ -15,6 +15,7 @@ import re
 import copy
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt
 from PySide6.QtCore import Signal, Slot
+import sys
 
 
 class DataTreeNode:
@@ -83,6 +84,7 @@ class DataTreeModel(QAbstractItemModel):
     IsArrayRole = Qt.UserRole + 15
     IsArrayElementRole = Qt.UserRole + 16
     IsExpandable = Qt.UserRole + 17
+    IsOptionalElementRole = Qt.UserRole + 18
 
     def __init__(self, rootItem: DataTreeNode, parent=None):
         super(DataTreeModel, self).__init__(parent)
@@ -128,7 +130,7 @@ class DataTreeModel(QAbstractItemModel):
         if role == self.DisplayRole:
             if item.itemName:
                 return item.itemName
-            elif item.role == self.IsSequenceElementRole or item.role == self.IsArrayElementRole:
+            elif item.role == self.IsSequenceElementRole or item.role == self.IsArrayElementRole or item.role == self.IsOptionalElementRole:
                 return ""
             else:
                 return "value"
@@ -158,6 +160,8 @@ class DataTreeModel(QAbstractItemModel):
             return item.role == self.IsSequenceElementRole
         elif role == self.IsArrayElementRole:
             return item.role == self.IsArrayElementRole
+        elif role == self.IsOptionalElementRole:
+            return item.role == self.IsOptionalElementRole
         elif role == self.ValueRole:
             if item.itemValue is not None:
                 return str(item.itemValue)
@@ -172,11 +176,17 @@ class DataTreeModel(QAbstractItemModel):
         elif role == self.DisplayHintRole:
             if item.role == self.IsSequenceElementRole or item.role == self.IsArrayElementRole:
                 return f"[{item.parentItem.childItems.index(item)}]"
+            elif item.role == self.IsOptionalElementRole:
+                return "[optional]"
             else:
                 return ""
         elif role == self.IsExpandable:
-            if item.role == self.IsSequenceRole:
-                return True if item.maxElements > item.childCount() else False
+            if item.maxElements:
+                if item.role == self.IsSequenceRole or item.role == self.IsOptionalRole:
+                    return True if item.maxElements > item.childCount() else False
+            elif item.role == self.IsSequenceRole:
+                return True
+
             return False
         return None
 
@@ -199,6 +209,7 @@ class DataTreeModel(QAbstractItemModel):
             self.IsOptionalRole: b'is_optional',
             self.IsArrayElementRole: b'is_array_element',
             self.IsExpandable: b'is_expandable',
+            self.IsOptionalElementRole: b'is_optional_element',
         }
 
     @Slot(QModelIndex, str)
@@ -236,7 +247,7 @@ class DataTreeModel(QAbstractItemModel):
                     obj = getattr(obj, attr)
 
             if obj is None or item.itemValue is None:
-                print("WARNINGGGGGGGG !!!")
+                logging.warning("Warning cannot set value")
                 return
 
             if isinstance(obj, list):
@@ -269,30 +280,51 @@ class DataTreeModel(QAbstractItemModel):
 
     @Slot(QModelIndex, DataTreeNode)
     def addArrayItem(self, index: QModelIndex, node: DataTreeNode):
-        logging.debug("Add array item")
-        if index.isValid() and node.parentItem.maxElements > node.parentItem.childCount():
+        logging.debug("Add array item " + str(node.parentItem.maxElements) + " " + str(node.parentItem.childCount()) + " "+  str(node.parentItem.role) + " " + str(DataTreeModel.DisplayRole))
+        
+        insertAllowed = True
+        if node.parentItem.maxElements:
+            insertAllowed = node.parentItem.maxElements > node.parentItem.childCount()
+
+        if index.isValid() and insertAllowed:
             item: DataTreeNode= index.internalPointer()
             self.beginInsertRows(index, item.childCount(), item.childCount())
             node.parentItem = item
             item.appendChild(node)
-
             seqenceObj = copy.deepcopy(node.parentItem.dataType)
+            if node.parentItem.role == DataTreeModel.IsOptionalRole:
+                attrs, parent = self.getDotPath(node)
+            else:
+                attrs, parent = self.getDotPath(node.childItems[0])
+                seqenceObj = copy.deepcopy(node.parentItem.dataType)
+
             print("seqenceObj !!!", seqenceObj)
             print("childitems", node.childItems)
-            attrs, parent = self.getDotPath(node.childItems[0])
+
             print("Add-array-item", attrs, parent)
             if attrs[-1].isdigit():
                 attrs.append(None)
+
             obj = parent.dataType
+
+            print(obj, type(obj))
+
             for attr in attrs[:-1]:
                 if attr.isdigit():
                     if len(obj) <= int(attr):
                         obj.append(seqenceObj)
                     obj = obj[int(attr)]
                 else:
-                    obj = getattr(obj, attr)
+                    objT = getattr(obj, attr)
+                    if objT is not None:
+                        obj = objT
+
+            if node.parentItem.role == DataTreeModel.IsOptionalRole:
+                setattr(obj, attrs[-1], seqenceObj)
 
             self.endInsertRows()
+        else:
+            logging.warning("Failed to insert array item")
 
     def getDotPath(self, item):
         dotName = item.itemName
@@ -352,6 +384,9 @@ class DataTreeModel(QAbstractItemModel):
 
             if attrs[-1].isdigit():
                 del obj[int(attrs[-1])]
+
+            if item.parentItem.role == DataTreeModel.IsOptionalRole:
+                setattr(obj, attrs[-1], None)
 
             parentX.childItems.remove(item)
 
