@@ -339,6 +339,9 @@ class DataModelHandler(QObject):
                 if isinstance(_type, cyclonedds.idl.types.array):
                     return True
 
+        elif isinstance(theType, cyclonedds.idl.types.array):
+            return True
+
         return False
 
     def getMetaDataType(self, theType):
@@ -366,6 +369,10 @@ class DataModelHandler(QObject):
                 print("theType:", type(theType), type(_type))
                 if isinstance(_type, cyclonedds.idl.types.sequence):
                     return True
+                
+        elif isinstance(theType, cyclonedds.idl.types.sequence):
+            return True
+
         return False
 
     def isStruct(self, theType):
@@ -457,10 +464,12 @@ class DataModelHandler(QObject):
                     if hasattr(innerType, "__idl_typename__"):
                         inner = innerType.__idl_typename__
                     else:
-                        inner = str(innerType)
+                        inner = innerType
                     seqRootNode.maxElements = metaType.max_length
 
-                    print("INNER:::::::", inner, seqRootNode.maxElements)
+                    inner = self.getRealType(inner)
+
+                    print("INNER:::::::", inner, seqRootNode.maxElements, self.isSequence(inner), type(inner))  
 
                     seqRootNode.dataType = self.getInitializedDataObj(str(inner))
                     seqRootNode.itemArrayTypeName = str(inner)

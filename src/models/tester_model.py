@@ -112,6 +112,14 @@ class TesterModel(QAbstractListModel):
                     targetRole = DataTreeModel.IsOptionalElementRole
                 itemNode = self.dataModelHandler.toNode(item.itemArrayTypeName, DataTreeNode("", "", targetRole, parent=item))
                 dataTreeModel.addArrayItem(currentTreeIndex, itemNode)
+            elif item.parentItem.itemArrayTypeName:
+                itemNode = self.dataModelHandler.toNode(item.parentItem.itemArrayTypeName, DataTreeNode("", "", DataTreeModel.IsSequenceElementRole, parent=item))
+                itemNode.itemArrayTypeName = item.parentItem.itemArrayTypeName
+                dataTreeModel.addArrayItem(currentTreeIndex, itemNode)
+            else:
+                logging.warning("itemArrayTypeName not set")
+        else:
+            logging.warning("currentTreeIndex not valid")
 
     @Slot(int, QModelIndex)
     def removeArrayItem(self, currentIndex: int, currentTreeIndex: QModelIndex):

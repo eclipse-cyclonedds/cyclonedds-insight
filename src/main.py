@@ -136,12 +136,6 @@ if __name__ == "__main__":
 
     qmlRegisterType(EndpointModel, "org.eclipse.cyclonedds.insight", 1, 0, "EndpointModel")
 
-    testVeh = Vehicle(None, None, None)
-    print(testVeh)
-    testVeh.name = "test"
-    print(testVeh)
-
-
     engine.load(QUrl("qrc:/src/views/main.qml"))
     if not engine.rootObjects():
         logging.critical("Failed to load qml")

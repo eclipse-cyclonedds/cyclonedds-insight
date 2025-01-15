@@ -267,6 +267,7 @@ Rectangle {
                     }
 
                     Button {
+                        id: plusButtonId
                         visible: model.is_expandable
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: label.right
@@ -279,7 +280,7 @@ Rectangle {
                     Button {
                         visible: model.is_sequence_element || model.is_optional_element
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: label.right
+                        anchors.left: model.is_expandable ? plusButtonId.right : label.right
                         anchors.leftMargin: 5
                         text: "-"
                         onClicked: {

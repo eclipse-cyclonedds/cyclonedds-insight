@@ -181,6 +181,11 @@ class DataTreeModel(QAbstractItemModel):
             else:
                 return ""
         elif role == self.IsExpandable:
+
+            if item.role == self.IsSequenceElementRole:
+                if item.childCount() == 0:
+                    return True
+
             if item.maxElements:
                 if item.role == self.IsSequenceRole or item.role == self.IsOptionalRole:
                     return True if item.maxElements > item.childCount() else False
@@ -295,8 +300,11 @@ class DataTreeModel(QAbstractItemModel):
             if node.parentItem.role == DataTreeModel.IsOptionalRole:
                 attrs, parent = self.getDotPath(node)
             else:
-                attrs, parent = self.getDotPath(node.childItems[0])
-                seqenceObj = copy.deepcopy(node.parentItem.dataType)
+                if len(node.childItems) > 0:
+                    attrs, parent = self.getDotPath(node.childItems[0])
+                else:
+                    print("Hm what happens here?", node.dataType, node.itemArrayTypeName, node.itemTypeName, node.parentItem.itemTypeName, node.parentItem.dataType)
+                    attrs, parent = self.getDotPath(node)
 
             print("seqenceObj !!!", seqenceObj)
             print("childitems", node.childItems)
