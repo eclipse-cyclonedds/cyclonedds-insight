@@ -276,7 +276,7 @@ Popup {
                         }
                         CheckBox {
                             id: allowTypeCoercion_ignore_member_names
-                            checked: true
+                            checked: false
                             text: qsTr("ignore_member_names")
                         }
                     }

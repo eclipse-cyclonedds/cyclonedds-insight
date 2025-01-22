@@ -121,6 +121,15 @@ class DataModelHandler(QObject):
 
        # print("self.structMembers", self.structMembers)
 
+    def addTypeFromNetwork(self, typeName, dataType):
+        print()
+        self.structMembers[typeName] = self.get_struct_members(dataType)
+        self.allTypes[typeName] = dataType
+        import json
+        print("allTypes", json.dumps(self.allTypes, indent=2, default=str))
+        print("customTypes", json.dumps(self.customTypes, indent=2, default=str))
+        print("structMembers", json.dumps(self.structMembers, indent=2, default=str))
+
     def import_module_and_nested(self, module_name):
         try:
             module = importlib.import_module(module_name)
@@ -250,14 +259,21 @@ class DataModelHandler(QObject):
                 elif self.isOptional(realType):
                     initList.append(None)                    
 
-            topic_type_dot: str = topicType.replace("::", ".")
-            moduleNameToImport = topic_type_dot.split('.')[0]
-            module = importlib.import_module(moduleNameToImport)
-            for part in topic_type_dot.split('.')[1:]:
-                module = getattr(module, part)
-            print(module, initList)
-            initializedObj = module(*initList)
-            print("initializedObj----->>>>", initializedObj)
+            #try:
+            #    topic_type_dot: str = topicType.replace("::", ".")
+            #    moduleNameToImport = topic_type_dot.split('.')[0]
+            #    module = importlib.import_module(moduleNameToImport)
+            #    for part in topic_type_dot.split('.')[1:]:
+            #        module = getattr(module, part)
+            #    print(module, initList)
+            #    initializedObj = module(*initList)
+            #    print("initializedObj----->>>>", initializedObj)
+            if True:
+                module = self.allTypes[topicType]
+                print(module, initList)
+                initializedObj = module(*initList)
+                print("initializedObj----->>>>", initializedObj)
+
         else:
             if self.isInt(topicType) or self.isEnum(topicType):
                 return 0
@@ -443,7 +459,7 @@ class DataModelHandler(QObject):
 
     def isBasic(self, theType):
         return self.isInt(theType) or self.isFloat(theType) or self.isStr(theType) or self.isBool(theType)
-    
+
     def isPredefined(self, theType):
         return self.isBasic(theType) or self.isStruct(theType) or self.isSequence(theType) or self.isArray(theType)
 
@@ -461,7 +477,6 @@ class DataModelHandler(QObject):
                 tt = str(self.structMembers[theType][keyStructMem]).replace(".", "::")
     
                 ano: typing.Annotated = self.structMembers[theType][keyStructMem]
-                
 
                 #realType = self.structMembers[theType][keyStructMem]
                 #if theType in self.customTypes:
@@ -484,8 +499,6 @@ class DataModelHandler(QObject):
                 # bool
                 elif self.isBool(realType):
                     rootNode.appendChild(DataTreeNode(keyStructMem, tt, DataTreeModel.IsBoolRole, parent=rootNode))
-
-
 
                 # union
                 elif self.isUnion(realType):
@@ -585,7 +598,7 @@ class DataModelHandler(QObject):
             node = DataTreeNode("", theType, DataTreeModel.IsUnionRole, parent=rootNode)
             rootNode.appendChild(node)
         else:
-            print("UNKOWN TYPE !!!!", theType)
+            logging.error(f"Unknown Datatype: {theType}")
 
         return rootNode
 

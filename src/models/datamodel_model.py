@@ -264,6 +264,10 @@ class DatamodelModel(QAbstractListModel):
     def receiveDataType(self, requestId, dataType):
         if requestId in self.readerRequests:
             (domain_id, topic_type, topic_name, qos, entityType) = self.readerRequests[requestId]
+            print("RECEIVED TYPE", dataType, type(dataType))
+            if hasattr(dataType, "__dict__"):
+                print("->", dataType.__dict__)
+            self.dataModelHandler.addTypeFromNetwork(topic_type, dataType)
             self.createEndpoint(domain_id, topic_name, dataType, qos, entityType, topic_type)
             del self.readerRequests[requestId]
 
