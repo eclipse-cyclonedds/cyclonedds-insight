@@ -26,6 +26,7 @@ class DataTreeNode:
         self.itemName = name
         self.itemTypeName = typeName
         self.itemArrayTypeName = None
+        self.itemArrayType = None
         self.itemValue = None
         self.role = role
         self.dataType = None
@@ -89,6 +90,47 @@ class DataTreeModel(QAbstractItemModel):
     def __init__(self, rootItem: DataTreeNode, parent=None):
         super(DataTreeModel, self).__init__(parent)
         self.rootItem = rootItem
+
+    def get_role_name_by_number(self, role_number):
+        # Manuelle Zuordnung der Rollen
+        if role_number == self.DisplayRole:
+            return "DisplayRole"
+        elif role_number == self.IsFloatRole:
+            return "IsFloatRole"
+        elif role_number == self.IsIntRole:
+            return "IsIntRole"
+        elif role_number == self.IsStrRole:
+            return "IsStrRole"
+        elif role_number == self.IsSequenceRole:
+            return "IsSequenceRole"
+        elif role_number == self.IsStructRole:
+            return "IsStructRole"
+        elif role_number == self.IsEnumRole:
+            return "IsEnumRole"
+        elif role_number == self.IsUnionRole:
+            return "IsUnionRole"
+        elif role_number == self.IsSequenceElementRole:
+            return "IsSequenceElementRole"
+        elif role_number == self.TypeNameRole:
+            return "TypeNameRole"
+        elif role_number == self.ValueRole:
+            return "ValueRole"
+        elif role_number == self.DisplayHintRole:
+            return "DisplayHintRole"
+        elif role_number == self.IsBoolRole:
+            return "IsBoolRole"
+        elif role_number == self.IsOptionalRole:
+            return "IsOptionalRole"
+        elif role_number == self.IsArrayRole:
+            return "IsArrayRole"
+        elif role_number == self.IsArrayElementRole:
+            return "IsArrayElementRole"
+        elif role_number == self.IsExpandable:
+            return "IsExpandable"
+        elif role_number == self.IsOptionalElementRole:
+            return "IsOptionalElementRole"
+        else:
+            return "Unknown Role"
 
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
@@ -263,7 +305,7 @@ class DataTreeModel(QAbstractItemModel):
     @Slot()
     def printTree(self):
         def printNode(node, indent=0):
-            print(' ' * indent + str(node.itemName) + " " + str(node.itemValue), node.dataType, node.role)
+            print(' ' * indent + str(node.itemName) + " " + str(node.itemValue), node.dataType, node.itemArrayType, self.get_role_name_by_number(node.role))
             for child in node.childItems:
                 printNode(child, indent + 2)
 

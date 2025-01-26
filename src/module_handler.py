@@ -268,11 +268,11 @@ class DataModelHandler(QObject):
             #    print(module, initList)
             #    initializedObj = module(*initList)
             #    print("initializedObj----->>>>", initializedObj)
-            if True:
-                module = self.allTypes[topicType]
-                print(module, initList)
-                initializedObj = module(*initList)
-                print("initializedObj----->>>>", initializedObj)
+
+            module = self.allTypes[topicType]
+            print(module, initList)
+            initializedObj = module(*initList)
+            print("initializedObj----->>>>", initializedObj)
 
         else:
             if self.isInt(topicType) or self.isEnum(topicType):
@@ -285,6 +285,8 @@ class DataModelHandler(QObject):
                 return ""
             elif self.isUnion(topicType):
                 return None
+            elif self.isSequence(topicType):
+                return []
             else:
                 logging.warning(f"Unknown type: {topicType}")
                 initializedObj = None
@@ -452,6 +454,12 @@ class DataModelHandler(QObject):
         elif isinstance(theType, cyclonedds.idl.types.sequence):
             return True
 
+        if isinstance(theType, str):
+            if theType.replace("::", ".").startswith("typing.Annotated[typing.Sequence"):
+                return True
+            if theType.startswith("sequence["):
+                return True
+
         return False
 
     def isStruct(self, theType):
@@ -548,8 +556,14 @@ class DataModelHandler(QObject):
 
                     print("INNER:::::::", inner, seqRootNode.maxElements, self.isSequence(inner), type(inner))  
 
+                    if hasattr(inner, "__dict__"):
+                        print(inner.__dict__)
+
                     seqRootNode.dataType = self.getInitializedDataObj(str(inner))
                     seqRootNode.itemArrayTypeName = str(inner)
+                    seqRootNode.itemArrayType = inner
+
+                    print("INNER DATA TYPE:", seqRootNode.dataType, type(seqRootNode.dataType))
 
                     rootNode.appendChild(seqRootNode)
 
@@ -597,6 +611,26 @@ class DataModelHandler(QObject):
         elif self.isUnion(theType):
             node = DataTreeNode("", theType, DataTreeModel.IsUnionRole, parent=rootNode)
             rootNode.appendChild(node)
+
+        elif self.isSequence(theType):
+            seqRootNode = DataTreeNode("", theType, DataTreeModel.IsSequenceRole, parent=rootNode)
+
+
+            print("AVC: ", theType)
+            inner = theType.replace("::", ".")
+            if inner.startswith("typing.Annotated[typing.Sequence["):
+                inner = inner.replace("typing.Annotated[typing.Sequence[", "", 1)
+            else:
+                inner = inner.replace("sequence[", "", 1)
+
+            inner = inner[:-1]
+            print("AVC2: ", inner)
+
+            seqRootNode.dataType = self.getInitializedDataObj(str(inner))
+            seqRootNode.itemArrayTypeName = str(inner)
+            seqRootNode.itemArrayType = inner
+
+            rootNode.appendChild(seqRootNode)
         else:
             logging.error(f"Unknown Datatype: {theType}")
 
@@ -621,6 +655,5 @@ class DataModelHandler(QObject):
                 if isinstance(metaType, cyclonedds.idl.types.typedef):
                     outType = self.getRealType(metaType)
 
-        
         print("OUT:", outType, type(outType))
         return outType
