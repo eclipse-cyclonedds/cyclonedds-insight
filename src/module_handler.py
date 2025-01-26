@@ -221,8 +221,12 @@ class DataModelHandler(QObject):
 
         #print(isinstance(topicType, int), isinstance(topicType, cyclonedds.idl.types.int32))
 
-        if topicType.replace(".", "::") in self.structMembers:
+        if topicType.replace(".", "::") in self.structMembers or topicType.replace(".", "::") in self.allTypes or topicType.replace(".", "::") in self.customTypes:
             topicType = topicType.replace(".", "::")
+        
+        if topicType in self.customTypes:
+            topicType = self.resolveCustomType(topicType)
+            topicType = str(topicType).replace(".", "::")
 
         if topicType in self.allTypes:
             initList = []
@@ -618,7 +622,7 @@ class DataModelHandler(QObject):
 
             # struct
             elif self.isStruct(theType):
-                subRootNode = DataTreeNode(keyStructMem, tt, DataTreeModel.IsStructRole, parent=rootNode)
+                subRootNode = DataTreeNode("", theType, DataTreeModel.IsStructRole, parent=rootNode)
                 subRootNode.dataType = self.getInitializedDataObj(str(theType).replace(".", "::"))
                 self.toNode(str(theType).replace(".", "::"), subRootNode)
                 rootNode.appendChild(subRootNode)
