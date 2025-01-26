@@ -25,6 +25,7 @@ from dataclasses import dataclass
 import typing
 from models.data_tree_model import DataTreeModel, DataTreeNode
 import cyclonedds
+import re
 
 @dataclass
 class DataModelItem:
@@ -299,55 +300,42 @@ class DataModelHandler(QObject):
         return self.toNode(topic_type, rootNode)
 
     def isInt(self, theType):
-        print("IS INT?", theType, type(theType), typing.get_args(theType), typing.get_origin(theType))
         args = typing.get_args(theType)
+        intLikeNames = ["byte", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"]
         if len(args) > 1:
-            print("ha", args[1], args[1] == "int64", type(args[1]))
-            if args[1] in ["byte", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"]:
-                print("ITS A INT!!!")
+            if args[1] in intLikeNames:
                 return True
 
-        return str(theType).startswith("typing.Annotated[int") or str(theType).startswith("typing::Annotated[int")
+        return str(theType).replace("::", ".").startswith("typing.Annotated[int") or str(theType) in intLikeNames
 
     def isFloat(self, theType):
         args = typing.get_args(theType)
+        floatLikeNames = ["float32", "float64", "float128"]
         if len(args) > 1:
-            if args[1] in ["float32", "float64", "float128"]:
+            if args[1] in floatLikeNames:
                 return True
 
-        return str(theType).startswith("typing.Annotated[float")
-    
+        return str(theType).replace("::", ".").startswith("typing.Annotated[float") or str(theType) in floatLikeNames
+
     def isEnum(self, theType):
-        print("IS-ENUM?", theType)
         smiCol = str(theType).replace(".", "::")
         if smiCol in self.allTypes:
-            print("ITS IN ALL TYPE !!!")
             ret = self.is_enum(self.allTypes[smiCol])
             rel = self.getRealType(self.allTypes[smiCol])
-            print("Return", ret, rel, type(rel), typing.get_args(rel), typing.get_origin(rel))
             return ret
 
         args = typing.get_args(theType)
-        print("args", args)
         if len(args) > 0:
             if hasattr(args[0], "__args__"):
-                print("hashargs", args[0].__args__, type(args[0]), isinstance(args[0], cyclonedds.idl.types.array), isinstance(args[0], cyclonedds.idl.types.sequence))
-    
                 if len(args[0].__args__) > 0:
                     forwRef = args[0].__args__[0]
                     if isinstance(forwRef, typing.ForwardRef):
-                        
                         realType = self.getRealType(forwRef.__forward_arg__)
-                        print("compare:", forwRef.__forward_arg__, realType)
                         if forwRef.__forward_arg__ == "IdlEnum":
                             return True
                         else:
-                            print("Try again!")
                             re = self.isEnum(realType)
-                            print("RETURN ", re)
                             return re
-
-        print("return false")
         return False
 
     def isUnion(self, theType):
@@ -393,31 +381,25 @@ class DataModelHandler(QObject):
         return False
 
     def isStr(self, theType):
-        self.isChar(theType)
-        print("IS COOL STRING ?", theType, type(theType), typing.get_args(theType), typing.get_origin(theType))
-        return theType == str or str(theType).startswith("typing.Annotated[str") or theType == "str" or theType == "<class 'str'>"
-    
+        # self.isChar(theType)
+        return theType == str or str(theType).replace("::", ".").startswith("typing.Annotated[str") or theType == "str" or theType == "<class 'str'>"
+
     def isBool(self, theType):
-        return theType == bool or str(theType).startswith("typing.Annotated[bool") or theType == "bool"
+        return theType == bool or str(theType).startswith("typing.Annotated[bool") or theType == "bool" or theType == "<class 'bool'>"
 
     def isArray(self, theType):
-        print("IS-ARRAY", theType, type(theType))
-
         smiCol = str(theType).replace(".", "::")
-        print("SMI: ", smiCol)
         if smiCol in self.customTypes:
             cls = self.customTypes[smiCol]
             if hasattr(cls, "__metadata__"):
                 if len(cls.__metadata__) > 0:
                     _type = cls.__metadata__[0]
-                    print("cls: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", type(cls), type(_type))
                     if isinstance(_type, cyclonedds.idl.types.array):
                         return True
         elif hasattr(theType, "__metadata__"):
             if len(theType.__metadata__) > 0:
                 _type = theType.__metadata__[0]
                 if isinstance(_type, cyclonedds.idl.types.array):
-                    print("??????????????????????")
                     return True
 
         elif isinstance(theType, cyclonedds.idl.types.array):
@@ -434,8 +416,6 @@ class DataModelHandler(QObject):
         return None
 
     def isSequence(self, theType):
-        print("IS-SEQUENDE", theType, type(theType))
-
         smiCol = str(theType).replace(".", "::")
         if smiCol in self.customTypes:
             cls = self.customTypes[smiCol]
@@ -471,11 +451,17 @@ class DataModelHandler(QObject):
     def isPredefined(self, theType):
         return self.isBasic(theType) or self.isStruct(theType) or self.isSequence(theType) or self.isArray(theType)
 
+    def convert_to_cpp_style(self, attr_string):
+        parts = [part for part in attr_string.split('.') if not part.startswith('_')]
+        return '::'.join(parts)
+
     def toNode(self, theType: str, rootNode):
-        print("toNode", theType, type(theType))
+        logging.debug("toNode " + str(theType) + " " + str(type(theType)))
 
         if theType.replace(".", "::") in self.structMembers:
             theType = theType.replace(".", "::")
+
+        theType = self.convert_to_cpp_style(theType)
 
         if theType in self.structMembers:
             print("xxx",theType, self.structMembers[theType], str(type(self.structMembers[theType])))
@@ -483,14 +469,7 @@ class DataModelHandler(QObject):
             for keyStructMem in self.structMembers[theType].keys():
 
                 tt = str(self.structMembers[theType][keyStructMem]).replace(".", "::")
-    
-                ano: typing.Annotated = self.structMembers[theType][keyStructMem]
-
-                #realType = self.structMembers[theType][keyStructMem]
-                #if theType in self.customTypes:
                 realType = self.getRealType(self.structMembers[theType][keyStructMem])
-
-                print("LOOOOKKKKK HEREEEEEE", realType, ano, typing.get_args(ano), typing.get_origin(ano))
 
                 # string
                 if self.isStr(realType):
@@ -595,46 +574,65 @@ class DataModelHandler(QObject):
                 # Unknown
                 else:
                     logging.error(f"Unknown Datatype: {theType} {keyStructMem} {str(realType)}")
-
-        elif self.isInt(theType):
-            rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsIntRole, parent=rootNode))
-        elif self.isFloat(theType):
-            rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsFloatRole, parent=rootNode))
-        elif self.isStr(theType):
-            rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsStrRole, parent=rootNode))
-        elif self.isBool(theType):
-            rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsBoolRole, parent=rootNode))
-        elif self.isEnum(theType):
-            node = DataTreeNode("", theType, DataTreeModel.IsEnumRole, parent=rootNode)
-            node.enumItemNames = self.getEnumItemNames(theType)
-            rootNode.appendChild(node)
-        elif self.isUnion(theType):
-            node = DataTreeNode("", theType, DataTreeModel.IsUnionRole, parent=rootNode)
-            rootNode.appendChild(node)
-
-        elif self.isSequence(theType):
-            seqRootNode = DataTreeNode("", theType, DataTreeModel.IsSequenceRole, parent=rootNode)
-
-
-            print("AVC: ", theType)
-            inner = theType.replace("::", ".")
-            if inner.startswith("typing.Annotated[typing.Sequence["):
-                inner = inner.replace("typing.Annotated[typing.Sequence[", "", 1)
-            else:
-                inner = inner.replace("sequence[", "", 1)
-
-            inner = inner[:-1]
-            print("AVC2: ", inner)
-
-            seqRootNode.dataType = self.getInitializedDataObj(str(inner))
-            seqRootNode.itemArrayTypeName = str(inner)
-            seqRootNode.itemArrayType = inner
-
-            rootNode.appendChild(seqRootNode)
         else:
-            logging.error(f"Unknown Datatype: {theType}")
+            theType = self.resolveCustomType(str(theType))
+            if self.isInt(theType):
+                rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsIntRole, parent=rootNode))
+            elif self.isFloat(theType):
+                rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsFloatRole, parent=rootNode))
+            elif self.isStr(theType):
+                rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsStrRole, parent=rootNode))
+            elif self.isBool(theType):
+                rootNode.appendChild(DataTreeNode("", theType, DataTreeModel.IsBoolRole, parent=rootNode))
+            elif self.isEnum(theType):
+                node = DataTreeNode("", theType, DataTreeModel.IsEnumRole, parent=rootNode)
+                node.enumItemNames = self.getEnumItemNames(theType)
+                rootNode.appendChild(node)
+            elif self.isUnion(theType):
+                node = DataTreeNode("", theType, DataTreeModel.IsUnionRole, parent=rootNode)
+                rootNode.appendChild(node)
+
+            elif self.isSequence(theType):
+                seqRootNode = DataTreeNode("", theType, DataTreeModel.IsSequenceRole, parent=rootNode)
+
+                inner = theType.replace("::", ".")
+                if inner.startswith("typing.Annotated[typing.Sequence["):
+                    inner = inner.replace("typing.Annotated[typing.Sequence[", "", 1)
+                else:
+                    inner = inner.replace("sequence[", "", 1)
+
+                inner = inner[:-1]
+
+                regex = r"ForwardRef\('([^']+)'\)"
+                match = re.search(regex, inner)
+                if match:
+                    inner = match.group(1)
+                    inner = inner.replace(".", "::")
+                    inner = self.resolveCustomType(inner)
+
+                seqRootNode.dataType = self.getInitializedDataObj(str(inner))
+                seqRootNode.itemArrayTypeName = str(inner)
+                seqRootNode.itemArrayType = inner
+
+                rootNode.appendChild(seqRootNode)
+
+            # struct
+            elif self.isStruct(theType):
+                subRootNode = DataTreeNode(keyStructMem, tt, DataTreeModel.IsStructRole, parent=rootNode)
+                subRootNode.dataType = self.getInitializedDataObj(str(theType).replace(".", "::"))
+                self.toNode(str(theType).replace(".", "::"), subRootNode)
+                rootNode.appendChild(subRootNode)
+
+            else:
+                logging.error(f"Unknown Datatype: {theType}")
 
         return rootNode
+
+    def resolveCustomType(self, typeName):
+        if typeName in self.customTypes:
+            return self.resolveCustomType(self.getRealType(self.customTypes[typeName]))
+        else:
+            return typeName
 
     def getRealType(self, inType):
         print("GETREALTYPE:", type(inType), inType)
