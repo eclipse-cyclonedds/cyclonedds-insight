@@ -10,6 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
+import sys
 import logging
 from queue import Queue
 from cyclonedds import core, builtin
@@ -18,7 +19,7 @@ from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 from cyclonedds.core import Qos, Policy
 from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
-from dds_access.datatypes.ospl.kernelModule import v_participantCMInfo
+from dds_access.datatypes.ospl import kernelModule
 from dds_access.datatypes.ospl.utils import from_ospl
 from typing import Optional, List, Tuple
 from dds_access.domain_participant_factory import DomainParticipantFactory
@@ -68,6 +69,7 @@ def builtin_observer(domain_id: int, queue: Queue, running):
     waitset.attach(rcr)
 
     # OpenSplice-BuiltIn
+    sys.modules["kernelModule"] = kernelModule
     ospl_qos = Qos(
         Policy.Ownership.Shared,
         Policy.Durability.TransientLocal,
@@ -76,7 +78,7 @@ def builtin_observer(domain_id: int, queue: Queue, running):
         Policy.Partition(partitions=["__BUILT-IN PARTITION__"]),
         Policy.EntityName(name="CMParticipantReader"),
         Policy.DataRepresentation(use_cdrv0_representation=True, use_xcdrv2_representation=False))
-    ospl_topic = Topic(domain_participant, "CMParticipant", v_participantCMInfo, qos=ospl_qos)
+    ospl_topic = Topic(domain_participant, "CMParticipant", kernelModule.v_participantCMInfo, qos=ospl_qos)
     ospl_subscriber = Subscriber(domain_participant, qos=ospl_qos)
     ospl_reader = DataReader(ospl_subscriber, ospl_topic, qos=ospl_qos)
     ospl_read_condition = core.ReadCondition(ospl_reader, core.SampleState.NotRead | core.ViewState.Any | core.InstanceState.Alive)
