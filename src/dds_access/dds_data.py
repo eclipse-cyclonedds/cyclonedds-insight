@@ -12,6 +12,7 @@
 
 from PySide6.QtCore import QObject, Signal, Slot, QThread, Qt
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
+from cyclonedds.core import Policy
 import threading
 import logging
 import time
@@ -20,8 +21,9 @@ from queue import Queue
 from typing import Dict, List, Optional
 import gc
 
-from dds_service import builtin_observer, getDataType
-from dds_qos import qos_match, dds_qos_policy_id
+from dds_access.builtin_observer import builtin_observer
+from dds_access.dispatcher import getDataType, DcpsParticipant
+from dds_access.dds_qos import qos_match, dds_qos_policy_id
 from utils import singleton, EntityType
 
 
@@ -131,6 +133,7 @@ class DataDomain:
         self.topics: Dict[str, DataTopic] = {}
         self.endpointToTopic = {} # shortcut for deletion where only endp key is available
         self.participants = {}
+        self.pending_participant_updates = {}
         self.obs_running = [True]
 
         self.obs_thread = threading.Thread(target=builtin_observer, args=(domain_id, queue, self.obs_running))
@@ -141,6 +144,24 @@ class DataDomain:
         self.participants[str(participant.key)] = participant
         for topic in self.topics.keys():
             self.topics[topic].link_participant(participant)
+        if str(participant.key) in self.pending_participant_updates:
+            self.update_participant(self.pending_participant_updates[str(participant.key)])
+            del self.pending_participant_updates[str(participant.key)]
+
+    def update_participant(self, update_participant: DcpsParticipant) -> Optional[DcpsParticipant]:
+        if str(update_participant.key) in self.participants:
+            p: DcpsParticipant = self.participants[str(update_participant.key)]
+            p += update_participant.qos
+            return p
+        else:
+            self.pending_participant_updates[str(update_participant.key)] = update_participant
+            return None
+
+    def remove_participant(self, key: str):
+        if key in self.participants:
+            del self.participants[key]
+        if key in self.pending_participant_updates:
+            del self.pending_participant_updates[key]
 
     def add_endpoint(self, dataEndpoint: DataEndpoint):
         self.endpointToTopic[str(dataEndpoint.endpoint.key)] = str(dataEndpoint.endpoint.topic_name)
@@ -161,10 +182,6 @@ class DataDomain:
 
                 if not self.topics[topicName].hasEndpoints():
                     del self.topics[topicName]
-
-    def remove_participant(self, key: str):
-        if key in self.participants:
-            del self.participants[key]
 
     def has_topic(self, topicName: str) -> bool:
         return topicName in self.topics
@@ -198,6 +215,7 @@ class BuiltInReceiver(QObject):
     newEndpointSignal = Signal(int, DcpsParticipant, EntityType)
     removeParticipantSignal = Signal(int, DcpsParticipant)
     removeEndpointSignal = Signal(int, DcpsParticipant)
+    updateParticipantSignal = Signal(int, DcpsParticipant)
 
     def __init__(self, queue):
         super().__init__()
@@ -230,6 +248,9 @@ class BuiltInReceiver(QObject):
                 for (domain_id, endpoint) in item.remove_endpoints:
                     self.removeEndpointSignal.emit(domain_id, endpoint)
 
+                for (endpoint_update) in item.update_participants:
+                    self.updateParticipantSignal.emit(domain_id, endpoint_update)
+
         logging.info("Running BuiltInReceiver ... DONE")
 
     def stop(self):
@@ -250,6 +271,7 @@ class DdsData(QObject):
     removed_endpoint_signal = Signal(int, str)
     new_participant_signal = Signal(int, DcpsParticipant)
     removed_participant_signal = Signal(int, str)
+    update_participant_signal = Signal(int, DcpsParticipant)
 
     response_data_type_signal = Signal(str, object)
 
@@ -270,6 +292,7 @@ class DdsData(QObject):
         self.receiver.newEndpointSignal.connect(self.add_endpoint, Qt.ConnectionType.QueuedConnection)
         self.receiver.removeParticipantSignal.connect(self.remove_domain_participant, Qt.ConnectionType.QueuedConnection)
         self.receiver.removeEndpointSignal.connect(self.remove_endpoint, Qt.ConnectionType.QueuedConnection)
+        self.receiver.updateParticipantSignal.connect(self.update_domain_participant, Qt.ConnectionType.QueuedConnection)
         self.receiverThread.started.connect(self.receiver.run)
         self.receiverThread.finished.connect(self.receiver.deleteLater)
         self.receiverThread.start()
@@ -295,21 +318,26 @@ class DdsData(QObject):
 
         self.removed_domain_signal.emit(domain_id)
 
-
     @Slot(int, DcpsParticipant)
     def add_domain_participant(self, domain_id: int, participant: DcpsParticipant):
         #logging.debug(f"Add domain participant {str(participant.key)}")
 
         if domain_id in self.the_domains:
             self.the_domains[domain_id].add_participant(participant)
-
-        self.new_participant_signal.emit(domain_id, participant)
+            self.new_participant_signal.emit(domain_id, participant)
 
     @Slot(int, DcpsParticipant)
     def remove_domain_participant(self, domain_id: int, participant: DcpsParticipant):
         if domain_id in self.the_domains:
             self.the_domains[domain_id].remove_participant(str(participant.key))
             self.removed_participant_signal.emit(domain_id, str(participant.key))
+
+    @Slot(int, DcpsParticipant)
+    def update_domain_participant(self, domain_id: int, participant_update: DcpsParticipant):
+        if domain_id in self.the_domains:
+            updated = self.the_domains[domain_id].update_participant(participant_update)
+            if updated:
+                self.update_participant_signal.emit(domain_id, updated)
 
     @Slot(int, DcpsEndpoint, EntityType)
     def add_endpoint(self, domain_id: int, endpoint: DcpsEndpoint, entity_type: EntityType):

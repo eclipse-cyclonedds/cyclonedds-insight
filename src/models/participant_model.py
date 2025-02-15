@@ -16,8 +16,8 @@ from pathlib import Path
 import os
 from cyclonedds.builtin import DcpsParticipant
 import logging
-import dds_data
-from dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
+import dds_access.dds_data as dds_data
+from dds_access.dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
 from enum import Enum
 
 

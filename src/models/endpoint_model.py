@@ -21,10 +21,10 @@ import time
 import uuid
 from typing import Optional, List
 
-import dds_data
-from dds_data import DataEndpoint
-from dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
-from dds_qos import partitions_match_p
+import dds_access.dds_data as dds_data
+from dds_access.dds_data import DataEndpoint
+from dds_access.dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
+from dds_access.dds_qos import partitions_match_p
 from utils import EntityType
 
 
