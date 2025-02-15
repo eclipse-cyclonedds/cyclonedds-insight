@@ -150,9 +150,8 @@ class DataDomain:
 
     def update_participant(self, update_participant: DcpsParticipant) -> Optional[DcpsParticipant]:
         if str(update_participant.key) in self.participants:
-            p: DcpsParticipant = self.participants[str(update_participant.key)]
-            p += update_participant.qos
-            return p
+            self.participants[str(update_participant.key)].qos += update_participant.qos
+            return self.participants[str(update_participant.key)]
         else:
             self.pending_participant_updates[str(update_participant.key)] = update_participant
             return None
@@ -248,7 +247,7 @@ class BuiltInReceiver(QObject):
                 for (domain_id, endpoint) in item.remove_endpoints:
                     self.removeEndpointSignal.emit(domain_id, endpoint)
 
-                for (endpoint_update) in item.update_participants:
+                for (domain_id, endpoint_update) in item.update_participants:
                     self.updateParticipantSignal.emit(domain_id, endpoint_update)
 
         logging.info("Running BuiltInReceiver ... DONE")
@@ -320,7 +319,7 @@ class DdsData(QObject):
 
     @Slot(int, DcpsParticipant)
     def add_domain_participant(self, domain_id: int, participant: DcpsParticipant):
-        #logging.debug(f"Add domain participant {str(participant.key)}")
+        # logging.debug(f"Add domain participant: {str(participant.key)}")
 
         if domain_id in self.the_domains:
             self.the_domains[domain_id].add_participant(participant)
@@ -328,12 +327,14 @@ class DdsData(QObject):
 
     @Slot(int, DcpsParticipant)
     def remove_domain_participant(self, domain_id: int, participant: DcpsParticipant):
+        # logging.debug(f"Remove domain participant: {str(participant.key)}")
         if domain_id in self.the_domains:
             self.the_domains[domain_id].remove_participant(str(participant.key))
             self.removed_participant_signal.emit(domain_id, str(participant.key))
 
     @Slot(int, DcpsParticipant)
     def update_domain_participant(self, domain_id: int, participant_update: DcpsParticipant):
+        # logging.debug(f"Update domain participant: {str(participant_update.key)}")
         if domain_id in self.the_domains:
             updated = self.the_domains[domain_id].update_participant(participant_update)
             if updated:
@@ -341,7 +342,6 @@ class DdsData(QObject):
 
     @Slot(int, DcpsEndpoint, EntityType)
     def add_endpoint(self, domain_id: int, endpoint: DcpsEndpoint, entity_type: EntityType):
-
         # logging.debug(f"Add endpoint domain: {domain_id}, key: {str(endpoint.key)}, entity: {entity_type}")
 
         if domain_id in self.the_domains:
@@ -353,13 +353,14 @@ class DdsData(QObject):
                 self.new_topic_signal.emit(domain_id, endpoint.topic_name)
 
             self.new_endpoint_signal.emit("", domain_id, copy.deepcopy(dataEndp))
-       
+
             mismatches = self.the_domains[domain_id].topics[endpoint.topic_name].get_mismatches()
             if len(mismatches) > 0:
                 self.publish_mismatch_signal.emit(domain_id, endpoint.topic_name, mismatches)
 
     @Slot(int, DcpsEndpoint)
     def remove_endpoint(self, domain_id: int, endpoint: DcpsEndpoint):
+        # logging.debug(f"Remove endpoint domain: {domain_id}, key: {str(endpoint.key)}")
 
         if domain_id in self.the_domains:
 

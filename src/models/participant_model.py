@@ -113,6 +113,7 @@ class ParticipantTreeModel(QAbstractItemModel):
         # Connect to from dds_data to self
         self.dds_data.new_participant_signal.connect(self.new_participant_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_participant_signal.connect(self.removed_participant_slot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.update_participant_signal.connect(self.update_participant_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.new_domain_signal.connect(self.addDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_domain_signal.connect(self.removeDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_endpoint_signal.connect(self.remove_endpoint_slot, Qt.ConnectionType.QueuedConnection)
@@ -245,6 +246,11 @@ class ParticipantTreeModel(QAbstractItemModel):
                 participant_child = ParticipantTreeNode(participant, DisplayLayerEnum.PARTICIPANT, app_child)
                 app_child.appendChild(str(participant.key), participant_child)
                 self.endInsertRows()
+
+    @Slot(int, DcpsParticipant)
+    def update_participant_slot(self, domain_id: int, participant: DcpsParticipant):
+        self.removed_participant_slot(domain_id, str(participant.key))
+        self.new_participant_slot(domain_id, participant)
 
     @Slot(int, str)
     def removed_participant_slot(self, domainId: int, participantKey: str):
