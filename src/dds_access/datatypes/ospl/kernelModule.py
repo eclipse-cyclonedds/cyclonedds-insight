@@ -21,22 +21,20 @@ import cyclonedds.idl.types as types
 @annotate.final
 @annotate.autoid("sequential")
 @annotate.nested
-class v_gid(idl.IdlStruct, typename="dds_access.datatypes.ospl.kernelModule.v_gid"):
+class v_gid(idl.IdlStruct, typename="kernelModule.v_gid"):
     systemId: types.uint32
     annotate.key("systemId")
     localId: types.uint32
     annotate.key("localId")
     serial: types.uint32
 
-
-v_builtinTopicKey = types.typedef['dds_access.datatypes.ospl.kernelModule.v_builtinTopicKey', 'dds_access.datatypes.ospl.kernelModule.v_gid']
-
+v_builtinTopicKey = types.typedef['kernelModule.v_builtinTopicKey', 'kernelModule.v_gid']
 
 @dataclass
 @annotate.final
 @annotate.autoid("sequential")
 @annotate.nested
-class v_productDataPolicy(idl.IdlStruct, typename="dds_access.datatypes.ospl.kernelModule.v_productDataPolicy"):
+class v_productDataPolicy(idl.IdlStruct, typename="kernelModule.v_productDataPolicy"):
     value: str
 
 
@@ -44,6 +42,6 @@ class v_productDataPolicy(idl.IdlStruct, typename="dds_access.datatypes.ospl.ker
 @annotate.final
 @annotate.autoid("sequential")
 class v_participantCMInfo(idl.IdlStruct, typename="kernelModule.v_participantCMInfo"):
-    key: 'dds_access.datatypes.ospl.kernelModule.v_builtinTopicKey'
+    key: 'kernelModule.v_builtinTopicKey'
     annotate.key("key")
-    product: 'dds_access.datatypes.ospl.kernelModule.v_productDataPolicy'
+    product: 'kernelModule.v_productDataPolicy'
