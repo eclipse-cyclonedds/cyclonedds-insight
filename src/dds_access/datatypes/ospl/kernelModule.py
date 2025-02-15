@@ -28,7 +28,9 @@ class v_gid(idl.IdlStruct, typename="kernelModule.v_gid"):
     annotate.key("localId")
     serial: types.uint32
 
+
 v_builtinTopicKey = types.typedef['kernelModule.v_builtinTopicKey', 'kernelModule.v_gid']
+
 
 @dataclass
 @annotate.final
