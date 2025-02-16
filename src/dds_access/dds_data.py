@@ -12,7 +12,6 @@
 
 from PySide6.QtCore import QObject, Signal, Slot, QThread, Qt
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
-from cyclonedds.core import Policy
 import threading
 import logging
 import time
@@ -22,7 +21,7 @@ from typing import Dict, List, Optional
 import gc
 
 from dds_access.builtin_observer import builtin_observer
-from dds_access.dispatcher import getDataType, DcpsParticipant
+from dds_access.dispatcher import getDataType
 from dds_access.dds_qos import qos_match, dds_qos_policy_id
 from utils import singleton, EntityType
 
@@ -285,7 +284,7 @@ class DdsData(QObject):
     update_participant_signal = Signal(int, DcpsParticipant)
 
     response_data_type_signal = Signal(str, object)
-    response_endpoints_signal = Signal(str, int, DataEndpoint)
+    response_endpoints_by_participant_key_signal = Signal(str, int, DataEndpoint)
 
     no_more_mismatch_in_topic_signal = Signal(int, str)
     publish_mismatch_signal = Signal(int, str, list)
@@ -332,7 +331,7 @@ class DdsData(QObject):
 
     @Slot(int, DcpsParticipant)
     def add_domain_participant(self, domain_id: int, participant: DcpsParticipant):
-        # logging.debug(f"Add domain participant: {str(participant.key)}")
+        #logging.debug(f"Add domain participant: {str(participant.key)}")
 
         if domain_id in self.the_domains:
             self.the_domains[domain_id].add_participant(participant)
@@ -427,4 +426,4 @@ class DdsData(QObject):
         if domainId in self.the_domains:
             endpoints = self.the_domains[domainId].getEndpointsByParticipantKey(participantKey)
 
-        self.response_endpoints_signal.emit(requestId, domainId, endpoints)
+        self.response_endpoints_by_participant_key_signal.emit(requestId, domainId, endpoints)

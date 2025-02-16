@@ -11,26 +11,13 @@
 """
 
 import logging
-import uuid
 import datetime
-from dataclasses import dataclass
-from enum import Enum
-from queue import Queue
-from PySide6.QtCore import QObject, Signal, Slot, QThread
-from dataclasses import dataclass
-from cyclonedds import core, domain, builtin, dynamic
+from PySide6.QtCore import Signal, Slot, QThread
+from cyclonedds import core, dynamic
 from cyclonedds.util import duration
-from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
-from cyclonedds.core import SampleState, ViewState, InstanceState, Qos, Policy
+from cyclonedds.core import SampleState, ViewState, InstanceState
 from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
-from dds_access.datatypes.ospl.kernelModule import v_participantCMInfo
-from dds_access.datatypes.ospl.utils import from_ospl
-import xml.etree.ElementTree as ET
-from typing import Optional, List, Tuple
-
-from dds_access.dds_qos import dds_qos_policy_id
-from utils import EntityType
 from dds_access.domain_participant_factory import DomainParticipantFactory
 from dds_access.dds_listener import DdsListener
 

@@ -122,7 +122,7 @@ class ParticipantTreeModel(QAbstractItemModel):
         self.dds_data.removed_domain_signal.connect(self.removeDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_endpoint_signal.connect(self.remove_endpoint_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.new_endpoint_signal.connect(self.new_endpoint_slot, Qt.ConnectionType.QueuedConnection)
-        self.dds_data.response_endpoints_signal.connect(self.response_endpoints_by_participant_key_slot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.response_endpoints_by_participant_key_signal.connect(self.response_endpoints_by_participant_key_slot, Qt.ConnectionType.QueuedConnection)
 
         # Connect from self to dds_data
         self.remove_domain_request_signal.connect(self.dds_data.remove_domain, Qt.ConnectionType.QueuedConnection)
