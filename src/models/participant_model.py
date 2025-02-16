@@ -14,6 +14,8 @@ from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt
 from PySide6.QtCore import Signal, Slot
 from pathlib import Path
 import os
+import uuid
+from typing import List
 from cyclonedds.builtin import DcpsParticipant
 import logging
 import dds_access.dds_data as dds_data
@@ -103,10 +105,12 @@ class ParticipantTreeModel(QAbstractItemModel):
     IsWriterRole = Qt.UserRole + 6
 
     remove_domain_request_signal = Signal(int)
+    request_endpoints_by_participant_key_signal = Signal(str, int, str)
 
     def __init__(self, rootItem: ParticipantTreeNode, parent=None):
         super(ParticipantTreeModel, self).__init__(parent)
         self.rootItem = rootItem
+        self.currentRequests: List[str] = []
 
         self.dds_data = dds_data.DdsData()
 
@@ -118,9 +122,11 @@ class ParticipantTreeModel(QAbstractItemModel):
         self.dds_data.removed_domain_signal.connect(self.removeDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_endpoint_signal.connect(self.remove_endpoint_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.new_endpoint_signal.connect(self.new_endpoint_slot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.response_endpoints_signal.connect(self.response_endpoints_by_participant_key_slot, Qt.ConnectionType.QueuedConnection)
 
         # Connect from self to dds_data
         self.remove_domain_request_signal.connect(self.dds_data.remove_domain, Qt.ConnectionType.QueuedConnection)
+        self.request_endpoints_by_participant_key_signal.connect(self.dds_data.requestEndpointsByParticipantKey, Qt.ConnectionType.QueuedConnection)
 
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
@@ -249,8 +255,14 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(int, DcpsParticipant)
     def update_participant_slot(self, domain_id: int, participant: DcpsParticipant):
+        # logging.debug("Update Participant " + str(participant.key))
+
         self.removed_participant_slot(domain_id, str(participant.key))
         self.new_participant_slot(domain_id, participant)
+
+        requestId: str = str(uuid.uuid4())
+        self.currentRequests.append(requestId)
+        self.request_endpoints_by_participant_key_signal.emit(requestId, domain_id, str(participant.key))
 
     @Slot(int, str)
     def removed_participant_slot(self, domainId: int, participantKey: str):
@@ -421,3 +433,14 @@ class ParticipantTreeModel(QAbstractItemModel):
                                     self.endRemoveRows()
 
                                 return
+
+    @Slot(str, int, dds_data.DataEndpoint)
+    def response_endpoints_by_participant_key_slot(self, requestId: str, domainId: int, endpoints: dds_data.DataEndpoint):
+        if requestId not in self.currentRequests:
+            return
+
+        # logging.debug("Response Endpoints By Participant Key, requestId: " + requestId)
+
+        self.currentRequests.remove(requestId)
+        for endpoint in endpoints:
+            self.new_endpoint_slot("", domainId, endpoint)

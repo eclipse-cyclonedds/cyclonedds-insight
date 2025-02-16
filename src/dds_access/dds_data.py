@@ -142,11 +142,11 @@ class DataDomain:
 
     def add_participant(self, participant: DcpsParticipant):
         self.participants[str(participant.key)] = participant
-        for topic in self.topics.keys():
-            self.topics[topic].link_participant(participant)
         if str(participant.key) in self.pending_participant_updates:
             self.update_participant(self.pending_participant_updates[str(participant.key)])
             del self.pending_participant_updates[str(participant.key)]
+        for topic in self.topics.keys():
+            self.topics[topic].link_participant(participant)
 
     def update_participant(self, update_participant: DcpsParticipant) -> Optional[DcpsParticipant]:
         if str(update_participant.key) in self.participants:
@@ -203,6 +203,18 @@ class DataDomain:
             else:
                 return self.topics[topicName].writer_endpoints
         return {}
+
+    def getEndpointsByParticipantKey(self, participantKey: str) -> List[DataEndpoint]:
+        endpoints = []
+        if participantKey in self.participants:
+            for topic in self.topics.keys():
+                for endpKey in self.topics[topic].reader_endpoints.keys():
+                    if str(self.topics[topic].reader_endpoints[endpKey].endpoint.participant_key) == participantKey:
+                        endpoints.append(self.topics[topic].reader_endpoints[endpKey])
+                for endpKey in self.topics[topic].writer_endpoints.keys():
+                    if str(self.topics[topic].writer_endpoints[endpKey].endpoint.participant_key) == participantKey:
+                        endpoints.append(self.topics[topic].writer_endpoints[endpKey])
+        return endpoints
 
     def __del__(self):
         self.obs_running[0] = False
@@ -273,6 +285,7 @@ class DdsData(QObject):
     update_participant_signal = Signal(int, DcpsParticipant)
 
     response_data_type_signal = Signal(str, object)
+    response_endpoints_signal = Signal(str, int, DataEndpoint)
 
     no_more_mismatch_in_topic_signal = Signal(int, str)
     publish_mismatch_signal = Signal(int, str, list)
@@ -406,3 +419,12 @@ class DdsData(QObject):
             logging.warning("domain not found")
 
         self.response_data_type_signal.emit(requestId, requestedDataType)
+
+    @Slot(str, int, str)
+    def requestEndpointsByParticipantKey(self, requestId: str, domainId: int, participantKey: str):
+        logging.debug(f"requestEndpointsByParticipantKey {requestId}, {domainId}, {participantKey}")
+        endpoints = []
+        if domainId in self.the_domains:
+            endpoints = self.the_domains[domainId].getEndpointsByParticipantKey(participantKey)
+
+        self.response_endpoints_signal.emit(requestId, domainId, endpoints)
