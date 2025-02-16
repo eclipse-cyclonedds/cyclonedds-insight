@@ -136,6 +136,7 @@ class EndpointModel(QAbstractItemModel):
         self.requestEndpointsSignal.connect(self.dds_data.requestEndpointsSlot, Qt.ConnectionType.QueuedConnection)
         # From dds_data to self
         self.dds_data.new_endpoint_signal.connect(self.new_endpoint_slot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.update_participant_signal.connect(self.update_participant_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_endpoint_signal.connect(self.remove_endpoint_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.no_more_mismatch_in_topic_signal.connect(self.no_more_mismatch_in_topic_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.publish_mismatch_signal.connect(self.publish_mismatch_slot, Qt.ConnectionType.QueuedConnection)
@@ -378,3 +379,15 @@ class EndpointModel(QAbstractItemModel):
     @Slot(result=list)
     def getAllTopicTypes(self):
         return list(set(self.topicTypes))
+
+    @Slot(int, DcpsParticipant)
+    def update_participant_slot(self, domain_id: int, participant: DcpsParticipant):
+        if domain_id != self.domain_id:
+            return
+
+        #for endpKey in self.endpoints.keys():
+        #    if self.endpoints[endpKey].endpoint.participant_key == participant.key:
+        #        idx = list(self.endpoints.keys()).index(endpKey)
+        #        index = self.createIndex(idx, 0)
+        #        self.endpoints[endpKey].participant = participant
+        #        self.dataChanged.emit(index, index, [self.HostnameRole, self.ProcessIdRole, self.ProcessNameRole, self.AddressesRole])
