@@ -21,7 +21,7 @@ from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
 from dds_access.datatypes.ospl import kernelModule
 from dds_access.datatypes.ospl.utils import from_ospl
-from typing import Optional, List, Tuple
+from typing import Tuple
 from dds_access.domain_participant_factory import DomainParticipantFactory
 from utils import EntityType
 
@@ -98,7 +98,6 @@ def builtin_observer(domain_id: int, queue: Queue, running):
 
         for p in rdp.take(condition=rcp):
             if p.sample_info.sample_state == core.SampleState.NotRead and p.sample_info.instance_state == core.InstanceState.Alive:
-                print(p)
                 dataItem.new_participants.append((domain_id, p))
             elif p.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
                 dataItem.remove_participants.append((domain_id, p))
@@ -119,7 +118,6 @@ def builtin_observer(domain_id: int, queue: Queue, running):
 
         for ospl_participant in ospl_reader.take(condition=ospl_read_condition):
             p_update = from_ospl(ospl_participant)
-            print("ospl: ", p_update)
             if p_update:
                 dataItem.update_participants.append((domain_id, p_update))
 
