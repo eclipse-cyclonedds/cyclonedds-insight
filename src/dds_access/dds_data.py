@@ -331,7 +331,7 @@ class DdsData(QObject):
 
     @Slot(int, DcpsParticipant)
     def add_domain_participant(self, domain_id: int, participant: DcpsParticipant):
-        #logging.debug(f"Add domain participant: {str(participant.key)}")
+        #logging.debug(f"Add domain participant {str(participant.key)}")
 
         if domain_id in self.the_domains:
             self.the_domains[domain_id].add_participant(participant)
