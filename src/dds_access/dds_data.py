@@ -20,7 +20,7 @@ from queue import Queue
 from typing import Dict, List, Optional
 import gc
 
-from dds_access.builtin_observer import builtin_observer
+from dds_access.builtin_observer import BuiltInObserver
 from dds_access.dispatcher import getDataType
 from dds_access.dds_qos import qos_match, dds_qos_policy_id
 from utils import singleton, EntityType
@@ -133,10 +133,7 @@ class DataDomain:
         self.endpointToTopic = {} # shortcut for deletion where only endp key is available
         self.participants = {}
         self.pending_participant_updates = {}
-        self.obs_running = [True]
-
-        self.obs_thread = threading.Thread(target=builtin_observer, args=(domain_id, queue, self.obs_running))
-
+        self.obs_thread = BuiltInObserver(domain_id, queue)
         self.obs_thread.start()
 
     def add_participant(self, participant: DcpsParticipant):
@@ -216,8 +213,8 @@ class DataDomain:
         return endpoints
 
     def __del__(self):
-        self.obs_running[0] = False
-        self.obs_thread.join()
+        self.obs_thread.stop()
+        self.obs_thread.wait()
 
 class BuiltInReceiver(QObject):
 
