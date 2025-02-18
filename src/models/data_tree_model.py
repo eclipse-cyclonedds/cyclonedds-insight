@@ -415,7 +415,7 @@ class DataTreeModel(QAbstractItemModel):
             item: DataTreeNode = index.internalPointer()
             parentX = item.parent()
 
-            self.beginRemoveRows(self.index(parentX.row(), 0), item.row(), item.row())
+            self.beginResetModel()
 
             attrs, parent = self.getDotPath(item)            
             obj = parent.dataType
@@ -433,7 +433,7 @@ class DataTreeModel(QAbstractItemModel):
 
             parentX.childItems.remove(item)
 
-            self.endRemoveRows()
+            self.endResetModel()
 
     def getDataObj(self):
         return self.rootItem.dataType
