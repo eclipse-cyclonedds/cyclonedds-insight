@@ -108,14 +108,14 @@ Rectangle {
                     Menu {
                         id: contextMenu
                         MenuItem {
-                            text: "Create Reader"
+                            text: "Create Reader (Listener)"
                             onTriggered: {
                                 readerTesterDialogId.setType(name, 3)
                                 readerTesterDialogId.open()
                             }
                         }
                         MenuItem {
-                            text: "Create Writer"
+                            text: "Create Writer (Tester)"
                             onTriggered: {
                                 readerTesterDialogId.setType(name, 4)
                                 readerTesterDialogId.open()
