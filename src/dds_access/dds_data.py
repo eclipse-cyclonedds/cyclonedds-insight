@@ -19,8 +19,9 @@ import copy
 from queue import Queue
 from typing import Dict, List, Optional
 import gc
-from dds_access.dds_utils import getDataType
-from dds_access.builtin_observer import builtin_observer
+
+from dds_access.builtin_observer import BuiltInObserver
+from dds_access.dispatcher import getDataType
 from dds_access.dds_qos import qos_match, dds_qos_policy_id
 from utils import singleton, EntityType
 
@@ -131,16 +132,31 @@ class DataDomain:
         self.topics: Dict[str, DataTopic] = {}
         self.endpointToTopic = {} # shortcut for deletion where only endp key is available
         self.participants = {}
-        self.obs_running = [True]
-
-        self.obs_thread = threading.Thread(target=builtin_observer, args=(domain_id, queue, self.obs_running))
-
+        self.pending_participant_updates = {}
+        self.obs_thread = BuiltInObserver(domain_id, queue)
         self.obs_thread.start()
 
     def add_participant(self, participant: DcpsParticipant):
         self.participants[str(participant.key)] = participant
+        if str(participant.key) in self.pending_participant_updates:
+            self.update_participant(self.pending_participant_updates[str(participant.key)])
+            del self.pending_participant_updates[str(participant.key)]
         for topic in self.topics.keys():
             self.topics[topic].link_participant(participant)
+
+    def update_participant(self, update_participant: DcpsParticipant) -> Optional[DcpsParticipant]:
+        if str(update_participant.key) in self.participants:
+            self.participants[str(update_participant.key)].qos += update_participant.qos
+            return self.participants[str(update_participant.key)]
+        else:
+            self.pending_participant_updates[str(update_participant.key)] = update_participant
+            return None
+
+    def remove_participant(self, key: str):
+        if key in self.participants:
+            del self.participants[key]
+        if key in self.pending_participant_updates:
+            del self.pending_participant_updates[key]
 
     def add_endpoint(self, dataEndpoint: DataEndpoint):
         self.endpointToTopic[str(dataEndpoint.endpoint.key)] = str(dataEndpoint.endpoint.topic_name)
@@ -161,10 +177,6 @@ class DataDomain:
 
                 if not self.topics[topicName].hasEndpoints():
                     del self.topics[topicName]
-
-    def remove_participant(self, key: str):
-        if key in self.participants:
-            del self.participants[key]
 
     def has_topic(self, topicName: str) -> bool:
         return topicName in self.topics
@@ -188,9 +200,21 @@ class DataDomain:
                 return self.topics[topicName].writer_endpoints
         return {}
 
+    def getEndpointsByParticipantKey(self, participantKey: str) -> List[DataEndpoint]:
+        endpoints = []
+        if participantKey in self.participants:
+            for topic in self.topics.keys():
+                for endpKey in self.topics[topic].reader_endpoints.keys():
+                    if str(self.topics[topic].reader_endpoints[endpKey].endpoint.participant_key) == participantKey:
+                        endpoints.append(self.topics[topic].reader_endpoints[endpKey])
+                for endpKey in self.topics[topic].writer_endpoints.keys():
+                    if str(self.topics[topic].writer_endpoints[endpKey].endpoint.participant_key) == participantKey:
+                        endpoints.append(self.topics[topic].writer_endpoints[endpKey])
+        return endpoints
+
     def __del__(self):
-        self.obs_running[0] = False
-        self.obs_thread.join()
+        self.obs_thread.stop()
+        self.obs_thread.wait()
 
 class BuiltInReceiver(QObject):
 
@@ -198,6 +222,7 @@ class BuiltInReceiver(QObject):
     newEndpointSignal = Signal(int, DcpsParticipant, EntityType)
     removeParticipantSignal = Signal(int, DcpsParticipant)
     removeEndpointSignal = Signal(int, DcpsParticipant)
+    updateParticipantSignal = Signal(int, DcpsParticipant)
 
     def __init__(self, queue):
         super().__init__()
@@ -230,6 +255,9 @@ class BuiltInReceiver(QObject):
                 for (domain_id, endpoint) in item.remove_endpoints:
                     self.removeEndpointSignal.emit(domain_id, endpoint)
 
+                for (domain_id, endpoint_update) in item.update_participants:
+                    self.updateParticipantSignal.emit(domain_id, endpoint_update)
+
         logging.info("Running BuiltInReceiver ... DONE")
 
     def stop(self):
@@ -250,8 +278,10 @@ class DdsData(QObject):
     removed_endpoint_signal = Signal(int, str)
     new_participant_signal = Signal(int, DcpsParticipant)
     removed_participant_signal = Signal(int, str)
+    update_participant_signal = Signal(int, DcpsParticipant)
 
     response_data_type_signal = Signal(str, object)
+    response_endpoints_by_participant_key_signal = Signal(str, int, DataEndpoint)
 
     no_more_mismatch_in_topic_signal = Signal(int, str)
     publish_mismatch_signal = Signal(int, str, list)
@@ -270,6 +300,7 @@ class DdsData(QObject):
         self.receiver.newEndpointSignal.connect(self.add_endpoint, Qt.ConnectionType.QueuedConnection)
         self.receiver.removeParticipantSignal.connect(self.remove_domain_participant, Qt.ConnectionType.QueuedConnection)
         self.receiver.removeEndpointSignal.connect(self.remove_endpoint, Qt.ConnectionType.QueuedConnection)
+        self.receiver.updateParticipantSignal.connect(self.update_domain_participant, Qt.ConnectionType.QueuedConnection)
         self.receiverThread.started.connect(self.receiver.run)
         self.receiverThread.finished.connect(self.receiver.deleteLater)
         self.receiverThread.start()
@@ -295,25 +326,31 @@ class DdsData(QObject):
 
         self.removed_domain_signal.emit(domain_id)
 
-
     @Slot(int, DcpsParticipant)
     def add_domain_participant(self, domain_id: int, participant: DcpsParticipant):
         #logging.debug(f"Add domain participant {str(participant.key)}")
 
         if domain_id in self.the_domains:
             self.the_domains[domain_id].add_participant(participant)
-
-        self.new_participant_signal.emit(domain_id, participant)
+            self.new_participant_signal.emit(domain_id, participant)
 
     @Slot(int, DcpsParticipant)
     def remove_domain_participant(self, domain_id: int, participant: DcpsParticipant):
+        # logging.debug(f"Remove domain participant: {str(participant.key)}")
         if domain_id in self.the_domains:
             self.the_domains[domain_id].remove_participant(str(participant.key))
             self.removed_participant_signal.emit(domain_id, str(participant.key))
 
+    @Slot(int, DcpsParticipant)
+    def update_domain_participant(self, domain_id: int, participant_update: DcpsParticipant):
+        # logging.debug(f"Update domain participant: {str(participant_update.key)}")
+        if domain_id in self.the_domains:
+            updated = self.the_domains[domain_id].update_participant(participant_update)
+            if updated:
+                self.update_participant_signal.emit(domain_id, updated)
+
     @Slot(int, DcpsEndpoint, EntityType)
     def add_endpoint(self, domain_id: int, endpoint: DcpsEndpoint, entity_type: EntityType):
-
         # logging.debug(f"Add endpoint domain: {domain_id}, key: {str(endpoint.key)}, entity: {entity_type}")
 
         if domain_id in self.the_domains:
@@ -325,13 +362,14 @@ class DdsData(QObject):
                 self.new_topic_signal.emit(domain_id, endpoint.topic_name)
 
             self.new_endpoint_signal.emit("", domain_id, copy.deepcopy(dataEndp))
-       
+
             mismatches = self.the_domains[domain_id].topics[endpoint.topic_name].get_mismatches()
             if len(mismatches) > 0:
                 self.publish_mismatch_signal.emit(domain_id, endpoint.topic_name, mismatches)
 
     @Slot(int, DcpsEndpoint)
     def remove_endpoint(self, domain_id: int, endpoint: DcpsEndpoint):
+        # logging.debug(f"Remove endpoint domain: {domain_id}, key: {str(endpoint.key)}")
 
         if domain_id in self.the_domains:
 
@@ -377,3 +415,12 @@ class DdsData(QObject):
             logging.warning("domain not found")
 
         self.response_data_type_signal.emit(requestId, requestedDataType)
+
+    @Slot(str, int, str)
+    def requestEndpointsByParticipantKey(self, requestId: str, domainId: int, participantKey: str):
+        logging.debug(f"requestEndpointsByParticipantKey {requestId}, {domainId}, {participantKey}")
+        endpoints = []
+        if domainId in self.the_domains:
+            endpoints = self.the_domains[domainId].getEndpointsByParticipantKey(participantKey)
+
+        self.response_endpoints_by_participant_key_signal.emit(requestId, domainId, endpoints)

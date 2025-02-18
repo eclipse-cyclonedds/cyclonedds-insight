@@ -30,9 +30,8 @@ class DdsListener(core.Listener):
         logging.warning("on_offered_deadline_missed")
 
     def on_offered_incompatible_qos(self, writer, status):
-        # QoS mismatches are not worthy of a warning (they should not have been a QoS in DDS in the first place)
-        # Most likely a mismatch is intended, otherwise there is no reason to use partitions.
-        # We show matching partitions inside the gui to be able to verify them.
+        # The check is only here because currently there is a bug in cyclonedds
+        # that causes the partition to be shown as incompatible.
         if dds_qos_policy_id(status.last_policy_id) != dds_qos_policy_id.DDS_PARTITION_QOS_POLICY_ID:
             logging.warning(f"on_offered_incompatible_qos: {dds_qos_policy_id(status.last_policy_id).name}")
 
@@ -49,9 +48,8 @@ class DdsListener(core.Listener):
         logging.warning("on_sample_rejected")
 
     def on_requested_incompatible_qos(self, reader, status):
-        # QoS mismatches are not worthy of a warning (they should not have been a QoS in DDS in the first place)
-        # Most likely a mismatch is intended, otherwise there is no reason to use partitions.
-        # We show matching partitions inside the gui to be able to verify them.
+        # The check is only here because currently there is a bug in cyclonedds
+        # that causes the partition to be shown as incompatible.
         if dds_qos_policy_id(status.last_policy_id) != dds_qos_policy_id.DDS_PARTITION_QOS_POLICY_ID:
             logging.warning(f"on_requested_incompatible_qos: {dds_qos_policy_id(status.last_policy_id).name}")
 
