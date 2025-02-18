@@ -77,6 +77,9 @@ class DispatcherThread(QThread):
         for id, tp, sub, rd, readCondition in self.readerData:
             logging.info(f"Delete reader {id} ({tp.name})")
             self.waitset.detach(readCondition)
+            del rd
+            del sub
+            del tp
         self.readerData.clear()
         self.guardCondition.set(False)
 
