@@ -86,7 +86,6 @@ class DispatcherThread(QThread):
     @Slot()
     def addEndpoint(self, id: str, topic_name: str, topic_type, qos, entity_type: EntityType):
         logging.info(f"Add endpoint {id} ...")
-        print(id, topic_name, topic_type, qos, entity_type)
         try:
             topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
 

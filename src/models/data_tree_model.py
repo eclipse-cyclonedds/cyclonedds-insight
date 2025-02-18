@@ -261,7 +261,7 @@ class DataTreeModel(QAbstractItemModel):
 
     @Slot(QModelIndex, str)
     def setData(self, index, value):
-        print("setData", index, value)
+        # print("setData", index, value)
         if index.isValid():
             item = index.internalPointer()
             if item.role == self.IsFloatRole:
@@ -345,19 +345,12 @@ class DataTreeModel(QAbstractItemModel):
                 if len(node.childItems) > 0:
                     attrs, parent = self.getDotPath(node.childItems[0])
                 else:
-                    print("Hm what happens here?", node.dataType, node.itemArrayTypeName, node.itemTypeName, node.parentItem.itemTypeName, node.parentItem.dataType)
                     attrs, parent = self.getDotPath(node)
 
-            print("seqenceObj !!!", seqenceObj)
-            print("childitems", node.childItems)
-
-            print("Add-array-item", attrs, parent)
             if attrs[-1].isdigit():
                 attrs.append(None)
 
             obj = parent.dataType
-
-            print(obj, type(obj))
 
             for attr in attrs[:-1]:
                 if attr.isdigit():
@@ -412,8 +405,6 @@ class DataTreeModel(QAbstractItemModel):
 
         attrs = re.split(r'\.|\[|\]', dotName)
         attrs = [attr for attr in attrs if attr]
-
-        print("attrs", attrs)
 
         return attrs, parent
 

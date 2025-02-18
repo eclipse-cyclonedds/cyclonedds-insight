@@ -120,16 +120,9 @@ class DataModelHandler(QObject):
         for submodule in submodules:
             self.import_module_and_nested(submodule)
 
-       # print("self.structMembers", self.structMembers)
-
     def addTypeFromNetwork(self, typeName, dataType):
-        print()
         self.structMembers[typeName] = self.get_struct_members(dataType)
         self.allTypes[typeName] = dataType
-        import json
-        print("allTypes", json.dumps(self.allTypes, indent=2, default=str))
-        print("customTypes", json.dumps(self.customTypes, indent=2, default=str))
-        print("structMembers", json.dumps(self.structMembers, indent=2, default=str))
 
     def import_module_and_nested(self, module_name):
         try:
@@ -169,14 +162,10 @@ class DataModelHandler(QObject):
         except Exception as e:
             logging.error(f"Error importing {module_name}: {e}")
 
-        #print("allTypes", self.allTypes)
-        #print("structMembers", self.structMembers)
-        #print("allTypeDefs", self.customTypes)
-        #print("DONE")
-        import json
-        print("allTypes", json.dumps(self.allTypes, indent=2, default=str))
-        print("customTypes", json.dumps(self.customTypes, indent=2, default=str))
-        print("structMembers", json.dumps(self.structMembers, indent=2, default=str))
+        #import json
+        #print("allTypes", json.dumps(self.allTypes, indent=2, default=str))
+        #print("customTypes", json.dumps(self.customTypes, indent=2, default=str))
+        #print("structMembers", json.dumps(self.structMembers, indent=2, default=str))
 
     def has_nested_annotation(self, cls):
         return 'nested' in getattr(cls, '__idl_annotations__', {})
@@ -217,9 +206,7 @@ class DataModelHandler(QObject):
     def getInitializedDataObj(self, topicType):
         """Returns an default initialized object of the given type"""
 
-        print("getInitializedDataObj", type(topicType), topicType, str(topicType))
-
-        #print(isinstance(topicType, int), isinstance(topicType, cyclonedds.idl.types.int32))
+        # print("getInitializedDataObj", type(topicType), topicType, str(topicType))
 
         if topicType.replace(".", "::") in self.structMembers or topicType.replace(".", "::") in self.allTypes or topicType.replace(".", "::") in self.customTypes:
             topicType = topicType.replace(".", "::")
@@ -232,9 +219,7 @@ class DataModelHandler(QObject):
             initList = []
             for k in self.structMembers[topicType].keys():
                 currentTypeName = self.structMembers[topicType][k]
-                print("----------->>>>>>>>>>>", currentTypeName)
                 realType = self.getRealType(currentTypeName)
-                print("xxxxxxxxREAL.", realType)
                 if self.isArray(realType):
                     arrayDefaultValues = []
                     metaType = self.getMetaDataType(realType)
@@ -264,20 +249,10 @@ class DataModelHandler(QObject):
                 elif self.isOptional(realType):
                     initList.append(None)                    
 
-            #try:
-            #    topic_type_dot: str = topicType.replace("::", ".")
-            #    moduleNameToImport = topic_type_dot.split('.')[0]
-            #    module = importlib.import_module(moduleNameToImport)
-            #    for part in topic_type_dot.split('.')[1:]:
-            #        module = getattr(module, part)
-            #    print(module, initList)
-            #    initializedObj = module(*initList)
-            #    print("initializedObj----->>>>", initializedObj)
-
             module = self.allTypes[topicType]
-            print(module, initList)
+            # print(module, initList)
             initializedObj = module(*initList)
-            print("initializedObj----->>>>", initializedObj)
+            # print("initializedObj:", initializedObj)
 
         else:
             if self.isInt(topicType) or self.isEnum(topicType):
@@ -365,16 +340,9 @@ class DataModelHandler(QObject):
         return None
 
     def getEnumItemNames(self, theType):
-        print("ENUM-ITEMS", theType, type(theType))
         smiCol = str(theType).replace(".", "::")
         if smiCol in self.allTypes:
             return getattr(self.allTypes[smiCol], "_member_names_")
-
-        if hasattr(theType, "__dict__"):
-            print("d", theType.__dict__)
-        if hasattr(theType, "__args__"):
-            print("a", theType.__args__)
-
         return []
 
     def isChar(self, theType):
@@ -415,7 +383,6 @@ class DataModelHandler(QObject):
         if hasattr(theType, "__metadata__"):
             if len(theType.__metadata__) > 0:
                 _type = theType.__metadata__[0]
-                print("theType:", type(theType), type(_type), theType.__metadata__[0])
                 return _type
         return None
 
@@ -431,7 +398,6 @@ class DataModelHandler(QObject):
         elif hasattr(theType, "__metadata__"):
             if len(theType.__metadata__) > 0:
                 _type = theType.__metadata__[0]
-                print("theType:", type(theType), type(_type))
                 if isinstance(_type, cyclonedds.idl.types.sequence):
                     return True
                 
@@ -471,8 +437,6 @@ class DataModelHandler(QObject):
         theType = self.convert_to_cpp_style(theType)
 
         if theType in self.structMembers:
-            print("xxx",theType, self.structMembers[theType], str(type(self.structMembers[theType])))
-
             for keyStructMem in self.structMembers[theType].keys():
 
                 tt = str(self.structMembers[theType][keyStructMem]).replace(".", "::")
@@ -503,21 +467,16 @@ class DataModelHandler(QObject):
                     arrayRootNode = DataTreeNode(keyStructMem, tt,DataTreeModel.IsArrayRole, parent=rootNode)
                     metaType = self.getMetaDataType(realType)
                     innerType = metaType.subtype
-                    print("ARRAYYYYY", innerType)
                     if hasattr(innerType, "__idl_typename__"):
                         inner = innerType.__idl_typename__
                     else:
                         inner = innerType
                     arrayLength = metaType.length
 
-                    print("ARRAYYYYY", inner)
-
                     arrayRootNode.dataType = self.getInitializedDataObj(str(inner))
                     arrayRootNode.itemArrayTypeName = str(inner)
 
                     for _ in range(arrayLength):
-                        print("FILL ARRAY", arrayRootNode.itemArrayTypeName)
-                        # TODO: add real datatypes to root node with the dds obj
                         arrElem = DataTreeNode("", "", DataTreeModel.IsArrayElementRole, parent=arrayRootNode)
                         itemNode = self.toNode(arrayRootNode.itemArrayTypeName, arrElem)
                         arrayRootNode.appendChild(itemNode)
@@ -531,7 +490,6 @@ class DataModelHandler(QObject):
                     metaType = self.getMetaDataType(realType)
 
                     innerType = metaType.subtype
-                    print("seq-dict", str(innerType), innerType)
                     if hasattr(innerType, "__idl_typename__"):
                         inner = innerType.__idl_typename__
                     else:
@@ -540,16 +498,9 @@ class DataModelHandler(QObject):
 
                     inner = self.getRealType(inner)
 
-                    print("INNER:::::::", inner, seqRootNode.maxElements, self.isSequence(inner), type(inner))  
-
-                    if hasattr(inner, "__dict__"):
-                        print(inner.__dict__)
-
                     seqRootNode.dataType = self.getInitializedDataObj(str(inner))
                     seqRootNode.itemArrayTypeName = str(inner)
                     seqRootNode.itemArrayType = inner
-
-                    print("INNER DATA TYPE:", seqRootNode.dataType, type(seqRootNode.dataType))
 
                     rootNode.appendChild(seqRootNode)
 
@@ -558,9 +509,7 @@ class DataModelHandler(QObject):
                     optionalNode.maxElements = 1
                     optType = self.getOptionalType(realType)
                     inner = str(optType).replace(".", "::")
-                    print("INNOPTIONAL", inner)
                     optionalNode.dataType = self.getInitializedDataObj(inner)
-                    print("HERE:", optionalNode.dataType)
                     optionalNode.itemArrayTypeName = inner
                     rootNode.appendChild(optionalNode)
 
@@ -568,7 +517,6 @@ class DataModelHandler(QObject):
                 elif self.isEnum(realType):
                     node = DataTreeNode(keyStructMem, tt, DataTreeModel.IsEnumRole, parent=rootNode)
                     node.enumItemNames = self.getEnumItemNames(realType)
-                    print("OTHER ITEMS:", node.enumItemNames)
                     rootNode.appendChild(node)
 
                 # struct
@@ -642,23 +590,16 @@ class DataModelHandler(QObject):
             return typeName
 
     def getRealType(self, inType):
-        print("GETREALTYPE:", type(inType), inType)
-
         outType = inType
 
         if isinstance(inType, str):
-            print("is-str")
             inTypeSemi = inType.replace(".", "::")
             if inTypeSemi in self.customTypes:
-                print("yearh its in", inTypeSemi, self.customTypes[inTypeSemi])
                 outType = self.getRealType(self.customTypes[inTypeSemi])
 
         elif hasattr(inType, "__metadata__"):
-            print("hash-metadata")
             if len(inType.__metadata__) > 0:
                 metaType = inType.__metadata__[0]
                 if isinstance(metaType, cyclonedds.idl.types.typedef):
                     outType = self.getRealType(metaType)
-
-        print("OUT:", outType, type(outType))
         return outType
