@@ -13,7 +13,7 @@
 import logging
 import datetime
 from PySide6.QtCore import Signal, Slot, QThread
-from cyclonedds import core, dynamic
+from cyclonedds import core
 from cyclonedds.util import duration
 from cyclonedds.core import SampleState, ViewState, InstanceState
 from cyclonedds.topic import Topic
@@ -23,17 +23,6 @@ from dds_access.dds_listener import DdsListener
 from threading import Lock
 from dds_access.domain_participant_factory import DomainParticipantFactory
 from utils import EntityType
-
-
-def getDataType(domainId, endp):
-    try:
-        requestedDataType, _ = dynamic.get_types_for_typeid(
-            DomainParticipantFactory.get_participant(domainId), endp.type_id, duration(seconds=3))
-        return requestedDataType
-    except Exception as e:
-        logging.error(str(e))
-
-    return None
 
 
 class DispatcherThread(QThread):
