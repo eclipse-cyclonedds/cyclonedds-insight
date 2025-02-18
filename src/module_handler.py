@@ -192,7 +192,7 @@ class DataModelHandler(QObject):
     def add_idl_without_module(self, module):
         classes = [getattr(module, name) for name in dir(module) if isinstance(getattr(module, name), type)]
         for cls in classes:
-            sId: str = f"{module.__name__}::{cls.__name__}"
+            sId: str = f"{cls.__name__}"
             if not self.has_nested_annotation(cls) and "(IdlStruct" in str(cls):
                 
                 if sId not in self.topLevelTypes:
@@ -447,6 +447,9 @@ class DataModelHandler(QObject):
         return False
 
     def isStruct(self, theType):
+        # doted = str(theType).replace(".", "::")
+        # if "::" not in doted:
+        #     return False
         return str(theType).replace(".", "::") in self.structMembers
 
     def isBasic(self, theType):
