@@ -31,20 +31,27 @@ Popup {
 
     property int domainId: 0
     property string topicType
+    property int entityType
+
+    Component.onCompleted: {
+        console.log("Reader", readerTesterDiaId.topicType)
+    }
     property string topicName
     property var topicTypeNameList: []
     property string selectedTypeText: ""
 
-    function setType(topicType) {
+    function setType(topicType, entityType) {
         topicTypeNameList = []
         topicName = topicType.replace(/::/g, "_");
         readerTesterDiaId.topicType = topicType
+        readerTesterDiaId.entityType = entityType
     }
 
-    function setTypes(domain, name, typeList) {
+    function setTypes(domain, name, typeList, entityType) {
         readerTesterDiaId.domainId = domain
         readerTesterDiaId.topicName = name
         readerTesterDiaId.topicTypeNameList = typeList
+        readerTesterDiaId.entityType = entityType
         readerDomainIdSpinBox.value = domain
     }
 
@@ -68,7 +75,7 @@ Popup {
             padding: 5
 
             Label {
-                text: "Create Reader"
+                text: readerTesterDiaId.entityType === 3 ? "Create Reader" : "Create Writer"
                 font.bold: true
                 font.pixelSize: 30
                 Layout.alignment: Qt.AlignHCenter
@@ -269,7 +276,7 @@ Popup {
                         }
                         CheckBox {
                             id: allowTypeCoercion_ignore_member_names
-                            checked: true
+                            checked: false
                             text: qsTr("ignore_member_names")
                         }
                     }
@@ -743,7 +750,7 @@ Popup {
         anchors.margins: 10
 
         Button {
-            text: qsTr("Create Reader")
+            text: readerTesterDiaId.entityType === 3 ? qsTr("Create Reader (Listener)") : qsTr("Create Writer (Tester)")
             onClicked: {
                 var partitions = [];
                 for (var i = 0; i < partitionModel.count; i++) {
@@ -800,7 +807,8 @@ Popup {
                     durabilityServiceKeepLastSpinBox.value,
                     durabilityServiceMaxSamplesSpinBox.value,
                     durabilityServiceMaxInstancesSpinBox.value,
-                    durabilityServiceMaxSamplesPerInstanceSpinBox.value
+                    durabilityServiceMaxSamplesPerInstanceSpinBox.value,
+                    entityType
                 )
                 readerTesterDiaId.close()
             }

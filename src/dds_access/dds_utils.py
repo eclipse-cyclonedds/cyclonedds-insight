@@ -12,7 +12,10 @@
 
 from typing import Optional, List
 from cyclonedds.builtin import DcpsParticipant
+from cyclonedds import core, dynamic
 from cyclonedds import core
+from cyclonedds.util import duration
+from dds_access.domain_participant_factory import DomainParticipantFactory
 import logging
 import xml.etree.ElementTree as ET
 import os
@@ -81,3 +84,14 @@ def getConfiguredDomainIds():
                 logging.error(f"Failed to get domain id: {str(e)} from {domain_id_str}")
 
     return sorted(domain_ids)
+
+
+def getDataType(domainId, endp):
+    with DomainParticipantFactory.get_participant(domainId) as participant:
+        try:
+            requestedDataType, _ = dynamic.get_types_for_typeid(participant, endp.type_id, duration(seconds=3))
+            return requestedDataType
+        except Exception as e:
+            logging.error(str(e))
+
+    return None

@@ -111,10 +111,34 @@ Rectangle {
                         }
                         addModelToCombinedArray(writerTypes);
                         addModelToCombinedArray(readerTypes);
-                        readerTesterDialogId.setTypes(domainId, topicName, combinedArray);
+                        readerTesterDialogId.setTypes(domainId, topicName, combinedArray, 3);
                         readerTesterDialogId.open();
                     }
                 }
+
+                // TODO: implement writer creation from network
+                /*Button {
+                    text: "Create Writer"
+                    onClicked: {
+                        var writerTypes = endpointWriterModel.getAllTopicTypes()
+                        var readerTypes = endpointReaderModel.getAllTopicTypes()
+                        var combinedArray = [];
+
+                        function addModelToCombinedArray(model) {
+                            var i = 0;
+                            while (i < model.length) {
+                                if (combinedArray.indexOf(model[i]) === -1) {
+                                    combinedArray.push(model[i]);
+                                }
+                                i++;
+                            }
+                        }
+                        addModelToCombinedArray(writerTypes);
+                        addModelToCombinedArray(readerTypes);
+                        readerTesterDialogId.setTypes(domainId, topicName, combinedArray, 4);
+                        readerTesterDialogId.open();
+                    }
+                }*/
 
                 WarningTriangle {
                     id: warning_triangle

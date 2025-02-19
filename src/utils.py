@@ -182,3 +182,14 @@ class QmlUtils(QObject):
     @Slot(int)
     def setColorScheme(self, scheme):
         QApplication.styleHints().setColorScheme(Qt.ColorScheme(scheme))
+
+def delete_folder(folder_path):
+    dir = QDir(folder_path)
+    if dir.exists():
+        success = dir.removeRecursively()
+        if success:
+            logging.info(f"Successfully deleted folder: {folder_path}")
+        else:
+            logging.error(f"Failed to delete folder: {folder_path}")
+    else:
+        logging.error(f"Folder does not exist: {folder_path}")

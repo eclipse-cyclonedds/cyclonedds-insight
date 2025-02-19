@@ -66,11 +66,11 @@ Rectangle {
                 implicitWidth: 1
             }
             Button {
-                text: "Clear Messages"
+                text: "Clear Log"
                 onClicked: logClear()
             }
             Button {
-                text: listenerTabId.autoScrollEnabled ? "Pause Messages" : "Resume Messages"
+                text: listenerTabId.autoScrollEnabled ? "Pause Log" : "Resume Log"
                 onClicked: {
                     listenerTabId.autoScrollEnabled = !listenerTabId.autoScrollEnabled
                     if (listenerTabId.autoScrollEnabled) {

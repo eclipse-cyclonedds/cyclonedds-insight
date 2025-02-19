@@ -66,81 +66,82 @@ class BuiltInObserver(QThread):
         logging.info(f"builtin_observer({self.domain_id}) ...")
         self.running = True
 
-        domain_participant = DomainParticipantFactory.get_participant(self.domain_id)
-        waitset = core.WaitSet(domain_participant)
+        with DomainParticipantFactory.get_participant(self.domain_id) as domain_participant:
 
-        self.guardCondition = core.GuardCondition(domain_participant)
-        waitset.attach(self.guardCondition)
+            waitset = core.WaitSet(domain_participant)
 
-        rdp = builtin.BuiltinDataReader(domain_participant, builtin.BuiltinTopicDcpsParticipant)
-        rcp = core.ReadCondition(
-            rdp, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
-        waitset.attach(rcp)
+            self.guardCondition = core.GuardCondition(domain_participant)
+            waitset.attach(self.guardCondition)
 
-        rdw = builtin.BuiltinDataReader(domain_participant, builtin.BuiltinTopicDcpsPublication)
-        rcw = core.ReadCondition(
-            rdw, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
-        waitset.attach(rcw)
+            rdp = builtin.BuiltinDataReader(domain_participant, builtin.BuiltinTopicDcpsParticipant)
+            rcp = core.ReadCondition(
+                rdp, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
+            waitset.attach(rcp)
 
-        rdr = builtin.BuiltinDataReader(domain_participant, builtin.BuiltinTopicDcpsSubscription)
-        rcr = core.ReadCondition(
-            rdr, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
-        waitset.attach(rcr)
+            rdw = builtin.BuiltinDataReader(domain_participant, builtin.BuiltinTopicDcpsPublication)
+            rcw = core.ReadCondition(
+                rdw, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
+            waitset.attach(rcw)
 
-        # OpenSplice-BuiltIn
-        sys.modules["kernelModule"] = kernelModule
-        ospl_qos = Qos(
-            Policy.Ownership.Shared,
-            Policy.Durability.TransientLocal,
-            Policy.Reliability.Reliable(max_blocking_time=duration(milliseconds=0)),
-            Policy.History.KeepAll,
-            Policy.Partition(partitions=["__BUILT-IN PARTITION__"]),
-            Policy.EntityName(name="CMParticipantReader"),
-            Policy.DataRepresentation(use_cdrv0_representation=True, use_xcdrv2_representation=False))
-        ospl_topic = Topic(domain_participant, "CMParticipant", kernelModule.v_participantCMInfo, qos=ospl_qos)
-        ospl_subscriber = Subscriber(domain_participant, qos=ospl_qos)
-        ospl_reader = DataReader(ospl_subscriber, ospl_topic, qos=ospl_qos)
-        ospl_read_condition = core.ReadCondition(ospl_reader, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
-        waitset.attach(ospl_read_condition)
+            rdr = builtin.BuiltinDataReader(domain_participant, builtin.BuiltinTopicDcpsSubscription)
+            rcr = core.ReadCondition(
+                rdr, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
+            waitset.attach(rcr)
 
-        while self.running:
+            # OpenSplice-BuiltIn
+            sys.modules["kernelModule"] = kernelModule
+            ospl_qos = Qos(
+                Policy.Ownership.Shared,
+                Policy.Durability.TransientLocal,
+                Policy.Reliability.Reliable(max_blocking_time=duration(milliseconds=0)),
+                Policy.History.KeepAll,
+                Policy.Partition(partitions=["__BUILT-IN PARTITION__"]),
+                Policy.EntityName(name="CMParticipantReader"),
+                Policy.DataRepresentation(use_cdrv0_representation=True, use_xcdrv2_representation=False))
+            ospl_topic = Topic(domain_participant, "CMParticipant", kernelModule.v_participantCMInfo, qos=ospl_qos)
+            ospl_subscriber = Subscriber(domain_participant, qos=ospl_qos)
+            ospl_reader = DataReader(ospl_subscriber, ospl_topic, qos=ospl_qos)
+            ospl_read_condition = core.ReadCondition(ospl_reader, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
+            waitset.attach(ospl_read_condition)
 
-            amount_triggered = 0
-            try:
-                amount_triggered = waitset.wait(duration(infinite=True))
-            except Exception as e:
-                logging.error(str(e))
-            if amount_triggered == 0:
-                continue
+            while self.running:
 
-            dataItem = BuiltInDataItem()
+                amount_triggered = 0
+                try:
+                    amount_triggered = waitset.wait(duration(infinite=True))
+                except Exception as e:
+                    logging.error(str(e))
+                if amount_triggered == 0:
+                    continue
 
-            for p in rdp.take(condition=rcp):
-                if p.sample_info.sample_state == core.SampleState.NotRead and p.sample_info.instance_state == core.InstanceState.Alive:
-                    dataItem.new_participants.append((self.domain_id, p))
-                elif p.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
-                    dataItem.remove_participants.append((self.domain_id, p))
+                dataItem = BuiltInDataItem()
 
-            for pub in rdw.take(condition=rcw):
-                if pub.sample_info.sample_state == core.SampleState.NotRead and pub.sample_info.instance_state == core.InstanceState.Alive:
-                    if pub.topic_name not in IGNORE_TOPICS:
-                        dataItem.new_endpoints.append((self.domain_id, pub, EntityType.WRITER))
-                elif pub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
-                    dataItem.remove_endpoints.append((self.domain_id, pub))
+                for p in rdp.take(condition=rcp):
+                    if p.sample_info.sample_state == core.SampleState.NotRead and p.sample_info.instance_state == core.InstanceState.Alive:
+                        dataItem.new_participants.append((self.domain_id, p))
+                    elif p.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
+                        dataItem.remove_participants.append((self.domain_id, p))
 
-            for sub in rdr.take(condition=rcr):
-                if sub.sample_info.sample_state == core.SampleState.NotRead and sub.sample_info.instance_state == core.InstanceState.Alive:
-                    if sub.topic_name not in IGNORE_TOPICS:
-                        dataItem.new_endpoints.append((self.domain_id, sub, EntityType.READER))
-                elif sub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
-                    dataItem.remove_endpoints.append((self.domain_id, sub))
+                for pub in rdw.take(condition=rcw):
+                    if pub.sample_info.sample_state == core.SampleState.NotRead and pub.sample_info.instance_state == core.InstanceState.Alive:
+                        if pub.topic_name not in IGNORE_TOPICS:
+                            dataItem.new_endpoints.append((self.domain_id, pub, EntityType.WRITER))
+                    elif pub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
+                        dataItem.remove_endpoints.append((self.domain_id, pub))
 
-            for ospl_participant in ospl_reader.take(condition=ospl_read_condition):
-                if ospl_participant.sample_info.sample_state == core.SampleState.NotRead and ospl_participant.sample_info.instance_state == core.InstanceState.Alive:
-                    p_update = from_ospl(ospl_participant)
-                    if p_update:
-                        dataItem.update_participants.append((self.domain_id, p_update))
+                for sub in rdr.take(condition=rcr):
+                    if sub.sample_info.sample_state == core.SampleState.NotRead and sub.sample_info.instance_state == core.InstanceState.Alive:
+                        if sub.topic_name not in IGNORE_TOPICS:
+                            dataItem.new_endpoints.append((self.domain_id, sub, EntityType.READER))
+                    elif sub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
+                        dataItem.remove_endpoints.append((self.domain_id, sub))
 
-            self.queue.put(dataItem)
+                for ospl_participant in ospl_reader.take(condition=ospl_read_condition):
+                    if ospl_participant.sample_info.sample_state == core.SampleState.NotRead and ospl_participant.sample_info.instance_state == core.InstanceState.Alive:
+                        p_update = from_ospl(ospl_participant)
+                        if p_update:
+                            dataItem.update_participants.append((self.domain_id, p_update))
+
+                self.queue.put(dataItem)
 
         logging.info(f"builtin_observer({self.domain_id}) ... DONE")

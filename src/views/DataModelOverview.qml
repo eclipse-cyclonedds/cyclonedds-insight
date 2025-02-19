@@ -110,14 +110,17 @@ Rectangle {
                         MenuItem {
                             text: "Create Reader (Listener)"
                             onTriggered: {
-                                readerTesterDialogId.setType(name)
+                                readerTesterDialogId.setType(name, 3)
                                 readerTesterDialogId.open()
                             }
                         }
-                        /*MenuItem {
+                        MenuItem {
                             text: "Create Writer (Tester)"
-                            enabled: false
-                        }*/
+                            onTriggered: {
+                                readerTesterDialogId.setType(name, 4)
+                                readerTesterDialogId.open()
+                            }
+                        }
                     }
                 }
             }

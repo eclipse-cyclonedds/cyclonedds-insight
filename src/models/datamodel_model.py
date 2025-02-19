@@ -10,30 +10,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, QByteArray, QStandardPaths, QFile, QDir, QProcess, QThread
+from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, QByteArray
 from PySide6.QtCore import QObject, Signal, Slot
 import logging
-import os
-import sys
-import importlib
-import inspect
-from pathlib import Path
-import subprocess
-import glob
-import uuid
-from dataclasses import dataclass
 import typing
-from dds_access.dispatcher import WorkerThread
+import uuid
+from dds_access.dispatcher import DispatcherThread
 from dds_access.dds_data import DdsData
-from dds_access.idlc import IdlcWorkerThread
 from cyclonedds.core import Qos, Policy
 from cyclonedds.util import duration
-
-
-@dataclass
-class DataModelItem:
-    id: str
-    parts: dict
+from utils import EntityType
+from module_handler import DataModelHandler
 
 
 class DatamodelModel(QAbstractListModel):
@@ -43,19 +30,20 @@ class DatamodelModel(QAbstractListModel):
     newDataArrived = Signal(str)
     isLoadingSignal = Signal(bool)
     requestDataType = Signal(str, int, str, str)
+    newWriterSignal = Signal(str, int, str, str, str, str)
 
-    def __init__(self, parent=typing.Optional[QObject]) -> None:
+    def __init__(self, threads, dataModelHandler, parent=typing.Optional[QObject]) -> None:
         super().__init__()
+        self.dataModelHandler: DataModelHandler = dataModelHandler
+        self.dataModelHandler.isLoadingSignal.connect(self.moduleHanlderIsLoading)
+        self.dataModelHandler.beginInsertModuleSignal.connect(self.beginInsertModule)
+        self.dataModelHandler.endInsertModuleSignal.connect(self.endInsertModule)
+
         self.ddsData = DdsData()
         self.requestDataType.connect(self.ddsData.requestDataType)
         self.ddsData.response_data_type_signal.connect(self.receiveDataType)
-        self.idlcWorker = None
-        self.dataModelItems = {}
-        self.threads = {}
-        self.app_data_dir = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
-        self.datamodel_dir = os.path.join(self.app_data_dir, "datamodel")
-        self.destination_folder_idl = os.path.join(self.datamodel_dir, "idl")
-        self.destination_folder_py = os.path.join(self.datamodel_dir, "py")
+
+        self.threads = threads
         self.readerRequests = {}
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> typing.Any:
@@ -63,10 +51,7 @@ class DatamodelModel(QAbstractListModel):
             return None
         row = index.row()
         if role == self.NameRole:
-            return str(list(self.dataModelItems.keys())[row])
-        elif False:
-            pass
-
+            return self.dataModelHandler.getName(row)
         return None
 
     def roleNames(self) -> typing.Dict[int, QByteArray]:
@@ -75,135 +60,66 @@ class DatamodelModel(QAbstractListModel):
         }
 
     def rowCount(self, index: QModelIndex = QModelIndex()) -> int:
-        return len(self.dataModelItems.keys())
+        return self.dataModelHandler.count()
 
-    def execute_command(self, command, cwd):
-        logging.debug("start executing command ...")
-        try:
-            # Run the command and capture stdout, stderr
-            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=cwd)
-            stdout, stderr = process.communicate()
-            logging.debug("command executed, eval result.")
-
-            # Check if there was an error
-            if process.returncode != 0:
-                logging.debug("Error occurred:")
-                logging.debug(stdout.decode("utf-8"))
-                logging.debug(stderr.decode("utf-8"))
-                return None
-
-            logging.debug("Command Done,")
-            logging.debug(stdout.decode("utf-8"))
-            logging.debug(stderr.decode("utf-8"))
-
-        except Exception as e:
-            logging.debug("An error occurred:", e)
+    @Slot()
+    def loadModules(self):
+        self.dataModelHandler.loadModules()
 
     @Slot(list)
     def addUrls(self, urls):
-        if self.idlcWorker:
-            return
+        self.dataModelHandler.addUrls(urls)
 
-        logging.info("add urls:" + str(urls))
-
-        self.isLoadingSignal.emit(True)
-
-        self.idlcWorker = IdlcWorkerThread(urls, self.destination_folder_py, self.destination_folder_idl)
-        self.idlcWorker.doneSignale.connect(self.idlcWorkerDone)
-        self.idlcWorker.start()
-
-    @Slot()
-    def idlcWorkerDone(self):
-        self.loadModules()
-        self.idlcWorker = None
-        self.isLoadingSignal.emit(False)
+    @Slot(bool)
+    def moduleHanlderIsLoading(self, loading: bool):
+        self.isLoadingSignal.emit(loading)
 
     @Slot()
     def clear(self):
         self.beginResetModel()
-        self.delete_folder(self.datamodel_dir)
-        self.dataModelItems.clear()
+        self.dataModelHandler.clear()
         self.endResetModel()
 
-    def delete_folder(self, folder_path):
-        dir = QDir(folder_path)
-        if dir.exists():
-            success = dir.removeRecursively()
-            if success:
-                logging.info(f"Successfully deleted folder: {folder_path}")
-            else:
-                logging.error(f"Failed to delete folder: {folder_path}")
-        else:
-            logging.error(f"Folder does not exist: {folder_path}")
+    @Slot(int)
+    def beginInsertModule(self, position):
+        self.beginInsertRows(QModelIndex(), position, position)
 
     @Slot()
-    def loadModules(self):
-        logging.debug("")
+    def endInsertModule(self):
+        self.endInsertRows()
 
-        dir = QDir(self.destination_folder_py)
-        if not dir.exists():
-            return
+    @Slot(str)
+    def onData(self, data: str):
+        self.newDataArrived.emit(data)
 
-        parent_dir = self.destination_folder_py
-        sys.path.insert(0, parent_dir)
+    @Slot()
+    def deleteAllReaders(self):
+        for key in list(self.threads.keys()):
+            self.threads[key].deleteAllReaders()
 
-        # Structs without any module, can only appear on root level
-        py_files = [f for f in os.listdir(parent_dir) if f.endswith('.py')]
-        for py_file in py_files:            
-            module_name = Path(py_file).stem
-            try:
-                module = importlib.import_module(module_name)
-                self.add_idl_without_module(module)
-            except Exception as e:
-                logging.error(f"Error importing {module_name}")
+    @Slot()
+    def shutdownEndpoints(self):
+        for key in list(self.threads.keys()):
+            self.threads[key].stop()
+            self.threads[key].wait()
+        self.threads.clear()
 
-        submodules = [name for name in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, name))]
-        for submodule in submodules:
-            self.import_module_and_nested(submodule)
-
-    def import_module_and_nested(self, module_name):
-        try:
-            module = importlib.import_module(module_name)
-            all_types = getattr(module, '__all__', [])
-            for type_name in all_types:
-                try:
-                    cls = getattr(module, type_name)
-                    if inspect.isclass(cls):
-                        if not self.has_nested_annotation(cls) and not self.is_enum(cls):
-                            sId: str = f"{module_name}::{cls.__name__}".replace(".", "::")
-                            if sId not in self.dataModelItems:
-                                self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
-                                self.dataModelItems[sId] = DataModelItem(sId, [module_name, cls.__name__])
-                                self.endInsertRows()
-                    elif inspect.ismodule(cls):
-                        self.import_module_and_nested(cls.__name__)
-                except Exception as e:
-                    logging.error(f"Error importing {module_name} : {type_name} : {e}")
-        except Exception as e:
-            logging.error(f"Error importing {module_name}: {e}")
-
-    def has_nested_annotation(self, cls):
-        return 'nested' in getattr(cls, '__idl_annotations__', {})
-
-    def is_enum(self, cls):
-        return getattr(cls, '__doc__', None) == "An enumeration."
-
-    def print_class_attributes(self, cls):
-        logging.debug(f"Attributes of class {cls.__name__}:")
-        for attr_name in dir(cls):
-            logging.debug(f"  {attr_name}: {getattr(cls, attr_name)}")
-
-    def add_idl_without_module(self, module):
-        classes = [getattr(module, name) for name in dir(module) if isinstance(getattr(module, name), type)]
-        for cls in classes:
-            if not self.has_nested_annotation(cls) and "(IdlStruct" in str(cls):
-                sId: str = f"{module.__name__}::{cls.__name__}"
-                if sId not in self.dataModelItems:
-                    self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
-                    self.dataModelItems[sId] = DataModelItem(sId, [module.__name__, cls.__name__])
-                    self.endInsertRows()
-
-    @Slot(int, str, str, str, str, str, int, bool, bool, list, str, bool, bool, bool, bool, bool, bool, str, int, str, str, int, int, int, int, int, str, bool, bool, bool, int, int, int, int, int, int, int, str, str, str, str, str, str, str, str, int, str, int, int, int, int)
+    @Slot(int, str, str,
+          str, str, str, int, bool, bool, list,
+          str, bool, bool, bool, bool, bool, bool,
+          str, int,
+          str,
+          str, int,
+          int, int, int, int,
+          str, bool, bool,
+          bool, int, int, int,
+          int, int, int,
+          int, str,
+          str,
+          str, str, str, str, str, str,
+          int, str, int,
+          int, int, int,
+          int)
     def addReader(self, domain_id, topic_name, topic_type,
         q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partitions,
         type_consis, ig_seq_bnds, ig_str_bnds, ign_mem_nam, prev_ty_wide, fore_type_vali, fore_type_vali_allow,
@@ -218,9 +134,10 @@ class DatamodelModel(QAbstractListModel):
         timebased_filter_time_sec, ignore_local,
         user_data, group_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value,
         durserv_cleanup_delay_minutes, durserv_history, durserv_history_keep_last_nr,
-        durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance):
+        durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance,
+        entityTypeInteger):
 
-        logging.debug("try add reader " + str(domain_id) + " " + str(topic_name) + " " + str(topic_type))
+        logging.debug("add endpoint request" + str(domain_id) + " " + str(topic_name) + " " + str(topic_type))
 
         qos = Qos()
 
@@ -330,43 +247,41 @@ class DatamodelModel(QAbstractListModel):
             max_instances=durserv_max_instances,
             max_samples_per_instance=durserv_max_samples_per_instance))
 
-        if topic_type in self.dataModelItems:
-            module_type = importlib.import_module(self.dataModelItems[topic_type].parts[0])
-            class_type = getattr(module_type, self.dataModelItems[topic_type].parts[1])
+        entityType = EntityType(entityTypeInteger)
+
+        if self.dataModelHandler.hasType(topic_type):
+            module_type, class_type = self.dataModelHandler.getType(topic_type)
 
             logging.debug(str(module_type))
             logging.debug(str(class_type))
-            self.createReader(domain_id, topic_name, class_type, qos)
+            self.createEndpoint(domain_id, topic_name, class_type, qos, entityType, topic_type)
         else:
             typeRequestId = str(uuid.uuid4())
-            self.readerRequests[typeRequestId] = (domain_id, topic_type, topic_name, qos)
+            self.readerRequests[typeRequestId] = (domain_id, topic_type, topic_name, qos, entityType)
             self.requestDataType.emit(typeRequestId, domain_id, topic_type, topic_name)
-
-    def createReader(self, domainId, topicName, dataType, qos):
-        logging.debug(f"add reader with qos: {str(qos)}")
-
-        if domainId in self.threads:
-            self.threads[domainId].receive_data(topicName, dataType, qos)
-        else:
-            self.threads[domainId] = WorkerThread(domainId, topicName, dataType, qos)
-            self.threads[domainId].data_emitted.connect(self.received_data, Qt.ConnectionType.QueuedConnection)
-            self.threads[domainId].start()
 
     @Slot(str, object)
     def receiveDataType(self, requestId, dataType):
         if requestId in self.readerRequests:
-            (domain_id, topic_type, topic_name, qos) = self.readerRequests[requestId]
-            self.createReader(domain_id, topic_name, dataType, qos)
+            (domain_id, topic_type, topic_name, qos, entityType) = self.readerRequests[requestId]
+            self.dataModelHandler.addTypeFromNetwork(topic_type, dataType)
+            self.createEndpoint(domain_id, topic_name, dataType, qos, entityType, topic_type)
             del self.readerRequests[requestId]
 
-    @Slot(str)
-    def received_data(self, data: str):
-        self.newDataArrived.emit(data)
+    def createEndpoint(self, domainId: int, topicName: str, dataType, qos, entityType: EntityType, topic_type):
+        logging.debug(f"add endpoint with qos: {str(qos)}")
 
-    @Slot()
-    def deleteAllReaders(self):
-        for key in list(self.threads.keys()):
-            if self.threads[key]:
-                self.threads[key].stop()
-                self.threads[key].wait()
-        self.threads.clear()
+        id = "m" + str(uuid.uuid4()).replace("-", "_")
+
+        if domainId in self.threads:
+            self.threads[domainId].addEndpoint(id, topicName, dataType, qos, entityType)
+        else:
+            self.threads[domainId] = DispatcherThread(id, domainId, topicName, dataType, qos, entityType)
+            self.threads[domainId].onData.connect(self.onData, Qt.ConnectionType.QueuedConnection)
+            self.threads[domainId].start()
+
+        # Add to Tester tab
+        if entityType == EntityType.WRITER:
+            self.newWriterSignal.emit(id, domainId, topicName, topic_type, "", "")
+
+        logging.debug("try add endpoint ... DONE")

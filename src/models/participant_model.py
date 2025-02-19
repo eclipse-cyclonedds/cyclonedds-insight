@@ -18,7 +18,7 @@ import uuid
 from typing import List
 from cyclonedds.builtin import DcpsParticipant
 import logging
-import dds_access.dds_data as dds_data
+from dds_access import dds_data
 from dds_access.dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
 from enum import Enum
 

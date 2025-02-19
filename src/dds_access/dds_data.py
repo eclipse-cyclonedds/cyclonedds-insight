@@ -12,7 +12,6 @@
 
 from PySide6.QtCore import QObject, Signal, Slot, QThread, Qt
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
-import threading
 import logging
 import time
 import copy
@@ -21,7 +20,7 @@ from typing import Dict, List, Optional
 import gc
 
 from dds_access.builtin_observer import BuiltInObserver
-from dds_access.dispatcher import getDataType
+from dds_access.dds_utils import getDataType
 from dds_access.dds_qos import qos_match, dds_qos_policy_id
 from utils import singleton, EntityType
 
