@@ -74,6 +74,7 @@ class LoggerConfig(QObject):
         logging.level("CRITICAL", color="<RED><bold>")
 
         self.logLevel = log_level
+        logging.info("Logger configured with level: " + log_level)
         self.logLevelChanged.emit(log_level)
 
     def qt_message_handler(self, mode, context, message):
