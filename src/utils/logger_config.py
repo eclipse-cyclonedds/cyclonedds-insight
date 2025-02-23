@@ -63,7 +63,8 @@ class LoggerConfig(QObject):
         )
 
         logging.add(log_file, rotation="5 MB", retention=7, level=log_level, format=log_format)
-        logging.add(sys.stderr, level=log_level, format=log_format, colorize=True)
+        if sys.stderr is not None:
+            logging.add(sys.stderr, level=log_level, format=log_format, colorize=True)
         logging.add(self._qml_sink, level=log_level, format=log_format)
 
         logging.level("TRACE", color="<dim>")
