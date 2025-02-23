@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-import logging
+from loguru import logger as logging
 import datetime
 from PySide6.QtCore import Signal, Slot, QThread
 from cyclonedds import core
@@ -22,13 +22,13 @@ from cyclonedds.pub import Publisher, DataWriter
 from dds_access.dds_listener import DdsListener
 from threading import Lock
 from dds_access.domain_participant_factory import DomainParticipantFactory
-from utils import EntityType
+from dds_access.datatypes.entity_type import EntityType
 
 
 class DispatcherThread(QThread):
 
     onData = Signal(str)
-    
+
     def __init__(self, id: str, domain_id: int, topic_name: str, topic_type, qos, entityType, parent=None):
         super().__init__(parent)
         self.listener = DdsListener()
@@ -120,6 +120,7 @@ class DispatcherThread(QThread):
 
                 for (_, _, _, readItem, condItem) in self.readerData:
                     for sample in readItem.take(condition=condItem):
+                        logging.trace(f"Received sample: {str(sample)}")
                         self.onData.emit(f"[{str(datetime.datetime.now().isoformat())}]  -  {str(sample)}")
 
             logging.info(f"Worker thread for domain({str(self.domain_id)}) ... DONE")

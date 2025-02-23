@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-import logging
+from loguru import logger as logging
 import re
 import copy
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt

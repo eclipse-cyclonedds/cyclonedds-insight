@@ -12,7 +12,7 @@
 
 from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, QByteArray, QStandardPaths, QFile, QDir, QProcess, QThread
 from PySide6.QtCore import QObject, Signal, Slot
-import logging
+from loguru import logger as logging
 import os
 import sys
 import importlib
@@ -132,14 +132,14 @@ class TesterModel(QAbstractListModel):
     def showTester(self, currentIndex: int):
         if currentIndex < 0 and len(list(self.dataWriters.keys())) == 0:
             return
-        logging.debug(f"Show Tester {str(currentIndex)}")
+        logging.trace(f"Show Tester pressed on index: {str(currentIndex)}")
         mId = list(self.dataWriters.keys())[int(currentIndex)]
         (domainId, topic_name, topic_type, qmlCode, mt, _) = self.dataWriters[mId]
         self.showQml.emit(mId, qmlCode)
 
     @Slot(int)
     def writeData(self, currentIndex: int):
-        logging.debug(f"Write Data {str(currentIndex)}")
+        logging.trace(f"Write Data pressed on index: {str(currentIndex)}")
         mId = list(self.dataWriters.keys())[int(currentIndex)]
         (_, _, _, _, _, dataTreeModel) = self.dataWriters[mId]
         self.writeDataSignal.emit(mId, dataTreeModel.getDataObj())

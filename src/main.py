@@ -34,21 +34,23 @@ else:
     else:
         print('cyclonedds_home: ' + cyclonedds_home)
 
+import argparse
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 from PySide6.QtCore import qInstallMessageHandler, QUrl, QThread, qVersion
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtQuickControls2 import QQuickStyle
-import logging
+from loguru import logger as logging
 from dds_access import dds_data
 from dds_access.dds_utils import getConfiguredDomainIds
 from models.overview_model import TreeModel, TreeNode
 from models.endpoint_model import EndpointModel
 from models.datamodel_model import DatamodelModel
 from models.tester_model import TesterModel
-from utils import qt_message_handler, setupLogger
+from utils.logger_config import LoggerConfig
 from models.participant_model import ParticipantTreeModel, ParticipantTreeNode
-import utils
+import utils.build_info_helper as build_info_helper
+from utils.qml_utils import QmlUtils
 from version import CYCLONEDDS_INSIGHT_VERSION
 from module_handler import DataModelHandler
 
@@ -65,19 +67,24 @@ if __name__ == "__main__":
     app.setOrganizationDomain("org.eclipse.cyclonedds.insight")
 
     # Setup the logger
-    utils.setupLogger(logging.DEBUG)
+    parser = argparse.ArgumentParser(description="CycloneDDS Insight")
+    parser.add_argument("--loglevel", type=str, help="Set logging level (TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL)", default="INFO")
+    args = parser.parse_args()
+    loglevel = args.loglevel.upper()
+    loggerConfig = LoggerConfig()
+    loggerConfig.setupLogger(loglevel)
 
     # Print qml log messages into the python log
-    qInstallMessageHandler(utils.qt_message_handler)
+    qInstallMessageHandler(loggerConfig.qt_message_handler)
 
-    logging.info(f"Starting CycloneDDS Insight Version {CYCLONEDDS_INSIGHT_VERSION} ({utils.getBuildInfoGitHashShort()}) ...")
-    logging.debug(f"Branch: {utils.getBuildInfoGitBranch()}")
-    logging.debug(f"Commit: {utils.getBuildInfoGitHash()}")
-    logging.debug(f"CycloneDDS-Python: {utils.getBuildInfoCyclonePythonGitHash()}")
-    logging.debug(f"CycloneDDS: {utils.getBuildInfoCycloneGitHash()}")
-    logging.debug(f"Application path: {APPLICATION_PATH}")
-    logging.debug(f"Python version: {str(sys.version)}")
-    logging.debug(f"Qt version: {qVersion()}")
+    logging.info(f"Starting CycloneDDS Insight Version {CYCLONEDDS_INSIGHT_VERSION} ({build_info_helper.getBuildInfoGitHashShort()}) ...")
+    logging.info(f"Branch: {build_info_helper.getBuildInfoGitBranch()}")
+    logging.info(f"Commit: {build_info_helper.getBuildInfoGitHash()}")
+    logging.info(f"CycloneDDS-Python: {build_info_helper.getBuildInfoCyclonePythonGitHash()}")
+    logging.info(f"CycloneDDS: {build_info_helper.getBuildInfoCycloneGitHash()}")
+    logging.info(f"Application path: {APPLICATION_PATH}")
+    logging.info(f"Python version: {str(sys.version)}")
+    logging.info(f"Qt version: {qVersion()}")
 
     if sys.platform == "darwin":
         QQuickStyle.setStyle("macOS")
@@ -100,7 +107,7 @@ if __name__ == "__main__":
     participantRootItem = ParticipantTreeNode("Root")
     participantModel = ParticipantTreeModel(participantRootItem)
 
-    qmlUtils = utils.QmlUtils()
+    qmlUtils = QmlUtils()
 
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("treeModel", treeModel)
@@ -108,17 +115,18 @@ if __name__ == "__main__":
     engine.rootContext().setContextProperty("datamodelRepoModel", datamodelRepoModel)
     engine.rootContext().setContextProperty("testerModel", testerModel)
     engine.rootContext().setContextProperty("qmlUtils", qmlUtils)
+    engine.rootContext().setContextProperty("loggerConfig", loggerConfig)
     engine.rootContext().setContextProperty("CYCLONEDDS_URI", os.getenv("CYCLONEDDS_URI", "<not set>"))
     engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_VERSION", CYCLONEDDS_INSIGHT_VERSION)
-    engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_GIT_HASH_SHORT", utils.getBuildInfoGitHashShort())
-    engine.rootContext().setContextProperty("CYCLONEDDS_PYTHON_GIT_HASH_SHORT", utils.getBuildInfoCyclonePythonGitHashShort())
-    engine.rootContext().setContextProperty("CYCLONEDDS_GIT_HASH_SHORT", utils.getBuildInfoCycloneGitHashShort())
-    engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_GIT_HASH", utils.getBuildInfoGitHash())
-    engine.rootContext().setContextProperty("CYCLONEDDS_PYTHON_GIT_HASH", utils.getBuildInfoCyclonePythonGitHash())
-    engine.rootContext().setContextProperty("CYCLONEDDS_GIT_HASH", utils.getBuildInfoCycloneGitHash())
-    engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_GIT_BRANCH", utils.getBuildInfoGitBranch())
-    engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_BUILD_ID", utils.getBuildId())
-    engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_BUILD_PIPELINE_ID", utils.getBuildPipelineId())
+    engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_GIT_HASH_SHORT", build_info_helper.getBuildInfoGitHashShort())
+    engine.rootContext().setContextProperty("CYCLONEDDS_PYTHON_GIT_HASH_SHORT", build_info_helper.getBuildInfoCyclonePythonGitHashShort())
+    engine.rootContext().setContextProperty("CYCLONEDDS_GIT_HASH_SHORT", build_info_helper.getBuildInfoCycloneGitHashShort())
+    engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_GIT_HASH", build_info_helper.getBuildInfoGitHash())
+    engine.rootContext().setContextProperty("CYCLONEDDS_PYTHON_GIT_HASH", build_info_helper.getBuildInfoCyclonePythonGitHash())
+    engine.rootContext().setContextProperty("CYCLONEDDS_GIT_HASH", build_info_helper.getBuildInfoCycloneGitHash())
+    engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_GIT_BRANCH", build_info_helper.getBuildInfoGitBranch())
+    engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_BUILD_ID", build_info_helper.getBuildId())
+    engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_BUILD_PIPELINE_ID", build_info_helper.getBuildPipelineId())
 
     qmlRegisterType(EndpointModel, "org.eclipse.cyclonedds.insight", 1, 0, "EndpointModel")
 
