@@ -20,6 +20,7 @@ from typing import Optional
 
 
 def from_ospl(participantCMInfo: v_participantCMInfo) -> Optional[DcpsParticipant]:
+    logging.trace(f"extract ospl info from: {str(participantCMInfo)}")
     entity_id = "000001c1"
     try:
         key = uuid.UUID(f"{participantCMInfo.key.systemId:08x}{participantCMInfo.key.localId:08x}{participantCMInfo.key.serial:08x}{entity_id}")
