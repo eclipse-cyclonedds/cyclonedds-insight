@@ -33,6 +33,13 @@ ApplicationWindow {
     menuBar: MenuBar {
         visible: Qt.platform.os === "osx"
         Menu {
+            title: "View"
+            MenuItem {
+                text: "Show Log Window"
+                onTriggered: logViewId.visible = true
+            }
+        }
+        Menu {
             title: "Help"
 
             MenuItem {
@@ -118,6 +125,11 @@ ApplicationWindow {
 
     LoadingView {
         id: loadingViewId
+        visible: false
+    }
+
+    LogWindow {
+        id: logViewId
         visible: false
     }
 }

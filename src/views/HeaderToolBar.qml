@@ -61,6 +61,10 @@ ToolBar {
                     onClicked: layout.currentIndex = 0
                 }
                 MenuItem {
+                    text: "Show Log Window"
+                    onTriggered: logViewId.visible = true
+                }
+                MenuItem {
                     text: "Check for Updates"
                     onTriggered: checkForUpdatesWindow.visible = true
                 }

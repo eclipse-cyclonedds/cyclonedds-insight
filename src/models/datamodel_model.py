@@ -12,14 +12,14 @@
 
 from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, QByteArray
 from PySide6.QtCore import QObject, Signal, Slot
-import logging
+from loguru import logger as logging
 import typing
 import uuid
 from dds_access.dispatcher import DispatcherThread
 from dds_access.dds_data import DdsData
 from cyclonedds.core import Qos, Policy
 from cyclonedds.util import duration
-from utils import EntityType
+from dds_access.datatypes.entity_type import EntityType
 from module_handler import DataModelHandler
 
 

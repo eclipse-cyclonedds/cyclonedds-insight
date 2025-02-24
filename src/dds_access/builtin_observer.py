@@ -11,7 +11,7 @@
 """
 
 import sys
-import logging
+from loguru import logger as logging
 from queue import Queue
 from PySide6.QtCore import QThread
 from cyclonedds import core, builtin
@@ -24,7 +24,7 @@ from dds_access.datatypes.ospl import kernelModule
 from dds_access.datatypes.ospl.utils import from_ospl
 from typing import Tuple
 from dds_access.domain_participant_factory import DomainParticipantFactory
-from utils import EntityType
+from dds_access.datatypes.entity_type import EntityType
 
 
 IGNORE_TOPICS = [

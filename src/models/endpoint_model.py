@@ -14,7 +14,7 @@ from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt, Slot, Signal
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 from cyclonedds import core
 from cyclonedds import qos
-import logging
+from loguru import logger as logging
 import os
 from pathlib import Path
 import time
@@ -25,7 +25,7 @@ from dds_access import dds_data
 from dds_access.dds_data import DataEndpoint
 from dds_access.dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
 from dds_access.dds_qos import partitions_match_p
-from utils import EntityType
+from dds_access.datatypes.entity_type import EntityType
 
 
 class PartitionModel(QAbstractItemModel):

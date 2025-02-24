@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-import logging
+from loguru import logger as logging
 import uuid
 from cyclonedds.builtin import DcpsParticipant
 from cyclonedds.core import Qos, Policy
@@ -20,6 +20,7 @@ from typing import Optional
 
 
 def from_ospl(participantCMInfo: v_participantCMInfo) -> Optional[DcpsParticipant]:
+    logging.trace(f"extract ospl info from: {str(participantCMInfo)}")
     entity_id = "000001c1"
     try:
         key = uuid.UUID(f"{participantCMInfo.key.systemId:08x}{participantCMInfo.key.localId:08x}{participantCMInfo.key.serial:08x}{entity_id}")

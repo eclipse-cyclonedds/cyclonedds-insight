@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-import logging
+from loguru import logger as logging
 from cyclonedds import core
 from dds_access.dds_qos import dds_qos_policy_id
 

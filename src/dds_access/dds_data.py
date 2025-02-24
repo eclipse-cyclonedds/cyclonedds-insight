@@ -12,7 +12,7 @@
 
 from PySide6.QtCore import QObject, Signal, Slot, QThread, Qt
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
-import logging
+from loguru import logger as logging
 import time
 import copy
 from queue import Queue
@@ -22,8 +22,8 @@ import gc
 from dds_access.builtin_observer import BuiltInObserver
 from dds_access.dds_utils import getDataType
 from dds_access.dds_qos import qos_match, dds_qos_policy_id
-from utils import singleton, EntityType
-
+from dds_access.datatypes.entity_type import EntityType
+from utils.singleton import singleton
 
 class DataEndpoint:
     def __init__(self, endpoint: DcpsEndpoint, entity_type) -> None:
@@ -291,7 +291,7 @@ class DdsData(QObject):
 
     def __init__(self):
         super().__init__()
-        logging.debug("Construct DdsData")
+        logging.trace("Construct DdsData")
         self.receiverThread: QThread = QThread()
         self.receiver: BuiltInReceiver = BuiltInReceiver(self.queue)
         self.receiver.moveToThread(self.receiverThread)
@@ -327,7 +327,7 @@ class DdsData(QObject):
 
     @Slot(int, DcpsParticipant)
     def add_domain_participant(self, domain_id: int, participant: DcpsParticipant):
-        #logging.debug(f"Add domain participant {str(participant.key)}")
+        logging.debug(f"Add domain participant {str(participant.key)}")
 
         if domain_id in self.the_domains:
             self.the_domains[domain_id].add_participant(participant)
@@ -335,14 +335,14 @@ class DdsData(QObject):
 
     @Slot(int, DcpsParticipant)
     def remove_domain_participant(self, domain_id: int, participant: DcpsParticipant):
-        # logging.debug(f"Remove domain participant: {str(participant.key)}")
+        logging.debug(f"Remove domain participant: {str(participant.key)}")
         if domain_id in self.the_domains:
             self.the_domains[domain_id].remove_participant(str(participant.key))
             self.removed_participant_signal.emit(domain_id, str(participant.key))
 
     @Slot(int, DcpsParticipant)
     def update_domain_participant(self, domain_id: int, participant_update: DcpsParticipant):
-        # logging.debug(f"Update domain participant: {str(participant_update.key)}")
+        logging.debug(f"Update domain participant: {str(participant_update.key)}")
         if domain_id in self.the_domains:
             updated = self.the_domains[domain_id].update_participant(participant_update)
             if updated:
@@ -350,7 +350,7 @@ class DdsData(QObject):
 
     @Slot(int, DcpsEndpoint, EntityType)
     def add_endpoint(self, domain_id: int, endpoint: DcpsEndpoint, entity_type: EntityType):
-        # logging.debug(f"Add endpoint domain: {domain_id}, key: {str(endpoint.key)}, entity: {entity_type}")
+        logging.debug(f"Add endpoint domain: {domain_id}, key: {str(endpoint.key)}, entity: {entity_type}")
 
         if domain_id in self.the_domains:
             topic_already_known = self.the_domains[domain_id].has_topic(str(endpoint.topic_name))
@@ -368,7 +368,7 @@ class DdsData(QObject):
 
     @Slot(int, DcpsEndpoint)
     def remove_endpoint(self, domain_id: int, endpoint: DcpsEndpoint):
-        # logging.debug(f"Remove endpoint domain: {domain_id}, key: {str(endpoint.key)}")
+        logging.debug(f"Remove endpoint domain: {domain_id}, key: {str(endpoint.key)}")
 
         if domain_id in self.the_domains:
 
@@ -376,12 +376,10 @@ class DdsData(QObject):
 
             self.the_domains[domain_id].remove_endpoint(str(endpoint.key))
 
-            #logging.debug(f"Remove endpoint {str(endpoint.key)} (topic: {topicName})")
-
             self.removed_endpoint_signal.emit(domain_id, str(endpoint.key))
 
             if not self.the_domains[domain_id].has_topic(topicName):
-                #logging.info(f"Removed last endpointon topic, topic gone {topicName}")
+                logging.info(f"Removed last endpointon topic, topic gone {topicName}")
                 self.remove_topic_signal.emit(domain_id, topicName)
             else:
                 self.no_more_mismatch_in_topic_signal.emit(domain_id, topicName)

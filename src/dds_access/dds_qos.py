@@ -13,7 +13,7 @@
 from enum import Enum
 from cyclonedds import qos
 # from cyclonedds.internal import feature_typelib # not available in v0.10.5
-from utils import OrderedEnum
+from utils.ordered_enum import OrderedEnum
 
 
 def qos_match(endpoint_reader, endpoint_writer) -> list:

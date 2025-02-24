@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-import logging
+from loguru import logger as logging
 import os
 import sys
 from PySide6.QtCore import QDir
@@ -29,6 +29,7 @@ class IdlcWorkerThread(QThread):
         self.destination_folder_py = destination_folder_py
 
     def run(self):
+        logging.info("Start idlc ...")
         for url in self.urls:
             logging.debug("Copy " + str(url) + " ...")
             if url.isLocalFile():
@@ -93,7 +94,7 @@ class IdlcWorkerThread(QThread):
 
             command = os.path.normpath(f"{application_path}/idlc")
 
-            logging.info("Execute: " + command + " " + " ".join(arguments))
+            logging.debug("Execute: " + command + " " + " ".join(arguments))
 
             process = QProcess()
             process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
@@ -105,8 +106,9 @@ class IdlcWorkerThread(QThread):
                     logging.debug(str(process.readAll()))
                     logging.debug("Process finished successfully.") 
                 else:
-                    logging.debug("Process failed with error code: " + str(process.exitCode()))
+                    logging.error("Process failed with error code: " + str(process.exitCode()))
             else:
-                logging.debug("Failed to start process:" + str(process.errorString()))
+                logging.error("Failed to start process:" + str(process.errorString()))
 
+        logging.info("idlc done.")
         self.doneSignale.emit()

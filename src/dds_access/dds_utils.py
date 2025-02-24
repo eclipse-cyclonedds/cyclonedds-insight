@@ -16,7 +16,7 @@ from cyclonedds import core, dynamic
 from cyclonedds import core
 from cyclonedds.util import duration
 from dds_access.domain_participant_factory import DomainParticipantFactory
-import logging
+from loguru import logger as logging
 import xml.etree.ElementTree as ET
 import os
 import re

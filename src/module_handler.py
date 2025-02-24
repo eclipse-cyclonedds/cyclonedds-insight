@@ -10,16 +10,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-import logging
+from loguru import logger as logging
 import os
 import sys
 import importlib
+import json
 from pathlib import Path
 from PySide6.QtCore import Slot, QDir
 from PySide6.QtCore import QThread, Signal, QStandardPaths
 from PySide6.QtCore import QObject
 import inspect
-from utils import delete_folder
+from utils.system import delete_folder
 from dds_access.idlc import IdlcWorkerThread
 from dataclasses import dataclass
 import typing
@@ -76,7 +77,7 @@ class DataModelHandler(QObject):
         
         self.isLoadingSignal.emit(True)
 
-        logging.info("add urls:" + str(urls))
+        logging.debug("add urls:" + str(urls))
 
         self.idlcWorker = IdlcWorkerThread(urls, self.destination_folder_py, self.destination_folder_idl)
         self.idlcWorker.doneSignale.connect(self.idlcWorkerDone)
@@ -97,7 +98,7 @@ class DataModelHandler(QObject):
         self.customTypes.clear()
 
     def loadModules(self):
-        logging.debug("")
+        logging.debug("loading modules")
 
         dir = QDir(self.destination_folder_py)
         if not dir.exists():
@@ -162,10 +163,9 @@ class DataModelHandler(QObject):
         except Exception as e:
             logging.error(f"Error importing {module_name}: {e}")
 
-        #import json
-        #print("allTypes", json.dumps(self.allTypes, indent=2, default=str))
-        #print("customTypes", json.dumps(self.customTypes, indent=2, default=str))
-        #print("structMembers", json.dumps(self.structMembers, indent=2, default=str))
+        logging.trace(f"allTypes {json.dumps(self.allTypes, indent=2, default=str)}")
+        logging.trace(f"customTypes {json.dumps(self.customTypes, indent=2, default=str)}")
+        logging.trace(f"structMembers {json.dumps(self.structMembers, indent=2, default=str)}")
 
     def has_nested_annotation(self, cls):
         return 'nested' in getattr(cls, '__idl_annotations__', {})
@@ -206,7 +206,7 @@ class DataModelHandler(QObject):
     def getInitializedDataObj(self, topicType):
         """Returns an default initialized object of the given type"""
 
-        # print("getInitializedDataObj", type(topicType), topicType, str(topicType))
+        logging.trace(f"get initialized obj for {topicType}")
 
         if topicType.replace(".", "::") in self.structMembers or topicType.replace(".", "::") in self.allTypes or topicType.replace(".", "::") in self.customTypes:
             topicType = topicType.replace(".", "::")
@@ -250,9 +250,9 @@ class DataModelHandler(QObject):
                     initList.append(None)                    
 
             module = self.allTypes[topicType]
-            # print(module, initList)
+            logging.trace(f"init with list: {initList}")
             initializedObj = module(*initList)
-            # print("initializedObj:", initializedObj)
+            logging.trace(f"initialized obj: {initializedObj}")
 
         else:
             if self.isInt(topicType) or self.isEnum(topicType):
@@ -429,7 +429,7 @@ class DataModelHandler(QObject):
         return '::'.join(parts)
 
     def toNode(self, theType: str, rootNode):
-        logging.debug("toNode " + str(theType) + " " + str(type(theType)))
+        logging.trace(f"toNode {str(theType)}")
 
         if theType.replace(".", "::") in self.structMembers:
             theType = theType.replace(".", "::")

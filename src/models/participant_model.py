@@ -17,7 +17,7 @@ import os
 import uuid
 from typing import List
 from cyclonedds.builtin import DcpsParticipant
-import logging
+from loguru import logger as logging
 from dds_access import dds_data
 from dds_access.dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
 from enum import Enum
@@ -210,7 +210,7 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(int, DcpsParticipant)
     def new_participant_slot(self, domain_id: int, participant: DcpsParticipant):
-        logging.debug("New Participant " + str(participant.key))
+        logging.trace("Add Participant " + str(participant.key) + " to participant model")
 
         # Look for the domain_id node under rootItem
         hostname = getProperty(participant, HOSTNAMES)
@@ -255,7 +255,7 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(int, DcpsParticipant)
     def update_participant_slot(self, domain_id: int, participant: DcpsParticipant):
-        # logging.debug("Update Participant " + str(participant.key))
+        logging.trace("Update Participant " + str(participant.key))
 
         self.removed_participant_slot(domain_id, str(participant.key))
         self.new_participant_slot(domain_id, participant)
@@ -266,7 +266,7 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(int, str)
     def removed_participant_slot(self, domainId: int, participantKey: str):
-        logging.debug("Remove Participant " + participantKey)
+        logging.trace("Remove Participant " + participantKey)
 
         for idx in range(self.rootItem.childCount()):
             domain_child: ParticipantTreeNode = self.rootItem.child(idx)
@@ -439,7 +439,7 @@ class ParticipantTreeModel(QAbstractItemModel):
         if requestId not in self.currentRequests:
             return
 
-        # logging.debug("Response Endpoints By Participant Key, requestId: " + requestId)
+        logging.trace("Response Endpoints By Participant Key, requestId: " + requestId)
 
         self.currentRequests.remove(requestId)
         for endpoint in endpoints:
