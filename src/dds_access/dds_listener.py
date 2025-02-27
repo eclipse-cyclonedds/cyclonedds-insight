@@ -12,7 +12,6 @@
 
 from loguru import logger as logging
 from cyclonedds import core
-import cyclonedds
 from cyclonedds.sub import DataReader, Subscriber
 from cyclonedds.pub import DataWriter
 from cyclonedds.internal import dds_c_t
