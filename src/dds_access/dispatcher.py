@@ -76,11 +76,11 @@ class DispatcherThread(QThread):
     def addEndpoint(self, id: str, topic_name: str, topic_type, qos, entity_type: EntityType):
         logging.info(f"Add endpoint {id} ...")
         try:
-            topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos)
+            topic = Topic(self.domain_participant, topic_name, topic_type, qos=qos, listener=self.listener)
 
             if entity_type == EntityType.READER:
-                subscriber = Subscriber(self.domain_participant, qos=qos)
-                reader = DataReader(subscriber, topic, qos=qos)
+                subscriber = Subscriber(self.domain_participant, qos=qos, listener=self.listener)
+                reader = DataReader(subscriber, topic, qos=qos, listener=self.listener)
                 readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
                 self.guardCondition.set(True)
                 self.waitset.attach(readCondition)
@@ -88,8 +88,8 @@ class DispatcherThread(QThread):
                 self.readerData.append((id, topic, subscriber, reader, readCondition))
 
             elif entity_type == EntityType.WRITER:
-                publisher = Publisher(self.domain_participant, qos=qos)
-                writer = DataWriter(publisher, topic, qos=qos)
+                publisher = Publisher(self.domain_participant, qos=qos, listener=self.listener)
+                writer = DataWriter(publisher, topic, qos=qos, listener=self.listener)
                 self.writerData[id] = (publisher, writer, topic_name)
 
             logging.info("Add endpoint ... DONE")
