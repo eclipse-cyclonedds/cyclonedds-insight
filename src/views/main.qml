@@ -132,4 +132,11 @@ ApplicationWindow {
         id: logViewId
         visible: false
     }
+
+    onClosing: (close) => {
+        console.log("QML: Received close request")
+        treeModel.aboutToClose()
+        close.accepted = true
+    }
+
 }

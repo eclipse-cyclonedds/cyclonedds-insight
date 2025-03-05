@@ -34,15 +34,29 @@ ColumnLayout {
         Button {
             id: addDomainButton
             text: "+"
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-            onClicked: addDomainView.open()
+            onClicked: menu.open()
             hoverEnabled: true
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+
+            Menu {
+                id: menu
+                y: addDomainButton.height
+
+                MenuItem {
+                    text: qsTr("Add domain")
+                    onClicked: addDomainView.open()
+                }
+                MenuItem {
+                    text: qsTr("Automatically discover domains")
+                    onClicked: treeModel.scanDomains()
+                }
+            }
             ToolTip {
                 id: addDomainTooltip
                 parent: addDomainButton
                 visible: addDomainButton.hovered
                 delay: 200
-                text: qsTr("Add domain")
+                text: qsTr("Add domain manually or discover automatically")
                 contentItem: Label {
                     text: addDomainTooltip.text
                 }
