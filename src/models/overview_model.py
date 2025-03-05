@@ -14,6 +14,7 @@ from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt
 from PySide6.QtCore import Signal, Slot
 from loguru import logger as logging
 from dds_access import dds_data
+from dds_access.domain_finder import DomainFinder
 
 
 class TreeNode:
@@ -68,6 +69,8 @@ class TreeModel(QAbstractItemModel):
         self.rootItem = rootItem
 
         self.dds_data = dds_data.DdsData()
+
+        self.domainFinderThreads = {}
 
         # Connect to from dds_data to self
         self.dds_data.new_topic_signal.connect(self.new_topic_slot, Qt.ConnectionType.QueuedConnection)
@@ -251,3 +254,28 @@ class TreeModel(QAbstractItemModel):
     def getName(self, index: QModelIndex):
         display = self.data(index, role=self.DisplayRole)
         return str(display)
+
+    @Slot()
+    def scanDomains(self):
+        for domain_id in range(0, 233):
+            if domain_id not in self.domainFinderThreads:
+                self.domainFinderThreads[domain_id] = DomainFinder(domain_id)
+                self.domainFinderThreads[domain_id].foundDomainSignal.connect(self.scanDomainResult, Qt.ConnectionType.QueuedConnection)
+                self.domainFinderThreads[domain_id].start()
+
+    @Slot(int, bool)
+    def scanDomainResult(self, domain_id, found):
+        if domain_id in self.domainFinderThreads:
+            self.domainFinderThreads[domain_id].stop()
+            self.domainFinderThreads[domain_id].wait()
+            del self.domainFinderThreads[domain_id]
+
+        if found:
+            self.dds_data.add_domain(domain_id)
+
+    @Slot(result=None)
+    def aboutToClose(self):
+        for domain_id in self.domainFinderThreads:
+            self.domainFinderThreads[domain_id].stop()
+            self.domainFinderThreads[domain_id].wait()
+        self.domainFinderThreads.clear()
