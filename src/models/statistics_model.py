@@ -43,10 +43,11 @@ from PySide6.QtCore import QTimer
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 
 from dds_access.dds_utils import getProperty, DEBUG_MONITORS
+import random
 
 
 class StatisticsModel(QObject):
-    newData = Signal(str, int)
+    newData = Signal(str, int, int, int, int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -91,7 +92,8 @@ class StatisticsModel(QObject):
                         for writer in participant["writers"]:
                             guid = self.normalize_guid(writer["guid"])
                             if "rexmit_bytes" in writer:
-                                self.newData.emit(guid, writer["rexmit_bytes"])
+                                color = self.dgbPorts[(ip, port)][0]
+                                self.newData.emit(guid, writer["rexmit_bytes"], color[0], color[1], color[2])
 
 
     @Slot(int, DcpsParticipant)
@@ -107,6 +109,9 @@ class StatisticsModel(QObject):
                     print("IP:", ip, "Port:", port)
                     if (ip, port) in self.dgbPorts.keys():
                         if participant.key not in self.dgbPorts[(ip, port)]:
-                            self.dgbPorts[(ip, port)].append(participant.key)
+                            self.dgbPorts[(ip, port)][1].append(participant.key)
                     else:
-                        self.dgbPorts[(ip, port)] = [participant.key]
+                        r = random.randint(0, 255)
+                        g = random.randint(0, 255)
+                        b = random.randint(0, 255)
+                        self.dgbPorts[(ip, port)] = [(r, g, b), [participant.key]]

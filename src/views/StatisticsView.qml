@@ -34,8 +34,8 @@ Rectangle {
 
     Connections {
         target: statisticModel
-        function onNewData(guid, value) {
-            console.log("New data received: " + guid + ", " + value);
+        function onNewData(guid, value, r, g, b) {
+            console.log("New data received: " + guid + ", " + value, r, g, b, Math.random());
 
             if (lineSeriesDict === undefined) {
                 lineSeriesDict = new Map();
@@ -45,12 +45,11 @@ Rectangle {
 
             if (guid in topicEndpointView.lineSeriesDict) {
                 console.log("Line series already exists for guid: " + guid, topicEndpointView.lineSeriesDict[guid].count);
-                
                 topicEndpointView.lineSeriesDict[guid].append(timestamp, value);
             } else {
                 console.log("Creating new line series for guid: " + guid);
                 var line = myChart.createSeries(ChartView.SeriesTypeLine, guid, axisX, axisY);
-                line.color = Qt.rgba(Math.random(), Math.random(), Math.random(), 1);
+                line.color = Qt.rgba(r/255, g/255, b/255, 1);
                 axisX.titleText = "time";
                 axisY.titleText = "rexmit_bytes [bytes]";
                 topicEndpointView.lineSeriesDict[guid] = line;
@@ -112,7 +111,7 @@ Rectangle {
 
                 ChartView {
                     Layout.preferredHeight: 350
-                    Layout.preferredWidth: 400
+                    Layout.preferredWidth: 450
 
                     id: myChart
                     title: "rexmit_bytes"
@@ -128,12 +127,13 @@ Rectangle {
                         max: 10
                     }
 
+
                     ValueAxis {
                         id: axisX
                         min: 500
                         max: (Date.now() / 1000) + 120;
                         gridVisible: true
-                        tickCount: 5
+                        tickCount: 4
                     }
                 }
 
