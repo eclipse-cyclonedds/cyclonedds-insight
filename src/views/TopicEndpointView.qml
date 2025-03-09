@@ -27,6 +27,7 @@ Rectangle {
     property bool hasQosMismatch: false
     property int writerCount: 0
     property int readerCount: 0
+    property bool statisticsShown: false
 
     EndpointModel {
         id: endpointWriterModel
@@ -140,6 +141,13 @@ Rectangle {
                     }
                 }*/
 
+                Button {
+                    text: "Statistics"
+                    onClicked: {
+                        statisticsShown = !statisticsShown
+                    }
+                }
+
                 WarningTriangle {
                     id: warning_triangle
                     Layout.preferredHeight: 30
@@ -151,6 +159,7 @@ Rectangle {
             }
 
             RowLayout {
+                visible: !statisticsShown
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 

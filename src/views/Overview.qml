@@ -63,8 +63,13 @@ SplitView {
             TabBar {
                 id: bar
                 width: parent.width
+
                 TabButton {
                     text: qsTr("Selected Topic")
+                    width: implicitWidth + 20
+                }
+                TabButton {
+                    text: qsTr("Statistics")
                     width: implicitWidth + 20
                 }
                 TabButton {
@@ -74,6 +79,29 @@ SplitView {
                 TabButton {
                     text: qsTr("Listener")
                     width: implicitWidth + 20
+                }
+                TabButton {
+                    id: addListenerButton
+                    text: "+"
+                    width: implicitWidth + 20
+                    onClicked: {
+                        console.log("Add new tab")
+                    }
+                    ToolTip {
+                        id: addListenerTooltip
+                        parent: addListenerButton
+                        visible: addListenerButton.hovered
+                        delay: 200
+                        text: qsTr("Add a new listener tab")
+                        contentItem: Label {
+                            text: addListenerTooltip.text
+                        }
+                        background: Rectangle {
+                            border.color: rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
+                            border.width: 1
+                            color: rootWindow.isDarkMode ? Constants.darkCardBackgroundColor : Constants.lightCardBackgroundColor
+                        }
+                    }
                 }
             }
             StackLayout {
@@ -91,6 +119,13 @@ SplitView {
 
                     StackView {
                         id: stackView
+                        anchors.fill: parent
+                    }
+                }
+                Item {
+                    id: statisticsTab
+
+                    StatisticsView {
                         anchors.fill: parent
                     }
                 }

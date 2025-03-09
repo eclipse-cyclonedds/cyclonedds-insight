@@ -26,6 +26,7 @@ HOSTNAMES     = ["__Hostname",    "dds.sys_info.hostname", "fastdds.physical_dat
 PROCESS_NAMES = ["__ProcessName", "dds.sys_info.executable_filepath"]
 PIDS          = ["__Pid",         "dds.sys_info.process_id", "fastdds.physical_data.process"]
 ADDRESSES     = ["__NetworkAddresses"]
+DEBUG_MONITORS = ["__DebugMonitor"]
 
 CYCLONEDDS_URI_NAME = "CYCLONEDDS_URI"
 
