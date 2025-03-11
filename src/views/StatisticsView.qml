@@ -84,6 +84,7 @@ Rectangle {
     }
 
     function eliminate() {
+        topicEndpointView.lineSeriesDict = Object.create(null);
         myChart.removeAllSeries();
     }
 
