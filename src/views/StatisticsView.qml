@@ -35,7 +35,7 @@ Rectangle {
     Connections {
         target: statisticModel
         function onNewData(guid, value, r, g, b) {
-            console.log("New data received: " + guid + ", " + value, r, g, b, Math.random());
+            // console.log("New data received: " + guid + ", " + value, r, g, b, Math.random());
 
             if (lineSeriesDict === undefined) {
                 lineSeriesDict = new Map();
@@ -44,10 +44,10 @@ Rectangle {
             var timestamp = Date.now() / 1000; // seconds since 1970
 
             if (guid in topicEndpointView.lineSeriesDict) {
-                console.log("Line series already exists for guid: " + guid, topicEndpointView.lineSeriesDict[guid].count);
+                //console.log("Line series already exists for guid: " + guid, topicEndpointView.lineSeriesDict[guid].count);
                 topicEndpointView.lineSeriesDict[guid].append(timestamp, value);
             } else {
-                console.log("Creating new line series for guid: " + guid);
+                //console.log("Creating new line series for guid: " + guid);
                 var line = myChart.createSeries(ChartView.SeriesTypeLine, guid, axisX, axisY);
                 line.color = Qt.rgba(r/255, g/255, b/255, 1);
                 axisX.titleText = "time";
@@ -191,7 +191,9 @@ Rectangle {
                             clip: true
                             interactive: true
 
-                            model: TableModel {
+                            model: statisticModel
+
+                            /*model: TableModel {
                                 TableModelColumn { display: "name" }
                                 TableModelColumn { display: "color" }
 
@@ -249,7 +251,7 @@ Rectangle {
                                         "color": "white"
                                     }
                                 ]
-                            }
+                            }*/
 
                             delegate: Rectangle {
                                 implicitWidth: 100
@@ -259,6 +261,7 @@ Rectangle {
                                 Text {
                                     text: display
                                     anchors.centerIn: parent
+                                    color: Qt.rgba(model.color_r / 255, model.color_g / 255, model.color_b / 255, 1)
                                 }
                             }
                         }

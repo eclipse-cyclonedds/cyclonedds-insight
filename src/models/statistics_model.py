@@ -46,12 +46,30 @@ from dds_access.dds_utils import getProperty, DEBUG_MONITORS
 import random
 
 
-class StatisticsModel(QObject):
+class StatisticsModel(QAbstractTableModel):
     newData = Signal(str, int, int, int, int)
+
+    RoleGUID = Qt.UserRole + 1
+    RoleRexmitBytes = Qt.UserRole + 2
+    RoleColorR = Qt.UserRole + 3
+    RoleColorG = Qt.UserRole + 4
+    RoleColorB = Qt.UserRole + 5
+
+    def roleNames(self):
+        roles = {
+            Qt.DisplayRole: b'display',
+            self.RoleGUID: b'guid',
+            self.RoleRexmitBytes: b'rexmit_bytes',
+            self.RoleColorR: b'color_r',
+            self.RoleColorG: b'color_g',
+            self.RoleColorB: b'color_b',
+        }
+        return roles
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.dgbPorts = {}
+        self.data_list = []
 
         self.dds_data = dds_data.DdsData()
         self.dds_data.new_participant_signal.connect(self.new_participant_slot, Qt.ConnectionType.QueuedConnection)
@@ -60,13 +78,48 @@ class StatisticsModel(QObject):
         self.timer.timeout.connect(self.on_timeout)
         self.timer.start(1000)
 
+    def rowCount(self, parent=QModelIndex()):
+        return len(self.data_list)
+
+    def columnCount(self, parent=QModelIndex()):
+        return 5  # guid, rexmit_bytes, color_r, color_g, color_b
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return None
+        row = index.row()
+        if row >= len(self.data_list):
+            return None
+        item = self.data_list[row]
+        if role == self.RoleGUID:
+            return item[0]
+        elif role == self.RoleRexmitBytes:
+            return item[1]
+        elif role == self.RoleColorR:
+            return item[2]
+        elif role == self.RoleColorG:
+            return item[3]
+        elif role == self.RoleColorB:
+            return item[4]
+        elif role == Qt.DisplayRole:
+            column = index.column()
+            return item[column]
+        return None
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role != Qt.DisplayRole:
+            return None
+        if orientation == Qt.Horizontal:
+            headers = ["GUID", "Rexmit Bytes", "Color R", "Color G", "Color B"]
+            if section < len(headers):
+                return headers[section]
+        return None
 
     def download_json(self, url):
         try:
             response = requests.get(url)
             response.raise_for_status()
             parsed_json = response.json()
-            # print("Received JSON:", json.dumps(parsed_json, indent=4))
             return parsed_json
         except requests.exceptions.RequestException as e:
             print("HTTP Request failed:", e)
@@ -84,6 +137,8 @@ class StatisticsModel(QObject):
     @Slot()
     def on_timeout(self):
         logging.trace("Debug monitor timer triggered")
+        self.beginResetModel()
+        self.data_list.clear()
         for (ip, port) in self.dgbPorts.keys():
             json_data = self.download_json("http://" + ip + ":" + port + "/")
             if "participants" in json_data:
@@ -94,7 +149,8 @@ class StatisticsModel(QObject):
                             if "rexmit_bytes" in writer:
                                 color = self.dgbPorts[(ip, port)][0]
                                 self.newData.emit(guid, writer["rexmit_bytes"], color[0], color[1], color[2])
-
+                                self.data_list.append([guid, writer["rexmit_bytes"], color[0], color[1], color[2]])
+        self.endResetModel()
 
     @Slot(int, DcpsParticipant)
     def new_participant_slot(self, domain_id: int, participant: DcpsParticipant):
