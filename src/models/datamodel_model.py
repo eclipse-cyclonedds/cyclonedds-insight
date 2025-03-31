@@ -158,7 +158,8 @@ class DatamodelModel(QAbstractListModel):
         if q_rel == "DDS_RELIABILITY_BEST_EFFORT":
             qos += Qos(Policy.Reliability.BestEffort)
         elif q_rel == "DDS_RELIABILITY_RELIABLE":
-            qos += Qos(Policy.Reliability.Reliable(max_blocking_time=duration(milliseconds=q_rel_max_block_msec)))
+            qos += Qos(Policy.Reliability.Reliable(
+                max_blocking_time=duration(milliseconds=q_rel_max_block_msec) if q_rel_max_block_msec >= 0 else duration(infinite=True)))
 
         if len(partitions) > 0:
             qos += Qos(Policy.Partition(partitions=partitions))

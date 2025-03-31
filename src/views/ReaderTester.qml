@@ -143,6 +143,12 @@ Popup {
                         id: reliabilitySpinBox
                         to: 1e9
                         value: 100
+                        enabled: !reliabilityCheckbox.checked
+                    }
+                    CheckBox {
+                        id: reliabilityCheckbox
+                        checked: false
+                        text: qsTr("infinite")
                     }
                 }
             }
@@ -763,7 +769,7 @@ Popup {
                     ownershipComboId.currentText,
                     durabilityComboId.currentText,
                     reliabilityComboId.currentText,
-                    reliabilitySpinBox.value,
+                    reliabilityCheckbox.checked ? -1 : reliabilitySpinBox.value,
                     dataReprXcdr1Checkbox.checked,
                     dataReprXcdr2Checkbox.checked,
                     partitions,
