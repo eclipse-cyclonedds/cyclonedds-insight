@@ -23,7 +23,7 @@ import re
 
 
 HOSTNAMES     = ["__Hostname",    "dds.sys_info.hostname", "fastdds.physical_data.host"]
-PROCESS_NAMES = ["__ProcessName", "dds.sys_info.executable_filepath"]
+PROCESS_NAMES = ["__ProcessName", "dds.sys_info.executable_filepath", "fastdds.application.id"]
 PIDS          = ["__Pid",         "dds.sys_info.process_id", "fastdds.physical_data.process"]
 ADDRESSES     = ["__NetworkAddresses"]
 
@@ -40,6 +40,15 @@ def getProperty(p: Optional[DcpsParticipant], names: List[str]):
             if propName != "Unknown":
                 break
     return propName
+
+
+def getHostname(p: Optional[DcpsParticipant]):
+    hostnameRaw = getProperty(p, HOSTNAMES)
+    if ":" in hostnameRaw:
+        hostnameSplit = hostnameRaw.split(":")
+        if len(hostnameSplit) > 0:
+            return hostnameSplit[0]
+    return hostnameRaw
 
 
 def getConfiguredDomainIds():
