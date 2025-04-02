@@ -19,7 +19,7 @@ from typing import List
 from cyclonedds.builtin import DcpsParticipant
 from loguru import logger as logging
 from dds_access import dds_data
-from dds_access.dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
+from dds_access.dds_utils import getProperty, getHostname, PROCESS_NAMES, PIDS, ADDRESSES
 from enum import Enum
 
 
@@ -168,7 +168,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                 return item.data(index)
             elif item.layer == DisplayLayerEnum.HOSTNAME:
                 p = item.data(index)
-                return getProperty(p, HOSTNAMES)
+                return getHostname(p)
             elif item.layer == DisplayLayerEnum.APP:
                 p = item.data(index)
                 return getAppName(getProperty(p, PROCESS_NAMES), getProperty(p, PIDS))
@@ -213,7 +213,7 @@ class ParticipantTreeModel(QAbstractItemModel):
         logging.trace("Add Participant " + str(participant.key) + " to participant model")
 
         # Look for the domain_id node under rootItem
-        hostname = getProperty(participant, HOSTNAMES)
+        hostname = getHostname(participant)
         appName = getAppName(getProperty(participant, PROCESS_NAMES), getProperty(participant, PIDS))
 
         if domain_id in self.rootItem.childMap:
@@ -228,7 +228,7 @@ class ParticipantTreeModel(QAbstractItemModel):
             else:
                 self.beginInsertRows(parent_index, row_count, row_count)
                 hostname_child = ParticipantTreeNode(participant, DisplayLayerEnum.HOSTNAME, domain_child)
-                domain_child.appendChild(getProperty(participant, HOSTNAMES), hostname_child)
+                domain_child.appendChild(getHostname(participant), hostname_child)
                 self.endInsertRows()
         
             # Add app
@@ -375,7 +375,7 @@ class ParticipantTreeModel(QAbstractItemModel):
     @Slot(str, int, dds_data.DataEndpoint)
     def new_endpoint_slot(self, unkown: str, domain_id: int, participant: dds_data.DataEndpoint):
 
-        hostname = getProperty(participant.participant, HOSTNAMES)
+        hostname = getHostname(participant.participant)
         appName = getAppName(getProperty(participant.participant, PROCESS_NAMES), getProperty(participant.participant, PIDS))
 
         if domain_id in self.rootItem.childMap:
