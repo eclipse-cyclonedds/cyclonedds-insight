@@ -44,12 +44,11 @@ def getProperty(p: Optional[DcpsParticipant], names: List[str]):
 
 def getHostname(p: Optional[DcpsParticipant]):
     hostnameRaw = getProperty(p, HOSTNAMES)
-    hostname = hostnameRaw
     if ":" in hostnameRaw:
         hostnameSplit = hostnameRaw.split(":")
         if len(hostnameSplit) > 0:
-            hostname = hostnameSplit[0]
-    return hostname
+            return hostnameSplit[0]
+    return hostnameRaw
 
 
 def getConfiguredDomainIds():
