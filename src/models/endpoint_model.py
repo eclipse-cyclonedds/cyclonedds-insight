@@ -23,7 +23,7 @@ from typing import Optional, List
 
 from dds_access import dds_data
 from dds_access.dds_data import DataEndpoint
-from dds_access.dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
+from dds_access.dds_utils import getProperty, getHostname, PROCESS_NAMES, PIDS, ADDRESSES
 from dds_access.dds_qos import partitions_match_p
 from dds_access.datatypes.entity_type import EntityType
 
@@ -182,7 +182,7 @@ class EndpointModel(QAbstractItemModel):
         elif role == self.TypeIdRole:
             return str(endp.type_id)
         elif role == self.HostnameRole:
-            return getProperty(p, HOSTNAMES)
+            return getHostname(p)
         elif role == self.ProcessIdRole:
             return getProperty(p, PIDS)
         elif role == self.ProcessNameRole:
