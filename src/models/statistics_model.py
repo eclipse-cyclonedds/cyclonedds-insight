@@ -82,7 +82,7 @@ class StatisticsModel(QAbstractTableModel):
         return len(self.data_list)
 
     def columnCount(self, parent=QModelIndex()):
-        return 5  # guid, rexmit_bytes, color_r, color_g, color_b
+        return 2  # guid, rexmit_bytes, color_r, color_g, color_b
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
@@ -131,7 +131,7 @@ class StatisticsModel(QAbstractTableModel):
         if ':' in guid:
             parts = guid.split(':')
             guid = f"{parts[0]:0>8}-{parts[1][:4]}-{parts[1][4:]}-{parts[2][:4]}-{parts[2][4:]:0<8}{parts[3]:0>4}"
-        print("GUID:", guid, len(guid))
+        logging.trace(f"Normalized GUID: {guid}, len: {len(guid)}")
         return guid
 
     @Slot()

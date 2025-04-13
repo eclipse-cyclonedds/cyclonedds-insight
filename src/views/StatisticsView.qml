@@ -27,9 +27,8 @@ Rectangle {
 
     Component.onCompleted: {
         console.log("StatisticsView.qml: Component.onCompleted");
-        var timestamp = Date.now() / 1000; 
-        axisX.min = timestamp;
-        axisX.max = timestamp + 120;
+        axisX.min = new Date(Date.now() - 2 * 60 * 1000)
+        axisX.max = new Date(Date.now())
     }
 
     Connections {
@@ -41,7 +40,7 @@ Rectangle {
                 lineSeriesDict = new Map();
             }
 
-            var timestamp = Date.now() / 1000; // seconds since 1970
+            var timestamp = Date.now()// / 1000; // seconds since 1970
 
             if (guid in topicEndpointView.lineSeriesDict) {
                 //console.log("Line series already exists for guid: " + guid, topicEndpointView.lineSeriesDict[guid].count);
@@ -56,11 +55,11 @@ Rectangle {
                 line.append(timestamp, value);
             }
 
-            axisX.min = Math.min(axisX.min, timestamp);
-            axisX.max = Math.max(axisX.max, timestamp);
+            axisX.min = new Date(Date.now() - 2 * 60 * 1000)
+            axisX.max = new Date(Date.now())
 
-            axisY.min = Math.min(axisY.min, value);
-            axisY.max = Math.max(axisY.max, value);
+            axisY.min = 0//Math.min(axisY.min, value - (value * 0.1));
+            axisY.max = Math.max(axisY.max, value + (value * 0.1));
         }
     }
 
@@ -128,13 +127,12 @@ Rectangle {
                         max: 10
                     }
 
-
-                    ValueAxis {
+                    DateTimeAxis {
                         id: axisX
-                        min: 500
+                        format: "hh:mm:ss"  // or "yyyy-MM-dd hh:mm"
+                        tickCount: 5
+                        min: (Date.now() / 1000) - 120;
                         max: (Date.now() / 1000) + 120;
-                        gridVisible: true
-                        tickCount: 4
                     }
                 }
 
@@ -178,12 +176,22 @@ Rectangle {
                             onClicked: eliminate()
                         }
                     }
+
+                    HorizontalHeaderView {
+                        id: horizontalHeader
+                        syncView: tableView
+                        Layout.fillWidth: true
+                        clip: true
+                    }
+
                     ScrollView {
                         Layout.preferredHeight: 250
-                        //Layout.preferredWidth: 200
-                        Layout.fillWidth: true
+                        Layout.preferredWidth: 380
+                        //Layout.fillWidth: true
+
 
                         TableView {
+                            id: tableView
                             anchors.fill: parent
 
                             columnSpacing: 1
@@ -193,70 +201,10 @@ Rectangle {
 
                             model: statisticModel
 
-                            /*model: TableModel {
-                                TableModelColumn { display: "name" }
-                                TableModelColumn { display: "color" }
-
-                                rows: [
-                                    {
-                                        "name": "cat",
-                                        "color": "black"
-                                    },
-                                    {
-                                        "name": "dog",
-                                        "color": "brown"
-                                    },
-                                    {
-                                        "name": "bird",
-                                        "color": "white"
-                                    },
-                                    {
-                                        "name": "fish",
-                                        "color": "blue"
-                                    },
-                                    {
-                                        "name": "horse",
-                                        "color": "brown"
-                                    },
-                                    {
-                                        "name": "rabbit",
-                                        "color": "gray"
-                                    },
-                                    {
-                                        "name": "turtle",
-                                        "color": "green"
-                                    },
-                                    {
-                                        "name": "hamster",
-                                        "color": "golden"
-                                    },
-                                    {
-                                        "name": "parrot",
-                                        "color": "red"
-                                    },
-                                    {
-                                        "name": "lizard",
-                                        "color": "green"
-                                    },
-                                    {
-                                        "name": "snake",
-                                        "color": "black"
-                                    },
-                                    {
-                                        "name": "frog",
-                                        "color": "green"
-                                    },
-                                    {
-                                        "name": "mouse",
-                                        "color": "white"
-                                    }
-                                ]
-                            }*/
-
                             delegate: Rectangle {
-                                implicitWidth: 100
-                                implicitHeight: 50
-                                //border.width: 1
+                                implicitWidth: model.column === 0 ? 300 : 80  // Set larger width for the first column
+                                implicitHeight: 25
+                                // border.width: 1
 
                                 Text {
                                     text: display
