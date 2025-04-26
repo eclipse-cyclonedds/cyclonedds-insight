@@ -29,6 +29,8 @@ TreeView {
             console.log("Selection changed to:", currentIndex);
             if (participantModel.getIsTopic(currentIndex)) {
                 showTopicEndpointView(participantModel.getDomain(currentIndex), participantModel.getName(currentIndex))
+            } else if (participantModel.getIsRowDomain(currentIndex)) {
+                showDomainView(participantModel.getDomain(currentIndex))
             } else {
                 stackView.clear()
             }

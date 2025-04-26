@@ -65,7 +65,7 @@ SplitView {
                 width: parent.width
 
                 TabButton {
-                    text: qsTr("Selected Topic")
+                    text: qsTr("Details")
                     width: implicitWidth + 20
                 }
                 TabButton {
@@ -80,29 +80,6 @@ SplitView {
                     text: qsTr("Listener")
                     width: implicitWidth + 20
                 }
-                TabButton {
-                    id: addListenerButton
-                    text: "+"
-                    width: implicitWidth + 20
-                    onClicked: {
-                        console.log("Add new tab")
-                    }
-                    ToolTip {
-                        id: addListenerTooltip
-                        parent: addListenerButton
-                        visible: addListenerButton.hovered
-                        delay: 200
-                        text: qsTr("Add a new listener tab")
-                        contentItem: Label {
-                            text: addListenerTooltip.text
-                        }
-                        background: Rectangle {
-                            border.color: rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
-                            border.width: 1
-                            color: rootWindow.isDarkMode ? Constants.darkCardBackgroundColor : Constants.lightCardBackgroundColor
-                        }
-                    }
-                }
             }
             StackLayout {
                 id: mainLayoutId
@@ -113,7 +90,7 @@ SplitView {
                     id: inspectTab
 
                     Label {
-                        text: "No Topic Selected"
+                        text: "Nothing Selected"
                         anchors.centerIn: parent
                     }
 
@@ -125,9 +102,14 @@ SplitView {
                 Item {
                     id: statisticsTab
 
-                    StatisticsView {
-                        anchors.fill: parent
+                    /*StatisticsModel {
+                        id: statOverView
                     }
+
+                    StatisticsView {
+                        statisticModel: statOverView
+                        anchors.fill: parent
+                    }*/
                 }
                 Item {
                     id: testerTab
@@ -158,6 +140,23 @@ SplitView {
             stackView.replace(childView);
         } else {
             console.log("Failed to create component TopicEndpointView")
+        }
+    }
+
+    function showDomainView(domainId) {
+        stackView.clear()
+        if (childView) {
+            childView.destroy()
+        }
+        var childComponent = Qt.createComponent("qrc:/src/views/DomainView.qml")
+        if (childComponent.status === Component.Ready) {
+            childView = childComponent.createObject(
+                        stackView, {
+                            domainId: domainId
+                        });
+            stackView.replace(childView);
+        } else {
+            console.log("Failed to create component DomainView")
         }
     }
 }

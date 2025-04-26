@@ -20,6 +20,7 @@ from loguru import logger as logging
 import xml.etree.ElementTree as ET
 import os
 import re
+from pathlib import Path
 
 
 HOSTNAMES     = ["__Hostname",    "dds.sys_info.hostname", "fastdds.physical_data.host"]
@@ -42,6 +43,11 @@ def getProperty(p: Optional[DcpsParticipant], names: List[str]):
                 break
     return propName
 
+def getAppName(p: Optional[DcpsParticipant]):
+    appNameWithPath = getProperty(p, PROCESS_NAMES)
+    pid = getProperty(p, PIDS)
+    appNameStem = Path(appNameWithPath.replace("\\", f"{os.path.sep}")).stem
+    return  appNameStem + ":" + pid
 
 def getConfiguredDomainIds():
 

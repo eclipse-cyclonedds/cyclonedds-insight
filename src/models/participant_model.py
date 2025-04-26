@@ -19,13 +19,8 @@ from typing import List
 from cyclonedds.builtin import DcpsParticipant
 from loguru import logger as logging
 from dds_access import dds_data
-from dds_access.dds_utils import getProperty, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
+from dds_access.dds_utils import getProperty, getAppName, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
 from enum import Enum
-
-
-def getAppName(appNameWithPath, pid):
-    appNameStem = Path(appNameWithPath.replace("\\", f"{os.path.sep}")).stem
-    return  appNameStem + ":" + pid
 
 
 # defines what type is the current node
@@ -171,7 +166,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                 return getProperty(p, HOSTNAMES)
             elif item.layer == DisplayLayerEnum.APP:
                 p = item.data(index)
-                return getAppName(getProperty(p, PROCESS_NAMES), getProperty(p, PIDS))
+                return getAppName(p)
             elif item.layer == DisplayLayerEnum.PARTICIPANT:
                 return str(item.data(index).key)
             elif item.layer == DisplayLayerEnum.TOPIC:
@@ -214,7 +209,7 @@ class ParticipantTreeModel(QAbstractItemModel):
 
         # Look for the domain_id node under rootItem
         hostname = getProperty(participant, HOSTNAMES)
-        appName = getAppName(getProperty(participant, PROCESS_NAMES), getProperty(participant, PIDS))
+        appName = getAppName(participant)
 
         if domain_id in self.rootItem.childMap:
             domain_child = self.rootItem.childMap[domain_id]
@@ -351,7 +346,6 @@ class ParticipantTreeModel(QAbstractItemModel):
         isTopic = self.data(index, role=self.IsTopicRole)
         return isTopic
 
-
     @Slot(QModelIndex, result=int)
     def getDomain(self, index: QModelIndex):
         isDomain = self.data(index, role=self.IsDomainRole)
@@ -376,7 +370,7 @@ class ParticipantTreeModel(QAbstractItemModel):
     def new_endpoint_slot(self, unkown: str, domain_id: int, participant: dds_data.DataEndpoint):
 
         hostname = getProperty(participant.participant, HOSTNAMES)
-        appName = getAppName(getProperty(participant.participant, PROCESS_NAMES), getProperty(participant.participant, PIDS))
+        appName = getAppName(participant.participant)
 
         if domain_id in self.rootItem.childMap:
             domain_child = self.rootItem.childMap[domain_id]

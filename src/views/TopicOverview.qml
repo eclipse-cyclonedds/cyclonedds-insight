@@ -31,7 +31,7 @@ TreeView {
         onCurrentIndexChanged: {
             console.log("Selection changed to:", currentIndex);
             if (treeModel.getIsRowDomain(currentIndex)) {
-                stackView.clear()
+                showDomainView(treeModel.getDomain(currentIndex))
             } else {
                 showTopicEndpointView(treeModel.getDomain(currentIndex), treeModel.getName(currentIndex))
             }

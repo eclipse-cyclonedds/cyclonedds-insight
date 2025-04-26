@@ -281,6 +281,7 @@ class DdsData(QObject):
 
     response_data_type_signal = Signal(str, object)
     response_endpoints_by_participant_key_signal = Signal(str, int, DataEndpoint)
+    response_participants_signal = Signal(str, int, object)
 
     no_more_mismatch_in_topic_signal = Signal(int, str)
     publish_mismatch_signal = Signal(int, str, list)
@@ -421,3 +422,13 @@ class DdsData(QObject):
             endpoints = self.the_domains[domainId].getEndpointsByParticipantKey(participantKey)
 
         self.response_endpoints_by_participant_key_signal.emit(requestId, domainId, endpoints)
+
+
+    @Slot(str, int)
+    def requestParticipants(self, requestId: str, domainId: int):
+        logging.debug(f"requestParticipants {requestId}, {domainId}")
+        participants = []
+        if domainId in self.the_domains:
+            participants = self.the_domains[domainId].participants.values()
+        logging.debug(f"found len: {len(participants)} participants")
+        self.response_participants_signal.emit(requestId, domainId, participants)

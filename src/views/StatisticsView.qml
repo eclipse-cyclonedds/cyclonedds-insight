@@ -24,11 +24,15 @@ Rectangle {
     id: topicEndpointView
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
     property var lineSeriesDict: Object.create(null)
+    property var statisticModel: Object.create(null)
+    property var domainId: 0
 
     Component.onCompleted: {
         console.log("StatisticsView.qml: Component.onCompleted");
         axisX.min = new Date(Date.now() - 2 * 60 * 1000)
         axisX.max = new Date(Date.now())
+
+        statisticModel.startStatistics(domainId, "topic")
     }
 
     Connections {

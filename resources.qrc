@@ -43,5 +43,6 @@
         <file>src/views/SideView.qml</file>
         <file>src/views/LogWindow.qml</file>
         <file>src/views/StatisticsView.qml</file>
+        <file>src/views/DomainView.qml</file>
     </qresource>
 </RCC>

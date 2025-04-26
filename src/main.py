@@ -128,10 +128,9 @@ if __name__ == "__main__":
     engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_GIT_BRANCH", build_info_helper.getBuildInfoGitBranch())
     engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_BUILD_ID", build_info_helper.getBuildId())
     engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_BUILD_PIPELINE_ID", build_info_helper.getBuildPipelineId())
-    statisticModel = StatisticsModel()
-    engine.rootContext().setContextProperty("statisticModel", statisticModel)
 
     qmlRegisterType(EndpointModel, "org.eclipse.cyclonedds.insight", 1, 0, "EndpointModel")
+    qmlRegisterType(StatisticsModel, "org.eclipse.cyclonedds.insight", 1, 0, "StatisticsModel")
 
     engine.load(QUrl("qrc:/src/views/main.qml"))
     if not engine.rootObjects():
