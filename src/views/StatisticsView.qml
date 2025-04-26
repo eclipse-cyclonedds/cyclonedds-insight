@@ -25,70 +25,63 @@ Rectangle {
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
     property var lineSeriesDict: Object.create(null)
     property var statisticModel: Object.create(null)
-    property var domainId: 0
+    property int domainId
 
     Component.onCompleted: {
         console.log("StatisticsView.qml: Component.onCompleted");
         axisX.min = new Date(Date.now() - 2 * 60 * 1000)
         axisX.max = new Date(Date.now())
+    }
 
-        statisticModel.startStatistics(domainId, "topic")
+    function startStatistics() {
+        if (statisticModel) {
+            console.log("Starting statistics");
+            statisticModel.startStatistics(domainId, "topic")
+        } else {
+            console.error("Statistic model is not initialized.");
+        }
+    }
+
+    function stopStatistics() {
+        if (statisticModel) {
+            console.log("Stopping statistics");
+            // statisticModel.stopStatistics();
+        } else {
+            console.error("Statistic model is not initialized.");
+        }
     }
 
     Connections {
         target: statisticModel
         function onNewData(guid, value, r, g, b) {
-            // console.log("New data received: " + guid + ", " + value, r, g, b, Math.random());
 
             if (lineSeriesDict === undefined) {
                 lineSeriesDict = new Map();
             }
 
-            var timestamp = Date.now()// / 1000; // seconds since 1970
+            var timestamp = Date.now()
 
             if (guid in topicEndpointView.lineSeriesDict) {
-                //console.log("Line series already exists for guid: " + guid, topicEndpointView.lineSeriesDict[guid].count);
+                if (topicEndpointView.lineSeriesDict[guid].count >= 120) {
+                    topicEndpointView.lineSeriesDict[guid].remove(0);
+                }
                 topicEndpointView.lineSeriesDict[guid].append(timestamp, value);
             } else {
-                //console.log("Creating new line series for guid: " + guid);
                 var line = myChart.createSeries(ChartView.SeriesTypeLine, guid, axisX, axisY);
                 line.color = Qt.rgba(r/255, g/255, b/255, 1);
                 axisX.titleText = "time";
                 axisY.titleText = "rexmit_bytes [bytes]";
-                topicEndpointView.lineSeriesDict[guid] = line;
                 line.append(timestamp, value);
+
+                topicEndpointView.lineSeriesDict[guid] = line;
             }
 
             axisX.min = new Date(Date.now() - 2 * 60 * 1000)
             axisX.max = new Date(Date.now())
 
-            axisY.min = 0//Math.min(axisY.min, value - (value * 0.1));
+            axisY.min = 0
             axisY.max = Math.max(axisY.max, value + (value * 0.1));
         }
-    }
-
-    function add() {
-        var line = myChart.createSeries(ChartView.SeriesTypeLine, "Line series", axisX, axisY);
-        
-        topicEndpointView.lineSeries = line;
-        line.name = "N: " + Math.floor(Math.random() * 10);
-        line.color = Qt.rgba(Math.random(), Math.random(), Math.random(), 1);
-        //line.color = "red";
-
-        for (var i = 0; i < 10; i++) {
-            line.append(i, Math.random() * 10);
-        }
-
-        axisX.min = 0;
-        axisX.max = 10;
-
-        axisY.min = 0;
-        axisY.max = 10;
-    }
-
-    function eliminate() {
-        topicEndpointView.lineSeriesDict = Object.create(null);
-        myChart.removeAllSeries();
     }
 
     ScrollView {
@@ -100,22 +93,29 @@ Rectangle {
 
             Label {
                 text: "This feature is only available for Cyclone DDS endpoints which have enabled Internal/MonitorPort."
-                padding: 10
+                padding: 5
             }
 
             Label {
-                text: "Acks"
+                text: "rexmit_bytes"
                 font.bold: true
-                padding: 10
+                padding: 5
+            }
+
+            Label {
+                text: "Total number of bytes retransmitted for a writer."
+                padding: 2
             }
 
             RowLayout {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
+                spacing: 0
 
                 ChartView {
                     Layout.preferredHeight: 350
                     Layout.preferredWidth: 450
+                    Layout.alignment: Qt.AlignTop
 
                     id: myChart
                     title: "rexmit_bytes"
@@ -133,7 +133,7 @@ Rectangle {
 
                     DateTimeAxis {
                         id: axisX
-                        format: "hh:mm:ss"  // or "yyyy-MM-dd hh:mm"
+                        format: "hh:mm:ss"
                         tickCount: 5
                         min: (Date.now() / 1000) - 120;
                         max: (Date.now() / 1000) + 120;
@@ -141,45 +141,10 @@ Rectangle {
                 }
 
                 ColumnLayout {
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                    }
-
-                    Label {
-                        text: "This is a placeholder for the statistics view."
-                        padding: 10
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-
-                        Button{
-                            id: addButton
-                            text: "Add"
-                            onClicked: add()
-                        }
-                        Button {
-                            id: addValueButton
-                            text: "Add Value"
-                            onClicked: {
-                                if (topicEndpointView.lineSeries) {
-                                    var x = topicEndpointView.lineSeries.count;
-                                    var y = Math.random() * 10;
-                                    topicEndpointView.lineSeries.append(x, y);
-                                    axisX.max = x + 1;
-                                }
-                            }
-                        }
-                        Button{
-                            id: eliminateButton
-                            text: "Reset"
-                            onClicked: eliminate()
-                        }
-                    }
+                    Layout.preferredHeight: 350
+                    Layout.preferredWidth: topicEndpointView.width - 450
+                    Layout.alignment: Qt.AlignTop
+                    spacing: 0
 
                     HorizontalHeaderView {
                         id: horizontalHeader
@@ -188,39 +153,31 @@ Rectangle {
                         clip: true
                     }
 
-                    ScrollView {
-                        Layout.preferredHeight: 250
-                        Layout.preferredWidth: 380
-                        //Layout.fillWidth: true
-
-
-                        TableView {
-                            id: tableView
-                            anchors.fill: parent
-
-                            columnSpacing: 1
-                            rowSpacing: 1
-                            clip: true
-                            interactive: true
-
-                            model: statisticModel
-
-                            delegate: Rectangle {
-                                implicitWidth: model.column === 0 ? 300 : 80  // Set larger width for the first column
-                                implicitHeight: 25
-                                // border.width: 1
-
-                                Text {
-                                    text: display
-                                    anchors.centerIn: parent
-                                    color: Qt.rgba(model.color_r / 255, model.color_g / 255, model.color_b / 255, 1)
-                                }
-                            }
-                        }
-                    }
-                    Item {
+                    TableView {
+                        id: tableView
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+
+                        columnSpacing: 1
+                        rowSpacing: 1
+                        clip: true
+                        interactive: true
+
+                        model: statisticModel
+
+                        delegate: Rectangle {
+                            implicitWidth: model.column === 0 ? topicEndpointView.width * 0.3 : topicEndpointView.width * 0.1
+                            implicitHeight: 25
+
+                            Text {
+                                text: display
+                                anchors.fill: parent
+                                color: Qt.rgba(model.color_r / 255, model.color_g / 255, model.color_b / 255, 1)
+                                horizontalAlignment: Text.AlignLeft
+                                verticalAlignment: Text.AlignVCenter
+                                clip: true
+                            }
+                        }
                     }
                 }
             }

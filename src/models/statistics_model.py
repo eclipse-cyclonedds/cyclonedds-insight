@@ -44,7 +44,7 @@ from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 
 from dds_access.dds_utils import getProperty, DEBUG_MONITORS, getAppName
 import random
-
+import colorsys
 
 class StatisticsModel(QAbstractTableModel):
     newData = Signal(str, int, int, int, int)
@@ -80,6 +80,7 @@ class StatisticsModel(QAbstractTableModel):
         self.requestParticipants.connect(self.dds_data.requestParticipants, Qt.ConnectionType.QueuedConnection)
         self.dds_data.new_participant_signal.connect(self.new_participant_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.response_participants_signal.connect(self.response_participants_slot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.removed_participant_signal.connect(self.removed_participant_slot, Qt.ConnectionType.QueuedConnection)
 
         self.timer = None
         self.domainId = None
@@ -111,11 +112,13 @@ class StatisticsModel(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex()):
         return 2  # guid, rexmit_bytes, color_r, color_g, color_b
 
+
     def getRandomColor(self):
-        r = random.randint(0, 255)
-        g = random.randint(0, 255)
-        b = random.randint(0, 255)
-        return (r, g, b)
+        h = random.random()
+        s = random.uniform(0.5, 1.0)  # not too gray
+        v = random.uniform(0.7, 1.0)  # not too dark
+        r, g, b = colorsys.hsv_to_rgb(h, s, v)
+        return (int(r * 255), int(g * 255), int(b * 255))
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
@@ -143,36 +146,37 @@ class StatisticsModel(QAbstractTableModel):
         if role != Qt.DisplayRole:
             return None
         if orientation == Qt.Horizontal:
-            headers = ["GUID", "Rexmit Bytes", "Color R", "Color G", "Color B"]
+            headers = ["Name", "Rexmit Bytes", "Color R", "Color G", "Color B"]
             if section < len(headers):
                 return headers[section]
         return None
 
     def download_json(self, url):
         try:
-            response = requests.get(url)
+            print("Downloading JSON from:", url)
+            response = requests.get(url, timeout=(5, 10))
+            print("Response code:", response.status_code)
             response.raise_for_status()
             parsed_json = response.json()
             return parsed_json
         except requests.exceptions.RequestException as e:
-            print("HTTP Request failed:", e)
+            logging.error("HTTP Request failed: " + str(e))
         except json.JSONDecodeError as e:
-            print("Invalid JSON received:", e)
+            logging.error("Invalid JSON received: " + str(e))
         return []
 
     def normalize_guid(self, guid: str) -> str:
         if ':' in guid:
             parts = guid.split(':')
             guid = f"{parts[0]:0>8}-{parts[1][:4]}-{parts[1][4:]}-{parts[2][:4]}-{parts[2][4:]:0<8}{parts[3]:0>4}"
-        #logging.trace(f"Normalized GUID: {guid}, len: {len(guid)}")
         return guid
 
     @Slot()
     def on_timeout(self):
-        # logging.trace("Debug monitor timer triggered")
+        logging.trace("Debug monitor timer triggered")
 
         aggregated_data = {}
-        for (ip, port) in self.dgbPorts.keys():
+        for (ip, port, appName) in self.dgbPorts.values():
             json_data = self.download_json("http://" + ip + ":" + port + "/")
             if "participants" in json_data:
                 for participant in json_data["participants"]:
@@ -221,15 +225,7 @@ class StatisticsModel(QAbstractTableModel):
                     ip = splitIpPort[0]
                     port = splitIpPort[1]
                     print("IP:", ip, "Port:", port)
-                    if (ip, port) in self.dgbPorts.keys():
-                        if participant.key not in self.dgbPorts[(ip, port)]:
-                            self.dgbPorts[(ip, port)][1].append(participant.key)
-                    else:
-                        r = random.randint(0, 255)
-                        g = random.randint(0, 255)
-                        b = random.randint(0, 255)
-                        self.dgbPorts[(ip, port)] = [(r, g, b), [participant.key]]
-
+                    self.dgbPorts[str(participant.key)] = (ip, port, appName)
 
     @Slot(str, int, object)
     def response_participants_slot(self, request_id: str, domain_id: int, participants):
@@ -243,3 +239,11 @@ class StatisticsModel(QAbstractTableModel):
             self.new_participant_slot(domain_id, participant)
 
         self.request_ids.remove(request_id)
+
+    @Slot(int, str)
+    def removed_participant_slot(self, domain_id: int, participant_key: str):
+        if self.domainId != domain_id:
+            return
+
+        if participant_key in self.dgbPorts:
+            del self.dgbPorts[participant_key]

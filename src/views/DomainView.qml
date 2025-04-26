@@ -37,12 +37,18 @@ Rectangle {
         }
         Label {
             text: qsTr("Domain ID: ") + domainViewId.domainId
-
         }
     
         Button {
-            text: qsTr("Toggle Statistics")
-            onClicked: statisticsView.visible = !statisticsView.visible
+            text: statisticsView.visible ? qsTr("Hide Statistics") : qsTr("Show Statistics")
+            onClicked: {
+                statisticsView.visible = !statisticsView.visible
+                if (statisticsView.visible) {
+                    statisticsView.startStatistics()
+                } else {
+                    statisticsView.stopStatistics()
+                }
+            }
         }
 
         StatisticsModel {
@@ -52,6 +58,8 @@ Rectangle {
         StatisticsView {
             id: statisticsView
             statisticModel: statisticModelDomainView
+            domainId: domainViewId.domainId
+            visible: false
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
@@ -61,7 +69,6 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
-
 
     }
 
