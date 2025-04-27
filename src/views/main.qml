@@ -35,6 +35,10 @@ ApplicationWindow {
         Menu {
             title: "View"
             MenuItem {
+                text: "Show Shapes Demo"
+                onTriggered: shapeDemoViewId.visible = true
+            }
+            MenuItem {
                 text: "Show Log Window"
                 onTriggered: logViewId.visible = true
             }
