@@ -763,7 +763,7 @@ Popup {
                 for (var i = 0; i < partitionModel.count; i++) {
                     partitions.push(partitionModel.get(i).partition);
                 }
-                model.addReader(
+                model.setQosSelection(
                     readerDomainIdSpinBox.value,
                     topicNameTextFieldId.text,
                     topicType,
