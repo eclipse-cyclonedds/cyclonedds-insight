@@ -42,5 +42,6 @@
         <file>src/views/ParticipantsOverview.qml</file>
         <file>src/views/SideView.qml</file>
         <file>src/views/LogWindow.qml</file>
+        <file>src/views/ShapesDemoView.qml</file>
     </qresource>
 </RCC>
