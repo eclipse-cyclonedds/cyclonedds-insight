@@ -232,10 +232,8 @@ Window {
                             text: "Subscribe"
                             onClicked: {
                                 shapesDemoModel.subscibe(shapeSelectorSubscribe.currentText);
-
                                 shapesDemoQosSelector.setType(shapeSelectorSubscribe.currentText, 3)
                                 shapesDemoQosSelector.open()
-
                             }
                         }
                     }
@@ -382,6 +380,6 @@ Window {
 
     ReaderTester {
         id: shapesDemoQosSelector
+        model: shapesDemoModel
     }
-
 }

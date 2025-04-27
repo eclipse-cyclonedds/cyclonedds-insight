@@ -18,6 +18,7 @@ import time
 import uuid
 from dds_access.dispatcher import DispatcherThread
 from dds_access.dds_data import DdsData
+from dds_access import dds_utils
 from cyclonedds.core import Qos, Policy
 from cyclonedds.util import duration
 from dds_access.datatypes.entity_type import EntityType
@@ -93,6 +94,58 @@ class ShapesDemoModel(QAbstractListModel):
             self.dispatcher.stop()
         for thread in self.writerShapeThreads.values():
             thread.stop()
+
+    @Slot(int, str, str,
+          str, str, str, int, bool, bool, list,
+          str, bool, bool, bool, bool, bool, bool,
+          str, int,
+          str,
+          str, int,
+          int, int, int, int,
+          str, bool, bool,
+          bool, int, int, int,
+          int, int, int,
+          int, str,
+          str,
+          str, str, str, str, str, str,
+          int, str, int,
+          int, int, int,
+          int)
+    def setQosSelection(self, domain_id, topic_name, topic_type,
+        q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partitions,
+        type_consis, ig_seq_bnds, ig_str_bnds, ign_mem_nam, prev_ty_wide, fore_type_vali, fore_type_vali_allow,
+        history, history_keep_last_nr,
+        destination_order,
+        liveliness, liveliness_seconds,
+        lifespan_seconds, deadline_seconds, latencybudget_seconds, owner_strength,
+        presentation_access_scope, pres_acc_scope_coherent, pres_acc_scope_ordered,
+        writer_life_autodispose,
+        reader_life_nowriter_delay, reader_life_disposed, transport_prio,
+        limit_max_samples, limit_max_instances, limit_max_samples_per_instance,
+        timebased_filter_time_sec, ignore_local,
+        user_data, group_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value,
+        durserv_cleanup_delay_minutes, durserv_history, durserv_history_keep_last_nr,
+        durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance,
+        entityTypeInteger):
+
+        logging.debug("set qos" + str(domain_id) + " " + str(topic_name) + " " + str(topic_type))
+
+        qos = dds_utils.toQos(
+            q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partitions,
+            type_consis, ig_seq_bnds, ig_str_bnds, ign_mem_nam, prev_ty_wide, fore_type_vali, fore_type_vali_allow,
+            history, history_keep_last_nr,
+            destination_order,
+            liveliness, liveliness_seconds,
+            lifespan_seconds, deadline_seconds, latencybudget_seconds, owner_strength,
+            presentation_access_scope, pres_acc_scope_coherent, pres_acc_scope_ordered,
+            writer_life_autodispose,
+            reader_life_nowriter_delay, reader_life_disposed, transport_prio,
+            limit_max_samples, limit_max_instances, limit_max_samples_per_instance,
+            timebased_filter_time_sec, ignore_local,
+            user_data, group_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value,
+            durserv_cleanup_delay_minutes, durserv_history, durserv_history_keep_last_nr,
+            durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance
+        )
 
 
 class ShapeDynamicThread(QThread):
