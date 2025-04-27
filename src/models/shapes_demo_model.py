@@ -186,8 +186,8 @@ class ShapeDynamicThread(QThread):
             shape = ishape.ShapeType(self.color, 0, 0, self.size)
             widthBound = 266
             heightBound = 234
-            angle = 0.7853981633974483
-            alpha = 0.7853981633974483
+            angle = random.uniform(0.0, 1.0)
+            alpha = random.uniform(0.0, 1.0)
 
             while self.running:
                 shape.x = round(shape.x + self.speed * math.cos(angle))
