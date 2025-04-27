@@ -106,7 +106,7 @@ ApplicationWindow {
         id: idlDropAreaId
     }
 
-    ReaderTester {
+    QosSelector {
         id: readerTesterDialogId
         model: datamodelRepoModel
     }
