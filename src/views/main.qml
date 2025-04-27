@@ -108,6 +108,7 @@ ApplicationWindow {
 
     ReaderTester {
         id: readerTesterDialogId
+        model: datamodelRepoModel
     }
 
     function getDarkMode() {
@@ -141,6 +142,6 @@ ApplicationWindow {
 
     ShapesDemoView {
         id: shapeDemoViewId
-        visible: true
+        visible: false
     }
 }

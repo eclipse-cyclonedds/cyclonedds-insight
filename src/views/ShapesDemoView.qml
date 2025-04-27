@@ -22,9 +22,8 @@ import org.eclipse.cyclonedds.insight
 Window {
     id: shapeDemoViewId
     title: "Shapes Demo"
-    width: 750
-    height: 378
-
+    width: 800
+    height: 500
     flags: Qt.Dialog
     property var shapesMap
 
@@ -32,10 +31,15 @@ Window {
         shapesMap = {};
     }
 
+    onVisibleChanged: {
+        if (visible) {
+            shapesDemoModel.start();
+        }
+    }
+
     Connections {
         target: shapesDemoModel
         function onShapeUpdateSignale(id, shape, color, x, y, size, disposed) {
-            // console.log("Shape update signal received", id, color, x, y, size);
             if (shapesMap[id] === undefined) {
                 if (disposed) {
                     console.log("Shape with ID", id, "was disposed");
@@ -171,21 +175,26 @@ Window {
                             Slider {
                                 id: speedSlider
                                 Layout.fillWidth: true
-                                from: 10
-                                to: 1000
-                                value: 100
-                                stepSize: 10
+                                from: 1
+                                to: 20
+                                value: 4
+                                stepSize: 1
                             }
                             Label {
                                 id: speedSliderLabel
-                                text: speedSlider.value + " ms"
+                                text: speedSlider.value
                             }
                         }
 
                         Button {
                             text: "Publish"
                             onClicked: {
-                                shapesDemoModel.publish(shapeSelector.currentText, colorSelector.currentText, 0, 0, sizeSlider.value, speedSlider.value);
+                                console.log("Publish shape:", shapeSelector.currentText, "Color:", colorSelector.currentText, "Size:", sizeSlider.value, "Speed:", speedSlider.value);
+                                shapesDemoModel.publish(shapeSelector.currentText, colorSelector.currentText, sizeSlider.value, speedSlider.value);
+
+                                shapesDemoQosSelector.setType(shapeSelector.currentText, 4)
+                                shapesDemoQosSelector.open()
+
                             }
                         }
                     }
@@ -223,6 +232,10 @@ Window {
                             text: "Subscribe"
                             onClicked: {
                                 shapesDemoModel.subscibe(shapeSelectorSubscribe.currentText);
+
+                                shapesDemoQosSelector.setType(shapeSelectorSubscribe.currentText, 3)
+                                shapesDemoQosSelector.open()
+
                             }
                         }
                     }
@@ -366,4 +379,9 @@ Window {
             return "#333333"; // fallback to black
         }
     }
+
+    ReaderTester {
+        id: shapesDemoQosSelector
+    }
+
 }

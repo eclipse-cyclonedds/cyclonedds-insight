@@ -20,6 +20,7 @@ import org.eclipse.cyclonedds.insight
 
 Popup {
     id: readerTesterDiaId
+    property var model: null
 
     anchors.centerIn: parent
     modal: true
@@ -762,7 +763,7 @@ Popup {
                 for (var i = 0; i < partitionModel.count; i++) {
                     partitions.push(partitionModel.get(i).partition);
                 }
-                datamodelRepoModel.addReader(
+                model.addReader(
                     readerDomainIdSpinBox.value,
                     topicNameTextFieldId.text,
                     topicType,
