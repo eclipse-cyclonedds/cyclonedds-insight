@@ -23,7 +23,7 @@ Window {
     id: shapeDemoViewId
     title: "Shapes Demo"
     width: 800
-    height: 500
+    height: 450
     flags: Qt.Dialog
     property var shapesMap
 
@@ -192,9 +192,10 @@ Window {
                                 console.log("Publish shape:", shapeSelector.currentText, "Color:", colorSelector.currentText, "Size:", sizeSlider.value, "Speed:", speedSlider.value);
                                 shapesDemoModel.setPublishInfos(shapeSelector.currentText, colorSelector.currentText, sizeSlider.value, speedSlider.value);
 
-                                shapesDemoQosSelector.setType(shapeSelector.currentText, 4)
+                                //shapesDemoQosSelector.setType(shapeSelector.currentText, 4)
+                                shapesDemoQosSelector.setTypes(0, shapeSelector.currentText, [shapeSelector.currentText], 3);
+                                shapesDemoQosSelector.setButtonName("Publish Shape")
                                 shapesDemoQosSelector.open()
-
                             }
                         }
                     }
@@ -233,6 +234,7 @@ Window {
                             onClicked: {
                                 shapesDemoModel.setSubscribeInfos(shapeSelectorSubscribe.currentText);
                                 shapesDemoQosSelector.setType(shapeSelectorSubscribe.currentText, 3)
+                                shapesDemoQosSelector.setButtonName("Subscribe Shape")
                                 shapesDemoQosSelector.open()
                             }
                         }
@@ -378,7 +380,7 @@ Window {
         }
     }
 
-    ReaderTester {
+    QosSelector {
         id: shapesDemoQosSelector
         model: shapesDemoModel
     }

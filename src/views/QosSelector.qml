@@ -40,12 +40,15 @@ Popup {
     property string topicName
     property var topicTypeNameList: []
     property string selectedTypeText: ""
+    property string buttonName: ""
 
     function setType(topicType, entityType) {
         topicTypeNameList = []
         topicName = topicType.replace(/::/g, "_");
         readerTesterDiaId.topicType = topicType
         readerTesterDiaId.entityType = entityType
+
+        setButtonNameDefault()
     }
 
     function setTypes(domain, name, typeList, entityType) {
@@ -54,6 +57,16 @@ Popup {
         readerTesterDiaId.topicTypeNameList = typeList
         readerTesterDiaId.entityType = entityType
         readerDomainIdSpinBox.value = domain
+
+        setButtonNameDefault()
+    }
+
+    function setButtonName(name) {
+        buttonName = name
+    }
+
+    function setButtonNameDefault() {
+        buttonName = readerTesterDiaId.entityType === 3 ? qsTr("Create Reader (Listener)") : qsTr("Create Writer (Tester)")
     }
 
     ListModel {
@@ -757,7 +770,7 @@ Popup {
         anchors.margins: 10
 
         Button {
-            text: readerTesterDiaId.entityType === 3 ? qsTr("Create Reader (Listener)") : qsTr("Create Writer (Tester)")
+            text: buttonName
             onClicked: {
                 var partitions = [];
                 for (var i = 0; i < partitionModel.count; i++) {

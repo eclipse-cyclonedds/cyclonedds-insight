@@ -90,7 +90,7 @@ class ShapesDemoModel(QAbstractListModel):
 
     def subscibe(self, qos):
         shapeType = self.subscribeInfos
-        self.dispatcher.addEndpoint(shapeType, ishape.ShapeType, qos, EntityType.READER)
+        self.dispatcher.addEndpoint(shapeType, ishape.ShapeType, qos)
 
     @Slot(str, object, bool)
     def onData(self, id: str, topicName: str, data: object, disposed: bool):
@@ -180,9 +180,9 @@ class ShapeDynamicThread(QThread):
     def run(self):
         self.running = True
         try:
-            topic = Topic(self.domain_participant, self.shapeType, ishape.ShapeType)
-            publisher = Publisher(self.domain_participant)
-            writer = DataWriter(publisher, topic, Qos(Policy.DataRepresentation(use_cdrv0_representation=False, use_xcdrv2_representation=True)))
+            topic = Topic(self.domain_participant, self.shapeType, ishape.ShapeType, self.qos)
+            publisher = Publisher(self.domain_participant, self.qos)
+            writer = DataWriter(publisher, topic, self.qos)
             shape = ishape.ShapeType(self.color, 0, 0, self.size)
             widthBound = 266
             heightBound = 234
@@ -232,11 +232,11 @@ class ShapeDispatcherThread(QThread):
         self.readerData = []
 
     @Slot()
-    def addEndpoint(self, topic_name: str, topic_type, qos, entity_type: EntityType):
+    def addEndpoint(self, topic_name: str, topic_type, qos):
         try:
-            topic = Topic(self.domain_participant, topic_name, topic_type)
-            subscriber = Subscriber(self.domain_participant)
-            reader = DataReader(subscriber, topic)
+            topic = Topic(self.domain_participant, topic_name, topic_type, qos)
+            subscriber = Subscriber(self.domain_participant, qos)
+            reader = DataReader(subscriber, topic, qos)
             readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
             self.guardCondition.set(True)
             self.waitset.attach(readCondition)
