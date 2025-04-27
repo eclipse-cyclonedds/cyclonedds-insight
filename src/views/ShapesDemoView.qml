@@ -190,7 +190,7 @@ Window {
                             text: "Publish"
                             onClicked: {
                                 console.log("Publish shape:", shapeSelector.currentText, "Color:", colorSelector.currentText, "Size:", sizeSlider.value, "Speed:", speedSlider.value);
-                                shapesDemoModel.publish(shapeSelector.currentText, colorSelector.currentText, sizeSlider.value, speedSlider.value);
+                                shapesDemoModel.setPublishInfos(shapeSelector.currentText, colorSelector.currentText, sizeSlider.value, speedSlider.value);
 
                                 shapesDemoQosSelector.setType(shapeSelector.currentText, 4)
                                 shapesDemoQosSelector.open()
@@ -231,7 +231,7 @@ Window {
                         Button {
                             text: "Subscribe"
                             onClicked: {
-                                shapesDemoModel.subscibe(shapeSelectorSubscribe.currentText);
+                                shapesDemoModel.setSubscribeInfos(shapeSelectorSubscribe.currentText);
                                 shapesDemoQosSelector.setType(shapeSelectorSubscribe.currentText, 3)
                                 shapesDemoQosSelector.open()
                             }

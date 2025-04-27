@@ -47,6 +47,8 @@ class ShapesDemoModel(QAbstractListModel):
         self.domain_participant = None
         self.writerShapeThreads = {}
         self.dispatcher = None
+        self.publishInfos = None
+        self.subscribeInfos = None
 
     @Slot()
     def start(self):
@@ -73,14 +75,22 @@ class ShapesDemoModel(QAbstractListModel):
         return self.dataModelHandler.count()
 
     @Slot(str, str, int, int)
-    def publish(self, shapeType: str, color: str, size: int, speed: int):
+    def setPublishInfos(self, shapeType: str, color: str, size: int, speed: int):
+        self.publishInfos = (shapeType, color, size, speed)
+
+    def publish(self, qos):
         id = str(uuid.uuid4())
-        self.writerShapeThreads[id] = ShapeDynamicThread(self.domain_participant, shapeType, color.upper(), size, speed)
+        (shapeType, color, size, speed) = self.publishInfos
+        self.writerShapeThreads[id] = ShapeDynamicThread(self.domain_participant, qos, shapeType, color.upper(), size, speed)
         self.writerShapeThreads[id].start()
 
     @Slot(str)
-    def subscibe(self, shapeType: str):
-        self.dispatcher.addEndpoint(shapeType, ishape.ShapeType, Qos(), EntityType.READER)
+    def setSubscribeInfos(self, shapeType: str):
+        self.subscribeInfos = shapeType
+
+    def subscibe(self, qos):
+        shapeType = self.subscribeInfos
+        self.dispatcher.addEndpoint(shapeType, ishape.ShapeType, qos, EntityType.READER)
 
     @Slot(str, object, bool)
     def onData(self, id: str, topicName: str, data: object, disposed: bool):
@@ -147,13 +157,21 @@ class ShapesDemoModel(QAbstractListModel):
             durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance
         )
 
+        entityType = EntityType(entityTypeInteger)
+
+        if entityType == EntityType.WRITER:
+            self.publish(qos)
+        elif entityType == EntityType.READER:
+            self.subscibe(qos)
+
 
 class ShapeDynamicThread(QThread):
 
-    def __init__(self, domainParticipant, shapeType: str, color: str, size: int, speed: int, parent=None):
+    def __init__(self, domainParticipant, qos, shapeType: str, color: str, size: int, speed: int, parent=None):
         super().__init__()
         self.running = False
         self.domain_participant = domainParticipant
+        self.qos = qos
         self.shapeType = shapeType
         self.color = color
         self.size = size
