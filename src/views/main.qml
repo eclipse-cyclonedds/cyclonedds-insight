@@ -139,4 +139,8 @@ ApplicationWindow {
         close.accepted = true
     }
 
+    ShapesDemoView {
+        id: shapeDemoViewId
+        visible: true
+    }
 }
