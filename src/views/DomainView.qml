@@ -30,7 +30,7 @@ Rectangle {
 
         Label {
             text: qsTr("Domain View")
-            font.pixelSize: 24
+            font.pixelSize: 18
             font.bold: true
             horizontalAlignment: Text.AlignLeft
             Layout.alignment: Qt.AlignLeft
@@ -53,6 +53,10 @@ Rectangle {
 
         StatisticsModel {
             id: statisticModelDomainView
+            Component.onDestruction: {
+                console.log("DomainView with domainId " + domainViewId.domainId + " is being destroyed.")
+                statisticModelDomainView.stop()
+            }
         }
 
         StatisticsView {

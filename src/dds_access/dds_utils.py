@@ -102,3 +102,9 @@ def getDataType(domainId, endp):
             logging.error(str(e))
 
     return None
+
+def normalizeGuid(guid: str) -> str:
+    if ':' in guid:
+        parts = guid.split(':')
+        guid = f"{parts[0]:0>8}-{parts[1][:4]}-{parts[1][4:]}-{parts[2][:4]}-{parts[2][4:]:0<8}{parts[3]:0>4}"
+    return guid

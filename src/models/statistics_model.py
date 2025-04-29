@@ -42,9 +42,99 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtCore import QTimer
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 
+from dds_access import dds_utils
 from dds_access.dds_utils import getProperty, DEBUG_MONITORS, getAppName
 import random
 import colorsys
+import time
+from threading import Lock
+
+
+class PollingThread(QThread):
+
+    onData = Signal(object, object)
+
+    def __init__(self, domainParticipant, parent=None):
+        super().__init__()
+        self.running = False
+        self.mutex = Lock()
+        self.color_mapping = {}
+        self.pollIntervalSeconds = 3
+
+    def getRandomColor(self):
+        h = random.random()
+        s = random.uniform(0.5, 1.0)  # not too gray
+        v = random.uniform(0.7, 1.0)  # not too dark
+        r, g, b = colorsys.hsv_to_rgb(h, s, v)
+        return (int(r * 255), int(g * 255), int(b * 255))
+
+    def download_json(self, url):
+        try:
+            print("Downloading JSON from:", url)
+            response = requests.get(url, timeout=(5, 10))
+            print("Response code:", response.status_code)
+            response.raise_for_status()
+            parsed_json = response.json()
+            return parsed_json
+        except requests.exceptions.RequestException as e:
+            logging.error("HTTP Request failed: " + str(e))
+        except json.JSONDecodeError as e:
+            logging.error("Invalid JSON received: " + str(e))
+        return []
+
+    def setDbgPorts(self, dgbPorts):
+        with self.mutex:
+            self.dgbPorts = dgbPorts.copy()
+
+    def poll(self):
+        logging.trace("Debug monitor timer triggered")
+
+        aggregated_data = {}
+        for (ip, port, appName) in self.dgbPorts.values():
+            json_data = []
+            try:
+                json_data = self.download_json("http://" + ip + ":" + port + "/")
+            except Exception as e:
+                logging.error("Error: " + str(e))
+                continue
+
+            if "participants" in json_data:
+                for participant in json_data["participants"]:
+                    participant_guid = dds_utils.normalizeGuid(participant["guid"])
+                    if "writers" in participant:
+                        for writer in participant["writers"]:
+                            guid = dds_utils.normalizeGuid(writer["guid"])
+                            topic = writer["topic"]
+                            topc_guid = topic
+                            if "rexmit_bytes" in writer:
+
+                                if topc_guid not in self.color_mapping:
+                                    self.color_mapping[topc_guid] = self.getRandomColor()
+
+                                if topc_guid in aggregated_data:
+                                    aggregated_data[topc_guid] += writer["rexmit_bytes"]
+                                else:
+                                    aggregated_data[topc_guid] = writer["rexmit_bytes"]
+
+        self.onData.emit(aggregated_data.copy(), self.color_mapping.copy())
+
+    def run(self):
+        self.running = True
+
+        start_time = time.monotonic()
+        while self.running:
+            
+            if time.monotonic() - start_time >= self.pollIntervalSeconds:
+                with self.mutex:
+                    self.poll()
+                start_time = time.monotonic()  # reset the timer
+            else:
+                time.sleep(0.1) # fast exit
+
+        logging.trace("Statistics-Polling thread stopped")
+
+    def stop(self):
+        self.running = False
 
 class StatisticsModel(QAbstractTableModel):
     newData = Signal(str, int, int, int, int)
@@ -72,7 +162,9 @@ class StatisticsModel(QAbstractTableModel):
         super().__init__(parent)
         self.dgbPorts = {}
         self.data_list = []
-        self.color_mapping = {}
+
+        self.pollingThread = PollingThread(self)
+        self.pollingThread.onData.connect(self.onAggregatedData, Qt.ConnectionType.QueuedConnection)
 
         self.groupBy = ""
 
@@ -94,13 +186,12 @@ class StatisticsModel(QAbstractTableModel):
         self.groupBy = groupBy
         self.domainId = domainId
 
-        if self.timer:
-            if self.timer.isActive():
-                self.timer.stop()
+        if self.pollingThread.isRunning():
+            self.pollingThread.stop()
+            self.pollingThread.wait()
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.on_timeout)
-        self.timer.start(1000)
+        self.pollingThread.setDbgPorts(self.dgbPorts)
+        self.pollingThread.start()
 
         reqId = str(uuid.uuid4())
         self.request_ids.append(reqId)
@@ -111,14 +202,6 @@ class StatisticsModel(QAbstractTableModel):
 
     def columnCount(self, parent=QModelIndex()):
         return 2  # guid, rexmit_bytes, color_r, color_g, color_b
-
-
-    def getRandomColor(self):
-        h = random.random()
-        s = random.uniform(0.5, 1.0)  # not too gray
-        v = random.uniform(0.7, 1.0)  # not too dark
-        r, g, b = colorsys.hsv_to_rgb(h, s, v)
-        return (int(r * 255), int(g * 255), int(b * 255))
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
@@ -151,28 +234,21 @@ class StatisticsModel(QAbstractTableModel):
                 return headers[section]
         return None
 
-    def download_json(self, url):
-        try:
-            print("Downloading JSON from:", url)
-            response = requests.get(url, timeout=(5, 10))
-            print("Response code:", response.status_code)
-            response.raise_for_status()
-            parsed_json = response.json()
-            return parsed_json
-        except requests.exceptions.RequestException as e:
-            logging.error("HTTP Request failed: " + str(e))
-        except json.JSONDecodeError as e:
-            logging.error("Invalid JSON received: " + str(e))
-        return []
-
-    def normalize_guid(self, guid: str) -> str:
-        if ':' in guid:
-            parts = guid.split(':')
-            guid = f"{parts[0]:0>8}-{parts[1][:4]}-{parts[1][4:]}-{parts[2][:4]}-{parts[2][4:]:0<8}{parts[3]:0>4}"
-        return guid
+    @Slot(object, object)
+    def onAggregatedData(self, aggregated_data, color_mapping):
+        logging.debug("New data received: " + str(len(aggregated_data)))
+        self.beginResetModel()
+        self.data_list.clear()
+        for topc_guid in aggregated_data.keys():
+            value = aggregated_data[topc_guid]
+            (r, g, b) = color_mapping[topc_guid]
+            self.newData.emit(topc_guid, value, r, g, b)
+            self.data_list.append([topc_guid, value, r, g, b])
+        self.endResetModel()
 
     @Slot()
     def on_timeout(self):
+        return
         logging.trace("Debug monitor timer triggered")
 
         aggregated_data = {}
@@ -180,10 +256,10 @@ class StatisticsModel(QAbstractTableModel):
             json_data = self.download_json("http://" + ip + ":" + port + "/")
             if "participants" in json_data:
                 for participant in json_data["participants"]:
-                    participant_guid = self.normalize_guid(participant["guid"])
+                    participant_guid = dds_utils.normalizeGuid(participant["guid"])
                     if "writers" in participant:
                         for writer in participant["writers"]:
-                            guid = self.normalize_guid(writer["guid"])
+                            guid = dds_utils.normalizeGuid(writer["guid"])
                             topic = writer["topic"]
                             topc_guid = topic
                             if "rexmit_bytes" in writer:
@@ -227,6 +303,8 @@ class StatisticsModel(QAbstractTableModel):
                     print("IP:", ip, "Port:", port)
                     self.dgbPorts[str(participant.key)] = (ip, port, appName)
 
+        self.pollingThread.setDbgPorts(self.dgbPorts)
+
     @Slot(str, int, object)
     def response_participants_slot(self, request_id: str, domain_id: int, participants):
 
@@ -247,3 +325,10 @@ class StatisticsModel(QAbstractTableModel):
 
         if participant_key in self.dgbPorts:
             del self.dgbPorts[participant_key]
+
+    @Slot()
+    def stop(self):
+        logging.trace("Stop statistics model")
+        if self.pollingThread.isRunning():
+            self.pollingThread.stop()
+            self.pollingThread.wait()
