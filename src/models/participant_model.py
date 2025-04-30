@@ -208,7 +208,7 @@ class ParticipantTreeModel(QAbstractItemModel):
         logging.trace("Add Participant " + str(participant.key) + " to participant model")
 
         # Look for the domain_id node under rootItem
-        hostname = getProperty(participant, HOSTNAMES)
+        hostname = getHostname(participant)
         appName = getAppName(participant)
 
         if domain_id in self.rootItem.childMap:
@@ -369,7 +369,7 @@ class ParticipantTreeModel(QAbstractItemModel):
     @Slot(str, int, dds_data.DataEndpoint)
     def new_endpoint_slot(self, unkown: str, domain_id: int, participant: dds_data.DataEndpoint):
 
-        hostname = getProperty(participant.participant, HOSTNAMES)
+        hostname = getHostname(participant.participant)
         appName = getAppName(participant.participant)
 
         if domain_id in self.rootItem.childMap:
