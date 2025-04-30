@@ -20,6 +20,7 @@ import org.eclipse.cyclonedds.insight
 
 Popup {
     id: readerTesterDiaId
+    property var model: null
 
     anchors.centerIn: parent
     modal: true
@@ -39,12 +40,15 @@ Popup {
     property string topicName
     property var topicTypeNameList: []
     property string selectedTypeText: ""
+    property string buttonName: ""
 
     function setType(topicType, entityType) {
         topicTypeNameList = []
         topicName = topicType.replace(/::/g, "_");
         readerTesterDiaId.topicType = topicType
         readerTesterDiaId.entityType = entityType
+
+        setButtonNameDefault()
     }
 
     function setTypes(domain, name, typeList, entityType) {
@@ -53,6 +57,16 @@ Popup {
         readerTesterDiaId.topicTypeNameList = typeList
         readerTesterDiaId.entityType = entityType
         readerDomainIdSpinBox.value = domain
+
+        setButtonNameDefault()
+    }
+
+    function setButtonName(name) {
+        buttonName = name
+    }
+
+    function setButtonNameDefault() {
+        buttonName = readerTesterDiaId.entityType === 3 ? qsTr("Create Reader (Listener)") : qsTr("Create Writer (Tester)")
     }
 
     ListModel {
@@ -143,6 +157,12 @@ Popup {
                         id: reliabilitySpinBox
                         to: 1e9
                         value: 100
+                        enabled: !reliabilityCheckbox.checked
+                    }
+                    CheckBox {
+                        id: reliabilityCheckbox
+                        checked: false
+                        text: qsTr("infinite")
                     }
                 }
             }
@@ -750,20 +770,20 @@ Popup {
         anchors.margins: 10
 
         Button {
-            text: readerTesterDiaId.entityType === 3 ? qsTr("Create Reader (Listener)") : qsTr("Create Writer (Tester)")
+            text: buttonName
             onClicked: {
                 var partitions = [];
                 for (var i = 0; i < partitionModel.count; i++) {
                     partitions.push(partitionModel.get(i).partition);
                 }
-                datamodelRepoModel.addReader(
+                model.setQosSelection(
                     readerDomainIdSpinBox.value,
                     topicNameTextFieldId.text,
                     topicType,
                     ownershipComboId.currentText,
                     durabilityComboId.currentText,
                     reliabilityComboId.currentText,
-                    reliabilitySpinBox.value,
+                    reliabilityCheckbox.checked ? -1 : reliabilitySpinBox.value,
                     dataReprXcdr1Checkbox.checked,
                     dataReprXcdr2Checkbox.checked,
                     partitions,

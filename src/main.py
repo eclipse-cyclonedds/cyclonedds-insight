@@ -47,6 +47,7 @@ from models.overview_model import TreeModel, TreeNode
 from models.endpoint_model import EndpointModel
 from models.datamodel_model import DatamodelModel
 from models.tester_model import TesterModel
+from models.shapes_demo_model import ShapesDemoModel
 from utils.logger_config import LoggerConfig
 from models.participant_model import ParticipantTreeModel, ParticipantTreeNode
 import utils.build_info_helper as build_info_helper
@@ -107,6 +108,7 @@ if __name__ == "__main__":
     datamodelRepoModel.newWriterSignal.connect(testerModel.addWriter)
     participantRootItem = ParticipantTreeNode("Root")
     participantModel = ParticipantTreeModel(participantRootItem)
+    shapesDemoModel = ShapesDemoModel()
 
     qmlUtils = QmlUtils()
 
@@ -115,6 +117,7 @@ if __name__ == "__main__":
     engine.rootContext().setContextProperty("participantModel", participantModel)
     engine.rootContext().setContextProperty("datamodelRepoModel", datamodelRepoModel)
     engine.rootContext().setContextProperty("testerModel", testerModel)
+    engine.rootContext().setContextProperty("shapesDemoModel", shapesDemoModel)
     engine.rootContext().setContextProperty("qmlUtils", qmlUtils)
     engine.rootContext().setContextProperty("loggerConfig", loggerConfig)
     engine.rootContext().setContextProperty("CYCLONEDDS_URI", os.getenv("CYCLONEDDS_URI", "<not set>"))
@@ -151,6 +154,7 @@ if __name__ == "__main__":
     logging.info("qt ... DONE")
 
     logging.info("Clean up ...")
+    shapesDemoModel.stop()
     datamodelRepoModel.shutdownEndpoints()
     data.join_observer()
     worker_thread.quit()

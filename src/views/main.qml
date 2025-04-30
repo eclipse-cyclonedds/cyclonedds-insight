@@ -35,6 +35,10 @@ ApplicationWindow {
         Menu {
             title: "View"
             MenuItem {
+                text: "Show Shapes Demo"
+                onTriggered: shapeDemoViewId.visible = true
+            }
+            MenuItem {
                 text: "Show Log Window"
                 onTriggered: logViewId.visible = true
             }
@@ -106,8 +110,9 @@ ApplicationWindow {
         id: idlDropAreaId
     }
 
-    ReaderTester {
+    QosSelector {
         id: readerTesterDialogId
+        model: datamodelRepoModel
     }
 
     function getDarkMode() {
@@ -139,4 +144,8 @@ ApplicationWindow {
         close.accepted = true
     }
 
+    ShapesDemoView {
+        id: shapeDemoViewId
+        visible: false
+    }
 }

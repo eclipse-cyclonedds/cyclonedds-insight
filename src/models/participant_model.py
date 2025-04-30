@@ -19,7 +19,7 @@ from typing import List
 from cyclonedds.builtin import DcpsParticipant
 from loguru import logger as logging
 from dds_access import dds_data
-from dds_access.dds_utils import getProperty, getAppName, HOSTNAMES, PROCESS_NAMES, PIDS, ADDRESSES
+from dds_access.dds_utils import getProperty, getHostname, getAppName, PROCESS_NAMES, PIDS, ADDRESSES
 from enum import Enum
 
 
@@ -163,7 +163,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                 return item.data(index)
             elif item.layer == DisplayLayerEnum.HOSTNAME:
                 p = item.data(index)
-                return getProperty(p, HOSTNAMES)
+                return getHostname(p)
             elif item.layer == DisplayLayerEnum.APP:
                 p = item.data(index)
                 return getAppName(p)
@@ -223,7 +223,7 @@ class ParticipantTreeModel(QAbstractItemModel):
             else:
                 self.beginInsertRows(parent_index, row_count, row_count)
                 hostname_child = ParticipantTreeNode(participant, DisplayLayerEnum.HOSTNAME, domain_child)
-                domain_child.appendChild(getProperty(participant, HOSTNAMES), hostname_child)
+                domain_child.appendChild(getHostname(participant), hostname_child)
                 self.endInsertRows()
         
             # Add app
