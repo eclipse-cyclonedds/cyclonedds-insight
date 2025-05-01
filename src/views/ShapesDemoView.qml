@@ -23,9 +23,12 @@ Window {
     id: shapeDemoViewId
     title: "Shapes Demo"
     width: 800
+    minimumWidth: 400
     height: 450
+    minimumHeight: 400
     flags: Qt.Dialog
     property var shapesMap
+    property var triangleScale: 0.7
 
     Component.onCompleted: {
         shapesMap = {};
@@ -39,12 +42,22 @@ Window {
 
     Connections {
         target: shapesDemoModel
-        function onShapeUpdateSignale(id, shape, color, x, y, size, disposed) {
+        function onShapeUpdateSignale(id, shape, color, x, y, size, rotation, fillKind, disposed) {
+            var realSize = size;
+            if (shape === "Triangle") {
+                realSize = size * (2-shapeDemoViewId.triangleScale);
+            }
+
+            var realColor = color;
+            if (fillKind >= 1) {
+                realColor = "transparent";
+            }
+
             if (shapesMap[id] === undefined) {
                 if (disposed) {
                     console.log("Shape with ID", id, "was disposed");
                 } else {
-                    spawnShape(id, shape, x, y, size, pastelColor(color));
+                    spawnShape(id, shape, x, y, realSize, pastelColor(realColor), rotation, fillKind);
                 }
             } else {
                 if (disposed) { 
@@ -52,32 +65,56 @@ Window {
                     shapesMap[id].destroy();
                     delete shapesMap[id];
                 } else {
-                    moveShape(id, x, y, size);
+                    moveShape(id, x, y, realSize, rotation);
                 }
             }
         }
     }
 
-    function spawnShape(shapeId, shape, initX, initY, initSize, color) {
+    function spawnShape(shapeId, shape, initX, initY, initSize, color, rotation, fillKind) {
         var rect = null;
+        var isHatch = fillKind > 1;
+        var orientation = "";
+        if (fillKind === 2) {
+            orientation = "horizontal";
+        } else if (fillKind === 3) {
+            orientation = "vertical";
+        }
         if (shape === "Circle") {
-            rect = circleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color });
+            var circleComponent = Qt.createComponent("qrc:/src/views/shapes_demo/ShapesDemoCircle.qml");
+            if (circleComponent.status !== Component.Ready) {
+                console.error("Failed to load ShapesDemoCircle.qml:", circleComponent.errorString());
+                return;
+            }
+            rect = circleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch });
         } else if (shape === "Triangle") {
-            rect = triangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color });
+            var realSize = initSize * (2-shapeDemoViewId.triangleScale);
+            var triangleComponent = Qt.createComponent("qrc:/src/views/shapes_demo/ShapesDemoTriangle.qml");
+            if (triangleComponent.status !== Component.Ready) {
+                console.error("Failed to load ShapesDemoTriangle.qml:", circleComponent.errorString());
+                return;
+            }
+            rect = triangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: realSize, height: realSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch });
         } else {
-            rect = rectangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color });
+            var rectangleComponent = Qt.createComponent("qrc:/src/views/shapes_demo/ShapesDemoSquare.qml");
+            if (rectangleComponent.status !== Component.Ready) {
+                console.error("Failed to load ShapesDemoSquare.qml:", circleComponent.errorString());
+                return;
+            }
+            rect = rectangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch });
         }
         if (rect !== null) {
             shapesMap[shapeId] = rect;
         }
     }
 
-    function moveShape(id, newX, newY, newSize) {
+    function moveShape(id, newX, newY, newSize, rotation) {
         if (shapesMap && shapesMap[id] !== undefined) {
             shapesMap[id].x = newX;
             shapesMap[id].y = newY;
             shapesMap[id].height = newSize;
             shapesMap[id].width = newSize;
+            shapesMap[id].rotation = rotation;
         } else {
             console.log("Shape with ID", id, "not found!");
         }
@@ -117,7 +154,7 @@ Window {
                             }
                             ComboBox {
                                 id: shapeSelector
-                                Layout.preferredWidth: leftColumn.width - shapeLabel.width - 10
+                                Layout.preferredWidth: leftColumn.width - shapeLabel.width - 20
                                 model: ["Square", "Triangle", "Circle"]
                                 currentIndex: 0
                                 onCurrentIndexChanged: {
@@ -136,11 +173,8 @@ Window {
                             ComboBox {
                                 id: colorSelector
                                 Layout.fillWidth: true
-                                model: ["Red", "Blue", "Green", "Yellow", "Orange", "Cyan", "Magenta", "Purple", "Gray", "Black"]
+                                model: ["Red", "Blue", "Green", "Yellow", "Orange", "Cyan", "Magenta", "Purple", "Gray", "Black", "<<ALL>>"]
                                 currentIndex: 0
-                                onCurrentIndexChanged: {
-                                    console.log("Selected color:", currentText)
-                                }
                             }
                         }
 
@@ -186,11 +220,79 @@ Window {
                             }
                         }
 
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            enabled: rotationSpeedSlider.value === 0
+
+                            Label {
+                                text: qsTr("Angle:")
+                            }
+                            Slider {
+                                id: rotationSlider
+                                Layout.fillWidth: true
+                                from: 0
+                                to: 360
+                                value: 0
+                                stepSize: 1
+                            }
+                            Label {
+                                id: rotationSliderLabel
+                                text: rotationSlider.value + "\u00B0"
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            Label {
+                                text: qsTr("Rotation-Speed:")
+                            }
+                            Slider {
+                                id: rotationSpeedSlider
+                                Layout.fillWidth: true
+                                from: 0
+                                to: 20
+                                value: 0
+                                stepSize: 1
+                            }
+                            Label {
+                                id: rotationSpeedSliderLabel
+                                text: rotationSpeedSlider.value
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            Label {
+                                text: qsTr("Fill:")
+                            }
+                            ComboBox {
+                                id: fillKindSelector
+                                Layout.fillWidth: true
+                                model: ["SOLID_FILL", "TRANSPARENT_FILL", "HORIZONTAL_HATCH_FILL", "VERTICAL_HATCH_FILL"]
+                                currentIndex: 0
+                                onCurrentIndexChanged: {
+                                    console.log("Selected fill:", currentText)
+                                }
+                            }
+                        }
+
                         Button {
                             text: "Publish"
                             onClicked: {
                                 console.log("Publish shape:", shapeSelector.currentText, "Color:", colorSelector.currentText, "Size:", sizeSlider.value, "Speed:", speedSlider.value);
-                                shapesDemoModel.setPublishInfos(shapeSelector.currentText, colorSelector.currentText, sizeSlider.value, speedSlider.value);
+                                shapesDemoModel.setPublishInfos(
+                                    shapeSelector.currentText,
+                                    colorSelector.currentText,
+                                    sizeSlider.value,
+                                    speedSlider.value,
+                                    rotationSlider.value,
+                                    rotationSpeedSlider.value,
+                                    fillKindSelector.currentIndex);
 
                                 shapesDemoQosSelector.setType(shapeSelector.currentText, 4)
                                 shapesDemoQosSelector.setButtonName("Publish Shape")
@@ -228,6 +330,7 @@ Window {
                                 }
                             }
                         }
+
                         Button {
                             text: "Subscribe"
                             onClicked: {
@@ -250,67 +353,7 @@ Window {
                     id: shapesPlane
                     color: rootWindow.isDarkMode ? "black" : "white"
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    Component {
-                        id: rectangleComponent
-                        Rectangle {
-                            width: 50
-                            height: 50
-                            color: "blue"
-                            border.color: rootWindow.isDarkMode ? "darkgray" : "black"
-                            border.width: 1
-                        }
-                    }
-                    Component {
-                        id: circleComponent
-                        Rectangle {
-                            width: 50
-                            height: 50
-                            color: "blue"
-                            radius: width / 2
-                            clip: true
-                            border.color: rootWindow.isDarkMode ? "darkgray" : "black"
-                            border.width: 1
-                        }
-                    }
-                    Component {
-                        id: triangleComponent
-
-                        Item {
-                            id: triangleItem
-                            property color color: "blue"
-                            property real borderWidth: 1
-                            property color borderColor: rootWindow.isDarkMode ? "darkgray" : "black"
-
-                            Canvas {
-                                anchors.fill: parent
-                                onPaint: {
-                                    var ctx = getContext("2d")
-                                    ctx.clearRect(0, 0, width, height)
-
-                                    ctx.beginPath()
-                                    ctx.moveTo(width / 2, 0)       // Top center
-                                    ctx.lineTo(0, height)           // Bottom left
-                                    ctx.lineTo(width, height)       // Bottom right
-                                    ctx.closePath()
-
-                                    ctx.fillStyle = triangleItem.color
-                                    ctx.fill()
-                        
-                                    if (triangleItem.borderWidth > 0) {
-                                        ctx.lineWidth = triangleItem.borderWidth
-                                        ctx.strokeStyle = triangleItem.borderColor
-                                        ctx.stroke()
-                                    }
-                                }
-
-                                onWidthChanged: requestPaint()
-                                onHeightChanged: requestPaint()
-                                onVisibleChanged: if (visible) requestPaint()
-                            }
-                        }
-                    }
+                    Layout.fillHeight: true                    
                 }
             }
         }
@@ -374,6 +417,8 @@ Window {
             return "#333333";
         case "purple":
             return "#9966CC";
+        case "transparent":
+            return "transparent";
         default:
             return "#333333"; // fallback to black
         }

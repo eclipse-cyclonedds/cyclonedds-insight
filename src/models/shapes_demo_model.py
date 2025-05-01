@@ -39,7 +39,7 @@ class ShapesDemoModel(QAbstractListModel):
 
     NameRole = Qt.UserRole + 1
 
-    shapeUpdateSignale = Signal(str, str, str, int, int, int, bool)
+    shapeUpdateSignale = Signal(str, str, str, int, int, int, float, int, bool)
 
     def __init__(self, parent=typing.Optional[QObject]) -> None:
         super().__init__()
@@ -74,30 +74,41 @@ class ShapesDemoModel(QAbstractListModel):
     def rowCount(self, index: QModelIndex = QModelIndex()) -> int:
         return self.dataModelHandler.count()
 
-    @Slot(str, str, int, int)
-    def setPublishInfos(self, shapeType: str, color: str, size: int, speed: int):
-        self.publishInfos = (shapeType, color, size, speed)
+    @Slot(str, str, int, int, float, int, int)
+    def setPublishInfos(self, shapeType: str, color: str, size: int, speed: int, rotation: float, rotationSpeed: int, fillKind: int):
+        self.publishInfos = (shapeType, color, size, speed, rotation, rotationSpeed, fillKind)
 
     def publish(self, qos):
-        id = str(uuid.uuid4())
-        (shapeType, color, size, speed) = self.publishInfos
-        self.writerShapeThreads[id] = ShapeDynamicThread(self.domain_participant, qos, shapeType, color.upper(), size, speed)
-        self.writerShapeThreads[id].start()
+        (shapeType, colorRaw, size, speed, rotation, rotationSpeed, fillKind) = self.publishInfos
+        if colorRaw == "<<ALL>>":
+            colors = ["Red", "Blue", "Green", "Yellow", "Orange", "Cyan", "Magenta", "Purple", "Gray", "Black"]
+        else:
+            colors = [colorRaw]
+
+        for color in colors:
+            id = str(uuid.uuid4())
+            self.writerShapeThreads[id] = ShapeDynamicThread(
+                self.domain_participant, qos, shapeType, color.upper(), size, speed, rotation, rotationSpeed, fillKind)
+            self.writerShapeThreads[id].start()
 
     @Slot(str)
     def setSubscribeInfos(self, shapeType: str):
-        self.subscribeInfos = shapeType
+        self.subscribeInfos = (shapeType)
 
     def subscibe(self, qos):
-        shapeType = self.subscribeInfos
-        self.dispatcher.addEndpoint(shapeType, ishape.ShapeType, qos)
+        (shapeType) = self.subscribeInfos
+        self.dispatcher.addEndpoint(shapeType, ishape.ShapeTypeExtended, qos)
 
     @Slot(str, object, bool)
-    def onData(self, id: str, topicName: str, data: object, disposed: bool):
+    def onData(self, id: str, topicName: str, data: ishape.ShapeTypeExtended, disposed: bool):
+
         if disposed:
-            self.shapeUpdateSignale.emit(id, "", "", -1, -1, -1, disposed)
+            self.shapeUpdateSignale.emit(id, "", "", -1, -1, -1, 0.0, 0, disposed)
         else:
-            self.shapeUpdateSignale.emit(id, topicName, data.color, data.x, data.y, data.shapesize, disposed)
+            if isinstance(data.fillKind, ishape.ShapeFillKind):
+                data.fillKind = data.fillKind.value
+
+            self.shapeUpdateSignale.emit(id, topicName, data.color, data.x, data.y, data.shapesize, data.angle, data.fillKind, disposed)
 
     def stop(self):
         if self.dispatcher:
@@ -167,7 +178,7 @@ class ShapesDemoModel(QAbstractListModel):
 
 class ShapeDynamicThread(QThread):
 
-    def __init__(self, domainParticipant, qos, shapeType: str, color: str, size: int, speed: int, parent=None):
+    def __init__(self, domainParticipant, qos, shapeType: str, color: str, size: int, speed: int, rotation: float, rotationSpeed, fillKind, parent=None):
         super().__init__()
         self.running = False
         self.domain_participant = domainParticipant
@@ -176,18 +187,25 @@ class ShapeDynamicThread(QThread):
         self.color = color
         self.size = size
         self.speed = speed
+        self.rotation = rotation
+        self.rotationSpeed = rotationSpeed
+        self.fillKind = ishape.ShapeFillKind(fillKind)
+        self.dataType = ishape.ShapeTypeExtended
 
     def run(self):
         self.running = True
         try:
-            topic = Topic(self.domain_participant, self.shapeType, ishape.ShapeType, self.qos)
+            topic = Topic(self.domain_participant, self.shapeType, self.dataType, self.qos)
             publisher = Publisher(self.domain_participant, self.qos)
             writer = DataWriter(publisher, topic, self.qos)
-            shape = ishape.ShapeType(self.color, 0, 0, self.size)
+            shape = ishape.ShapeTypeExtended(self.color, 0, 0, self.size, self.fillKind, self.rotation)
             widthBound = 266
             heightBound = 234
-            angle = random.uniform(0.0, 1.0)
-            alpha = random.uniform(0.0, 1.0)
+            angle = random.uniform(0.1, 1.0)
+            alpha = random.uniform(0.1, 1.0)
+
+            if self.rotationSpeed > 0 and shape.angle == 0:
+                shape.angle = 1
 
             while self.running:
                 shape.x = round(shape.x + self.speed * math.cos(angle))
@@ -206,6 +224,9 @@ class ShapeDynamicThread(QThread):
                 elif shape.y >= heightBound:
                     angle = -alpha if self.flip() else math.pi + alpha
                     shape.y = heightBound
+
+                if self.rotationSpeed > 0:
+                    shape.angle = (shape.angle + self.rotationSpeed) % 360
 
                 writer.write(shape)
                 time.sleep(0.04)
