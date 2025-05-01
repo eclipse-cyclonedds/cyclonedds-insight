@@ -27,7 +27,7 @@ Window {
     minimumWidth: 400
     height: 450
     minimumHeight: 400
-    flags: Qt.Dialog
+    flags: Qt.Window
     property var shapesMap
     property var triangleScale: 0.7
 
@@ -156,7 +156,7 @@ Window {
                             ComboBox {
                                 id: shapeSelector
                                 Layout.preferredWidth: leftColumn.width - shapeLabel.width - 20
-                                model: ["Square", "Triangle", "Circle"]
+                                model: ["Square", "Triangle", "Circle", "<<ALL>>"]
                                 currentIndex: 0
                                 onCurrentIndexChanged: {
                                     console.log("Selected shape:", currentText)
@@ -324,7 +324,7 @@ Window {
                             ComboBox {
                                 id: shapeSelectorSubscribe
                                 Layout.preferredWidth: leftColumn.width - shapeLabelSubscribe.width - 10
-                                model: ["Square", "Triangle", "Circle"]
+                                model: ["Square", "Triangle", "Circle", "<<ALL>>"]
                                 currentIndex: 0
                                 onCurrentIndexChanged: {
                                     console.log("Selected shape:", currentText)

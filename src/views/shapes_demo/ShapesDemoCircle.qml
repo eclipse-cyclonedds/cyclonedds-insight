@@ -24,7 +24,6 @@ Item {
     property real rotation: 0
     property color color: "lightgray"
     property string orientation: ""
-    property color hatchColor: "black"
     property bool isHatch: false
     property int hatchSpacing: 7
     property int lineWidth: 2
@@ -61,7 +60,7 @@ Item {
 
             // Draw vertical hatches inside clipped circle
             if (root.isHatch && root.orientation === "vertical") {
-                ctx.strokeStyle = root.hatchColor
+                ctx.strokeStyle = root.borderColor
                 ctx.lineWidth = root.lineWidth
                 for (let x = 0; x <= width; x += root.hatchSpacing) {
                     ctx.beginPath()
@@ -71,7 +70,7 @@ Item {
                 }
             }
             if (root.isHatch && root.orientation === "horizontal") {
-                ctx.strokeStyle = root.hatchColor
+                ctx.strokeStyle = root.borderColor
                 ctx.lineWidth = root.lineWidth
                 for (let y = 0; y <= height; y += root.hatchSpacing) {
                     ctx.beginPath()
