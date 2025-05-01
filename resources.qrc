@@ -42,7 +42,7 @@
         <file>src/views/ParticipantsOverview.qml</file>
         <file>src/views/SideView.qml</file>
         <file>src/views/LogWindow.qml</file>
-        <file>src/views/ShapesDemoView.qml</file>
+        <file>src/views/shapes_demo/ShapesDemoView.qml</file>
         <file>src/views/shapes_demo/ShapesDemoCircle.qml</file>
         <file>src/views/shapes_demo/ShapesDemoSquare.qml</file>
         <file>src/views/shapes_demo/ShapesDemoTriangle.qml</file>

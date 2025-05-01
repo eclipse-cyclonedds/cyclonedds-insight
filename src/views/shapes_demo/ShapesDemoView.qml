@@ -17,6 +17,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views"
 
 
 Window {
