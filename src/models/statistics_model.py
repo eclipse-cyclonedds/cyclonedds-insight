@@ -136,6 +136,9 @@ class PollingThread(QThread):
     def stop(self):
         self.running = False
 
+    def stillRunning(self):
+        return self.running
+
 class StatisticsModel(QAbstractTableModel):
     newData = Signal(str, int, int, int, int)
 
@@ -325,10 +328,13 @@ class StatisticsModel(QAbstractTableModel):
 
         if participant_key in self.dgbPorts:
             del self.dgbPorts[participant_key]
+        
+        self.pollingThread.setDbgPorts(self.dgbPorts)
 
     @Slot()
     def stop(self):
         logging.trace("Stop statistics model")
-        if self.pollingThread.isRunning():
-            self.pollingThread.stop()
-            self.pollingThread.wait()
+        if self.pollingThread:
+            if self.pollingThread.stillRunning():
+                self.pollingThread.stop()
+                self.pollingThread.wait()

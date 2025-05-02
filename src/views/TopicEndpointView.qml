@@ -37,6 +37,14 @@ Rectangle {
         id: endpointReaderModel
     }
 
+    StatisticsModel {
+        id: statisticModelDomainView
+        Component.onDestruction: {
+            console.log("DomainView with domainId " + processViewId.domainId + " is being destroyed.")
+            statisticModelDomainView.stop()
+        }
+    }
+
     Connections {
         target: endpointWriterModel
         function onTopicHasQosMismatchSignal(mismatch) {
@@ -68,6 +76,8 @@ Rectangle {
     ColumnLayout  {
         anchors.fill: parent
 
+
+
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 10
@@ -81,6 +91,11 @@ Rectangle {
 
                 Column {
                     id: headlineLabel
+                    Label {
+                        text: qsTr("Topic View")
+                        font.pixelSize: 18
+                        font.bold: true
+                    }
                     Label {
                         text: "Domain Id: " + domainId
                     }
@@ -142,9 +157,14 @@ Rectangle {
                 }*/
 
                 Button {
-                    text: "Statistics"
+                    text: statisticsView.visible ? qsTr("Hide Statistics") : qsTr("Show Statistics")
                     onClicked: {
-                        statisticsShown = !statisticsShown
+                        statisticsView.visible = !statisticsView.visible
+                        if (statisticsView.visible) {
+                            statisticsView.startStatistics()
+                        } else {
+                            statisticsView.stopStatistics()
+                        }
                     }
                 }
 
@@ -158,8 +178,17 @@ Rectangle {
                 }
             }
 
+            StatisticsView {
+                id: statisticsView
+                statisticModel: statisticModelDomainView
+                domainId: processViewId.domainId
+                visible: false
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+
             RowLayout {
-                visible: !statisticsShown
+                visible: !statisticsView.visible
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 

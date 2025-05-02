@@ -77,6 +77,12 @@ class ParticipantTreeNode:
     def isDomain(self):
         return self.layer == DisplayLayerEnum.DOMAIN
 
+    def isHost(self):
+        return self.layer == DisplayLayerEnum.HOSTNAME
+
+    def isProcess(self):
+        return self.layer == DisplayLayerEnum.APP
+
     def isParticipant(self):
         return self.layer == DisplayLayerEnum.PARTICIPANT
 
@@ -98,6 +104,8 @@ class ParticipantTreeModel(QAbstractItemModel):
     IsTopicRole = Qt.UserRole + 4
     IsReaderRole = Qt.UserRole + 5
     IsWriterRole = Qt.UserRole + 6
+    IsHostRole = Qt.UserRole + 7
+    IsProcessRole = Qt.UserRole + 8
 
     remove_domain_request_signal = Signal(int)
     request_endpoints_by_participant_key_signal = Signal(str, int, str)
@@ -156,6 +164,7 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
+            logging.warning("calling data with invalid index")
             return None
         item = index.internalPointer()
         if role == self.DisplayRole:
@@ -177,10 +186,14 @@ class ParticipantTreeModel(QAbstractItemModel):
                 return ""
         if role == self.IsDomainRole:
             return item.isDomain()
-        elif role == self.IsTopicRole:
-            return item.isTopic()
+        elif role == self.IsHostRole:
+            return item.isHost()
+        elif role == self.IsProcessRole:
+            return item.isProcess()
         elif role == self.IsParticipantRole:
             return item.isParticipant()
+        elif role == self.IsTopicRole:
+            return item.isTopic()
         elif role == self.IsReaderRole:
             return item.isReader()
         elif role == self.IsWriterRole:
@@ -195,7 +208,9 @@ class ParticipantTreeModel(QAbstractItemModel):
             self.IsTopicRole: b'is_topic',
             self.IsParticipantRole: b'is_participant',
             self.IsReaderRole: b'is_reader',
-            self.IsWriterRole: b'is_writer'
+            self.IsWriterRole: b'is_writer',
+            self.IsHostRole: b'is_host',
+            self.IsProcessRole: b'is_process'
         }
 
     def flags(self, index):
@@ -342,22 +357,59 @@ class ParticipantTreeModel(QAbstractItemModel):
         return isDomain
 
     @Slot(QModelIndex, result=bool)
+    def getIsHost(self, index: QModelIndex):
+        return self.data(index, role=self.IsHostRole)
+
+    @Slot(QModelIndex, result=bool)
+    def getIsProcess(self, index: QModelIndex):
+        return self.data(index, role=self.IsProcessRole)
+
+    @Slot(QModelIndex, result=bool)
+    def getIsParticipant(self, index: QModelIndex):
+        return self.data(index, role=self.IsParticipantRole)
+
+    @Slot(QModelIndex, result=bool)
     def getIsTopic(self, index: QModelIndex):
-        isTopic = self.data(index, role=self.IsTopicRole)
-        return isTopic
+        return self.data(index, role=self.IsTopicRole)
+
+    @Slot(QModelIndex, result=bool)
+    def getIsEndpoint(self, index: QModelIndex):
+        return self.data(index, role=self.IsWriterRole) or self.data(index, role=self.IsReaderRole) 
 
     @Slot(QModelIndex, result=int)
     def getDomain(self, index: QModelIndex):
-        isDomain = self.data(index, role=self.IsDomainRole)
-        isTopic = self.data(index, role=self.IsTopicRole)
-        if isTopic:
+        if self.getIsRowDomain(index):
+            return int(self.data(index, role=self.DisplayRole))
+        elif self.getIsHost(index):
+            parentIndex = self.parent(index)
+            dom = self.data(parentIndex, role=self.DisplayRole)
+            if dom:
+                return int(dom)
+            return None
+        elif self.getIsProcess(index):
+            parentIndex = self.parent(self.parent(index))
+            dom = self.data(parentIndex, role=self.DisplayRole)
+            if dom:
+                return int(dom)
+            return None
+        elif self.getIsParticipant(index):
+            parentIndex = self.parent(self.parent(self.parent(index)))
+            dom = self.data(parentIndex, role=self.DisplayRole)
+            if dom:
+                return int(dom)
+            return None
+        elif self.getIsTopic(index):
             parentIndex = self.parent(self.parent(self.parent(self.parent(index))))
             dom = self.data(parentIndex, role=self.DisplayRole)
             if dom:
                 return int(dom)
             return None
-        elif isDomain:
-            return int(self.data(index, role=self.DisplayRole))
+        elif self.getIsEndpoint(index):
+            parentIndex = self.parent(self.parent(self.parent(self.parent(self.parent(index)))))
+            dom = self.data(parentIndex, role=self.DisplayRole)
+            if dom:
+                return int(dom)
+            return None
 
         return None
 

@@ -140,6 +140,7 @@ ApplicationWindow {
 
     onClosing: (close) => {
         console.log("QML: Received close request")
+        overviewId.aboutToClose()
         treeModel.aboutToClose()
         close.accepted = true
     }

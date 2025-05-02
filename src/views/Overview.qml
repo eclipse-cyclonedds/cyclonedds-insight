@@ -69,10 +69,6 @@ SplitView {
                     width: implicitWidth + 20
                 }
                 TabButton {
-                    text: qsTr("Statistics")
-                    width: implicitWidth + 20
-                }
-                TabButton {
                     text: qsTr("Tester")
                     width: implicitWidth + 20
                 }
@@ -100,18 +96,6 @@ SplitView {
                     }
                 }
                 Item {
-                    id: statisticsTab
-
-                    /*StatisticsModel {
-                        id: statOverView
-                    }
-
-                    StatisticsView {
-                        statisticModel: statOverView
-                        anchors.fill: parent
-                    }*/
-                }
-                Item {
                     id: testerTab
 
                     TesterView {}
@@ -125,38 +109,64 @@ SplitView {
         }
     }
 
-    function showTopicEndpointView(domainId, topicName) {
+    function showView(name, data) {
         stackView.clear()
         if (childView) {
             childView.destroy()
         }
-        var childComponent = Qt.createComponent("qrc:/src/views/TopicEndpointView.qml")
+        console.log("Create component " + name)
+        var childComponent = Qt.createComponent("qrc:/src/views/" + name)
         if (childComponent.status === Component.Ready) {
-            childView = childComponent.createObject(
-                        stackView, {
-                            domainId: domainId,
-                            topicName: topicName
-                        });
+            childView = childComponent.createObject(stackView, data);
             stackView.replace(childView);
         } else {
-            console.log("Failed to create component TopicEndpointView")
+            console.log("Failed to create component " + name)
         }
     }
 
     function showDomainView(domainId) {
-        stackView.clear()
+        showView("DomainView.qml", {
+                            domainId: domainId
+                        })
+    }
+
+    function showHostView(domainId) {
+        showView("HostView.qml", {
+                            domainId: domainId
+                        })
+    }
+
+    function showProcessView(domainId) {
+        showView("ProcessView.qml", {
+                            domainId: domainId
+                        })
+    }
+
+    function showParticipantView(domainId) {
+        showView("ParticipantView.qml", {
+                            domainId: domainId
+                        })
+    }
+
+    function showTopicEndpointView(domainId, topicName) {
+        showView("TopicEndpointView.qml", {
+                            domainId: domainId,
+                            topicName: topicName
+                        })
+    }
+
+    function showEndpointView(domainId) {
+        showView("EndpointView.qml", {
+                            domainId: domainId
+                        })
+    }
+
+    function aboutToClose() {
         if (childView) {
             childView.destroy()
         }
-        var childComponent = Qt.createComponent("qrc:/src/views/DomainView.qml")
-        if (childComponent.status === Component.Ready) {
-            childView = childComponent.createObject(
-                        stackView, {
-                            domainId: domainId
-                        });
-            stackView.replace(childView);
-        } else {
-            console.log("Failed to create component DomainView")
+        if (stackView) {
+            stackView.clear()
         }
     }
 }

@@ -20,18 +20,27 @@ import org.eclipse.cyclonedds.insight
 
 TreeView {
     id: treeView
-
     clip: true
     ScrollBar.vertical: ScrollBar {}
     selectionModel: ItemSelectionModel {
         id: treeSelectionParticipant
         onCurrentIndexChanged: {
             console.log("Selection changed to:", currentIndex);
-            if (participantModel.getIsTopic(currentIndex)) {
-                showTopicEndpointView(participantModel.getDomain(currentIndex), participantModel.getName(currentIndex))
-            } else if (participantModel.getIsRowDomain(currentIndex)) {
-                showDomainView(participantModel.getDomain(currentIndex))
+            var domainId = participantModel.getDomain(currentIndex);
+            if (participantModel.getIsRowDomain(currentIndex)) {
+                showDomainView(domainId)
+            } else if (participantModel.getIsHost(currentIndex)) {
+                showHostView(domainId)
+            } else if (participantModel.getIsProcess(currentIndex)) {
+                showProcessView(domainId)
+            } else if (participantModel.getIsParticipant(currentIndex)) {
+                showParticipantView(domainId)
+            } else if (participantModel.getIsTopic(currentIndex)) {
+                showTopicEndpointView(domainId, participantModel.getName(currentIndex))
+            } else if (participantModel.getIsEndpoint(currentIndex)) {
+                showEndpointView(domainId)
             } else {
+                console.log("Nothing found, clear view.")
                 stackView.clear()
             }
         }

@@ -45,11 +45,13 @@ Rectangle {
     function stopStatistics() {
         if (statisticModel) {
             console.log("Stopping statistics");
-            // statisticModel.stopStatistics();
+            statisticModel.stop();
         } else {
             console.error("Statistic model is not initialized.");
         }
     }
+
+
 
     Connections {
         target: statisticModel
