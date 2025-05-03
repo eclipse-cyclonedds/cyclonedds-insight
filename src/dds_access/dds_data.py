@@ -423,12 +423,10 @@ class DdsData(QObject):
 
         self.response_endpoints_by_participant_key_signal.emit(requestId, domainId, endpoints)
 
-
-    @Slot(str, int)
-    def requestParticipants(self, requestId: str, domainId: int):
-        logging.debug(f"requestParticipants {requestId}, {domainId}")
-        participants = []
-        if domainId in self.the_domains:
-            participants = self.the_domains[domainId].participants.values()
-        logging.debug(f"found len: {len(participants)} participants")
-        self.response_participants_signal.emit(requestId, domainId, participants)
+    @Slot(str)
+    def requestParticipants(self, requestId: str):
+        logging.debug(f"requestParticipants {requestId}")
+        for domainId in self.the_domains:
+            participants = (self.the_domains[domainId].participants.values())
+            logging.debug(f"found len: {len(participants)} participants")
+            self.response_participants_signal.emit(requestId, domainId, participants)

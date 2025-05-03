@@ -17,6 +17,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views/statistics"
 
 
 SplitView {
@@ -65,7 +66,11 @@ SplitView {
                 width: parent.width
 
                 TabButton {
-                    text: qsTr("Details")
+                    text: qsTr("Selection")
+                    width: implicitWidth + 20
+                }
+                TabButton {
+                    text: qsTr("Statistics")
                     width: implicitWidth + 20
                 }
                 TabButton {
@@ -93,6 +98,13 @@ SplitView {
                     StackView {
                         id: stackView
                         anchors.fill: parent
+                    }
+                }
+                Item {
+                    id: statisticsTab
+
+                    StatisticsWindow {
+                        id: statisticsWindow
                     }
                 }
                 Item {
@@ -162,6 +174,7 @@ SplitView {
     }
 
     function aboutToClose() {
+        statisticsWindow.aboutToClose()
         if (childView) {
             childView.destroy()
         }

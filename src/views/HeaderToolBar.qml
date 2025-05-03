@@ -57,10 +57,6 @@ ToolBar {
                     onClicked: layout.currentIndex = 1
                 }
                 MenuItem {
-                    text: "Statistics"
-                    onClicked: statisticsWindow.visible = true
-                }
-                MenuItem {
                     text: "Shapes Demo"
                     onClicked: shapeDemoViewId.visible = true
                 }

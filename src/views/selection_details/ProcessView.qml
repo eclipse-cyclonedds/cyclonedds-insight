@@ -39,35 +39,6 @@ Rectangle {
         Label {
             text: qsTr("Domain ID: ") + processViewId.domainId
         }
-    
-        Button {
-            text: statisticsView.visible ? qsTr("Hide Statistics") : qsTr("Show Statistics")
-            onClicked: {
-                statisticsView.visible = !statisticsView.visible
-                if (statisticsView.visible) {
-                    statisticsView.startStatistics()
-                } else {
-                    statisticsView.stopStatistics()
-                }
-            }
-        }
-
-        StatisticsModel {
-            id: statisticModelDomainView
-            Component.onDestruction: {
-                console.log("DomainView with domainId " + processViewId.domainId + " is being destroyed.")
-                statisticModelDomainView.stop()
-            }
-        }
-
-        StatisticsView {
-            id: statisticsView
-            statisticModel: statisticModelDomainView
-            domainId: processViewId.domainId
-            visible: false
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-        }
 
         Item {
             visible: !statisticsView.visible

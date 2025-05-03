@@ -20,12 +20,10 @@ import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
 
 
-Window {
-    id: shapeDemoViewId
-    title: "CycloneDDS Statistics"
-    width: 1200
-    height: 800
-    flags: Qt.Dialog
+Rectangle {
+    id: statisticsMainViewId
+    anchors.fill: parent
+    color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
     property bool statsRunning: false
 
     ColumnLayout {
@@ -89,7 +87,10 @@ Window {
                         Layout.preferredWidth: 150
                         model: ["Domain", "Host", "Process", "Participant", "Topic", "Writer"]
                         currentIndex: 0
-                        onCurrentTextChanged: statisticModelId.setAggregation(currentText)
+                        onCurrentTextChanged: {
+                            statisticsView.clearStatistics()
+                            statisticModelId.setAggregation(currentText)
+                        }
                     }
                 }
 
@@ -114,6 +115,14 @@ Window {
                     Label {
                         text: statsRunning ? qsTr("Running") : qsTr("Stopped")
                     }
+                    Rectangle {
+                        width: 10
+                        height: 10
+                        radius: width / 2
+                        clip: true
+                        color: statsRunning ? "green" : "red"
+                        Layout.leftMargin: 5
+                    }
                 }
             }
         }
@@ -135,7 +144,7 @@ Window {
         }
     }
 
-    onClosing: function(closeEvent) {
+    function aboutToClose() {
         console.log("StatisticsWindow is closing")
         statisticsView.stopStatistics()
         statsRunning = false

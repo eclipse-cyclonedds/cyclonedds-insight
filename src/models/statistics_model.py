@@ -153,16 +153,19 @@ class PollingThread(QThread):
         return self.running
     
     def setInterval(self, seconds):
+        logging.trace(f"Set update interval to: {seconds} seconds")
         self.pollIntervalSeconds = seconds
 
     def setAggregation(self, aggre: str):
         with self.mutex:
+            logging.trace(f"Set aggregateBy to: {aggre}")
             self.aggregateBy = aggre
+            self.color_mapping.clear()
 
 class StatisticsModel(QAbstractTableModel):
     newData = Signal(str, int, int, int, int)
 
-    requestParticipants = Signal(str, int)
+    requestParticipants = Signal(str)
 
     RoleGUID = Qt.UserRole + 1
     RoleRexmitBytes = Qt.UserRole + 2
@@ -189,25 +192,18 @@ class StatisticsModel(QAbstractTableModel):
         self.pollingThread = PollingThread(self)
         self.pollingThread.onData.connect(self.onAggregatedData, Qt.ConnectionType.QueuedConnection)
 
-        self.groupBy = ""
-
         self.dds_data = dds_data.DdsData()
         self.requestParticipants.connect(self.dds_data.requestParticipants, Qt.ConnectionType.QueuedConnection)
         self.dds_data.new_participant_signal.connect(self.new_participant_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.response_participants_signal.connect(self.response_participants_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_participant_signal.connect(self.removed_participant_slot, Qt.ConnectionType.QueuedConnection)
 
-        self.timer = None
-        self.domainId = None
         self.request_ids = []
 
-    @Slot(int, str)
-    def startStatistics(self, domainId: int, groupBy: str):
+    @Slot()
+    def startStatistics(self):
 
-        logging.info("Start statistics model" + str(domainId) + " " + groupBy)
-
-        self.groupBy = groupBy
-        self.domainId = domainId
+        logging.info("Start statistics model")
 
         if self.pollingThread.isRunning():
             self.pollingThread.stop()
@@ -218,7 +214,7 @@ class StatisticsModel(QAbstractTableModel):
 
         reqId = str(uuid.uuid4())
         self.request_ids.append(reqId)
-        self.requestParticipants.emit(reqId, self.domainId)
+        self.requestParticipants.emit(reqId)
 
     def rowCount(self, parent=QModelIndex()):
         return len(self.data_list)
@@ -272,9 +268,6 @@ class StatisticsModel(QAbstractTableModel):
     @Slot(int, DcpsParticipant)
     def new_participant_slot(self, domain_id: int, participant: DcpsParticipant):
 
-        if self.domainId != domain_id:
-            return
-
         dbg_mon_str: str = getProperty(participant, DEBUG_MONITORS)
         appName = getAppName(participant)
         host = getHostname(participant)
@@ -293,11 +286,8 @@ class StatisticsModel(QAbstractTableModel):
 
     @Slot(str, int, object)
     def response_participants_slot(self, request_id: str, domain_id: int, participants):
-
-        if self.domainId != domain_id or request_id not in self.request_ids:
+        if request_id not in self.request_ids:
             return
-
-        logging.debug(f"Statistics response aprticipants: req-id: {request_id}, Domain: {domain_id}, Participants: {len(participants)}")
 
         for participant in participants:
             self.new_participant_slot(domain_id, participant)
@@ -306,12 +296,8 @@ class StatisticsModel(QAbstractTableModel):
 
     @Slot(int, str)
     def removed_participant_slot(self, domain_id: int, participant_key: str):
-        if self.domainId != domain_id:
-            return
-
         if participant_key in self.dgbPorts:
             del self.dgbPorts[participant_key]
-        
         self.pollingThread.setDbgPorts(self.dgbPorts)
 
     @Slot()
@@ -324,7 +310,6 @@ class StatisticsModel(QAbstractTableModel):
 
     @Slot(int)
     def setUpdateInterval(self, interval: int):
-        logging.trace(f"Set update interval to {interval}")
         self.pollingThread.setInterval(interval)
 
     @Slot(str)

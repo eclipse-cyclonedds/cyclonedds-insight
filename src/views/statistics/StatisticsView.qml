@@ -26,6 +26,7 @@ Rectangle {
     property var lineSeriesDict: Object.create(null)
     property var statisticModel: Object.create(null)
     property int domainId
+    property bool clearOnNextData: false
 
     Component.onCompleted: {
         console.log("StatisticsView.qml: Component.onCompleted");
@@ -36,7 +37,7 @@ Rectangle {
     function startStatistics() {
         if (statisticModel) {
             console.log("Starting statistics");
-            statisticModel.startStatistics(domainId, "topic")
+            statisticModel.startStatistics()
         } else {
             console.error("Statistic model is not initialized.");
         }
@@ -51,12 +52,22 @@ Rectangle {
         }
     }
 
+    function clearStatistics() {
+        clearOnNextData = true
+    }
+
     Connections {
         target: statisticModel
         function onNewData(guid, value, r, g, b) {
 
             if (lineSeriesDict === undefined) {
                 lineSeriesDict = new Map();
+            }
+
+            if (clearOnNextData) {
+                myChart.removeAllSeries()
+                lineSeriesDict = new Map();
+                clearOnNextData = false
             }
 
             var timestamp = Date.now()

@@ -157,18 +157,6 @@ Rectangle {
                     }
                 }*/
 
-                Button {
-                    text: statisticsView.visible ? qsTr("Hide Statistics") : qsTr("Show Statistics")
-                    onClicked: {
-                        statisticsView.visible = !statisticsView.visible
-                        if (statisticsView.visible) {
-                            statisticsView.startStatistics()
-                        } else {
-                            statisticsView.stopStatistics()
-                        }
-                    }
-                }
-
                 WarningTriangle {
                     id: warning_triangle
                     Layout.preferredHeight: 30
@@ -179,17 +167,7 @@ Rectangle {
                 }
             }
 
-            StatisticsView {
-                id: statisticsView
-                statisticModel: statisticModelDomainView
-                domainId: topicEndpointView.domainId
-                visible: false
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-            }
-
             RowLayout {
-                visible: !statisticsView.visible
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
