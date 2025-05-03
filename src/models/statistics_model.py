@@ -43,7 +43,7 @@ from PySide6.QtCore import QTimer
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 
 from dds_access import dds_utils
-from dds_access.dds_utils import getProperty, DEBUG_MONITORS, getAppName
+from dds_access.dds_utils import getProperty, DEBUG_MONITORS, getAppName, getHostname
 import random
 import colorsys
 import time
@@ -60,6 +60,7 @@ class PollingThread(QThread):
         self.mutex = Lock()
         self.color_mapping = {}
         self.pollIntervalSeconds = 3
+        self.aggregateBy = "writer"
 
     def getRandomColor(self):
         h = random.random()
@@ -90,31 +91,43 @@ class PollingThread(QThread):
         logging.trace("Debug monitor timer triggered")
 
         aggregated_data = {}
-        for (ip, port, appName) in self.dgbPorts.values():
+        
+        for (ip, port, appName, host, domainId) in self.dgbPorts.values():
             json_data = []
+            aggkey = "undefined"
+            if self.aggregateBy == "domain":
+                aggkey = str(domainId)
+            if self.aggregateBy == "process":
+                aggkey = appName
+            if self.aggregateBy == "host":
+                aggkey = host
+
             try:
                 json_data = self.download_json("http://" + ip + ":" + port + "/")
+                print(json.dumps(json_data, indent=4))
             except Exception as e:
                 logging.error("Error: " + str(e))
                 continue
 
             if "participants" in json_data:
                 for participant in json_data["participants"]:
-                    participant_guid = dds_utils.normalizeGuid(participant["guid"])
+                    if self.aggregateBy == "participant":
+                        aggkey = dds_utils.normalizeGuid(participant["guid"])
                     if "writers" in participant:
                         for writer in participant["writers"]:
-                            guid = dds_utils.normalizeGuid(writer["guid"])
-                            topic = writer["topic"]
-                            topc_guid = topic
+                            if self.aggregateBy == "writer":
+                                aggkey = dds_utils.normalizeGuid(writer["guid"])
+                            if self.aggregateBy == "topic":
+                                topic = writer["topic"]
+                                aggkey = topic
                             if "rexmit_bytes" in writer:
+                                if aggkey not in self.color_mapping:
+                                    self.color_mapping[aggkey] = self.getRandomColor()
 
-                                if topc_guid not in self.color_mapping:
-                                    self.color_mapping[topc_guid] = self.getRandomColor()
-
-                                if topc_guid in aggregated_data:
-                                    aggregated_data[topc_guid] += writer["rexmit_bytes"]
+                                if aggkey in aggregated_data:
+                                    aggregated_data[aggkey] += writer["rexmit_bytes"]
                                 else:
-                                    aggregated_data[topc_guid] = writer["rexmit_bytes"]
+                                    aggregated_data[aggkey] = writer["rexmit_bytes"]
 
         self.onData.emit(aggregated_data.copy(), self.color_mapping.copy())
 
@@ -141,6 +154,10 @@ class PollingThread(QThread):
     
     def setInterval(self, seconds):
         self.pollIntervalSeconds = seconds
+
+    def setAggregation(self, aggre: str):
+        with self.mutex:
+            self.aggregateBy = aggre
 
 class StatisticsModel(QAbstractTableModel):
     newData = Signal(str, int, int, int, int)
@@ -235,7 +252,7 @@ class StatisticsModel(QAbstractTableModel):
         if role != Qt.DisplayRole:
             return None
         if orientation == Qt.Horizontal:
-            headers = ["Name", "Rexmit Bytes", "Color R", "Color G", "Color B"]
+            headers = ["Name", "Value"]
             if section < len(headers):
                 return headers[section]
         return None
@@ -260,6 +277,7 @@ class StatisticsModel(QAbstractTableModel):
 
         dbg_mon_str: str = getProperty(participant, DEBUG_MONITORS)
         appName = getAppName(participant)
+        host = getHostname(participant)
 
         splitProtoAdr = dbg_mon_str.split("/")
         if len(splitProtoAdr) > 0:
@@ -269,7 +287,7 @@ class StatisticsModel(QAbstractTableModel):
                     ip = splitIpPort[0]
                     port = splitIpPort[1]
                     print("IP:", ip, "Port:", port)
-                    self.dgbPorts[str(participant.key)] = (ip, port, appName)
+                    self.dgbPorts[str(participant.key)] = (ip, port, appName, host, domain_id)
 
         self.pollingThread.setDbgPorts(self.dgbPorts)
 
@@ -308,3 +326,7 @@ class StatisticsModel(QAbstractTableModel):
     def setUpdateInterval(self, interval: int):
         logging.trace(f"Set update interval to {interval}")
         self.pollingThread.setInterval(interval)
+
+    @Slot(str)
+    def setAggregation(self, aggre: str):
+        self.pollingThread.setAggregation(aggre.lower())

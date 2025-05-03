@@ -87,8 +87,9 @@ Window {
                     ComboBox {
                         id: aggregateByComboBoxId
                         Layout.preferredWidth: 150
-                        model: ["Domain", "Host", "Process", "Participant", "Topic", "Endpoint"]
+                        model: ["Domain", "Host", "Process", "Participant", "Topic", "Writer"]
                         currentIndex: 0
+                        onCurrentTextChanged: statisticModelId.setAggregation(currentText)
                     }
                 }
 
@@ -133,5 +134,10 @@ Window {
             Layout.fillHeight: true
         }
     }
-    
+
+    onClosing: function(closeEvent) {
+        console.log("StatisticsWindow is closing")
+        statisticsView.stopStatistics()
+        statsRunning = false
+    }
 }
