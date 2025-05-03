@@ -20,10 +20,10 @@
         <file>res/images/spinning.gif</file>
 
         <!-- source files -->
-        <file>src/views/ProcessView.qml</file>
-        <file>src/views/ParticipantView.qml</file>
-        <file>src/views/HostView.qml</file>
-        <file>src/views/EndpointView.qml</file>
+        <file>src/views/selection_details/ProcessView.qml</file>
+        <file>src/views/selection_details/ParticipantView.qml</file>
+        <file>src/views/selection_details/HostView.qml</file>
+        <file>src/views/selection_details/EndpointView.qml</file>
         <file>src/views/EndpointDetailWindow.qml</file>
         <file>src/views/main.qml</file>
         <file>src/views/AddDomainView.qml</file>
@@ -32,7 +32,7 @@
         <file>src/views/qmldir</file>
         <file>src/views/SettingsView.qml</file>
         <file>src/views/TopicOverview.qml</file>
-        <file>src/views/TopicEndpointView.qml</file>
+        <file>src/views/selection_details/TopicEndpointView.qml</file>
         <file>src/views/WarningTriangle.qml</file>
         <file>src/views/IdlDropArea.qml</file>
         <file>src/views/Overview.qml</file>
@@ -46,8 +46,9 @@
         <file>src/views/ParticipantsOverview.qml</file>
         <file>src/views/SideView.qml</file>
         <file>src/views/LogWindow.qml</file>
-        <file>src/views/StatisticsView.qml</file>
-        <file>src/views/DomainView.qml</file>
+        <file>src/views/statistics/StatisticsView.qml</file>
+        <file>src/views/statistics/StatisticsWindow.qml</file>
+        <file>src/views/selection_details/DomainView.qml</file>
         <file>src/views/ShapesDemoView.qml</file>
     </qresource>
 </RCC>

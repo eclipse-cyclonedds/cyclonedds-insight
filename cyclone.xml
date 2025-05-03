@@ -4,5 +4,10 @@
         <Internal>
             <MonitorPort>0</MonitorPort>
         </Internal>
+        <!--
+        <Tracing>
+            <PacketCaptureFile>cdds.pcap.${CYCLONEDDS_PID}.pcap</PacketCaptureFile>
+        </Tracing>
+        -->
     </Domain>
 </CycloneDDS>

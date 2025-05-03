@@ -18,10 +18,10 @@ import QtCharts
 import Qt.labs.qmlmodels
 
 import org.eclipse.cyclonedds.insight
-
+import "qrc:/src/views"
 
 Rectangle {
-    id: topicEndpointView
+    id: rootStatViewId
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
     property var lineSeriesDict: Object.create(null)
     property var statisticModel: Object.create(null)
@@ -51,8 +51,6 @@ Rectangle {
         }
     }
 
-
-
     Connections {
         target: statisticModel
         function onNewData(guid, value, r, g, b) {
@@ -63,11 +61,11 @@ Rectangle {
 
             var timestamp = Date.now()
 
-            if (guid in topicEndpointView.lineSeriesDict) {
-                if (topicEndpointView.lineSeriesDict[guid].count >= 120) {
-                    topicEndpointView.lineSeriesDict[guid].remove(0);
+            if (guid in rootStatViewId.lineSeriesDict) {
+                if (rootStatViewId.lineSeriesDict[guid].count >= 120) {
+                    rootStatViewId.lineSeriesDict[guid].remove(0);
                 }
-                topicEndpointView.lineSeriesDict[guid].append(timestamp, value);
+                rootStatViewId.lineSeriesDict[guid].append(timestamp, value);
             } else {
                 var line = myChart.createSeries(ChartView.SeriesTypeLine, guid, axisX, axisY);
                 line.color = Qt.rgba(r/255, g/255, b/255, 1);
@@ -75,7 +73,7 @@ Rectangle {
                 axisY.titleText = "rexmit_bytes [bytes]";
                 line.append(timestamp, value);
 
-                topicEndpointView.lineSeriesDict[guid] = line;
+                rootStatViewId.lineSeriesDict[guid] = line;
             }
 
             axisX.min = new Date(Date.now() - 2 * 60 * 1000)
@@ -92,11 +90,6 @@ Rectangle {
         ColumnLayout {
             anchors.fill: parent
             spacing: 0
-
-            Label {
-                text: "This feature is only available for Cyclone DDS endpoints which have enabled Internal/MonitorPort."
-                padding: 5
-            }
 
             Label {
                 text: "rexmit_bytes"
@@ -144,7 +137,7 @@ Rectangle {
 
                 ColumnLayout {
                     Layout.preferredHeight: 350
-                    Layout.preferredWidth: topicEndpointView.width - 450
+                    Layout.preferredWidth: rootStatViewId.width - 450
                     Layout.alignment: Qt.AlignTop
                     spacing: 0
 
@@ -168,7 +161,7 @@ Rectangle {
                         model: statisticModel
 
                         delegate: Rectangle {
-                            implicitWidth: model.column === 0 ? topicEndpointView.width * 0.3 : topicEndpointView.width * 0.1
+                            implicitWidth: model.column === 0 ? rootStatViewId.width * 0.3 : rootStatViewId.width * 0.1
                             implicitHeight: 25
 
                             Text {

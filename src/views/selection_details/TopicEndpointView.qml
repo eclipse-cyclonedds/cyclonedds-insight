@@ -16,6 +16,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views"
 
 
 Rectangle {
@@ -40,7 +41,7 @@ Rectangle {
     StatisticsModel {
         id: statisticModelDomainView
         Component.onDestruction: {
-            console.log("DomainView with domainId " + processViewId.domainId + " is being destroyed.")
+            console.log("DomainView with domainId " + topicEndpointView.domainId + " is being destroyed.")
             statisticModelDomainView.stop()
         }
     }
@@ -181,7 +182,7 @@ Rectangle {
             StatisticsView {
                 id: statisticsView
                 statisticModel: statisticModelDomainView
-                domainId: processViewId.domainId
+                domainId: topicEndpointView.domainId
                 visible: false
                 Layout.fillWidth: true
                 Layout.fillHeight: true

@@ -138,6 +138,9 @@ class PollingThread(QThread):
 
     def stillRunning(self):
         return self.running
+    
+    def setInterval(self, seconds):
+        self.pollIntervalSeconds = seconds
 
 class StatisticsModel(QAbstractTableModel):
     newData = Signal(str, int, int, int, int)
@@ -249,44 +252,6 @@ class StatisticsModel(QAbstractTableModel):
             self.data_list.append([topc_guid, value, r, g, b])
         self.endResetModel()
 
-    @Slot()
-    def on_timeout(self):
-        return
-        logging.trace("Debug monitor timer triggered")
-
-        aggregated_data = {}
-        for (ip, port, appName) in self.dgbPorts.values():
-            json_data = self.download_json("http://" + ip + ":" + port + "/")
-            if "participants" in json_data:
-                for participant in json_data["participants"]:
-                    participant_guid = dds_utils.normalizeGuid(participant["guid"])
-                    if "writers" in participant:
-                        for writer in participant["writers"]:
-                            guid = dds_utils.normalizeGuid(writer["guid"])
-                            topic = writer["topic"]
-                            topc_guid = topic
-                            if "rexmit_bytes" in writer:
-
-                                if topc_guid in self.color_mapping:
-                                    r, g, b = self.color_mapping[topc_guid]
-                                else:
-                                    self.color_mapping[topc_guid] = self.getRandomColor()
-
-                                if topc_guid in aggregated_data:
-                                    aggregated_data[topc_guid] += writer["rexmit_bytes"]
-                                else:
-                                    aggregated_data[topc_guid] = writer["rexmit_bytes"]
-
-        # Update the model with the aggregated data
-        self.beginResetModel()
-        self.data_list.clear()
-        for topc_guid in aggregated_data.keys():
-            value = aggregated_data[topc_guid]
-            (r, g, b) = self.color_mapping[topc_guid]
-            self.newData.emit(topc_guid, value, r, g, b)
-            self.data_list.append([topc_guid, value, r, g, b])
-        self.endResetModel()
-
     @Slot(int, DcpsParticipant)
     def new_participant_slot(self, domain_id: int, participant: DcpsParticipant):
 
@@ -338,3 +303,8 @@ class StatisticsModel(QAbstractTableModel):
             if self.pollingThread.stillRunning():
                 self.pollingThread.stop()
                 self.pollingThread.wait()
+
+    @Slot(int)
+    def setUpdateInterval(self, interval: int):
+        logging.trace(f"Set update interval to {interval}")
+        self.pollingThread.setInterval(interval)

@@ -17,6 +17,8 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views/selection_details"
+import "qrc:/src/views/statistics"
 
 
 ApplicationWindow {
@@ -148,5 +150,10 @@ ApplicationWindow {
     ShapesDemoView {
         id: shapeDemoViewId
         visible: false
+    }
+
+    StatisticsWindow {
+        id: statisticsWindow
+        visible: true   
     }
 }

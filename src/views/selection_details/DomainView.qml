@@ -16,10 +16,10 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
-
+import "qrc:/src/views"
 
 Rectangle {
-    id: endpointViewId
+    id: domainViewId
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
 
     property int domainId
@@ -29,14 +29,14 @@ Rectangle {
         anchors.margins: 10
 
         Label {
-            text: qsTr("Endpoint View")
+            text: qsTr("Domain View")
             font.pixelSize: 18
             font.bold: true
             horizontalAlignment: Text.AlignLeft
             Layout.alignment: Qt.AlignLeft
         }
         Label {
-            text: qsTr("Domain ID: ") + endpointViewId.domainId
+            text: qsTr("Domain ID: ") + domainViewId.domainId
         }
     
         Button {
@@ -54,7 +54,7 @@ Rectangle {
         StatisticsModel {
             id: statisticModelDomainView
             Component.onDestruction: {
-                console.log("DomainView with domainId " + endpointViewId.domainId + " is being destroyed.")
+                console.log("DomainView with domainId " + domainViewId.domainId + " is being destroyed.")
                 statisticModelDomainView.stop()
             }
         }
@@ -62,7 +62,7 @@ Rectangle {
         StatisticsView {
             id: statisticsView
             statisticModel: statisticModelDomainView
-            domainId: endpointViewId.domainId
+            domainId: domainViewId.domainId
             visible: false
             Layout.fillWidth: true
             Layout.fillHeight: true

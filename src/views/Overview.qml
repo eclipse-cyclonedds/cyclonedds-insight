@@ -125,38 +125,38 @@ SplitView {
     }
 
     function showDomainView(domainId) {
-        showView("DomainView.qml", {
+        showView("selection_details/DomainView.qml", {
                             domainId: domainId
                         })
     }
 
     function showHostView(domainId) {
-        showView("HostView.qml", {
+        showView("selection_details/HostView.qml", {
                             domainId: domainId
                         })
     }
 
     function showProcessView(domainId) {
-        showView("ProcessView.qml", {
+        showView("selection_details/ProcessView.qml", {
                             domainId: domainId
                         })
     }
 
     function showParticipantView(domainId) {
-        showView("ParticipantView.qml", {
+        showView("selection_details/ParticipantView.qml", {
                             domainId: domainId
                         })
     }
 
     function showTopicEndpointView(domainId, topicName) {
-        showView("TopicEndpointView.qml", {
+        showView("selection_details/TopicEndpointView.qml", {
                             domainId: domainId,
                             topicName: topicName
                         })
     }
 
     function showEndpointView(domainId) {
-        showView("EndpointView.qml", {
+        showView("selection_details/EndpointView.qml", {
                             domainId: domainId
                         })
     }
