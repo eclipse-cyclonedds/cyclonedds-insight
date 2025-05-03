@@ -71,9 +71,9 @@ class PollingThread(QThread):
 
     def download_json(self, url):
         try:
-            print("Downloading JSON from:", url)
+            logging.trace(f"Downloading JSON from: {url}")
             response = requests.get(url, timeout=(5, 10))
-            print("Response code:", response.status_code)
+            logging.trace(f"Response code: {str(response.status_code)}")
             response.raise_for_status()
             parsed_json = response.json()
             return parsed_json
@@ -104,7 +104,7 @@ class PollingThread(QThread):
 
             try:
                 json_data = self.download_json("http://" + ip + ":" + port + "/")
-                print(json.dumps(json_data, indent=4))
+                # print(json.dumps(json_data, indent=4))
             except Exception as e:
                 logging.error("Error: " + str(e))
                 continue
@@ -255,7 +255,7 @@ class StatisticsModel(QAbstractTableModel):
 
     @Slot(object, object)
     def onAggregatedData(self, aggregated_data, color_mapping):
-        logging.debug("New data received: " + str(len(aggregated_data)))
+        logging.trace("New data received: " + str(len(aggregated_data)))
         self.beginResetModel()
         self.data_list.clear()
         for topc_guid in aggregated_data.keys():
