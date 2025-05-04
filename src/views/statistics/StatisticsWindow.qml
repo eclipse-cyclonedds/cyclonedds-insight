@@ -62,16 +62,38 @@ Rectangle {
 
                     ComboBox {
                         id: updateRateSelector
-                        Layout.preferredWidth: 60
-                        model: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+                        Layout.preferredWidth: 70
+                        model: ["1", "2", "3", "5", "8", "10", "30", "60", "900", "1800", "3600"]
                         currentIndex: 2
                         onCurrentTextChanged: statisticModelId.setUpdateInterval(parseInt(currentText))
                     }
 
                     Label {
-                        text: "seconds"
+                        text: "seconds."
                     }
                 }
+
+                RowLayout {
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    spacing: 0
+
+                    Label {
+                        text: "Show data from last"
+                    }
+
+                    ComboBox {
+                        Layout.preferredWidth: 70
+                        model: ["1", "2", "3", "5", "8", "13", "21", "34", "55", "89", "144", "233", "720" ,"1440"]
+                        currentIndex: 1
+                        onCurrentTextChanged: statisticsView.setKeepHistoryMinutes(parseInt(currentText))
+                    }
+
+                    Label {
+                        text: "minutes."
+                    }
+                }
+
 
                 RowLayout {
                     Layout.fillHeight: true

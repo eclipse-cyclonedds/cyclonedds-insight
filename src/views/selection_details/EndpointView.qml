@@ -41,7 +41,6 @@ Rectangle {
         }
 
         Item {
-            visible: !statisticsView.visible
             Layout.fillWidth: true
             Layout.fillHeight: true
         }

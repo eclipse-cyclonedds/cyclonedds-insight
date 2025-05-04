@@ -20,16 +20,12 @@ import Qt.labs.qmlmodels
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
 
+
 Rectangle {
     id: rootStatViewId
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
     property var statisticModel: Object.create(null)
-
-    Component.onCompleted: {
-        console.log("StatisticsView.qml: Component.onCompleted");
-        axisX.min = new Date(Date.now() - 2 * 60 * 1000)
-        axisX.max = new Date(Date.now())
-    }
+    property int keepHistoryMinutes: 10
 
     function startStatistics() {
         if (statisticModel) {
@@ -53,6 +49,10 @@ Rectangle {
         statisticModel.clearStatistics()
     }
 
+    function setKeepHistoryMinutes(minutes) {
+        keepHistoryMinutes = minutes
+    }
+
     ScrollView {
         anchors.fill: parent
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -71,6 +71,11 @@ Rectangle {
 
                     property var lineSeriesDict: Object.create(null)
 
+                    Component.onCompleted: {
+                        axisX.min = new Date(Date.now() - 2 * 60 * 1000)
+                        axisX.max = new Date(Date.now())
+                    }
+
                     Connections {
                         target: table_model_role
                         function onNewData(guid, value, r, g, b, clearOnNextData) {
@@ -87,7 +92,7 @@ Rectangle {
                             var timestamp = Date.now()
 
                             if (guid in currentStatUnitId.lineSeriesDict) {
-                                if (currentStatUnitId.lineSeriesDict[guid].count >= 120) {
+                                if (currentStatUnitId.lineSeriesDict[guid].count >= (keepHistoryMinutes * 60)) {
                                     currentStatUnitId.lineSeriesDict[guid].remove(0);
                                 }
                                 currentStatUnitId.lineSeriesDict[guid].append(timestamp, value);
@@ -101,7 +106,7 @@ Rectangle {
                                 currentStatUnitId.lineSeriesDict[guid] = line;
                             }
 
-                            axisX.min = new Date(Date.now() - 2 * 60 * 1000)
+                            axisX.min = new Date(Date.now() - keepHistoryMinutes * 60 * 1000)
                             axisX.max = new Date(Date.now())
 
                             axisY.min = 0
@@ -152,8 +157,8 @@ Rectangle {
                                     id: axisX
                                     format: "hh:mm:ss"
                                     tickCount: 5
-                                    min: (Date.now() / 1000) - 120;
-                                    max: (Date.now() / 1000) + 120;
+                                    min: (Date.now() / 1000) - (60 * keepHistoryMinutes);
+                                    max: (Date.now() / 1000) + (60 * keepHistoryMinutes);
                                 }
                             }
 
