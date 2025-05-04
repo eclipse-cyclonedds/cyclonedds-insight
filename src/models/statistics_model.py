@@ -69,20 +69,6 @@ class PollingThread(QThread):
         r, g, b = colorsys.hsv_to_rgb(h, s, v)
         return (int(r * 255), int(g * 255), int(b * 255))
 
-    def download_json(self, url):
-        try:
-            logging.trace(f"Downloading JSON from: {url}")
-            response = requests.get(url, timeout=(5, 10))
-            logging.trace(f"Response code: {str(response.status_code)}")
-            response.raise_for_status()
-            parsed_json = response.json()
-            return parsed_json
-        except requests.exceptions.RequestException as e:
-            logging.error("HTTP Request failed: " + str(e))
-        except json.JSONDecodeError as e:
-            logging.error("Invalid JSON received: " + str(e))
-        return []
-
     def setDbgPorts(self, dgbPorts):
         with self.mutex:
             self.dgbPorts = dgbPorts.copy()
@@ -90,41 +76,52 @@ class PollingThread(QThread):
     def poll(self):
         logging.trace("Debug monitor timer triggered")
 
-        aggregated_data = {}
+        ag_rexmit_bytes = {}
         ag_n_nacks_received = {}
         ag_rexmit_count = {}
         ag_n_acks_received = {}
         ag_n_reliable_readers = {}
 
         already_processed_ip_port = []
-        for (ip, port, appName, host, domainId) in self.dgbPorts.values():
-            if (ip, port) in already_processed_ip_port:
+        for participant_key in self.dgbPorts.keys():
+            (ip, port, _, _, _) = self.dgbPorts[participant_key]
+            if f"{ip}:{port}" in already_processed_ip_port:
+                logging.trace(f"skip {ip}:{port} - already processed.")
                 continue
-            already_processed_ip_port.append((ip, port))
+            already_processed_ip_port.append(f"{ip}:{port}")
 
-            json_data = []
-            aggkey = "undefined"
-            if self.aggregateBy == "domain":
-                aggkey = str(domainId)
-            if self.aggregateBy == "process":
-                aggkey = appName
-            if self.aggregateBy == "host":
-                aggkey = host
-
+            json_data = {}
             try:
-                json_data = self.download_json("http://" + ip + ":" + port + "/")
-                #print(json.dumps(json_data, indent=4))
+                url = "http://" + ip + ":" + port + "/"
+                logging.trace(f"Downloading JSON from: {url}")
+                response = requests.get(url, timeout=(5, 10))
+                logging.trace(f"Response code: {str(response.status_code)}")
+                response.raise_for_status()
+                json_data = response.json()
+                # print(json.dumps(json_data, indent=4))
             except Exception as e:
                 logging.error("Error: " + str(e))
-                continue
-
-            if not json_data:
                 return
 
             if "participants" in json_data:
                 for participant in json_data["participants"]:
+                    pKeyCurrent = dds_utils.normalizeGuid(participant["guid"])
+                    if pKeyCurrent not in self.dgbPorts:
+                        logging.warning(f"{pKeyCurrent} not in dgbPorts")
+                        continue
+
+                    (_, _, appName, host, domainId) = self.dgbPorts[pKeyCurrent]
+
+                    aggkey = "undefined"
+                    if self.aggregateBy == "domain":
+                        aggkey = str(domainId)
+                    if self.aggregateBy == "process":
+                        aggkey = appName
+                    if self.aggregateBy == "host":
+                        aggkey = host
                     if self.aggregateBy == "participant":
-                        aggkey = dds_utils.normalizeGuid(participant["guid"])
+                        aggkey = pKeyCurrent
+
                     if "writers" in participant:
                         for writer in participant["writers"]:
                             if self.aggregateBy == "writer":
@@ -137,10 +134,10 @@ class PollingThread(QThread):
                                 self.color_mapping[aggkey] = self.getRandomColor()
 
                             if "rexmit_bytes" in writer:
-                                if aggkey in aggregated_data:
-                                    aggregated_data[aggkey] += writer["rexmit_bytes"]
+                                if aggkey in ag_rexmit_bytes:
+                                    ag_rexmit_bytes[aggkey] += writer["rexmit_bytes"]
                                 else:
-                                    aggregated_data[aggkey] = writer["rexmit_bytes"]
+                                    ag_rexmit_bytes[aggkey] = writer["rexmit_bytes"]
 
                             if "ack" in writer:
                                 ack = writer["ack"]
@@ -168,12 +165,12 @@ class PollingThread(QThread):
                                     else:
                                         ag_n_reliable_readers[aggkey] = heartbeat["n_reliable_readers"]
 
-        self.onData.emit("rexmit_bytes", aggregated_data.copy(), self.color_mapping.copy())
+        self.onData.emit("rexmit_bytes", ag_rexmit_bytes.copy(), self.color_mapping.copy())
         self.onData.emit("n_acks_received", ag_n_acks_received.copy(), self.color_mapping.copy())
         self.onData.emit("n_nacks_received", ag_n_nacks_received.copy(), self.color_mapping.copy())
         self.onData.emit("rexmit_count", ag_rexmit_count.copy(), self.color_mapping.copy())
         self.onData.emit("n_reliable_readers", ag_n_reliable_readers.copy(), self.color_mapping.copy())
-        
+
 
     def run(self):
         self.running = True
