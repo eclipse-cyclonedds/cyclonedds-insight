@@ -10,6 +10,7 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install -DENABLE_SSL=o
 cd ..\.. && ^
 git clone https://github.com/eclipse-cyclonedds/cyclonedds-python.git && ^
 cd cyclonedds-python && ^
+python.exe -m pip install --upgrade pip && ^
 pip install -e . && ^
 pip install -r ..\..\requirements.txt && ^
 cd ..\.. && ^
