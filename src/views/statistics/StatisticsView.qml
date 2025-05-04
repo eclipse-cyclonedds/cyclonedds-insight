@@ -23,9 +23,7 @@ import "qrc:/src/views"
 Rectangle {
     id: rootStatViewId
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
-    property var lineSeriesDict: Object.create(null)
     property var statisticModel: Object.create(null)
-    property int domainId
     property bool clearOnNextData: false
 
     Component.onCompleted: {
@@ -56,45 +54,6 @@ Rectangle {
         clearOnNextData = true
     }
 
-    Connections {
-        target: statisticModel
-        function onNewData(guid, value, r, g, b) {
-
-            if (lineSeriesDict === undefined) {
-                lineSeriesDict = new Map();
-            }
-
-            if (clearOnNextData) {
-                myChart.removeAllSeries()
-                lineSeriesDict = new Map();
-                clearOnNextData = false
-            }
-
-            var timestamp = Date.now()
-
-            if (guid in rootStatViewId.lineSeriesDict) {
-                if (rootStatViewId.lineSeriesDict[guid].count >= 120) {
-                    rootStatViewId.lineSeriesDict[guid].remove(0);
-                }
-                rootStatViewId.lineSeriesDict[guid].append(timestamp, value);
-            } else {
-                var line = myChart.createSeries(ChartView.SeriesTypeLine, guid, axisX, axisY);
-                line.color = Qt.rgba(r/255, g/255, b/255, 1);
-                axisX.titleText = "time";
-                axisY.titleText = "rexmit_bytes [bytes]";
-                line.append(timestamp, value);
-
-                rootStatViewId.lineSeriesDict[guid] = line;
-            }
-
-            axisX.min = new Date(Date.now() - 2 * 60 * 1000)
-            axisX.max = new Date(Date.now())
-
-            axisY.min = 0
-            axisY.max = Math.max(axisY.max, value + (value * 0.1));
-        }
-    }
-
     ScrollView {
         anchors.fill: parent
 
@@ -102,86 +61,139 @@ Rectangle {
             anchors.fill: parent
             spacing: 0
 
-            Label {
-                text: "rexmit_bytes"
-                font.bold: true
-                padding: 5
-            }
+            Repeater {
+                model: statisticModel
+                delegate: Item {
+                    id: currentStatUnitId
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    property var lineSeriesDict: Object.create(null)
 
-            Label {
-                text: "Total number of bytes retransmitted for a writer."
-                padding: 2
-            }
+                    Connections {
+                        target: table_model_role
+                        function onNewData(guid, value, r, g, b) {
 
-            RowLayout {
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-                spacing: 0
+                            if (lineSeriesDict === undefined) {
+                                lineSeriesDict = new Map();
+                            }
 
-                ChartView {
-                    Layout.preferredHeight: 350
-                    Layout.preferredWidth: 450
-                    Layout.alignment: Qt.AlignTop
+                            if (clearOnNextData) {
+                                myChart.removeAllSeries()
+                                lineSeriesDict = new Map();
+                                clearOnNextData = false
+                            }
 
-                    id: myChart
-                    title: "rexmit_bytes"
-                    antialiasing: true
-                    legend.visible: false
-                    legend.alignment: Qt.AlignRight
+                            var timestamp = Date.now()
 
-                    ValueAxis {
-                        id: axisY
-                        gridVisible: true
-                        tickCount: 5
-                        min: 500
-                        max: 10
+                            if (guid in currentStatUnitId.lineSeriesDict) {
+                                if (currentStatUnitId.lineSeriesDict[guid].count >= 120) {
+                                    currentStatUnitId.lineSeriesDict[guid].remove(0);
+                                }
+                                currentStatUnitId.lineSeriesDict[guid].append(timestamp, value);
+                            } else {
+                                var line = myChart.createSeries(ChartView.SeriesTypeLine, guid, axisX, axisY);
+                                line.color = Qt.rgba(r/255, g/255, b/255, 1);
+                                axisX.titleText = "time";
+                                axisY.titleText = name_role + " [" + unit_name_role + "]";
+                                line.append(timestamp, value);
+
+                                currentStatUnitId.lineSeriesDict[guid] = line;
+                            }
+
+                            axisX.min = new Date(Date.now() - 2 * 60 * 1000)
+                            axisX.max = new Date(Date.now())
+
+                            axisY.min = 0
+                            axisY.max = Math.max(axisY.max, value + (value * 0.1));
+                        }
                     }
 
-                    DateTimeAxis {
-                        id: axisX
-                        format: "hh:mm:ss"
-                        tickCount: 5
-                        min: (Date.now() / 1000) - 120;
-                        max: (Date.now() / 1000) + 120;
-                    }
-                }
+                    ColumnLayout {
+                        anchors.fill: parent
 
-                ColumnLayout {
-                    Layout.preferredHeight: 350
-                    Layout.preferredWidth: rootStatViewId.width - 450
-                    Layout.alignment: Qt.AlignTop
-                    spacing: 0
+                        Label {
+                            text: name_role
+                            font.bold: true
+                            padding: 5
+                        }
 
-                    HorizontalHeaderView {
-                        id: horizontalHeader
-                        syncView: tableView
-                        Layout.fillWidth: true
-                        clip: true
-                    }
+                        Label {
+                            text: description_role
+                            padding: 2
+                        }
 
-                    TableView {
-                        id: tableView
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
+                        RowLayout {
+                            Layout.fillHeight: true
+                            Layout.fillWidth: true
+                            spacing: 0
 
-                        columnSpacing: 1
-                        rowSpacing: 1
-                        clip: true
-                        interactive: true
+                            ChartView {
+                                Layout.preferredHeight: 350
+                                Layout.preferredWidth: 450
+                                Layout.alignment: Qt.AlignTop
 
-                        model: statisticModel
+                                id: myChart
+                                title: name_role
+                                antialiasing: true
+                                legend.visible: false
+                                legend.alignment: Qt.AlignRight
 
-                        delegate: Rectangle {
-                            implicitWidth: model.column === 0 ? rootStatViewId.width * 0.3 : rootStatViewId.width * 0.1
-                            implicitHeight: 25
+                                ValueAxis {
+                                    id: axisY
+                                    gridVisible: true
+                                    tickCount: 5
+                                    min: 500
+                                    max: 10
+                                }
 
-                            Text {
-                                text: display
-                                anchors.fill: parent
-                                color: Qt.rgba(model.color_r / 255, model.color_g / 255, model.color_b / 255, 1)
-                                horizontalAlignment: Text.AlignLeft
-                                verticalAlignment: Text.AlignVCenter
-                                clip: true
+                                DateTimeAxis {
+                                    id: axisX
+                                    format: "hh:mm:ss"
+                                    tickCount: 5
+                                    min: (Date.now() / 1000) - 120;
+                                    max: (Date.now() / 1000) + 120;
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.preferredHeight: 350
+                                Layout.preferredWidth: rootStatViewId.width - 450
+                                Layout.alignment: Qt.AlignTop
+                                spacing: 0
+
+                                HorizontalHeaderView {
+                                    id: horizontalHeader
+                                    syncView: tableView
+                                    Layout.fillWidth: true
+                                    clip: true
+                                }
+
+                                TableView {
+                                    id: tableView
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+
+                                    columnSpacing: 1
+                                    rowSpacing: 1
+                                    clip: true
+                                    interactive: true
+
+                                    model: table_model_role
+
+                                    delegate: Rectangle {
+                                        implicitWidth: model.column === 0 ? rootStatViewId.width * 0.3 : rootStatViewId.width * 0.1
+                                        implicitHeight: 25
+
+                                        Text {
+                                            text: display
+                                            anchors.fill: parent
+                                            color: Qt.rgba(model.color_r / 255, model.color_g / 255, model.color_b / 255, 1)
+                                            horizontalAlignment: Text.AlignLeft
+                                            verticalAlignment: Text.AlignVCenter
+                                            clip: true
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

@@ -137,7 +137,6 @@ Rectangle {
         StatisticsView {
             id: statisticsView
             statisticModel: statisticModelId
-            domainId: 0
             visible: true
             Layout.fillWidth: true
             Layout.fillHeight: true

@@ -52,7 +52,7 @@ from threading import Lock
 
 class PollingThread(QThread):
 
-    onData = Signal(object, object)
+    onData = Signal(str, object, object)
 
     def __init__(self, domainParticipant, parent=None):
         super().__init__()
@@ -91,6 +91,8 @@ class PollingThread(QThread):
         logging.trace("Debug monitor timer triggered")
 
         aggregated_data = {}
+        ag_n_nacks_received = {}
+        ag_rexmit_count = {}
         
         for (ip, port, appName, host, domainId) in self.dgbPorts.values():
             json_data = []
@@ -104,7 +106,7 @@ class PollingThread(QThread):
 
             try:
                 json_data = self.download_json("http://" + ip + ":" + port + "/")
-                # print(json.dumps(json_data, indent=4))
+                print(json.dumps(json_data, indent=4))
             except Exception as e:
                 logging.error("Error: " + str(e))
                 continue
@@ -120,16 +122,33 @@ class PollingThread(QThread):
                             if self.aggregateBy == "topic":
                                 topic = writer["topic"]
                                 aggkey = topic
-                            if "rexmit_bytes" in writer:
-                                if aggkey not in self.color_mapping:
-                                    self.color_mapping[aggkey] = self.getRandomColor()
 
+                            if aggkey not in self.color_mapping:
+                                self.color_mapping[aggkey] = self.getRandomColor()
+
+                            if "rexmit_bytes" in writer:
                                 if aggkey in aggregated_data:
                                     aggregated_data[aggkey] += writer["rexmit_bytes"]
                                 else:
                                     aggregated_data[aggkey] = writer["rexmit_bytes"]
 
-        self.onData.emit(aggregated_data.copy(), self.color_mapping.copy())
+                            if "ack" in writer:
+                                ack = writer["ack"]
+                                if "n_nacks_received" in ack:
+                                    if aggkey in ag_n_nacks_received:
+                                        ag_n_nacks_received[aggkey] += ack["n_nacks_received"]
+                                    else:
+                                        ag_n_nacks_received[aggkey] = ack["n_nacks_received"]
+
+                                if "rexmit_count" in ack:
+                                    if aggkey in ag_rexmit_count:
+                                        ag_rexmit_count[aggkey] += ack["rexmit_count"]
+                                    else:
+                                        ag_rexmit_count[aggkey] = ack["rexmit_count"]
+
+        self.onData.emit("rexmit_bytes", aggregated_data.copy(), self.color_mapping.copy())
+        self.onData.emit("n_nacks_received", ag_n_nacks_received.copy(), self.color_mapping.copy())
+        self.onData.emit("rexmit_count", ag_rexmit_count.copy(), self.color_mapping.copy())
 
     def run(self):
         self.running = True
@@ -163,34 +182,30 @@ class PollingThread(QThread):
             self.color_mapping.clear()
 
 class StatisticsModel(QAbstractTableModel):
-    newData = Signal(str, int, int, int, int)
 
+    newData = Signal(str, str, int, int, int, int)
     requestParticipants = Signal(str)
 
-    RoleGUID = Qt.UserRole + 1
-    RoleRexmitBytes = Qt.UserRole + 2
-    RoleColorR = Qt.UserRole + 3
-    RoleColorG = Qt.UserRole + 4
-    RoleColorB = Qt.UserRole + 5
+    NameRole = Qt.UserRole + 1
+    TableModelRole = Qt.UserRole + 2
+    DescriptionRole = Qt.UserRole + 3
+    UnitNameRole = Qt.UserRole + 4
 
     def roleNames(self):
         roles = {
-            Qt.DisplayRole: b'display',
-            self.RoleGUID: b'guid',
-            self.RoleRexmitBytes: b'rexmit_bytes',
-            self.RoleColorR: b'color_r',
-            self.RoleColorG: b'color_g',
-            self.RoleColorB: b'color_b',
+            self.NameRole: b'name_role',
+            self.TableModelRole: b'table_model_role',
+            self.DescriptionRole: b'description_role',
+            self.UnitNameRole: b'unit_name_role'
         }
         return roles
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.dgbPorts = {}
-        self.data_list = []
+        self.data_list = {} 
 
         self.pollingThread = PollingThread(self)
-        self.pollingThread.onData.connect(self.onAggregatedData, Qt.ConnectionType.QueuedConnection)
 
         self.dds_data = dds_data.DdsData()
         self.requestParticipants.connect(self.dds_data.requestParticipants, Qt.ConnectionType.QueuedConnection)
@@ -199,6 +214,25 @@ class StatisticsModel(QAbstractTableModel):
         self.dds_data.removed_participant_signal.connect(self.removed_participant_slot, Qt.ConnectionType.QueuedConnection)
 
         self.request_ids = []
+
+        self.unitModels = {}
+        self.unitModels["rexmit_bytes"] = StatisticsUnitModel(self.pollingThread, "rexmit_bytes")
+        self.unitModels["rexmit_count"] = StatisticsUnitModel(self.pollingThread, "rexmit_count")
+
+        self.unitDescriptions = {
+            "rexmit_bytes": {
+                "description": "Total number of bytes retransmitted for a writer.",
+                "unit": "bytes"
+            },
+            "n_nacks_received": {
+                "description": "Total number of ACKNACK messages requesting a retransmit.",
+                "unit": "ACKNACK"
+            },
+            "rexmit_count": {
+                "description": "Number of samples retransmitted (counts events, a single sample can count multiple times).",
+                "unit": "Samples"
+            }
+        }
 
     @Slot()
     def startStatistics(self):
@@ -217,31 +251,37 @@ class StatisticsModel(QAbstractTableModel):
         self.requestParticipants.emit(reqId)
 
     def rowCount(self, parent=QModelIndex()):
-        return len(self.data_list)
+        return len(self.unitModels)
 
     def columnCount(self, parent=QModelIndex()):
-        return 2  # guid, rexmit_bytes, color_r, color_g, color_b
+        return 1
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
             return None
         row = index.row()
-        if row >= len(self.data_list):
+        if row >= len(self.unitModels):
             return None
-        item = self.data_list[row]
-        if role == self.RoleGUID:
-            return item[0]
-        elif role == self.RoleRexmitBytes:
-            return item[1]
-        elif role == self.RoleColorR:
-            return item[2]
-        elif role == self.RoleColorG:
-            return item[3]
-        elif role == self.RoleColorB:
-            return item[4]
-        elif role == Qt.DisplayRole:
-            column = index.column()
-            return item[column]
+
+        key = (list(self.unitModels.keys()))[row]
+        item = self.unitModels[key]
+    
+        if role == self.NameRole:
+            return key
+        elif role == self.TableModelRole:
+            return item
+        elif role == self.DescriptionRole:
+            if key in self.unitDescriptions:
+                return self.unitDescriptions[key]["description"]
+            else:
+                return "n/a"
+        elif role == self.UnitNameRole:
+            if key in self.unitDescriptions:
+                return self.unitDescriptions[key]["unit"]
+            else:
+                return "n/a"
+
+
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
@@ -253,17 +293,6 @@ class StatisticsModel(QAbstractTableModel):
                 return headers[section]
         return None
 
-    @Slot(object, object)
-    def onAggregatedData(self, aggregated_data, color_mapping):
-        logging.trace("New data received: " + str(len(aggregated_data)))
-        self.beginResetModel()
-        self.data_list.clear()
-        for topc_guid in aggregated_data.keys():
-            value = aggregated_data[topc_guid]
-            (r, g, b) = color_mapping[topc_guid]
-            self.newData.emit(topc_guid, value, r, g, b)
-            self.data_list.append([topc_guid, value, r, g, b])
-        self.endResetModel()
 
     @Slot(int, DcpsParticipant)
     def new_participant_slot(self, domain_id: int, participant: DcpsParticipant):
@@ -296,6 +325,7 @@ class StatisticsModel(QAbstractTableModel):
 
     @Slot(int, str)
     def removed_participant_slot(self, domain_id: int, participant_key: str):
+        print(self.dgbPorts.keys(), participant_key)
         if participant_key in self.dgbPorts:
             del self.dgbPorts[participant_key]
         self.pollingThread.setDbgPorts(self.dgbPorts)
@@ -315,3 +345,95 @@ class StatisticsModel(QAbstractTableModel):
     @Slot(str)
     def setAggregation(self, aggre: str):
         self.pollingThread.setAggregation(aggre.lower())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class StatisticsUnitModel(QAbstractTableModel):
+    newData = Signal(str, int, int, int, int)
+
+    NameRole = Qt.UserRole + 1
+    ValueRole = Qt.UserRole + 2
+    RoleColorR = Qt.UserRole + 3
+    RoleColorG = Qt.UserRole + 4
+    RoleColorB = Qt.UserRole + 5
+
+    def roleNames(self):
+        roles = {
+            Qt.DisplayRole: b'display',
+            self.NameRole: b'name',
+            self.ValueRole: b'value',
+            self.RoleColorR: b'color_r',
+            self.RoleColorG: b'color_g',
+            self.RoleColorB: b'color_b'
+        }
+        return roles
+
+    def __init__(self, pollingThread, prop, parent=None):
+        super().__init__(parent)
+        self.data_list = []
+        self.prop = prop
+        self.pollingThread = pollingThread
+        self.pollingThread.onData.connect(self.onAggregatedData, Qt.ConnectionType.QueuedConnection)
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self.data_list)
+
+    def columnCount(self, parent=QModelIndex()):
+        return 2
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return None
+        row = index.row()
+        if row >= len(self.data_list):
+            return None
+        item = self.data_list[row]
+        if role == self.NameRole:
+            return item[0]
+        elif role == self.ValueRole:
+            return item[1]
+        elif role == self.RoleColorR:
+            return item[2]
+        elif role == self.RoleColorG:
+            return item[3]
+        elif role == self.RoleColorB:
+            return item[4]
+        elif role == Qt.DisplayRole:
+            column = index.column()
+            return item[column]
+        return None
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role != Qt.DisplayRole:
+            return None
+        if orientation == Qt.Horizontal:
+            headers = ["Name", "Value"]
+            if section < len(headers):
+                return headers[section]
+        return None
+
+    @Slot(str, object, object)
+    def onAggregatedData(self, prop, aggregated_data, color_mapping):
+        if prop != self.prop:
+            return
+
+        logging.trace(f"New data received {prop}: {str(len(aggregated_data))}")
+        self.beginResetModel()
+        self.data_list.clear()
+        for topc_guid in aggregated_data.keys():
+            value = aggregated_data[topc_guid]
+            (r, g, b) = color_mapping[topc_guid]
+            self.newData.emit(topc_guid, value, r, g, b)
+            self.data_list.append([topc_guid, value, r, g, b])
+        self.endResetModel()
