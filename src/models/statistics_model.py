@@ -96,7 +96,12 @@ class PollingThread(QThread):
         ag_n_acks_received = {}
         ag_n_reliable_readers = {}
 
+        already_processed_ip_port = []
         for (ip, port, appName, host, domainId) in self.dgbPorts.values():
+            if (ip, port) in already_processed_ip_port:
+                continue
+            already_processed_ip_port.append((ip, port))
+
             json_data = []
             aggkey = "undefined"
             if self.aggregateBy == "domain":
@@ -112,6 +117,9 @@ class PollingThread(QThread):
             except Exception as e:
                 logging.error("Error: " + str(e))
                 continue
+
+            if not json_data:
+                return
 
             if "participants" in json_data:
                 for participant in json_data["participants"]:

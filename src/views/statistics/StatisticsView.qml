@@ -138,7 +138,6 @@ Rectangle {
                                 Layout.preferredHeight: 350
                                 Layout.preferredWidth: 450
                                 Layout.alignment: Qt.AlignTop
-
                                 id: myChart
                                 title: name_role
                                 antialiasing: true
