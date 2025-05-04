@@ -24,7 +24,6 @@ Rectangle {
     id: rootStatViewId
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
     property var statisticModel: Object.create(null)
-    property bool clearOnNextData: false
 
     Component.onCompleted: {
         console.log("StatisticsView.qml: Component.onCompleted");
@@ -51,13 +50,15 @@ Rectangle {
     }
 
     function clearStatistics() {
-        clearOnNextData = true
+        statisticModel.clearStatistics()
     }
 
     ScrollView {
         anchors.fill: parent
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
         ColumnLayout {
+            id: repeaterItem
             anchors.fill: parent
             spacing: 0
 
@@ -65,13 +66,14 @@ Rectangle {
                 model: statisticModel
                 delegate: Item {
                     id: currentStatUnitId
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
+                    Layout.preferredHeight: 350
+                    Layout.preferredWidth: rootStatViewId.width
+
                     property var lineSeriesDict: Object.create(null)
 
                     Connections {
                         target: table_model_role
-                        function onNewData(guid, value, r, g, b) {
+                        function onNewData(guid, value, r, g, b, clearOnNextData) {
 
                             if (lineSeriesDict === undefined) {
                                 lineSeriesDict = new Map();
@@ -80,7 +82,6 @@ Rectangle {
                             if (clearOnNextData) {
                                 myChart.removeAllSeries()
                                 lineSeriesDict = new Map();
-                                clearOnNextData = false
                             }
 
                             var timestamp = Date.now()
@@ -110,6 +111,7 @@ Rectangle {
 
                     ColumnLayout {
                         anchors.fill: parent
+                        spacing: 0
 
                         Label {
                             text: name_role
@@ -180,11 +182,11 @@ Rectangle {
 
                                     model: table_model_role
 
-                                    delegate: Rectangle {
-                                        implicitWidth: model.column === 0 ? rootStatViewId.width * 0.3 : rootStatViewId.width * 0.1
+                                    delegate: Item {
+                                        implicitWidth: model.column === 0 ? (rootStatViewId.width - 450) * 0.7 : (rootStatViewId.width - 450) * 0.3
                                         implicitHeight: 25
-
-                                        Text {
+   
+                                        Label {
                                             text: display
                                             anchors.fill: parent
                                             color: Qt.rgba(model.color_r / 255, model.color_g / 255, model.color_b / 255, 1)

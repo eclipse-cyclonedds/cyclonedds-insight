@@ -93,7 +93,9 @@ class PollingThread(QThread):
         aggregated_data = {}
         ag_n_nacks_received = {}
         ag_rexmit_count = {}
-        
+        ag_n_acks_received = {}
+        ag_n_reliable_readers = {}
+
         for (ip, port, appName, host, domainId) in self.dgbPorts.values():
             json_data = []
             aggkey = "undefined"
@@ -106,7 +108,7 @@ class PollingThread(QThread):
 
             try:
                 json_data = self.download_json("http://" + ip + ":" + port + "/")
-                print(json.dumps(json_data, indent=4))
+                #print(json.dumps(json_data, indent=4))
             except Exception as e:
                 logging.error("Error: " + str(e))
                 continue
@@ -134,21 +136,36 @@ class PollingThread(QThread):
 
                             if "ack" in writer:
                                 ack = writer["ack"]
+                                if "n_acks_received" in ack:
+                                    if aggkey in ag_n_acks_received:
+                                        ag_n_acks_received[aggkey] += ack["n_acks_received"]
+                                    else:
+                                        ag_n_acks_received[aggkey] = ack["n_acks_received"]
                                 if "n_nacks_received" in ack:
                                     if aggkey in ag_n_nacks_received:
                                         ag_n_nacks_received[aggkey] += ack["n_nacks_received"]
                                     else:
                                         ag_n_nacks_received[aggkey] = ack["n_nacks_received"]
-
                                 if "rexmit_count" in ack:
                                     if aggkey in ag_rexmit_count:
                                         ag_rexmit_count[aggkey] += ack["rexmit_count"]
                                     else:
                                         ag_rexmit_count[aggkey] = ack["rexmit_count"]
 
+                            if "heartbeat" in writer:
+                                heartbeat = writer["heartbeat"]
+                                if "n_reliable_readers" in heartbeat:
+                                    if aggkey in ag_n_reliable_readers:
+                                        ag_n_reliable_readers[aggkey] += heartbeat["n_reliable_readers"]
+                                    else:
+                                        ag_n_reliable_readers[aggkey] = heartbeat["n_reliable_readers"]
+
         self.onData.emit("rexmit_bytes", aggregated_data.copy(), self.color_mapping.copy())
+        self.onData.emit("n_acks_received", ag_n_acks_received.copy(), self.color_mapping.copy())
         self.onData.emit("n_nacks_received", ag_n_nacks_received.copy(), self.color_mapping.copy())
         self.onData.emit("rexmit_count", ag_rexmit_count.copy(), self.color_mapping.copy())
+        self.onData.emit("n_reliable_readers", ag_n_reliable_readers.copy(), self.color_mapping.copy())
+        
 
     def run(self):
         self.running = True
@@ -218,11 +235,18 @@ class StatisticsModel(QAbstractTableModel):
         self.unitModels = {}
         self.unitModels["rexmit_bytes"] = StatisticsUnitModel(self.pollingThread, "rexmit_bytes")
         self.unitModels["rexmit_count"] = StatisticsUnitModel(self.pollingThread, "rexmit_count")
+        self.unitModels["n_acks_received"] = StatisticsUnitModel(self.pollingThread, "n_acks_received")
+        self.unitModels["n_nacks_received"] = StatisticsUnitModel(self.pollingThread, "n_nacks_received")
+        self.unitModels["n_reliable_readers"] = StatisticsUnitModel(self.pollingThread, "n_reliable_readers")
 
         self.unitDescriptions = {
             "rexmit_bytes": {
                 "description": "Total number of bytes retransmitted for a writer.",
                 "unit": "bytes"
+            },
+            "n_acks_received": {
+                "description": "Total number of ACKNACK messages not requesting a retransmit.",
+                "unit": "ACKNACK"
             },
             "n_nacks_received": {
                 "description": "Total number of ACKNACK messages requesting a retransmit.",
@@ -231,6 +255,10 @@ class StatisticsModel(QAbstractTableModel):
             "rexmit_count": {
                 "description": "Number of samples retransmitted (counts events, a single sample can count multiple times).",
                 "unit": "Samples"
+            },
+            "n_reliable_readers": {
+                "description": "the current number of matched reliable readers.",
+                "unit": "Matched"   
             }
         }
 
@@ -281,7 +309,6 @@ class StatisticsModel(QAbstractTableModel):
             else:
                 return "n/a"
 
-
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
@@ -292,7 +319,6 @@ class StatisticsModel(QAbstractTableModel):
             if section < len(headers):
                 return headers[section]
         return None
-
 
     @Slot(int, DcpsParticipant)
     def new_participant_slot(self, domain_id: int, participant: DcpsParticipant):
@@ -346,21 +372,14 @@ class StatisticsModel(QAbstractTableModel):
     def setAggregation(self, aggre: str):
         self.pollingThread.setAggregation(aggre.lower())
 
-
-
-
-
-
-
-
-
-
-
-
+    @Slot()
+    def clearStatistics(self):
+        for key in self.unitModels.keys():
+            self.unitModels[key].clearStatistics()
 
 
 class StatisticsUnitModel(QAbstractTableModel):
-    newData = Signal(str, int, int, int, int)
+    newData = Signal(str, int, int, int, int, bool)
 
     NameRole = Qt.UserRole + 1
     ValueRole = Qt.UserRole + 2
@@ -383,6 +402,7 @@ class StatisticsUnitModel(QAbstractTableModel):
         super().__init__(parent)
         self.data_list = []
         self.prop = prop
+        self.clearOnNextData = False
         self.pollingThread = pollingThread
         self.pollingThread.onData.connect(self.onAggregatedData, Qt.ConnectionType.QueuedConnection)
 
@@ -434,6 +454,11 @@ class StatisticsUnitModel(QAbstractTableModel):
         for topc_guid in aggregated_data.keys():
             value = aggregated_data[topc_guid]
             (r, g, b) = color_mapping[topc_guid]
-            self.newData.emit(topc_guid, value, r, g, b)
+            self.newData.emit(topc_guid, value, r, g, b, self.clearOnNextData)
             self.data_list.append([topc_guid, value, r, g, b])
         self.endResetModel()
+
+        self.clearOnNextData = False
+
+    def clearStatistics(self):
+        self.clearOnNextData = True
