@@ -66,7 +66,7 @@ Rectangle {
                 model: statisticModel
                 delegate: Item {
                     id: currentStatUnitId
-                    Layout.preferredHeight: 350
+                    Layout.preferredHeight: 400
                     Layout.preferredWidth: rootStatViewId.width
 
                     property var lineSeriesDict: Object.create(null)
