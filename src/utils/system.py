@@ -12,8 +12,6 @@
 
 from PySide6.QtCore import QDir
 from loguru import logger as logging
-import requests
-import json
 
 
 def delete_folder(folder_path):
