@@ -15,13 +15,11 @@ import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import QtCharts 2.15
 
 import org.eclipse.cyclonedds.insight
 
 
 Window {
-    id: endpointDetailWindow
     property string endpointText
 
     visible: false
@@ -39,42 +37,13 @@ Window {
         visible: false
     }
 
-    ScrollView {
+    TextEdit {
         anchors.fill: parent
-
-        ColumnLayout {
-            width: parent.width
-
-            TextEdit {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                text: endpointText
-                readOnly: true
-                wrapMode: Text.WordWrap
-                selectByMouse: true
-                padding: 10
-                color: colorLabel.color
-            }
-
-            Rectangle {
-                Layout.preferredHeight: 500
-                Layout.preferredWidth: endpointDetailWindow.width
-                color: "red"
-                ChartView {
-                    anchors.fill: parent
-                    title: "Hello Qt Charts"
-                    antialiasing: true
-
-                    LineSeries {
-                        name: "Example Data"
-                        XYPoint { x: 0; y: 10 }
-                        XYPoint { x: 1; y: 20 }
-                        XYPoint { x: 2; y: 15 }
-                        XYPoint { x: 3; y: 30 }
-                    }
-                }
-            }
-        }
+        text: endpointText
+        readOnly: true
+        wrapMode: Text.WordWrap
+        selectByMouse: true
+        padding: 10
+        color: colorLabel.color
     }
-
 }
