@@ -26,16 +26,3 @@ def delete_folder(folder_path):
             logging.error(f"Failed to delete folder: {folder_path}")
     else:
         logging.error(f"Folder does not exist: {folder_path}")
-
-def download_json(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        parsed_json = response.json()
-        print("Received JSON:", json.dumps(parsed_json, indent=4))
-        return parsed_json
-    except requests.exceptions.RequestException as e:
-        print("HTTP Request failed:", e)
-    except json.JSONDecodeError as e:
-        print("Invalid JSON received:", e)
-    return None
