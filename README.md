@@ -7,7 +7,6 @@
 # CycloneDDS Insight
 
 ***Looking for binaries?***
-- The released App will be published under [Releases](https://github.com/eclipse-cyclonedds/cyclonedds-insight/releases).
 - The latest master build can be downloaded [here](https://dev.azure.com/eclipse-cyclonedds/cyclonedds-insight/_build?definitionId=19&repositoryFilter=8&branchFilter=1200%2C1200%2C1200%2C1200&statusFilter=succeeded) click on latest build / "3 published".
 
 ## Overview
