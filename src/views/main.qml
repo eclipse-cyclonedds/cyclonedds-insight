@@ -18,6 +18,7 @@ import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views/selection_details"
+import "qrc:/src/views/shapes_demo"
 
 
 ApplicationWindow {
