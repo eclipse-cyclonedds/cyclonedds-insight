@@ -10,38 +10,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, QByteArray, QStandardPaths, QFile, QDir, QProcess, QThread
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import Qt, QModelIndex, Qt, QThread, Signal, Slot, QAbstractTableModel, QAbstractListModel, QObject
 from loguru import logger as logging
-import os
-import sys
-import importlib
-import inspect
-from pathlib import Path
 import uuid
-import subprocess
-import glob
-from dataclasses import dataclass
-import typing
 import requests
-import json
-from dds_access.dispatcher import DispatcherThread
-from cyclonedds.core import Qos, Policy
-from cyclonedds.util import duration
-import types
-from PySide6.QtQml import qmlRegisterType
-from models.data_tree_model import DataTreeModel, DataTreeNode
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QObject, Signal, Property, Slot
-from PySide6.QtGui import QGuiApplication
-from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 from dds_access import dds_data
-
-from PySide6.QtCore import Qt, QAbstractListModel, QModelIndex, QObject, Signal, Slot
-from PySide6.QtGui import QGuiApplication
-from PySide6.QtQml import QQmlApplicationEngine
-from PySide6.QtCore import QTimer
-from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
-
+from cyclonedds.builtin import DcpsParticipant
 from dds_access import dds_utils
 from dds_access.dds_utils import getProperty, DEBUG_MONITORS, getAppName, getHostname
 import random
@@ -54,13 +28,17 @@ class PollingThread(QThread):
 
     onData = Signal(str, object, object)
 
-    def __init__(self, domainParticipant, parent=None):
+    def __init__(self, parent=None):
         super().__init__()
         self.running = False
         self.mutex = Lock()
         self.color_mapping = {}
         self.pollIntervalSeconds = 3
         self.aggregateBy = "writer"
+        self.aggregateByRequest = self.aggregateBy
+        self.dgbPorts = {}
+        self.dgbPortsRequest = self.dgbPorts
+        self.dgbPortChangeRequest = False
 
     def getRandomColor(self):
         h = random.random()
@@ -68,10 +46,6 @@ class PollingThread(QThread):
         v = random.uniform(0.7, 1.0)  # not too dark
         r, g, b = colorsys.hsv_to_rgb(h, s, v)
         return (int(r * 255), int(g * 255), int(b * 255))
-
-    def setDbgPorts(self, dgbPorts):
-        with self.mutex:
-            self.dgbPorts = dgbPorts.copy()
 
     def poll(self):
         logging.trace("Debug monitor timer triggered")
@@ -177,10 +151,16 @@ class PollingThread(QThread):
 
         start_time = time.monotonic()
         while self.running:
-            
+
             if time.monotonic() - start_time >= self.pollIntervalSeconds:
                 with self.mutex:
-                    self.poll()
+                    if self.aggregateByRequest != self.aggregateBy:
+                        self.color_mapping.clear()
+                        self.aggregateBy = self.aggregateByRequest
+                    if self.dgbPortChangeRequest:
+                        self.dgbPorts = self.dgbPortsRequest.copy()
+                
+                self.poll()
                 start_time = time.monotonic()  # reset the timer
             else:
                 time.sleep(0.1) # fast exit
@@ -192,16 +172,21 @@ class PollingThread(QThread):
 
     def stillRunning(self):
         return self.running
-    
+
     def setInterval(self, seconds):
         logging.trace(f"Set update interval to: {seconds} seconds")
         self.pollIntervalSeconds = seconds
 
+    def setDbgPorts(self, dgbPorts):
+        with self.mutex:
+            self.dgbPortsRequest = dgbPorts.copy()
+            self.dgbPortChangeRequest = True
+
     def setAggregation(self, aggre: str):
         with self.mutex:
-            logging.trace(f"Set aggregateBy to: {aggre}")
-            self.aggregateBy = aggre
-            self.color_mapping.clear()
+            logging.trace(f"Set aggregateByRequest to: {aggre}")
+            self.aggregateByRequest = aggre
+
 
 class StatisticsModel(QAbstractTableModel):
 
@@ -329,8 +314,8 @@ class StatisticsModel(QAbstractTableModel):
     def new_participant_slot(self, domain_id: int, participant: DcpsParticipant):
 
         dbg_mon_str: str = getProperty(participant, DEBUG_MONITORS)
-        appName = getAppName(participant)
-        host = getHostname(participant)
+        appName: str = getAppName(participant)
+        host: str = getHostname(participant)
 
         splitProtoAdr = dbg_mon_str.split("/")
         if len(splitProtoAdr) > 0:
@@ -339,7 +324,6 @@ class StatisticsModel(QAbstractTableModel):
                 if len(splitIpPort) > 1:
                     ip = splitIpPort[0]
                     port = splitIpPort[1]
-                    print("IP:", ip, "Port:", port)
                     self.dgbPorts[str(participant.key)] = (ip, port, appName, host, domain_id)
 
         self.pollingThread.setDbgPorts(self.dgbPorts)

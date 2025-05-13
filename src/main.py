@@ -111,6 +111,7 @@ if __name__ == "__main__":
     shapesDemoModel = ShapesDemoModel()
 
     qmlUtils = QmlUtils()
+    app.aboutToQuit.connect(qmlUtils.aboutToQuit)
 
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("treeModel", treeModel)

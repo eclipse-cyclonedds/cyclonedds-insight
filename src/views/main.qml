@@ -29,6 +29,7 @@ ApplicationWindow {
     title: "CycloneDDS Insight"
 
     property bool isDarkMode: false
+    property bool shutdownInitiated: false
 
     header: HeaderToolBar {}
 
@@ -140,10 +141,27 @@ ApplicationWindow {
         visible: false
     }
 
+    function shutdown() {
+        if (!shutdownInitiated) {
+            shutdownInitiated = true
+            console.log("Shutdown QML ...")
+            overviewId.aboutToClose()
+            treeModel.aboutToClose()  
+            console.log("Shutdown QML ... DONE")
+        }
+    }
+
+    Connections {
+        target: qmlUtils
+        function onAboutToQuit() {
+            console.log("Application is about to quit.")
+            shutdown()
+        }
+    }
+
     onClosing: (close) => {
-        console.log("QML: Received close request")
-        overviewId.aboutToClose()
-        treeModel.aboutToClose()
+        console.log("Received close request.")
+        shutdown()
         close.accepted = true
     }
 
