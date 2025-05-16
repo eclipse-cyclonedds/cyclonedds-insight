@@ -101,7 +101,15 @@ Rectangle {
                                 line.color = Qt.rgba(r/255, g/255, b/255, 1);
                                 axisX.titleText = "time";
                                 axisY.titleText = name_role + " [" + unit_name_role + "]";
-                                line.append(timestamp, value);
+                                line.append(timestamp, value); 
+                                line.hovered.connect(function(point, state) {
+                                    tooltip.visible = state;
+                                    tooltip.text = line.name;
+                                    tooltip.textColor = line.color;
+                                    var pos = myChart.mapToPosition(point, line);
+                                    tooltip.x = pos.x;
+                                    tooltip.y = pos.y;
+                                });
 
                                 currentStatUnitId.lineSeriesDict[guid] = line;
                             }
@@ -135,10 +143,12 @@ Rectangle {
                             spacing: 0
 
                             ChartView {
+                                id: myChart
+
                                 Layout.preferredHeight: 350
                                 Layout.preferredWidth: 450
                                 Layout.alignment: Qt.AlignTop
-                                id: myChart
+                                
                                 title: name_role
                                 antialiasing: true
                                 legend.visible: false
@@ -205,6 +215,25 @@ Rectangle {
                     }
                 }
             }
+        }
+    }
+
+    ToolTip {
+        id: tooltip
+        visible: false
+        delay: 0
+        text: ""
+        property color textColor: "black"
+        contentItem: Label {
+            id: tooltipText
+            text: tooltip.text
+            padding: 6
+            color: tooltip.textColor
+        }
+        background: Rectangle {
+            border.color: rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
+            border.width: 1
+            color: rootWindow.isDarkMode ? Constants.darkCardBackgroundColor : Constants.lightCardBackgroundColor
         }
     }
 }
