@@ -75,7 +75,7 @@ class PollingThread(QThread):
                 # print(json.dumps(json_data, indent=4))
             except Exception as e:
                 logging.error("Error: " + str(e))
-                return
+                continue
 
             if "participants" in json_data:
                 for participant in json_data["participants"]:
