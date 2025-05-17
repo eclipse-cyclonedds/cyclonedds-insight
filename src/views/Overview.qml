@@ -122,7 +122,9 @@ SplitView {
     }
 
     function clearView() {
-        stackView.clear()
+        if (stackView) {
+            stackView.clear()
+        }
         if (childView) {
             childView.destroy()
         }    
@@ -179,11 +181,6 @@ SplitView {
 
     function aboutToClose() {
         statisticsWindow.aboutToClose()
-        if (childView) {
-            childView.destroy()
-        }
-        if (stackView) {
-            stackView.clear()
-        }
+        clearView()
     }
 }
