@@ -21,12 +21,14 @@ from loguru import logger as logging
 import xml.etree.ElementTree as ET
 import os
 import re
+from pathlib import Path
 
 
 HOSTNAMES     = ["__Hostname",    "dds.sys_info.hostname", "fastdds.physical_data.host"]
 PROCESS_NAMES = ["__ProcessName", "dds.sys_info.executable_filepath", "fastdds.application.id"]
 PIDS          = ["__Pid",         "dds.sys_info.process_id", "fastdds.physical_data.process"]
 ADDRESSES     = ["__NetworkAddresses"]
+DEBUG_MONITORS = ["__DebugMonitor"]
 
 CYCLONEDDS_URI_NAME = "CYCLONEDDS_URI"
 
@@ -42,6 +44,11 @@ def getProperty(p: Optional[DcpsParticipant], names: List[str]):
                 break
     return propName
 
+def getAppName(p: Optional[DcpsParticipant]):
+    appNameWithPath = getProperty(p, PROCESS_NAMES)
+    pid = getProperty(p, PIDS)
+    appNameStem = Path(appNameWithPath.replace("\\", f"{os.path.sep}")).stem
+    return  appNameStem + ":" + pid
 
 def getHostname(p: Optional[DcpsParticipant]):
     hostnameRaw = getProperty(p, HOSTNAMES)
@@ -106,6 +113,18 @@ def getDataType(domainId, endp):
 
     return None
 
+def normalizeGuid(guid: str) -> str:
+
+    parts = guid.split(':')
+    if len(parts) != 4:
+        return guid
+
+    part0 = parts[0].rjust(8, '0')
+    part1 = parts[1].rjust(8, '0')
+    part2 = parts[2].rjust(8, '0')
+    part3 = parts[3].zfill(8)
+
+    return f"{part0}-{part1[:4]}-{part1[4:8]}-{part2[:4]}-{part2[4:8]}{part3}"
 
 def toQos(q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partitions,
         type_consis, ig_seq_bnds, ig_str_bnds, ign_mem_nam, prev_ty_wide, fore_type_vali, fore_type_vali_allow,

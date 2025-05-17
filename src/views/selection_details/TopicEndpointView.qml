@@ -16,6 +16,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views"
 
 
 Rectangle {
@@ -80,6 +81,11 @@ Rectangle {
 
                 Column {
                     id: headlineLabel
+                    Label {
+                        text: qsTr("Topic")
+                        font.pixelSize: 18
+                        font.bold: true
+                    }
                     Label {
                         text: "Domain Id: " + domainId
                     }

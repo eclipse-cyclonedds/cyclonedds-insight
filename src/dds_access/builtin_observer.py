@@ -118,6 +118,7 @@ class BuiltInObserver(QThread):
 
                 for p in rdp.take(condition=rcp):
                     if p.sample_info.sample_state == core.SampleState.NotRead and p.sample_info.instance_state == core.InstanceState.Alive:
+                        logging.trace(str(p))
                         dataItem.new_participants.append((self.domain_id, p))
                     elif p.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
                         dataItem.remove_participants.append((self.domain_id, p))

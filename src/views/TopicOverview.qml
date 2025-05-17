@@ -31,9 +31,12 @@ TreeView {
         onCurrentIndexChanged: {
             console.log("Selection changed to:", currentIndex);
             if (treeModel.getIsRowDomain(currentIndex)) {
-                stackView.clear()
-            } else {
+                showDomainView(treeModel.getDomain(currentIndex))
+            } else if (treeModel.getIsRowTopic(currentIndex)) {
                 showTopicEndpointView(treeModel.getDomain(currentIndex), treeModel.getName(currentIndex))
+            } else {
+                console.log("Nothing found, clear view.")
+                clearView()
             }
         }
     }
