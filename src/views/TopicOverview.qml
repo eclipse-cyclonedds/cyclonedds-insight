@@ -35,6 +35,7 @@ TreeView {
             } else if (treeModel.getIsRowTopic(currentIndex)) {
                 showTopicEndpointView(treeModel.getDomain(currentIndex), treeModel.getName(currentIndex))
             } else {
+                console.log("Nothing found, clear view.")
                 clearView()
             }
         }

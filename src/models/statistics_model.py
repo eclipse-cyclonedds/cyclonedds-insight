@@ -81,7 +81,7 @@ class PollingThread(QThread):
                 # logging.trace(json.dumps(json_data, indent=4))
             except Exception as e:
                 logging.error(str(e))
-                self.error.emit("[" + datetime.datetime.now().isoformat() + "] " + str(e))
+                self.error.emit("[" + datetime.datetime.now().isoformat() + "] " + url + " " + str(e))
                 continue
 
             if "participants" in json_data:

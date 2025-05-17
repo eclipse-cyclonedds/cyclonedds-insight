@@ -54,7 +54,7 @@ class TreeNode:
         return self.is_domain
 
     def isTopic(self):
-        not self.isDomain()
+        return not self.is_domain
 
     def hasQosMismatch(self):
         return self.has_qos_mismatch
