@@ -93,7 +93,7 @@ Rectangle {
                 Column {
                     id: headlineLabel
                     Label {
-                        text: qsTr("Topic View")
+                        text: qsTr("Topic")
                         font.pixelSize: 18
                         font.bold: true
                     }

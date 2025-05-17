@@ -53,6 +53,9 @@ class TreeNode:
     def isDomain(self):
         return self.is_domain
 
+    def isTopic(self):
+        not self.isDomain()
+
     def hasQosMismatch(self):
         return self.has_qos_mismatch
 
@@ -61,6 +64,7 @@ class TreeModel(QAbstractItemModel):
     IsDomainRole = Qt.UserRole + 1
     DisplayRole = Qt.UserRole + 2
     HasQosMismatch = Qt.UserRole + 3
+    IsTopicRole = Qt.UserRole + 4
 
     remove_domain_request_signal = Signal(int)
 
@@ -124,6 +128,8 @@ class TreeModel(QAbstractItemModel):
             return item.data(index)
         if role == self.IsDomainRole:
             return item.isDomain()
+        if role == self.IsTopicRole:
+            return item.isTopic()
         if role == self.HasQosMismatch:
             return item.hasQosMismatch()
         return None
@@ -132,7 +138,8 @@ class TreeModel(QAbstractItemModel):
         return {
             self.DisplayRole: b'display',
             self.IsDomainRole: b'is_domain',
-            self.HasQosMismatch: b'has_qos_mismatch'
+            self.HasQosMismatch: b'has_qos_mismatch',
+            self.IsTopicRole: b'is_topic'
         }
 
     def flags(self, index):
@@ -235,8 +242,17 @@ class TreeModel(QAbstractItemModel):
 
     @Slot(QModelIndex, result=bool)
     def getIsRowDomain(self, index: QModelIndex):
-        isDomain = self.data(index, role=self.IsDomainRole)
+        isDomain = False
+        if index.isValid():
+            isDomain = self.data(index, role=self.IsDomainRole)
         return isDomain
+
+    @Slot(QModelIndex, result=bool)
+    def getIsRowTopic(self, index: QModelIndex):
+        isTopic = False
+        if index.isValid():
+            isTopic = self.data(index, role=self.IsTopicRole)
+        return isTopic
 
     @Slot(QModelIndex, result=int)
     def getDomain(self, index: QModelIndex):

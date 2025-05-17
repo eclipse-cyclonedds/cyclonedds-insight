@@ -41,7 +41,7 @@ TreeView {
                 showEndpointView(domainId)
             } else {
                 console.log("Nothing found, clear view.")
-                stackView.clear()
+                clearView()
             }
         }
     }

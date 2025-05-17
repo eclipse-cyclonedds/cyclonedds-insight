@@ -30,7 +30,7 @@ Rectangle {
         anchors.margins: 10
 
         Label {
-            text: qsTr("Participant View")
+            text: qsTr("Participant")
             font.pixelSize: 18
             font.bold: true
             horizontalAlignment: Text.AlignLeft

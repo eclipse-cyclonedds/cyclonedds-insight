@@ -164,7 +164,6 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
-            logging.warning("calling data with invalid index")
             return None
         item = index.internalPointer()
         if role == self.DisplayRole:
@@ -353,31 +352,45 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(QModelIndex, result=bool)
     def getIsRowDomain(self, index: QModelIndex):
-        isDomain = self.data(index, role=self.IsDomainRole)
+        isDomain = False
+        if index.isValid():
+            isDomain = self.data(index, role=self.IsDomainRole)
         return isDomain
 
     @Slot(QModelIndex, result=bool)
     def getIsHost(self, index: QModelIndex):
-        return self.data(index, role=self.IsHostRole)
+        if index.isValid():
+            return self.data(index, role=self.IsHostRole)
+        return False
 
     @Slot(QModelIndex, result=bool)
     def getIsProcess(self, index: QModelIndex):
-        return self.data(index, role=self.IsProcessRole)
+        if index.isValid():
+            return self.data(index, role=self.IsProcessRole)
+        return False
 
     @Slot(QModelIndex, result=bool)
     def getIsParticipant(self, index: QModelIndex):
-        return self.data(index, role=self.IsParticipantRole)
+        if index.isValid():
+            return self.data(index, role=self.IsParticipantRole)
+        return False
 
     @Slot(QModelIndex, result=bool)
     def getIsTopic(self, index: QModelIndex):
-        return self.data(index, role=self.IsTopicRole)
+        if index.isValid():
+            return self.data(index, role=self.IsTopicRole)
+        return False
 
     @Slot(QModelIndex, result=bool)
     def getIsEndpoint(self, index: QModelIndex):
-        return self.data(index, role=self.IsWriterRole) or self.data(index, role=self.IsReaderRole) 
+        if index.isValid():
+            return self.data(index, role=self.IsWriterRole) or self.data(index, role=self.IsReaderRole)
+        return False
 
     @Slot(QModelIndex, result=int)
     def getDomain(self, index: QModelIndex):
+        if not index.isValid():
+            return None
         if self.getIsRowDomain(index):
             return int(self.data(index, role=self.DisplayRole))
         elif self.getIsHost(index):
@@ -415,8 +428,10 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(QModelIndex, result=str)
     def getName(self, index: QModelIndex):
-        display = self.data(index, role=self.DisplayRole)
-        return str(display)
+        if index.isValid():
+            display = self.data(index, role=self.DisplayRole)
+            return str(display)
+        return ""
 
     @Slot(str, int, dds_data.DataEndpoint)
     def new_endpoint_slot(self, unkown: str, domain_id: int, participant: dds_data.DataEndpoint):

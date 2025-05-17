@@ -30,7 +30,7 @@ Rectangle {
         anchors.margins: 10
 
         Label {
-            text: qsTr("Domain View")
+            text: qsTr("Domain")
             font.pixelSize: 18
             font.bold: true
             horizontalAlignment: Text.AlignLeft

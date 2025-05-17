@@ -32,8 +32,10 @@ TreeView {
             console.log("Selection changed to:", currentIndex);
             if (treeModel.getIsRowDomain(currentIndex)) {
                 showDomainView(treeModel.getDomain(currentIndex))
-            } else {
+            } else if (treeModel.getIsRowTopic(currentIndex)) {
                 showTopicEndpointView(treeModel.getDomain(currentIndex), treeModel.getName(currentIndex))
+            } else {
+                clearView()
             }
         }
     }

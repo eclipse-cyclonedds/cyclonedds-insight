@@ -30,7 +30,7 @@ Rectangle {
         anchors.margins: 10
 
         Label {
-            text: qsTr("Endpoint View")
+            text: qsTr("Endpoint")
             font.pixelSize: 18
             font.bold: true
             horizontalAlignment: Text.AlignLeft

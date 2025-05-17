@@ -14,12 +14,14 @@ from PySide6.QtCore import Qt, QModelIndex, Qt, QThread, Signal, Slot, QAbstract
 from loguru import logger as logging
 import uuid
 import requests
+import json
 from dds_access import dds_data
 from cyclonedds.builtin import DcpsParticipant
 from dds_access import dds_utils
 from dds_access.dds_utils import getProperty, DEBUG_MONITORS, getAppName, getHostname
 import random
 import colorsys
+import datetime
 import time
 from threading import Lock
 
@@ -27,6 +29,7 @@ from threading import Lock
 class PollingThread(QThread):
 
     onData = Signal(str, object, object)
+    error = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__()
@@ -68,13 +71,17 @@ class PollingThread(QThread):
             try:
                 url = "http://" + ip + ":" + port + "/"
                 logging.trace(f"Downloading JSON from: {url}")
-                response = requests.get(url, timeout=(5, 10))
+                headers = {
+                    'Connection': 'close'
+                }
+                response = requests.get(url, timeout=(3, 5), verify=False, headers=headers)
                 logging.trace(f"Response code: {str(response.status_code)}")
                 response.raise_for_status()
                 json_data = response.json()
-                # print(json.dumps(json_data, indent=4))
+                # logging.trace(json.dumps(json_data, indent=4))
             except Exception as e:
-                logging.error("Error: " + str(e))
+                logging.error(str(e))
+                self.error.emit("[" + datetime.datetime.now().isoformat() + "] " + str(e))
                 continue
 
             if "participants" in json_data:
@@ -192,6 +199,7 @@ class StatisticsModel(QAbstractTableModel):
 
     newData = Signal(str, str, int, int, int, int)
     requestParticipants = Signal(str)
+    statisticError = Signal(str)
 
     NameRole = Qt.UserRole + 1
     TableModelRole = Qt.UserRole + 2
@@ -213,6 +221,7 @@ class StatisticsModel(QAbstractTableModel):
         self.data_list = {} 
 
         self.pollingThread = PollingThread(self)
+        self.pollingThread.error.connect(self.statisticError)
 
         self.dds_data = dds_data.DdsData()
         self.requestParticipants.connect(self.dds_data.requestParticipants, Qt.ConnectionType.QueuedConnection)
@@ -340,7 +349,6 @@ class StatisticsModel(QAbstractTableModel):
 
     @Slot(int, str)
     def removed_participant_slot(self, domain_id: int, participant_key: str):
-        print(self.dgbPorts.keys(), participant_key)
         if participant_key in self.dgbPorts:
             del self.dgbPorts[participant_key]
         self.pollingThread.setDbgPorts(self.dgbPorts)

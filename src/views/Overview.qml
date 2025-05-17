@@ -66,7 +66,7 @@ SplitView {
                 width: parent.width
 
                 TabButton {
-                    text: qsTr("Selection")
+                    text: qsTr("Details")
                     width: implicitWidth + 20
                 }
                 TabButton {
@@ -121,11 +121,15 @@ SplitView {
         }
     }
 
-    function showView(name, data) {
+    function clearView() {
         stackView.clear()
         if (childView) {
             childView.destroy()
-        }
+        }    
+    }
+
+    function showView(name, data) {
+        clearView()
         console.log("Create component " + name)
         var childComponent = Qt.createComponent("qrc:/src/views/" + name)
         if (childComponent.status === Component.Ready) {
