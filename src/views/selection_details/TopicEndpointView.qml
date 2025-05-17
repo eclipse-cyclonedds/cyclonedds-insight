@@ -28,7 +28,6 @@ Rectangle {
     property bool hasQosMismatch: false
     property int writerCount: 0
     property int readerCount: 0
-    property bool statisticsShown: false
 
     EndpointModel {
         id: endpointWriterModel
@@ -36,14 +35,6 @@ Rectangle {
 
     EndpointModel {
         id: endpointReaderModel
-    }
-
-    StatisticsModel {
-        id: statisticModelDomainView
-        Component.onDestruction: {
-            console.log("DomainView with domainId " + topicEndpointView.domainId + " is being destroyed.")
-            statisticModelDomainView.stop()
-        }
     }
 
     Connections {
@@ -76,8 +67,6 @@ Rectangle {
 
     ColumnLayout  {
         anchors.fill: parent
-
-
 
         ColumnLayout {
             Layout.fillWidth: true
