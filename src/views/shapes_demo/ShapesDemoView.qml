@@ -169,13 +169,14 @@ Window {
                             Layout.fillHeight: true
 
                             Label {
+                                id: pubColorLabel
                                 text: qsTr("Color:")
                             }
                             ComboBox {
                                 id: colorSelector
-                                Layout.fillWidth: true
                                 model: ["Red", "Blue", "Green", "Yellow", "Orange", "Cyan", "Magenta", "Purple", "Gray", "Black", "<<ALL>>"]
                                 currentIndex: 0
+                                Layout.preferredWidth: leftColumn.width - pubColorLabel.width - 20
                             }
                         }
 
@@ -248,6 +249,7 @@ Window {
                             Layout.fillHeight: true
 
                             Label {
+                                id: pubRotLabel
                                 text: qsTr("Rotation-Speed:")
                             }
                             Slider {
@@ -257,6 +259,7 @@ Window {
                                 to: 20
                                 value: 0
                                 stepSize: 1
+                                Layout.preferredWidth: leftColumn.width - pubRotLabel.width - rotationSpeedSliderLabel.width - 30
                             }
                             Label {
                                 id: rotationSpeedSliderLabel
@@ -269,11 +272,12 @@ Window {
                             Layout.fillHeight: true
 
                             Label {
+                                id: pubFillLabel
                                 text: qsTr("Fill:")
                             }
                             ComboBox {
                                 id: fillKindSelector
-                                Layout.fillWidth: true
+                                Layout.preferredWidth: leftColumn.width - pubFillLabel.width - 20
                                 model: ["SOLID_FILL", "TRANSPARENT_FILL", "HORIZONTAL_HATCH_FILL", "VERTICAL_HATCH_FILL"]
                                 currentIndex: 0
                                 onCurrentIndexChanged: {
@@ -323,7 +327,7 @@ Window {
 
                             ComboBox {
                                 id: shapeSelectorSubscribe
-                                Layout.preferredWidth: leftColumn.width - shapeLabelSubscribe.width - 10
+                                Layout.preferredWidth: leftColumn.width - shapeLabelSubscribe.width - 20
                                 model: ["Square", "Triangle", "Circle", "<<ALL>>"]
                                 currentIndex: 0
                                 onCurrentIndexChanged: {
