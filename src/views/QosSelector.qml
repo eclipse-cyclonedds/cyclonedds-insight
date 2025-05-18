@@ -339,6 +339,7 @@ Popup {
                     }
                     SpinBox {
                         id: keepLastSpinBox
+                        from: 1
                         to: 1e9
                         value: 1
                         visible: historyComboId.currentText === "KeepLast"
@@ -714,6 +715,7 @@ Popup {
                             }
                             SpinBox {
                                 id: durabilityServiceKeepLastSpinBox
+                                from: 1
                                 to: 1e9
                                 value: 1
                                 enabled: durabilityServiceHistoryComboId.currentText === "KeepLast"
