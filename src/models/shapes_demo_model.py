@@ -304,7 +304,7 @@ class ShapeDispatcherThread(QThread):
                         else:
                             count_per_instance[instance_handle] = 0
 
-                        id = f"{instance_handle}_{str(count_per_instance[instance_handle])}"
+                        id = f"{self.topic_name}_{instance_handle}_{str(count_per_instance[instance_handle])}"
                         if sample.sample_info.instance_state == core.InstanceState.Alive and sample.sample_info.valid_data:
                             self.onData.emit(id, topic.get_name(), sample, False)
 
