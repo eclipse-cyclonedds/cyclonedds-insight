@@ -19,13 +19,8 @@ from typing import List
 from cyclonedds.builtin import DcpsParticipant
 from loguru import logger as logging
 from dds_access import dds_data
-from dds_access.dds_utils import getProperty, getHostname, PROCESS_NAMES, PIDS, ADDRESSES
+from dds_access.dds_utils import getProperty, getHostname, getAppName, PROCESS_NAMES, PIDS, ADDRESSES
 from enum import Enum
-
-
-def getAppName(appNameWithPath, pid):
-    appNameStem = Path(appNameWithPath.replace("\\", f"{os.path.sep}")).stem
-    return  appNameStem + ":" + pid
 
 
 # defines what type is the current node
@@ -82,6 +77,12 @@ class ParticipantTreeNode:
     def isDomain(self):
         return self.layer == DisplayLayerEnum.DOMAIN
 
+    def isHost(self):
+        return self.layer == DisplayLayerEnum.HOSTNAME
+
+    def isProcess(self):
+        return self.layer == DisplayLayerEnum.APP
+
     def isParticipant(self):
         return self.layer == DisplayLayerEnum.PARTICIPANT
 
@@ -103,6 +104,8 @@ class ParticipantTreeModel(QAbstractItemModel):
     IsTopicRole = Qt.UserRole + 4
     IsReaderRole = Qt.UserRole + 5
     IsWriterRole = Qt.UserRole + 6
+    IsHostRole = Qt.UserRole + 7
+    IsProcessRole = Qt.UserRole + 8
 
     remove_domain_request_signal = Signal(int)
     request_endpoints_by_participant_key_signal = Signal(str, int, str)
@@ -171,7 +174,7 @@ class ParticipantTreeModel(QAbstractItemModel):
                 return getHostname(p)
             elif item.layer == DisplayLayerEnum.APP:
                 p = item.data(index)
-                return getAppName(getProperty(p, PROCESS_NAMES), getProperty(p, PIDS))
+                return getAppName(p)
             elif item.layer == DisplayLayerEnum.PARTICIPANT:
                 return str(item.data(index).key)
             elif item.layer == DisplayLayerEnum.TOPIC:
@@ -182,10 +185,14 @@ class ParticipantTreeModel(QAbstractItemModel):
                 return ""
         if role == self.IsDomainRole:
             return item.isDomain()
-        elif role == self.IsTopicRole:
-            return item.isTopic()
+        elif role == self.IsHostRole:
+            return item.isHost()
+        elif role == self.IsProcessRole:
+            return item.isProcess()
         elif role == self.IsParticipantRole:
             return item.isParticipant()
+        elif role == self.IsTopicRole:
+            return item.isTopic()
         elif role == self.IsReaderRole:
             return item.isReader()
         elif role == self.IsWriterRole:
@@ -200,7 +207,9 @@ class ParticipantTreeModel(QAbstractItemModel):
             self.IsTopicRole: b'is_topic',
             self.IsParticipantRole: b'is_participant',
             self.IsReaderRole: b'is_reader',
-            self.IsWriterRole: b'is_writer'
+            self.IsWriterRole: b'is_writer',
+            self.IsHostRole: b'is_host',
+            self.IsProcessRole: b'is_process'
         }
 
     def flags(self, index):
@@ -214,7 +223,7 @@ class ParticipantTreeModel(QAbstractItemModel):
 
         # Look for the domain_id node under rootItem
         hostname = getHostname(participant)
-        appName = getAppName(getProperty(participant, PROCESS_NAMES), getProperty(participant, PIDS))
+        appName = getAppName(participant)
 
         if domain_id in self.rootItem.childMap:
             domain_child = self.rootItem.childMap[domain_id]
@@ -343,40 +352,92 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(QModelIndex, result=bool)
     def getIsRowDomain(self, index: QModelIndex):
-        isDomain = self.data(index, role=self.IsDomainRole)
+        isDomain = False
+        if index.isValid():
+            isDomain = self.data(index, role=self.IsDomainRole)
         return isDomain
 
     @Slot(QModelIndex, result=bool)
-    def getIsTopic(self, index: QModelIndex):
-        isTopic = self.data(index, role=self.IsTopicRole)
-        return isTopic
+    def getIsHost(self, index: QModelIndex):
+        if index.isValid():
+            return self.data(index, role=self.IsHostRole)
+        return False
 
+    @Slot(QModelIndex, result=bool)
+    def getIsProcess(self, index: QModelIndex):
+        if index.isValid():
+            return self.data(index, role=self.IsProcessRole)
+        return False
+
+    @Slot(QModelIndex, result=bool)
+    def getIsParticipant(self, index: QModelIndex):
+        if index.isValid():
+            return self.data(index, role=self.IsParticipantRole)
+        return False
+
+    @Slot(QModelIndex, result=bool)
+    def getIsTopic(self, index: QModelIndex):
+        if index.isValid():
+            return self.data(index, role=self.IsTopicRole)
+        return False
+
+    @Slot(QModelIndex, result=bool)
+    def getIsEndpoint(self, index: QModelIndex):
+        if index.isValid():
+            return self.data(index, role=self.IsWriterRole) or self.data(index, role=self.IsReaderRole)
+        return False
 
     @Slot(QModelIndex, result=int)
     def getDomain(self, index: QModelIndex):
-        isDomain = self.data(index, role=self.IsDomainRole)
-        isTopic = self.data(index, role=self.IsTopicRole)
-        if isTopic:
+        if not index.isValid():
+            return None
+        if self.getIsRowDomain(index):
+            return int(self.data(index, role=self.DisplayRole))
+        elif self.getIsHost(index):
+            parentIndex = self.parent(index)
+            dom = self.data(parentIndex, role=self.DisplayRole)
+            if dom:
+                return int(dom)
+            return None
+        elif self.getIsProcess(index):
+            parentIndex = self.parent(self.parent(index))
+            dom = self.data(parentIndex, role=self.DisplayRole)
+            if dom:
+                return int(dom)
+            return None
+        elif self.getIsParticipant(index):
+            parentIndex = self.parent(self.parent(self.parent(index)))
+            dom = self.data(parentIndex, role=self.DisplayRole)
+            if dom:
+                return int(dom)
+            return None
+        elif self.getIsTopic(index):
             parentIndex = self.parent(self.parent(self.parent(self.parent(index))))
             dom = self.data(parentIndex, role=self.DisplayRole)
             if dom:
                 return int(dom)
             return None
-        elif isDomain:
-            return int(self.data(index, role=self.DisplayRole))
+        elif self.getIsEndpoint(index):
+            parentIndex = self.parent(self.parent(self.parent(self.parent(self.parent(index)))))
+            dom = self.data(parentIndex, role=self.DisplayRole)
+            if dom:
+                return int(dom)
+            return None
 
         return None
 
     @Slot(QModelIndex, result=str)
     def getName(self, index: QModelIndex):
-        display = self.data(index, role=self.DisplayRole)
-        return str(display)
+        if index.isValid():
+            display = self.data(index, role=self.DisplayRole)
+            return str(display)
+        return ""
 
     @Slot(str, int, dds_data.DataEndpoint)
     def new_endpoint_slot(self, unkown: str, domain_id: int, participant: dds_data.DataEndpoint):
 
         hostname = getHostname(participant.participant)
-        appName = getAppName(getProperty(participant.participant, PROCESS_NAMES), getProperty(participant.participant, PIDS))
+        appName = getAppName(participant.participant)
 
         if domain_id in self.rootItem.childMap:
             domain_child = self.rootItem.childMap[domain_id]

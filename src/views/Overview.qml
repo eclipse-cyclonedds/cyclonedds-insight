@@ -17,6 +17,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views/statistics"
 
 
 SplitView {
@@ -63,8 +64,13 @@ SplitView {
             TabBar {
                 id: bar
                 width: parent.width
+
                 TabButton {
-                    text: qsTr("Selected Topic")
+                    text: qsTr("Details")
+                    width: implicitWidth + 20
+                }
+                TabButton {
+                    text: qsTr("Statistics")
                     width: implicitWidth + 20
                 }
                 TabButton {
@@ -85,13 +91,20 @@ SplitView {
                     id: inspectTab
 
                     Label {
-                        text: "No Topic Selected"
+                        text: "Nothing Selected"
                         anchors.centerIn: parent
                     }
 
                     StackView {
                         id: stackView
                         anchors.fill: parent
+                    }
+                }
+                Item {
+                    id: statisticsTab
+
+                    StatisticsWindow {
+                        id: statisticsWindow
                     }
                 }
                 Item {
@@ -108,21 +121,66 @@ SplitView {
         }
     }
 
-    function showTopicEndpointView(domainId, topicName) {
-        stackView.clear()
+    function clearView() {
+        if (stackView) {
+            stackView.clear()
+        }
         if (childView) {
             childView.destroy()
-        }
-        var childComponent = Qt.createComponent("qrc:/src/views/TopicEndpointView.qml")
+        }    
+    }
+
+    function showView(name, data) {
+        clearView()
+        console.log("Create component " + name)
+        var childComponent = Qt.createComponent("qrc:/src/views/" + name)
         if (childComponent.status === Component.Ready) {
-            childView = childComponent.createObject(
-                        stackView, {
-                            domainId: domainId,
-                            topicName: topicName
-                        });
+            childView = childComponent.createObject(stackView, data);
             stackView.replace(childView);
         } else {
-            console.log("Failed to create component TopicEndpointView")
+            console.log("Failed to create component " + name)
         }
+    }
+
+    function showDomainView(domainId) {
+        showView("selection_details/DomainView.qml", {
+                            domainId: domainId
+                        })
+    }
+
+    function showHostView(domainId) {
+        showView("selection_details/HostView.qml", {
+                            domainId: domainId
+                        })
+    }
+
+    function showProcessView(domainId) {
+        showView("selection_details/ProcessView.qml", {
+                            domainId: domainId
+                        })
+    }
+
+    function showParticipantView(domainId) {
+        showView("selection_details/ParticipantView.qml", {
+                            domainId: domainId
+                        })
+    }
+
+    function showTopicEndpointView(domainId, topicName) {
+        showView("selection_details/TopicEndpointView.qml", {
+                            domainId: domainId,
+                            topicName: topicName
+                        })
+    }
+
+    function showEndpointView(domainId) {
+        showView("selection_details/EndpointView.qml", {
+                            domainId: domainId
+                        })
+    }
+
+    function aboutToClose() {
+        statisticsWindow.aboutToClose()
+        clearView()
     }
 }
