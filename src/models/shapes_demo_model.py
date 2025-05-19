@@ -50,10 +50,6 @@ class ShapesDemoModel(QAbstractListModel):
         self.publishInfos = None
         self.subscribeInfos = None
 
-    @Slot()
-    def start(self):
-        pass
-
     def getParticipant(self, domain_id):
         if domain_id not in self.domain_participants:
             self.domain_participants[domain_id] = DomainParticipant(domain_id)

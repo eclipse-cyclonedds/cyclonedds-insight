@@ -35,12 +35,6 @@ Window {
         shapesMap = {};
     }
 
-    onVisibleChanged: {
-        if (visible) {
-            shapesDemoModel.start();
-        }
-    }
-
     Connections {
         target: shapesDemoModel
         function onShapeUpdateSignale(id, shape, color, x, y, size, rotation, fillKind, disposed) {
