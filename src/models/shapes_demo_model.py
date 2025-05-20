@@ -49,21 +49,6 @@ class ShapesDemoModel(QAbstractListModel):
         self.dispatchers = {}
         self.publishInfos = None
         self.subscribeInfos = None
-        self.started = False
-
-    @Slot()
-    def start(self):
-        if not self.started:
-            self.started = True
-            self.getDispatcher(0)
-
-    def getDispatcher(self, domain_id):
-        if domain_id not in self.dispatchers:
-            self.dispatchers[domain_id] = ShapeDispatcherThread(self.getParticipant(domain_id), self.parent)
-            self.dispatchers[domain_id].onData.connect(self.onData, Qt.ConnectionType.QueuedConnection)
-            self.dispatchers[domain_id].start()
-
-        return self.dispatchers[domain_id]
 
     def getParticipant(self, domain_id):
         if domain_id not in self.domain_participants:
@@ -124,8 +109,15 @@ class ShapesDemoModel(QAbstractListModel):
             shapeTypes = [shapeTypeRaw]
 
         for shapeType in shapeTypes:
-            dsp = self.getDispatcher(domain_id)
-            dsp.addEndpoint(shapeType, ishape.ShapeTypeExtended, qos)
+            if domain_id not in self.dispatchers:
+                self.dispatchers[domain_id] = []
+
+            dsp = ShapeDispatcherThread(self.getParticipant(domain_id), shapeType, ishape.ShapeTypeExtended, qos, self.parent)
+            dsp.onData.connect(self.onData, Qt.ConnectionType.QueuedConnection)
+            dsp.start()
+
+            self.dispatchers[domain_id].append(dsp)
+
 
     @Slot(str, object, bool)
     def onData(self, id: str, topicName: str, data: ishape.ShapeTypeExtended, disposed: bool):
@@ -139,8 +131,9 @@ class ShapesDemoModel(QAbstractListModel):
             self.shapeUpdateSignale.emit(id, topicName, data.color, data.x, data.y, data.shapesize, data.angle, data.fillKind, disposed)
 
     def stop(self):
-        for dsp in self.dispatchers.values():
-            dsp.stop()
+        for domain in self.dispatchers.keys():
+            for dsp in self.dispatchers[domain]:
+                dsp.stop()
         for thread in self.writerShapeThreads.values():
             thread.stop()
 
@@ -256,7 +249,10 @@ class ShapeDynamicThread(QThread):
                 if self.rotationSpeed > 0:
                     shape.angle = (shape.angle + self.rotationSpeed) % 360
 
-                writer.write(shape)
+                try:
+                    writer.write(shape)
+                except:
+                    pass
                 time.sleep(0.04)
         except Exception as e:
             logging.error(f"Error in ShapeDynamicThread: {e}")
@@ -272,52 +268,46 @@ class ShapeDispatcherThread(QThread):
 
     onData = Signal(str, str, object, bool)
 
-    def __init__(self, domainParticipant, parent=None):
+    def __init__(self, domainParticipant, topic_name: str, topic_type, qos, parent=None):
         super().__init__()
         self.domain_participant = domainParticipant
-        self.waitset = None
-        self.guardCondition = None
         self.running = False
-        self.readerData = []
-
-    @Slot()
-    def addEndpoint(self, topic_name: str, topic_type, qos):
-        try:
-            topic = Topic(self.domain_participant, topic_name, topic_type, qos)
-            subscriber = Subscriber(self.domain_participant, qos)
-            reader = DataReader(subscriber, topic, qos)
-            readCondition = core.ReadCondition(reader, SampleState.Any | ViewState.Any | InstanceState.Any)
-            self.guardCondition.set(True)
-            self.waitset.attach(readCondition)
-            self.guardCondition.set(False)
-            self.readerData.append((topic, subscriber, reader, readCondition))
-
-            logging.info("Add endpoint ... DONE")
-
-        except Exception as e:
-            logging.error(f"Error creating endpoint {topic_name}: {e}")
+        self.topic_name = topic_name
+        self.topic_type = topic_type
+        self.qos = qos
 
     def run(self):
         self.running = True
-        self.waitset = core.WaitSet(self.domain_participant)
-        self.guardCondition = core.GuardCondition(self.domain_participant)
-        self.waitset.attach(self.guardCondition)
 
-        while self.running:
-            try:
-                self.waitset.wait(duration(infinite=True))
-            except:
-                pass
+        try:
+            topic = Topic(self.domain_participant, self.topic_name, self.topic_type, self.qos)
+            subscriber = Subscriber(self.domain_participant, self.qos)
+            reader = DataReader(subscriber, topic, self.qos)
 
-            for (topic, _, readItem, condItem) in self.readerData:
-                for sample in readItem.take(condition=condItem):
-                    id = str(sample.sample_info.instance_handle) + "_" + str(sample.sample_info.publication_handle)
-                    if sample.sample_info.sample_state == SampleState.NotRead and sample.sample_info.instance_state == core.InstanceState.Alive and sample.sample_info.valid_data:
-                        self.onData.emit(id, topic.get_name(), sample, False)
-                    else:
-                        self.onData.emit(id, "", None, True)
+            while self.running:
+                time.sleep(0.04)
+
+                count_per_instance = {}
+                try:
+                    samples = reader.read(dds_utils.MAX_SAMPLE_SIZE)
+                    for sample in samples:
+                        if not self.running:
+                            break
+
+                        instance_handle = str(sample.sample_info.instance_handle)
+                        if instance_handle in count_per_instance:
+                            count_per_instance[instance_handle] += 1
+                        else:
+                            count_per_instance[instance_handle] = 0
+
+                        id = f"{self.topic_name}_{instance_handle}_{str(count_per_instance[instance_handle])}"
+                        if sample.sample_info.instance_state == core.InstanceState.Alive and sample.sample_info.valid_data:
+                            self.onData.emit(id, topic.get_name(), sample, False)
+
+                except Exception as e:
+                    logging.error(str(e))
+        except Exception as e:
+            logging.error(str(e))
 
     def stop(self):
         self.running = False
-        if self.guardCondition:
-            self.guardCondition.set(True)

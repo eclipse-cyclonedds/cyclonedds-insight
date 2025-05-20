@@ -32,6 +32,8 @@ DEBUG_MONITORS = ["__DebugMonitor"]
 
 CYCLONEDDS_URI_NAME = "CYCLONEDDS_URI"
 
+MAX_SAMPLE_SIZE = 67108863
+
 
 def getProperty(p: Optional[DcpsParticipant], names: List[str]):
     propName: str = "Unknown"
