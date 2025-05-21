@@ -378,6 +378,8 @@ Window {
                         anchors.top: parent.top
                         anchors.right: parent.right
                         anchors.margins: 10
+                        width: 40
+                        height: 40
                     }
 
                     Label {
