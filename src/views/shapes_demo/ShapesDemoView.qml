@@ -372,21 +372,11 @@ Window {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
-                    Button {
-                        id: pauseButton
-                        text: shapeDemoViewId.paused ? "►" : "❚❚"
-                        anchors.top: parent.top
-                        anchors.right: parent.right
-                        anchors.margins: 10
-                        width: 40
-                        height: 40
-                    }
-
                     Label {
                         text: "Paused"
                         visible: shapeDemoViewId.paused
                         anchors.top: parent.top
-                        anchors.right: pauseButton.left
+                        anchors.right: parent.right
                         font.pixelSize: 24
                         anchors.margins: 10
                     }
