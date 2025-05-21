@@ -61,19 +61,28 @@ Window {
                 opacity = 0.5
                 centerColor = "white"
             }
+            var rgbaColor = pastelColorToQColor(realColor, opacity)
+
+            var isHatch = fillKind > 1;
+            var orientation = "";
+            if (fillKind === 2) {
+                orientation = "horizontal";
+            } else if (fillKind === 3) {
+                orientation = "vertical";
+            }
 
             if (shapesMap[id] === undefined) {
                 if (disposed) {
                     console.log("Shape with ID", id, "was disposed");
                 } else {
-                    spawnShape(id, shape, x, y, realSize, pastelColorToQColor(realColor, opacity), rotation, fillKind, centerColor, !fromDds);
+                    spawnShape(id, shape, x, y, realSize, rgbaColor, rotation, centerColor, !fromDds, orientation, isHatch);
                 }
             } else {
                 if (disposed) { 
                     console.log("Shape with ID", id, "was disposed");
                     destroyShape(id)
                 } else {
-                    moveShape(id, x, y, realSize, rotation);
+                    updateShape(id, x, y, realSize, rotation, rgbaColor, orientation, isHatch); 
                 }
             }
         }
@@ -84,15 +93,8 @@ Window {
         delete shapesMap[id];
     }
 
-    function spawnShape(shapeId, shape, initX, initY, initSize, color, rotation, fillKind, centerColor, isForeground) {
+    function spawnShape(shapeId, shape, initX, initY, initSize, color, rotation, centerColor, isForeground, orientation, isHatch) {
         var rect = null;
-        var isHatch = fillKind > 1;
-        var orientation = "";
-        if (fillKind === 2) {
-            orientation = "horizontal";
-        } else if (fillKind === 3) {
-            orientation = "vertical";
-        }
         if (shape === "Circle") {
             var circleComponent = Qt.createComponent("qrc:/src/views/shapes_demo/ShapesDemoCircle.qml");
             if (circleComponent.status !== Component.Ready) {
@@ -101,13 +103,12 @@ Window {
             }
             rect = circleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor, isForeground: isForeground });
         } else if (shape === "Triangle") {
-            var realSize = initSize * (2-shapeDemoViewId.triangleScale);
             var triangleComponent = Qt.createComponent("qrc:/src/views/shapes_demo/ShapesDemoTriangle.qml");
             if (triangleComponent.status !== Component.Ready) {
                 console.error("Failed to load ShapesDemoTriangle.qml:", circleComponent.errorString());
                 return;
             }
-            rect = triangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: realSize, height: realSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor, isForeground: isForeground });
+            rect = triangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor, isForeground: isForeground });
         } else {
             var rectangleComponent = Qt.createComponent("qrc:/src/views/shapes_demo/ShapesDemoSquare.qml");
             if (rectangleComponent.status !== Component.Ready) {
@@ -121,13 +122,16 @@ Window {
         }
     }
 
-    function moveShape(id, newX, newY, newSize, rotation) {
+    function updateShape(id, newX, newY, newSize, rotation, color, orientation, isHatch) {
         if (shapesMap && shapesMap[id] !== undefined) {
             shapesMap[id].x = newX;
             shapesMap[id].y = newY;
             shapesMap[id].height = newSize;
             shapesMap[id].width = newSize;
             shapesMap[id].rotation = rotation;
+            shapesMap[id].color = color;
+            shapesMap[id].orientation = orientation;
+            shapesMap[id].isHatch = isHatch;
         } else {
             console.log("Shape with ID", id, "not found!");
         }
