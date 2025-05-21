@@ -374,7 +374,7 @@ Window {
 
                     Button {
                         id: pauseButton
-                        text: shapeDemoViewId.paused ? "\u23F5" : "\u23F8"
+                        text: shapeDemoViewId.paused ? "►" : "❚❚"
                         anchors.top: parent.top
                         anchors.right: parent.right
                         anchors.margins: 10
