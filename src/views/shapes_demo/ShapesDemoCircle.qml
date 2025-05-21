@@ -23,8 +23,9 @@ Item {
     id: root
     property real rotation: 0
     property color color: "lightgray"
-    property string orientation: ""
+    property color centerColor: "black"
     property bool isHatch: false
+    property string orientation: ""
     property int hatchSpacing: 7
     property int lineWidth: 2
     property real borderWidth: 1
@@ -87,6 +88,13 @@ Item {
             ctx.beginPath()
             ctx.arc(centerX, centerY, radius - root.borderWidth / 2, 0, 2 * Math.PI)
             ctx.stroke()
+
+            // Inner circle
+            ctx.fillStyle = root.centerColor
+            const innerRadius = radius / 3
+            ctx.beginPath()
+            ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI)
+            ctx.fill()
         }
 
         onWidthChanged: requestPaint()

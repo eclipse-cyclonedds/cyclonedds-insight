@@ -25,6 +25,7 @@ Item {
     height: 50
 
     property color color: "blue"
+    property color centerColor: "black"
     property bool isHatch: false
     property string orientation: ""
     property int spacing: 7
@@ -81,6 +82,17 @@ Item {
                 ctx.stroke();
                 ctx.restore();
             }
+
+            // Draw inner rectangle (half size)
+            const innerWidth = width / 3;
+            const innerHeight = height / 3;
+            const innerX = (width - innerWidth) / 2;
+            const innerY = (height - innerHeight) / 2;
+
+            ctx.beginPath();
+            ctx.rect(innerX, innerY, innerWidth, innerHeight);
+            ctx.fillStyle = rectangleItem.centerColor;  // reusing this property
+            ctx.fill();
         }
 
         onWidthChanged: requestPaint()

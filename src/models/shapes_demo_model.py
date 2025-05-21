@@ -39,7 +39,7 @@ class ShapesDemoModel(QAbstractListModel):
 
     NameRole = Qt.UserRole + 1
 
-    shapeUpdateSignale = Signal(str, str, str, int, int, int, float, int, bool)
+    shapeUpdateSignale = Signal(str, str, str, int, int, int, float, int, bool, bool)
 
     def __init__(self, parent=typing.Optional[QObject]) -> None:
         super().__init__()
@@ -94,6 +94,7 @@ class ShapesDemoModel(QAbstractListModel):
                 id = str(uuid.uuid4())
                 self.writerShapeThreads[id] = ShapeDynamicThread(
                     self.getParticipant(domain_id), qos, shapeType, color.upper(), size, speed, rotation, rotationSpeed, fillKind)
+                self.writerShapeThreads[id].onData.connect(self.onData, Qt.ConnectionType.QueuedConnection)
                 self.writerShapeThreads[id].start()
 
     @Slot(str)
@@ -115,20 +116,16 @@ class ShapesDemoModel(QAbstractListModel):
             dsp = ShapeDispatcherThread(self.getParticipant(domain_id), shapeType, ishape.ShapeTypeExtended, qos, self.parent)
             dsp.onData.connect(self.onData, Qt.ConnectionType.QueuedConnection)
             dsp.start()
-
             self.dispatchers[domain_id].append(dsp)
 
-
-    @Slot(str, object, bool)
-    def onData(self, id: str, topicName: str, data: ishape.ShapeTypeExtended, disposed: bool):
-
+    @Slot(str, str, object, bool, bool)
+    def onData(self, id: str, topicName: str, data: ishape.ShapeTypeExtended, disposed: bool, fromDds: bool):
         if disposed:
-            self.shapeUpdateSignale.emit(id, "", "", -1, -1, -1, 0.0, 0, disposed)
+            self.shapeUpdateSignale.emit(id, "", "", -1, -1, -1, 0.0, 0, disposed, fromDds)
         else:
             if isinstance(data.fillKind, ishape.ShapeFillKind):
                 data.fillKind = data.fillKind.value
-
-            self.shapeUpdateSignale.emit(id, topicName, data.color, data.x, data.y, data.shapesize, data.angle, data.fillKind, disposed)
+            self.shapeUpdateSignale.emit(id, topicName, data.color, data.x, data.y, data.shapesize, data.angle, data.fillKind, disposed, fromDds)
 
     def stop(self):
         for domain in self.dispatchers.keys():
@@ -199,6 +196,8 @@ class ShapesDemoModel(QAbstractListModel):
 
 class ShapeDynamicThread(QThread):
 
+    onData = Signal(str, str, object, bool, bool)
+
     def __init__(self, domainParticipant, qos, shapeType: str, color: str, size: int, speed: int, rotation: float, rotationSpeed, fillKind, parent=None):
         super().__init__()
         self.running = False
@@ -212,6 +211,7 @@ class ShapeDynamicThread(QThread):
         self.rotationSpeed = rotationSpeed
         self.fillKind = ishape.ShapeFillKind(fillKind)
         self.dataType = ishape.ShapeTypeExtended
+        self.id = f"{self.shapeType}_{self.color}_0"
 
     def run(self):
         self.running = True
@@ -236,7 +236,6 @@ class ShapeDynamicThread(QThread):
                     angle = -alpha if self.flip() else alpha
                     shape.x = 0
                 elif shape.x >= widthBound:
-
                     angle = -alpha if self.flip() else math.pi - alpha
                     shape.x = widthBound
                 elif shape.y <= 0:
@@ -249,13 +248,16 @@ class ShapeDynamicThread(QThread):
                 if self.rotationSpeed > 0:
                     shape.angle = (shape.angle + self.rotationSpeed) % 360
 
+                self.onData.emit(self.id, self.shapeType, shape, False, False)
                 try:
                     writer.write(shape)
-                except:
-                    pass
+                except Exception as e:
+                    logging.error(f"Error while writing Shape: {e}")
                 time.sleep(0.04)
         except Exception as e:
             logging.error(f"Error in ShapeDynamicThread: {e}")
+
+        self.onData.emit(self.id, self.shapeType, shape, True, False)
 
     def flip(self):
         return random.random() <= 0.5
@@ -266,7 +268,7 @@ class ShapeDynamicThread(QThread):
 
 class ShapeDispatcherThread(QThread):
 
-    onData = Signal(str, str, object, bool)
+    onData = Signal(str, str, object, bool, bool)
 
     def __init__(self, domainParticipant, topic_name: str, topic_type, qos, parent=None):
         super().__init__()
@@ -279,6 +281,12 @@ class ShapeDispatcherThread(QThread):
     def run(self):
         self.running = True
 
+        # Spawn placeholder
+        placeHolderId = str(uuid.uuid4())
+        placeholderShape = ishape.ShapeTypeExtended("lightgray", random.randint(50, 300), random.randint(50, 300), 30, ishape.ShapeFillKind.SOLID_FILL, 0)
+        self.onData.emit(placeHolderId, self.topic_name, placeholderShape, False, False)
+        placeholderVisible: bool = True
+
         try:
             topic = Topic(self.domain_participant, self.topic_name, self.topic_type, self.qos)
             subscriber = Subscriber(self.domain_participant, self.qos)
@@ -290,11 +298,17 @@ class ShapeDispatcherThread(QThread):
                 count_per_instance = {}
                 try:
                     samples = reader.read(dds_utils.MAX_SAMPLE_SIZE)
+
+                    if placeholderVisible:
+                        if len(samples) > 0:
+                            placeholderVisible = False
+                            self.onData.emit(placeHolderId, self.topic_name, None, True, False)
+
                     for sample in samples:
                         if not self.running:
                             break
 
-                        instance_handle = str(sample.sample_info.instance_handle)
+                        instance_handle = sample.color
                         if instance_handle in count_per_instance:
                             count_per_instance[instance_handle] += 1
                         else:
@@ -302,7 +316,7 @@ class ShapeDispatcherThread(QThread):
 
                         id = f"{self.topic_name}_{instance_handle}_{str(count_per_instance[instance_handle])}"
                         if sample.sample_info.instance_state == core.InstanceState.Alive and sample.sample_info.valid_data:
-                            self.onData.emit(id, topic.get_name(), sample, False)
+                            self.onData.emit(id, topic.get_name(), sample, False, True)
 
                 except Exception as e:
                     logging.error(str(e))
