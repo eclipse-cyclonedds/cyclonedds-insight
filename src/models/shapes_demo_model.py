@@ -308,7 +308,7 @@ class ShapeDispatcherThread(QThread):
                         if not self.running:
                             break
 
-                        instance_handle = sample.color
+                        instance_handle = str(sample.sample_info.instance_handle)
                         if instance_handle in count_per_instance:
                             count_per_instance[instance_handle] += 1
                         else:
