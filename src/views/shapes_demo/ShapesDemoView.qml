@@ -35,7 +35,6 @@ Window {
 
     Component.onCompleted: {
         shapesMap = {};
-        pendingWriterMap = {};
     }
 
     Connections {
@@ -43,10 +42,6 @@ Window {
         function onShapeUpdateSignale(id, shape, color, x, y, size, rotation, fillKind, disposed, fromDds) {
 
             if (shapeDemoViewId.paused) {
-                return
-            }
-
-            if (handlePendingWriter(id, fromDds) === false) {
                 return
             }
 
@@ -71,7 +66,7 @@ Window {
                 if (disposed) {
                     console.log("Shape with ID", id, "was disposed");
                 } else {
-                    spawnShape(id, shape, x, y, realSize, pastelColorToQColor(realColor, opacity), rotation, fillKind, centerColor);
+                    spawnShape(id, shape, x, y, realSize, pastelColorToQColor(realColor, opacity), rotation, fillKind, centerColor, !fromDds);
                 }
             } else {
                 if (disposed) { 
@@ -89,25 +84,7 @@ Window {
         delete shapesMap[id];
     }
 
-    function handlePendingWriter(id, fromDds) {
-        if (pendingWriterMap[id] === undefined) {
-            if (fromDds === true) {
-                pendingWriterMap[id] = true
-            } else {
-                pendingWriterMap[id] = false
-            }
-        } else {
-            if (fromDds === true && pendingWriterMap[id] === false)  {
-                destroyShape(id)
-                pendingWriterMap[id] = true
-            } else if (fromDds === false && pendingWriterMap[id] === true) {
-                return false
-            } 
-        }
-        return true
-    }
-
-    function spawnShape(shapeId, shape, initX, initY, initSize, color, rotation, fillKind, centerColor) {
+    function spawnShape(shapeId, shape, initX, initY, initSize, color, rotation, fillKind, centerColor, isForeground) {
         var rect = null;
         var isHatch = fillKind > 1;
         var orientation = "";
@@ -122,7 +99,7 @@ Window {
                 console.error("Failed to load ShapesDemoCircle.qml:", circleComponent.errorString());
                 return;
             }
-            rect = circleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor });
+            rect = circleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor, isForeground: isForeground });
         } else if (shape === "Triangle") {
             var realSize = initSize * (2-shapeDemoViewId.triangleScale);
             var triangleComponent = Qt.createComponent("qrc:/src/views/shapes_demo/ShapesDemoTriangle.qml");
@@ -130,14 +107,14 @@ Window {
                 console.error("Failed to load ShapesDemoTriangle.qml:", circleComponent.errorString());
                 return;
             }
-            rect = triangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: realSize, height: realSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor });
+            rect = triangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: realSize, height: realSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor, isForeground: isForeground });
         } else {
             var rectangleComponent = Qt.createComponent("qrc:/src/views/shapes_demo/ShapesDemoSquare.qml");
             if (rectangleComponent.status !== Component.Ready) {
                 console.error("Failed to load ShapesDemoSquare.qml:", circleComponent.errorString());
                 return;
             }
-            rect = rectangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor });
+            rect = rectangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor, isForeground: isForeground });
         }
         if (rect !== null) {
             shapesMap[shapeId] = rect;

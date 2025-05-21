@@ -31,6 +31,9 @@ Item {
     property int spacing: 7
     property color borderColor: rootWindow.isDarkMode ? "darkgray" : "black"
     property bool isCircle: false
+    property bool isForeground: true
+
+    z: isForeground ? 1 : 0
 
     Canvas {
         id: rectangleCanvas

@@ -211,7 +211,7 @@ class ShapeDynamicThread(QThread):
         self.rotationSpeed = rotationSpeed
         self.fillKind = ishape.ShapeFillKind(fillKind)
         self.dataType = ishape.ShapeTypeExtended
-        self.id = f"{self.shapeType}_{self.color}_0"
+        self.id = str(uuid.uuid4())
 
     def run(self):
         self.running = True

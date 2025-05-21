@@ -28,7 +28,9 @@ Item {
     property real rotation: 0
     property real borderWidth: 1
     property color borderColor: rootWindow.isDarkMode ? "darkgray" : "black"
+    property bool isForeground: true
 
+    z: isForeground ? 1 : 0
     onRotationChanged: triangleCanvas.requestPaint()
 
     Canvas {
