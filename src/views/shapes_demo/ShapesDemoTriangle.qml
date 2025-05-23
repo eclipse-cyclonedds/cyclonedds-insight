@@ -24,10 +24,13 @@ Item {
     property color color: "blue"
     property string orientation: ""
     property bool isHatch: false
+    property color centerColor: "black"
     property real rotation: 0
     property real borderWidth: 1
     property color borderColor: rootWindow.isDarkMode ? "darkgray" : "black"
+    property bool isForeground: true
 
+    z: isForeground ? 1 : 0
     onRotationChanged: triangleCanvas.requestPaint()
 
     Canvas {
@@ -90,9 +93,16 @@ Item {
                 ctx.restore()
             }
 
+            // Dot in the center
+            const radius = triangleHeight / (3 * Math.sqrt(3));
+            const centroidY = triangleHeight / 6;
+            ctx.beginPath();
+            ctx.arc(0, centroidY, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = triangleItem.centerColor;
+            ctx.fill();
+
             ctx.restore()
         }
-
 
         onWidthChanged: requestPaint()
         onHeightChanged: requestPaint()

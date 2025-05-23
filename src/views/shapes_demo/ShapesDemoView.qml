@@ -29,7 +29,9 @@ Window {
     minimumHeight: 400
     flags: Qt.Window
     property var shapesMap
+    property var pendingWriterMap
     property var triangleScale: 0.7
+    property bool paused: false
 
     Component.onCompleted: {
         shapesMap = {};
@@ -37,7 +39,12 @@ Window {
 
     Connections {
         target: shapesDemoModel
-        function onShapeUpdateSignale(id, shape, color, x, y, size, rotation, fillKind, disposed) {
+        function onShapeUpdateSignale(id, shape, color, x, y, size, rotation, fillKind, disposed, fromDds) {
+
+            if (shapeDemoViewId.paused) {
+                return
+            }
+
             var realSize = size;
             if (shape === "Triangle") {
                 realSize = size * (2-shapeDemoViewId.triangleScale);
@@ -48,68 +55,83 @@ Window {
                 realColor = "transparent";
             }
 
+            var opacity = 1.0
+            var centerColor = "black"
+            if (!fromDds) {
+                opacity = 0.5
+                centerColor = "white"
+            }
+            var rgbaColor = pastelColorToQColor(realColor, opacity)
+
+            var isHatch = fillKind > 1;
+            var orientation = "";
+            if (fillKind === 2) {
+                orientation = "horizontal";
+            } else if (fillKind === 3) {
+                orientation = "vertical";
+            }
+
             if (shapesMap[id] === undefined) {
                 if (disposed) {
                     console.log("Shape with ID", id, "was disposed");
                 } else {
-                    spawnShape(id, shape, x, y, realSize, pastelColor(realColor), rotation, fillKind);
+                    spawnShape(id, shape, x, y, realSize, rgbaColor, rotation, centerColor, !fromDds, orientation, isHatch);
                 }
             } else {
                 if (disposed) { 
                     console.log("Shape with ID", id, "was disposed");
-                    shapesMap[id].destroy();
-                    delete shapesMap[id];
+                    destroyShape(id)
                 } else {
-                    moveShape(id, x, y, realSize, rotation);
+                    updateShape(id, x, y, realSize, rotation, rgbaColor, orientation, isHatch); 
                 }
             }
         }
     }
 
-    function spawnShape(shapeId, shape, initX, initY, initSize, color, rotation, fillKind) {
+    function destroyShape(id) {
+        shapesMap[id].destroy();
+        delete shapesMap[id];
+    }
+
+    function spawnShape(shapeId, shape, initX, initY, initSize, color, rotation, centerColor, isForeground, orientation, isHatch) {
         var rect = null;
-        var isHatch = fillKind > 1;
-        var orientation = "";
-        if (fillKind === 2) {
-            orientation = "horizontal";
-        } else if (fillKind === 3) {
-            orientation = "vertical";
-        }
         if (shape === "Circle") {
             var circleComponent = Qt.createComponent("qrc:/src/views/shapes_demo/ShapesDemoCircle.qml");
             if (circleComponent.status !== Component.Ready) {
                 console.error("Failed to load ShapesDemoCircle.qml:", circleComponent.errorString());
                 return;
             }
-            rect = circleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch });
+            rect = circleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor, isForeground: isForeground });
         } else if (shape === "Triangle") {
-            var realSize = initSize * (2-shapeDemoViewId.triangleScale);
             var triangleComponent = Qt.createComponent("qrc:/src/views/shapes_demo/ShapesDemoTriangle.qml");
             if (triangleComponent.status !== Component.Ready) {
                 console.error("Failed to load ShapesDemoTriangle.qml:", circleComponent.errorString());
                 return;
             }
-            rect = triangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: realSize, height: realSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch });
+            rect = triangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor, isForeground: isForeground });
         } else {
             var rectangleComponent = Qt.createComponent("qrc:/src/views/shapes_demo/ShapesDemoSquare.qml");
             if (rectangleComponent.status !== Component.Ready) {
                 console.error("Failed to load ShapesDemoSquare.qml:", circleComponent.errorString());
                 return;
             }
-            rect = rectangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch });
+            rect = rectangleComponent.createObject(shapesPlane, { x: initX, y: initY, width: initSize, height: initSize, color: color, rotation: rotation, orientation: orientation, isHatch: isHatch, centerColor: centerColor, isForeground: isForeground });
         }
         if (rect !== null) {
             shapesMap[shapeId] = rect;
         }
     }
 
-    function moveShape(id, newX, newY, newSize, rotation) {
+    function updateShape(id, newX, newY, newSize, rotation, color, orientation, isHatch) {
         if (shapesMap && shapesMap[id] !== undefined) {
             shapesMap[id].x = newX;
             shapesMap[id].y = newY;
             shapesMap[id].height = newSize;
             shapesMap[id].width = newSize;
             shapesMap[id].rotation = rotation;
+            shapesMap[id].color = color;
+            shapesMap[id].orientation = orientation;
+            shapesMap[id].isHatch = isHatch;
         } else {
             console.log("Shape with ID", id, "not found!");
         }
@@ -352,7 +374,23 @@ Window {
                     id: shapesPlane
                     color: rootWindow.isDarkMode ? "black" : "white"
                     Layout.fillWidth: true
-                    Layout.fillHeight: true                    
+                    Layout.fillHeight: true
+
+                    Label {
+                        text: "Paused"
+                        visible: shapeDemoViewId.paused
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        font.pixelSize: 24
+                        anchors.margins: 10
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            shapeDemoViewId.paused = !shapeDemoViewId.paused
+                        }
+                    }               
                 }
             }
         }
@@ -412,6 +450,9 @@ Window {
             return "#99CCFF";
         case "gray":
             return "#999999";
+        case "lightgray":
+        case "light grey":
+            return "#CCCCCC";
         case "black":
             return "#333333";
         case "purple":
@@ -421,6 +462,28 @@ Window {
         default:
             return "#333333"; // fallback to black
         }
+    }
+
+    function hexToRgb(hex) {
+        if (hex === "transparent") {
+            return { r: 0, g: 0, b: 0, a: 0 };
+        }
+        hex = hex.replace("#", "");
+        const bigint = parseInt(hex, 16);
+        return {
+            r: (bigint >> 16) & 255,
+            g: (bigint >> 8) & 255,
+            b: bigint & 255
+        };
+    }
+
+    function pastelColorToQColor(name, opacity = 1.0) {
+        const hex = pastelColor(name);
+        const rgb = hexToRgb(hex);
+        if (name === "transparent") {
+            return rgb;
+        }
+        return Qt.rgba(rgb.r / 255, rgb.g / 255, rgb.b / 255, opacity);
     }
 
     QosSelector {
