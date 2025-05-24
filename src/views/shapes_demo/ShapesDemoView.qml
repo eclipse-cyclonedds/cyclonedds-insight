@@ -168,8 +168,8 @@ Window {
 
                 StackLayout {
                     id: mainLayoutId
-                    Layout.preferredWidth: leftColumnOverview.width
-                    Layout.preferredHeight: leftColumnOverview.height - bar.height
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
                     currentIndex: bar.currentIndex
 
                     Item {
@@ -184,7 +184,6 @@ Window {
                             GroupBox {
                                 title: qsTr("Publish Shape")
                                 Layout.fillWidth: true
-                                Layout.fillHeight: true
 
                                 ColumnLayout {
                                     anchors.fill: parent
@@ -354,7 +353,6 @@ Window {
                             GroupBox {
                                 title: qsTr("Subscribe Shape")
                                 Layout.fillWidth: true
-                                Layout.fillHeight: true
 
                                 ColumnLayout {
                                     anchors.fill: parent
@@ -389,6 +387,10 @@ Window {
                                         }
                                     }
                                 }
+                            }
+                            Item {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
                             }
                         }
                     }
