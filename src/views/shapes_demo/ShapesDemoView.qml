@@ -174,7 +174,8 @@ Window {
 
                     Item {
                         id: createTabItem
-                        anchors.fill: parent
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
 
                         ColumnLayout {
                             id: leftColumn
@@ -186,8 +187,7 @@ Window {
                                 Layout.fillHeight: true
 
                                 ColumnLayout {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
+                                    anchors.fill: parent
 
                                     RowLayout {
                                         Layout.fillWidth: true
@@ -357,8 +357,7 @@ Window {
                                 Layout.fillHeight: true
 
                                 ColumnLayout {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
+                                    anchors.fill: parent
 
                                     RowLayout {
                                         Layout.fillWidth: true
@@ -439,7 +438,6 @@ Window {
                                 Button {
                                     id: infoButton
                                     text: "Info"
-                                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                                     hoverEnabled: true
                                     ToolTip {
                                         id: infoTooltip
