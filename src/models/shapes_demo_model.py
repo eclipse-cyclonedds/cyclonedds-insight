@@ -38,6 +38,7 @@ import random
 class ShapesDemoModel(QAbstractListModel):
 
     NameRole = Qt.UserRole + 1
+    QosRole = Qt.UserRole + 2
 
     shapeUpdateSignale = Signal(str, str, str, int, int, int, float, int, bool, bool)
 
@@ -45,8 +46,7 @@ class ShapesDemoModel(QAbstractListModel):
         super().__init__()
         self.parent = parent
         self.domain_participants = {}
-        self.writerShapeThreads = {}
-        self.dispatchers = {}
+        self.threads = []
         self.publishInfos = None
         self.subscribeInfos = None
 
@@ -60,17 +60,42 @@ class ShapesDemoModel(QAbstractListModel):
         if not index.isValid():
             return None
         row = index.row()
+
+        thread = self.threads[row][1]
+        endpTypeName = "Reader"
+        color = ""
+        if isinstance(thread, ShapeDynamicThread):
+            endpTypeName = "Writer"
+            color = thread.color
+
         if role == self.NameRole:
-            return "a"
+            return f"{endpTypeName} {self.threads[row][1].topic_name} {color}"
+        elif role == self.QosRole:
+            split = ""
+            for idx, q in enumerate(thread.qos):
+                split += "  " + str(q)
+                if idx < len(thread.qos) - 1:
+                    split += "\n"
+            return split
         return None
 
     def roleNames(self) -> typing.Dict[int, QByteArray]:
         return {
-            self.NameRole: b'name'
+            self.NameRole: b'name',
+            self.QosRole: b'qos'
         }
 
     def rowCount(self, index: QModelIndex = QModelIndex()) -> int:
-        return self.dataModelHandler.count()
+        return len(self.threads)
+
+    @Slot(int)
+    def removeItem(self, index):
+        if index >= 0 and index < len(self.threads):
+            self.beginRemoveRows(QModelIndex(), index, index)
+            self.threads[index][1].stop()
+            self.threads[index][1].wait()
+            del self.threads[index]
+            self.endRemoveRows()
 
     @Slot(str, str, int, int, float, int, int)
     def setPublishInfos(self, shapeType: str, color: str, size: int, speed: int, rotation: float, rotationSpeed: int, fillKind: int):
@@ -84,6 +109,8 @@ class ShapesDemoModel(QAbstractListModel):
         else:
             shapeTypes = [shapeTypeRaw]
 
+        self.beginResetModel()
+
         for shapeType in shapeTypes:
             if colorRaw == "<<ALL>>":
                 colors = ["Red", "Blue", "Green", "Yellow", "Orange", "Cyan", "Magenta", "Purple", "Gray", "Black"]
@@ -92,10 +119,14 @@ class ShapesDemoModel(QAbstractListModel):
 
             for color in colors:
                 id = str(uuid.uuid4())
-                self.writerShapeThreads[id] = ShapeDynamicThread(
+                writerShapeThread = ShapeDynamicThread(
                     self.getParticipant(domain_id), qos, shapeType, color.upper(), size, speed, rotation, rotationSpeed, fillKind)
-                self.writerShapeThreads[id].onData.connect(self.onData, Qt.ConnectionType.QueuedConnection)
-                self.writerShapeThreads[id].start()
+                writerShapeThread.onData.connect(self.onData, Qt.ConnectionType.QueuedConnection)
+                writerShapeThread.start()
+
+                self.threads.append((id, writerShapeThread))
+
+        self.endResetModel()
 
     @Slot(str)
     def setSubscribeInfos(self, shapeType: str):
@@ -109,14 +140,16 @@ class ShapesDemoModel(QAbstractListModel):
         else:
             shapeTypes = [shapeTypeRaw]
 
-        for shapeType in shapeTypes:
-            if domain_id not in self.dispatchers:
-                self.dispatchers[domain_id] = []
+        self.beginResetModel()
 
+        for shapeType in shapeTypes:
+            id = str(uuid.uuid4())
             dsp = ShapeDispatcherThread(self.getParticipant(domain_id), shapeType, ishape.ShapeTypeExtended, qos, self.parent)
             dsp.onData.connect(self.onData, Qt.ConnectionType.QueuedConnection)
             dsp.start()
-            self.dispatchers[domain_id].append(dsp)
+            self.threads.append((id, dsp))
+
+        self.endResetModel()
 
     @Slot(str, str, object, bool, bool)
     def onData(self, id: str, topicName: str, data: ishape.ShapeTypeExtended, disposed: bool, fromDds: bool):
@@ -128,11 +161,10 @@ class ShapesDemoModel(QAbstractListModel):
             self.shapeUpdateSignale.emit(id, topicName, data.color, data.x, data.y, data.shapesize, data.angle, data.fillKind, disposed, fromDds)
 
     def stop(self):
-        for domain in self.dispatchers.keys():
-            for dsp in self.dispatchers[domain]:
-                dsp.stop()
-        for thread in self.writerShapeThreads.values():
+        for (id, thread) in self.threads:
+            logging.debug("Stopping shape thread: " + id)
             thread.stop()
+            thread.wait()
 
     @Slot(int, str, str,
           str, str, str, int, bool, bool, list,
@@ -203,7 +235,7 @@ class ShapeDynamicThread(QThread):
         self.running = False
         self.domain_participant = domainParticipant
         self.qos = qos
-        self.shapeType = shapeType
+        self.topic_name = shapeType
         self.color = color
         self.size = size
         self.speed = speed
@@ -216,7 +248,7 @@ class ShapeDynamicThread(QThread):
     def run(self):
         self.running = True
         try:
-            topic = Topic(self.domain_participant, self.shapeType, self.dataType, self.qos)
+            topic = Topic(self.domain_participant, self.topic_name, self.dataType, self.qos)
             publisher = Publisher(self.domain_participant, self.qos)
             writer = DataWriter(publisher, topic, self.qos)
             shape = ishape.ShapeTypeExtended(self.color, 0, 0, self.size, self.fillKind, self.rotation)
@@ -248,7 +280,7 @@ class ShapeDynamicThread(QThread):
                 if self.rotationSpeed > 0:
                     shape.angle = (shape.angle + self.rotationSpeed) % 360
 
-                self.onData.emit(self.id, self.shapeType, shape, False, False)
+                self.onData.emit(self.id, self.topic_name, shape, False, False)
                 try:
                     writer.write(shape)
                 except Exception as e:
@@ -257,7 +289,7 @@ class ShapeDynamicThread(QThread):
         except Exception as e:
             logging.error(f"Error in ShapeDynamicThread: {e}")
 
-        self.onData.emit(self.id, self.shapeType, shape, True, False)
+        self.onData.emit(self.id, self.topic_name, shape, True, False)
 
     def flip(self):
         return random.random() <= 0.5

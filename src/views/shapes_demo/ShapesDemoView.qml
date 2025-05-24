@@ -147,218 +147,326 @@ Window {
             spacing: 5
 
             ColumnLayout {
-                id: leftColumn
+                id: leftColumnOverview
                 Layout.preferredWidth: 250
                 Layout.maximumWidth: 250
                 Layout.fillHeight: true
 
-                GroupBox {
-                    title: qsTr("Publish Shape")
+                TabBar {
+                    id: bar
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
 
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-
-                            Label {
-                                id: shapeLabel
-                                text: qsTr("Shape:")
-                            }
-                            ComboBox {
-                                id: shapeSelector
-                                Layout.preferredWidth: leftColumn.width - shapeLabel.width - 20
-                                model: ["Square", "Triangle", "Circle", "<<ALL>>"]
-                                currentIndex: 0
-                                onCurrentIndexChanged: {
-                                    console.log("Selected shape:", currentText)
-                                }
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-
-                            Label {
-                                id: pubColorLabel
-                                text: qsTr("Color:")
-                            }
-                            ComboBox {
-                                id: colorSelector
-                                model: ["Red", "Blue", "Green", "Yellow", "Orange", "Cyan", "Magenta", "Purple", "Gray", "Black", "<<ALL>>"]
-                                currentIndex: 0
-                                Layout.preferredWidth: leftColumn.width - pubColorLabel.width - 20
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-
-                            Label {
-                                text: qsTr("Size:")
-                            }
-                            Slider {
-                                id: sizeSlider
-                                Layout.fillWidth: true
-                                from: 1
-                                to: 99
-                                value: 30
-                                stepSize: 1
-                            }
-                            Label {
-                                id: sizeSliderLabel
-                                text: sizeSlider.value
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-
-                            Label {
-                                text: qsTr("Speed:")
-                            }
-                            Slider {
-                                id: speedSlider
-                                Layout.fillWidth: true
-                                from: 1
-                                to: 20
-                                value: 4
-                                stepSize: 1
-                            }
-                            Label {
-                                id: speedSliderLabel
-                                text: speedSlider.value
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            enabled: rotationSpeedSlider.value === 0
-
-                            Label {
-                                text: qsTr("Angle:")
-                            }
-                            Slider {
-                                id: rotationSlider
-                                Layout.fillWidth: true
-                                from: 0
-                                to: 360
-                                value: 0
-                                stepSize: 1
-                            }
-                            Label {
-                                id: rotationSliderLabel
-                                text: rotationSlider.value + "\u00B0"
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-
-                            Label {
-                                id: pubRotLabel
-                                text: qsTr("Rotation-Speed:")
-                            }
-                            Slider {
-                                id: rotationSpeedSlider
-                                Layout.fillWidth: true
-                                from: 0
-                                to: 20
-                                value: 0
-                                stepSize: 1
-                                Layout.preferredWidth: leftColumn.width - pubRotLabel.width - rotationSpeedSliderLabel.width - 30
-                            }
-                            Label {
-                                id: rotationSpeedSliderLabel
-                                text: rotationSpeedSlider.value
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-
-                            Label {
-                                id: pubFillLabel
-                                text: qsTr("Fill:")
-                            }
-                            ComboBox {
-                                id: fillKindSelector
-                                Layout.preferredWidth: leftColumn.width - pubFillLabel.width - 20
-                                model: ["SOLID_FILL", "TRANSPARENT_FILL", "HORIZONTAL_HATCH_FILL", "VERTICAL_HATCH_FILL"]
-                                currentIndex: 0
-                                onCurrentIndexChanged: {
-                                    console.log("Selected fill:", currentText)
-                                }
-                            }
-                        }
-
-                        Button {
-                            text: "Publish"
-                            onClicked: {
-                                console.log("Publish shape:", shapeSelector.currentText, "Color:", colorSelector.currentText, "Size:", sizeSlider.value, "Speed:", speedSlider.value);
-                                shapesDemoModel.setPublishInfos(
-                                    shapeSelector.currentText,
-                                    colorSelector.currentText,
-                                    sizeSlider.value,
-                                    speedSlider.value,
-                                    rotationSlider.value,
-                                    rotationSpeedSlider.value,
-                                    fillKindSelector.currentIndex);
-
-                                shapesDemoQosSelector.setType(shapeSelector.currentText, 4)
-                                shapesDemoQosSelector.setButtonName("Publish Shape")
-                                shapesDemoQosSelector.open()
-                            }
-                        }
+                    TabButton {
+                        text: qsTr("Shape Lab")
+                    }
+                    TabButton {
+                        text: qsTr("Manage")
                     }
                 }
 
-                GroupBox {
-                    title: qsTr("Subscribe Shape")
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
+                StackLayout {
+                    id: mainLayoutId
+                    Layout.preferredWidth: leftColumnOverview.width
+                    Layout.preferredHeight: leftColumnOverview.height - bar.height
+                    currentIndex: bar.currentIndex
 
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
+                    Item {
+                        id: createTabItem
+                        anchors.fill: parent
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
+                        ColumnLayout {
+                            id: leftColumn
+                            anchors.fill: parent
 
-                            Label {
-                                id: shapeLabelSubscribe
-                                text: qsTr("Shape:")
+                            GroupBox {
+                                title: qsTr("Publish Shape")
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+
+                                        Label {
+                                            id: shapeLabel
+                                            text: qsTr("Shape:")
+                                        }
+                                        ComboBox {
+                                            id: shapeSelector
+                                            Layout.preferredWidth: leftColumn.width - shapeLabel.width - 20
+                                            model: ["Square", "Triangle", "Circle", "<<ALL>>"]
+                                            currentIndex: 0
+                                            onCurrentIndexChanged: {
+                                                console.log("Selected shape:", currentText)
+                                            }
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+
+                                        Label {
+                                            id: pubColorLabel
+                                            text: qsTr("Color:")
+                                        }
+                                        ComboBox {
+                                            id: colorSelector
+                                            model: ["Red", "Blue", "Green", "Yellow", "Orange", "Cyan", "Magenta", "Purple", "Gray", "Black", "<<ALL>>"]
+                                            currentIndex: 0
+                                            Layout.preferredWidth: leftColumn.width - pubColorLabel.width - 20
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+
+                                        Label {
+                                            text: qsTr("Size:")
+                                        }
+                                        Slider {
+                                            id: sizeSlider
+                                            Layout.fillWidth: true
+                                            from: 1
+                                            to: 99
+                                            value: 30
+                                            stepSize: 1
+                                        }
+                                        Label {
+                                            id: sizeSliderLabel
+                                            text: sizeSlider.value
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+
+                                        Label {
+                                            text: qsTr("Speed:")
+                                        }
+                                        Slider {
+                                            id: speedSlider
+                                            Layout.fillWidth: true
+                                            from: 1
+                                            to: 20
+                                            value: 4
+                                            stepSize: 1
+                                        }
+                                        Label {
+                                            id: speedSliderLabel
+                                            text: speedSlider.value
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        enabled: rotationSpeedSlider.value === 0
+
+                                        Label {
+                                            text: qsTr("Angle:")
+                                        }
+                                        Slider {
+                                            id: rotationSlider
+                                            Layout.fillWidth: true
+                                            from: 0
+                                            to: 360
+                                            value: 0
+                                            stepSize: 1
+                                        }
+                                        Label {
+                                            id: rotationSliderLabel
+                                            text: rotationSlider.value + "\u00B0"
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+
+                                        Label {
+                                            id: pubRotLabel
+                                            text: qsTr("Rotation-Speed:")
+                                        }
+                                        Slider {
+                                            id: rotationSpeedSlider
+                                            Layout.fillWidth: true
+                                            from: 0
+                                            to: 20
+                                            value: 0
+                                            stepSize: 1
+                                            Layout.preferredWidth: leftColumn.width - pubRotLabel.width - rotationSpeedSliderLabel.width - 30
+                                        }
+                                        Label {
+                                            id: rotationSpeedSliderLabel
+                                            text: rotationSpeedSlider.value
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+
+                                        Label {
+                                            id: pubFillLabel
+                                            text: qsTr("Fill:")
+                                        }
+                                        ComboBox {
+                                            id: fillKindSelector
+                                            Layout.preferredWidth: leftColumn.width - pubFillLabel.width - 20
+                                            model: ["SOLID_FILL", "TRANSPARENT_FILL", "HORIZONTAL_HATCH_FILL", "VERTICAL_HATCH_FILL"]
+                                            currentIndex: 0
+                                            onCurrentIndexChanged: {
+                                                console.log("Selected fill:", currentText)
+                                            }
+                                        }
+                                    }
+
+                                    Button {
+                                        text: "Publish"
+                                        onClicked: {
+                                            console.log("Publish shape:", shapeSelector.currentText, "Color:", colorSelector.currentText, "Size:", sizeSlider.value, "Speed:", speedSlider.value);
+                                            shapesDemoModel.setPublishInfos(
+                                                shapeSelector.currentText,
+                                                colorSelector.currentText,
+                                                sizeSlider.value,
+                                                speedSlider.value,
+                                                rotationSlider.value,
+                                                rotationSpeedSlider.value,
+                                                fillKindSelector.currentIndex);
+
+                                            shapesDemoQosSelector.setType(shapeSelector.currentText, 4)
+                                            shapesDemoQosSelector.setButtonName("Publish Shape")
+                                            shapesDemoQosSelector.open()
+                                        }
+                                    }
+                                }
                             }
 
-                            ComboBox {
-                                id: shapeSelectorSubscribe
-                                Layout.preferredWidth: leftColumn.width - shapeLabelSubscribe.width - 20
-                                model: ["Square", "Triangle", "Circle", "<<ALL>>"]
-                                currentIndex: 0
-                                onCurrentIndexChanged: {
-                                    console.log("Selected shape:", currentText)
+                            GroupBox {
+                                title: qsTr("Subscribe Shape")
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+
+                                        Label {
+                                            id: shapeLabelSubscribe
+                                            text: qsTr("Shape:")
+                                        }
+
+                                        ComboBox {
+                                            id: shapeSelectorSubscribe
+                                            Layout.preferredWidth: leftColumn.width - shapeLabelSubscribe.width - 20
+                                            model: ["Square", "Triangle", "Circle", "<<ALL>>"]
+                                            currentIndex: 0
+                                            onCurrentIndexChanged: {
+                                                console.log("Selected shape:", currentText)
+                                            }
+                                        }
+                                    }
+
+                                    Button {
+                                        text: "Subscribe"
+                                        onClicked: {
+                                            shapesDemoModel.setSubscribeInfos(shapeSelectorSubscribe.currentText);
+                                            shapesDemoQosSelector.setType(shapeSelectorSubscribe.currentText, 3)
+                                            shapesDemoQosSelector.setButtonName("Subscribe Shape")
+                                            shapesDemoQosSelector.open()
+                                        }
+                                    }
                                 }
                             }
                         }
+                    }
+                
+                    Item {
+                        id: listTabItem
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
 
-                        Button {
-                            text: "Subscribe"
-                            onClicked: {
-                                shapesDemoModel.setSubscribeInfos(shapeSelectorSubscribe.currentText);
-                                shapesDemoQosSelector.setType(shapeSelectorSubscribe.currentText, 3)
-                                shapesDemoQosSelector.setButtonName("Subscribe Shape")
-                                shapesDemoQosSelector.open()
+                        ListView {
+                            anchors.fill: parent
+                            Layout.leftMargin: 10
+                            clip: true
+                            ScrollBar.vertical: ScrollBar {}
+                            model: shapesDemoModel
+
+                            delegate: Item {
+                                width: listTabItem.width
+                                height: 30
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: (mouseArea.hovered || infoButton.hovered || removeButton.hovered) ? rootWindow.isDarkMode ? Constants.darkSelectionBackground : Constants.lightSelectionBackground : "transparent"
+                                    opacity: 0.3
+                                }
+
+                                Label {
+                                    text: name
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 10
+                                }
+
+                                MouseArea {
+                                    id: mouseArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    property bool hovered: false
+                                    onEntered: {
+                                        hovered = true
+                                    }
+                                    onExited: {
+                                        hovered = false
+                                    }
+                                }
+
+                                Button {
+                                    id: infoButton
+                                    text: "Info"
+                                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                                    hoverEnabled: true
+                                    ToolTip {
+                                        id: infoTooltip
+                                        parent: infoButton
+                                        visible: infoButton.hovered
+                                        delay: 200
+                                        text: qos
+                                        contentItem: Label {
+                                            text: infoTooltip.text
+                                        }
+                                        background: Rectangle {
+                                            border.color: rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
+                                            border.width: 1
+                                            color: rootWindow.isDarkMode ? Constants.darkCardBackgroundColor : Constants.lightCardBackgroundColor
+                                        }
+                                    }
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.right: removeButton.left
+                                }
+
+                                Button {
+                                    id: removeButton
+                                    hoverEnabled: true
+                                    text: "X"
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 5
+                                    onClicked: shapesDemoModel.removeItem(index)
+                                }
                             }
                         }
                     }
