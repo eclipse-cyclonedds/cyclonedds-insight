@@ -318,6 +318,7 @@ class ShapeDispatcherThread(QThread):
         placeholderShape = ishape.ShapeTypeExtended("lightgray", random.randint(50, 300), random.randint(50, 300), 30, ishape.ShapeFillKind.SOLID_FILL, 0)
         self.onData.emit(placeHolderId, self.topic_name, placeholderShape, False, False)
         placeholderVisible: bool = True
+        createdShapeIds = set()
 
         try:
             topic = Topic(self.domain_participant, self.topic_name, self.topic_type, self.qos)
@@ -346,7 +347,8 @@ class ShapeDispatcherThread(QThread):
                         else:
                             count_per_instance[instance_handle] = 0
 
-                        id = f"{self.topic_name}_{instance_handle}_{str(count_per_instance[instance_handle])}"
+                        id = f"{str(reader.guid)}_{self.topic_name}_{instance_handle}_{str(count_per_instance[instance_handle])}"
+                        createdShapeIds.add(id)
                         if sample.sample_info.instance_state == core.InstanceState.Alive and sample.sample_info.valid_data:
                             self.onData.emit(id, topic.get_name(), sample, False, True)
 
@@ -354,6 +356,12 @@ class ShapeDispatcherThread(QThread):
                     logging.error(str(e))
         except Exception as e:
             logging.error(str(e))
+
+        if placeholderVisible:
+            self.onData.emit(placeHolderId, self.topic_name, None, True, False)
+
+        for id in createdShapeIds:
+            self.onData.emit(id, self.topic_name, None, True, False)
 
     def stop(self):
         self.running = False

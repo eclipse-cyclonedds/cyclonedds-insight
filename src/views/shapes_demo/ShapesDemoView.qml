@@ -73,7 +73,7 @@ Window {
 
             if (shapesMap[id] === undefined) {
                 if (disposed) {
-                    console.log("Shape with ID", id, "was disposed");
+                    console.log("Shape with ID:", id, "was disposed");
                 } else {
                     spawnShape(id, shape, x, y, realSize, rgbaColor, rotation, centerColor, !fromDds, orientation, isHatch);
                 }
@@ -89,8 +89,10 @@ Window {
     }
 
     function destroyShape(id) {
-        shapesMap[id].destroy();
-        delete shapesMap[id];
+        if (shapesMap !== undefined && shapesMap[id] !== undefined) {
+            shapesMap[id].destroy();
+            delete shapesMap[id];
+        }
     }
 
     function spawnShape(shapeId, shape, initX, initY, initSize, color, rotation, centerColor, isForeground, orientation, isHatch) {
