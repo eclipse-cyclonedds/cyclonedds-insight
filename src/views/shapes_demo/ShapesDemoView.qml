@@ -441,12 +441,24 @@ Window {
                                     id: infoButton
                                     text: "Info"
                                     hoverEnabled: true
+                                    width: 50
+                                    height: 30
+                                    onClicked: {
+                                        if (endpDetailWindow.visible) {
+                                            endpDetailWindow.raise()
+                                        } else {
+                                            var centerPos = infoButton.mapToGlobal(infoButton.width / 2, infoButton.height)
+                                            endpDetailWindow.x = centerPos.x - endpDetailWindow.width / 2
+                                            endpDetailWindow.y = centerPos.y
+                                            endpDetailWindow.visible = true
+                                        }
+                                    }
                                     ToolTip {
                                         id: infoTooltip
                                         parent: infoButton
                                         visible: infoButton.hovered
                                         delay: 200
-                                        text: qos
+                                        text: "Qos:\n" + qos
                                         contentItem: Label {
                                             text: infoTooltip.text
                                         }
@@ -464,10 +476,17 @@ Window {
                                     id: removeButton
                                     hoverEnabled: true
                                     text: "X"
+                                    width: 40
+                                    height: 30
                                     anchors.verticalCenter: parent.verticalCenter
                                     anchors.right: parent.right
                                     anchors.rightMargin: 5
                                     onClicked: shapesDemoModel.removeItem(index)
+                                }
+                                EndpointDetailWindow {
+                                    id: endpDetailWindow
+                                    title: name
+                                    endpointText: infoTooltip.text
                                 }
                             }
                         }
