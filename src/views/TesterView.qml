@@ -57,7 +57,6 @@ Rectangle {
 
             ComboBox {
                 id: librariesCombobox
-                Layout.preferredWidth: parent.width * 0.33
                 model: testerModel
                 Layout.fillWidth: true
                 textRole: "name"

@@ -347,9 +347,9 @@ class ShapeDispatcherThread(QThread):
                         else:
                             count_per_instance[instance_handle] = 0
 
-                        id = f"{str(reader.guid)}_{self.topic_name}_{instance_handle}_{str(count_per_instance[instance_handle])}"
-                        createdShapeIds.add(id)
                         if sample.sample_info.instance_state == core.InstanceState.Alive and sample.sample_info.valid_data:
+                            id = f"{str(reader.guid)}_{self.topic_name}_{instance_handle}_{str(count_per_instance[instance_handle])}"
+                            createdShapeIds.add(id)
                             self.onData.emit(id, topic.get_name(), sample, False, True)
 
                 except Exception as e:
