@@ -248,7 +248,7 @@ class ShapeDynamicThread(QThread):
     def run(self):
         self.running = True
         try:
-            topic = Topic(self.domain_participant, self.topic_name, self.dataType, self.qos)
+            topic = Topic(self.domain_participant, self.topic_name, self.dataType)
             publisher = Publisher(self.domain_participant, self.qos)
             writer = DataWriter(publisher, topic, self.qos)
             shape = ishape.ShapeTypeExtended(self.color, 0, 0, self.size, self.fillKind, self.rotation)
@@ -321,7 +321,7 @@ class ShapeDispatcherThread(QThread):
         createdShapeIds = set()
 
         try:
-            topic = Topic(self.domain_participant, self.topic_name, self.topic_type, self.qos)
+            topic = Topic(self.domain_participant, self.topic_name, self.topic_type)
             subscriber = Subscriber(self.domain_participant, self.qos)
             reader = DataReader(subscriber, topic, self.qos)
 
