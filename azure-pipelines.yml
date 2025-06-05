@@ -30,7 +30,7 @@ jobs:
         image: ubuntu-22.04
       'macOS_13_x64':
         image: macOS-13
-      'Windows_Server_2019_x64':
-        image: windows-2019
+      'Windows_Server_2022_x64':
+        image: windows-2022
   steps:
     - template: /.azure/templates/build-insight.yml
