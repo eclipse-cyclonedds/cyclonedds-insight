@@ -56,7 +56,7 @@ Popup {
         readerTesterDiaId.topicName = name
         readerTesterDiaId.topicTypeNameList = typeList
         readerTesterDiaId.entityType = entityType
-        readerDomainIdSpinBox.value = domain
+        domainIdTextField.text = domain
 
         setButtonNameDefault()
     }
@@ -84,28 +84,33 @@ Popup {
         ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
         Column {
-            anchors.fill: parent
+            id: lay
+            width: parent.width
             spacing: 5
-            padding: 5
 
             Label {
                 text: readerTesterDiaId.entityType === 3 ? "Create Reader" : "Create Writer"
                 font.bold: true
                 font.pixelSize: 30
-                Layout.alignment: Qt.AlignHCenter
             }
 
             Label {
                 text: "Domain"
                 font.bold: true
             }
-            SpinBox {
-                id: readerDomainIdSpinBox
-                value: 0
-                editable: false
-                from: 0
-                to: 232
-                enabled: topicTypeNameList.length === 0
+            TextField {
+                id: domainIdTextField
+                text: "0"
+                validator: IntValidator {
+                    bottom: 0
+                    top: 232
+                }
+                focus: true
+                onTextChanged: {
+                    if (domainIdTextField.text > 232) {
+                        domainIdTextField.text = 232
+                    }
+                }
             }
 
             Label {
@@ -139,627 +144,1137 @@ Popup {
             }
 
             Label {
-                text: "Reliability"
+                text: "Quality of Service (QoS)"
                 font.bold: true
             }
-            Column {
-                ComboBox {
-                    id: reliabilityComboId
-                    model: ["DDS_RELIABILITY_BEST_EFFORT", "DDS_RELIABILITY_RELIABLE"]
-                    width: readerTesterDiaId.width - 30
+            TabBar {
+                id: bar
+                width: readerTesterDiaId.width - 40
+
+                TabButton {
+                    text: readerTesterDiaId.entityType === 3 ? qsTr("Reader") : qsTr("Writer")
                 }
-                Row {
-                    visible: reliabilityComboId.currentText === "DDS_RELIABILITY_RELIABLE" 
-                    Label {
-                        text: "max_blocking_time in milliseconds: "
-                    }
-                    SpinBox {
-                        id: reliabilitySpinBox
-                        to: 1e9
-                        value: 100
-                        enabled: !reliabilityCheckbox.checked
-                    }
-                    CheckBox {
-                        id: reliabilityCheckbox
-                        checked: false
-                        text: qsTr("infinite")
-                    }
+                TabButton {
+                    text: readerTesterDiaId.entityType === 3 ? qsTr("Subscriber") : qsTr("Publisher")
                 }
+                TabButton {
+                    text: qsTr("Topic")
+                }
+                /*TabButton {
+                    text: qsTr("Participant")
+                }*/
             }
 
-            Label {
-                text: "Durability"
-                font.bold: true
-            }
-            ComboBox {
-                id: durabilityComboId
-                model: ["DDS_DURABILITY_VOLATILE", "DDS_DURABILITY_TRANSIENT_LOCAL", "DDS_DURABILITY_TRANSIENT", "DDS_DURABILITY_PERSISTENT"]
-                width: readerTesterDiaId.width - 30
-            }
-
-            Label {
-                text: "Ownership"
-                font.bold: true
-            }
-            ComboBox {
-                id: ownershipComboId
-                model: ["DDS_OWNERSHIP_SHARED", "DDS_OWNERSHIP_EXCLUSIVE"]
-                width: readerTesterDiaId.width - 30
-            }
-
-            Column {
-                Label {
-                    text: "Partitions"
-                    font.bold: true
+            StackLayout {
+                id: mainLayoutId
+                width: readerTesterDiaId.width - 40
+                currentIndex: bar.currentIndex
+                height: {
+                    let child = mainLayoutId.children[mainLayoutId.currentIndex];
+                    return child && child.implicitHeight > 0 ? child.implicitHeight : 0;
                 }
 
-                Button {
-                    text: "Add Partition"
-                    onClicked: partitionModel.append({"partition": ""})
-                }
-            }
-            Repeater {
-                model: partitionModel
+                Item {
+                    id: endpointTab
+                    implicitHeight: endpointTabCol.implicitHeight
 
-                Row {
-                    spacing: 10
-                    Rectangle {
-                        width: 20
-                        height: partitionField.height
-                        color: "transparent"
-                    }
-                    TextField {
-                        leftPadding: 10
-                        id: partitionField
-                        placeholderText: "Enter partition"
-                        text: modelData
-                        onTextChanged: partitionModel.set(index, {"partition": text})
-                    }
-                    Button {
-                        text: "Remove"
-                        onClicked: partitionModel.remove(index)
-                    }
-                }
-            }
-
-            Label {
-                text: "DataRepresentation"
-                font.bold: true
-            }
-            Row {
-                CheckBox {
-                    id: dataReprDefaultCheckbox
-                    checked: true
-                    text: qsTr("Default")
-                    onCheckedChanged: {
-                        if (checked) {
-                            dataReprXcdr1Checkbox.checked = false;
-                            dataReprXcdr2Checkbox.checked = false;
-                        }
-                        if (!dataReprXcdr1Checkbox.checked && !dataReprXcdr2Checkbox.checked) {
-                            checked = true;
-                        }
-                    }
-                }
-                CheckBox {
-                    id: dataReprXcdr1Checkbox
-                    checked: false
-                    text: qsTr("XCDR1")
-                    onCheckedChanged: {
-                        if (checked) {
-                            dataReprDefaultCheckbox.checked = false;
-                        } else {
-                            if (!dataReprXcdr2Checkbox.checked) {
-                                dataReprDefaultCheckbox.checked = true;
-                            }
-                        }
-                    }
-                }
-                CheckBox {
-                    id: dataReprXcdr2Checkbox
-                    checked: false
-                    text: qsTr("XCDR2")
-                    onCheckedChanged: {
-                        if (checked) {
-                            dataReprDefaultCheckbox.checked = false;
-                        } else {
-                            if (!dataReprXcdr1Checkbox.checked) {
-                                dataReprDefaultCheckbox.checked = true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            Label {
-                text: "TypeConsistency"
-                font.bold: true
-            }
-            Column {
-                ComboBox {
-                    id: typeConsistencyComboId
-                    model: ["AllowTypeCoercion", "DisallowTypeCoercion"]
-                    width: readerTesterDiaId.width - 30
-                }
-                Column {
-                    visible: typeConsistencyComboId.currentText === "AllowTypeCoercion"
-                    Row {
-                        CheckBox {
-                            id: allowTypeCoercion_ignore_sequence_bounds
-                            checked: true
-                            text: qsTr("ignore_sequence_bounds")
-                        }
-                        CheckBox {
-                            id: allowTypeCoercion_ignore_string_bounds
-                            checked: true
-                            text: qsTr("ignore_string_bounds")
-                        }
-                        CheckBox {
-                            id: allowTypeCoercion_ignore_member_names
-                            checked: false
-                            text: qsTr("ignore_member_names")
-                        }
-                    }
-                    Row {
-                        CheckBox {
-                            id: allowTypeCoercion_prevent_type_widening
-                            checked: false
-                            text: qsTr("prevent_type_widening")
-                        }
-                        CheckBox {
-                            id: allowTypeCoercion_force_type_validation
-                            checked: false
-                            text: qsTr("force_type_validation")
-                        }
-                    }
-                }
-
-                CheckBox {
-                    id: disallowTypeCoercionForce_type_validationCheckbox
-                    checked: false
-                    text: qsTr("force_type_validation")
-                    visible: typeConsistencyComboId.currentText === "DisallowTypeCoercion" 
-                }
-            }
-
-            Label {
-                text: "History"
-                font.bold: true
-            }
-            Column {
-                ComboBox {
-                    id: historyComboId
-                    model: ["KeepLast", "KeepAll"]
-                    width: readerTesterDiaId.width - 30
-                }
-                Row {
-                    Label {
-                        text: "depth"
-                        visible: historyComboId.currentText === "KeepLast"
-                    }
-                    SpinBox {
-                        id: keepLastSpinBox
-                        from: 1
-                        to: 1e9
-                        value: 1
-                        visible: historyComboId.currentText === "KeepLast"
-                    }
-                }
-            }
-
-            Label {
-                text: "DestinationOrder"
-                font.bold: true
-            }
-            ComboBox {
-                id: destinationOrderComboId
-                model: ["ByReceptionTimestamp", "BySourceTimestamp"]
-                width: readerTesterDiaId.width - 30
-            }
-
-            Label {
-                text: "Liveliness"
-                font.bold: true
-            }
-            Column {
-                ComboBox {
-                    id: livelinessComboId
-                    model: ["Automatic", "ManualByParticipant", "ManualByTopic"]
-                    width: readerTesterDiaId.width - 30
-                }
-                Row {
-                    Label {
-                        text: "Seconds: "
-                    }
-                    SpinBox {
-                        id: livelinessSpinBox
-                        to: 1e9
-                        value: 1
-                        enabled: !livelinessCheckbox.checked
-                    }
-                    CheckBox {
-                        id: livelinessCheckbox
-                        checked: true
-                        text: qsTr("infinite")
-                    }
-                }
-            }
-
-            Label {
-                text: "Lifespan"
-                font.bold: true
-            }
-            Row {
-                Label {
-                    text: "Seconds: "
-                }
-                SpinBox {
-                    id: lifespanSpinBox
-                    to: 1e9
-                    value: 2
-                    enabled: !lifespanCheckbox.checked
-                }
-                CheckBox {
-                    id: lifespanCheckbox
-                    checked: true
-                    text: qsTr("infinite")
-                }
-            }
-
-            Label {
-                text: "Deadline"
-                font.bold: true
-            }
-            Row {
-                Label {
-                    text: "Seconds: "
-                }
-                SpinBox {
-                    id: deadlineSpinBox
-                    to: 1e9
-                    value: 2
-                    enabled: !deadlineCheckbox.checked
-                }
-                CheckBox {
-                    id: deadlineCheckbox
-                    checked: true
-                    text: qsTr("infinite")
-                }
-            }
-
-            Label {
-                text: "LatencyBudget"
-                font.bold: true
-            }
-            Row {
-                Label {
-                    text: "Seconds: "
-                }
-                SpinBox {
-                    id: latencyBudgetSpinBox
-                    to: 1e9
-                    value: 0
-                    enabled: !latencyBudgetCheckbox.checked
-                }
-                CheckBox {
-                    id: latencyBudgetCheckbox
-                    checked: false
-                    text: qsTr("infinite")
-                }
-            }
-
-            Label {
-                text: "OwnershipStrength"
-                font.bold: true
-            }
-            SpinBox {
-                id: ownershipStrengthSpinBox
-                to: 1e9
-                value: 0
-            }
-
-            Label {
-                text: "PresentationAccessScope"
-                font.bold: true
-            }
-            Column {
-                ComboBox {
-                    id: presentationAccessScopeComboId
-                    model: ["Instance", "Topic", "Group"]
-                    width: readerTesterDiaId.width - 30
-                }
-                Row {
-                    CheckBox {
-                        id: coherent_accessCheckbox
-                        checked: false
-                        text: qsTr("coherent_access")
-                    }
-                    CheckBox {
-                        id: ordered_accessCheckbox
-                        checked: false
-                        text: qsTr("ordered_access")
-                    }
-                }
-            }
-            Label {
-                text: "WriterDataLifecycle"
-                font.bold: true
-            }
-            CheckBox {
-                id: writerDataLifecycleCheckbox
-                checked: true
-                text: qsTr("autodispose")
-            }
-
-            Label {
-                text: "ReaderDataLifecycle"
-                font.bold: true
-            }
-            Column {
-                Row {
-                    Label {
-                        text: "autopurge_nowriter_samples_delay in minutes: "
-                    }
-                    SpinBox {
-                        id: autopurge_nowriter_samples_delaySpinBox
-                        to: 1e9
-                        value: 1
-                        enabled: !autopurge_nowriter_samples_delayCheckbox.checked
-                    }
-                    CheckBox {
-                        id: autopurge_nowriter_samples_delayCheckbox
-                        checked: true
-                        text: qsTr("infinite")
-                    }
-                }
-                Row {
-                    Label {
-                        text: "autopurge_disposed_samples_delay in minutes: "
-                    }
-                    SpinBox {
-                        id: autopurge_disposed_samples_delaySpinBox
-                        to: 1e9
-                        value: 1
-                        enabled: !autopurge_disposed_samples_delaySpinBoxCheckbox.checked
-                    }
-                    CheckBox {
-                        id: autopurge_disposed_samples_delaySpinBoxCheckbox
-                        checked: true
-                        text: qsTr("infinite")
-                    }
-                }
-
-            }
-
-            Label {
-                text: "TransportPriority"
-                font.bold: true
-            }
-            SpinBox {
-                id: transportPrioritySpinBox
-                to: 1e9
-                value: 0
-            }
-            
-            Label {
-                text: "ResourceLimits"
-                font.bold: true
-            }
-            Column {
-                Row {
-                    Label {
-                        text: "max_samples"
-                    }
-                    SpinBox {
-                        id: max_samplesSpinBox
-                        from: -1
-                        to: 1e9
-                        value: -1
-                    }
-                }
-                Row {
-                    Label {
-                        text: "max_instances"
-                    }
-                    SpinBox {
-                        id: max_instancesSpinBox
-                        from: -1
-                        to: 1e9
-                        value: -1
-                    }
-                }
-                Row {
-                    Label {
-                        text: "max_samples_per_instance"
-                    }
-                    SpinBox {
-                        id: max_samples_per_instanceSpinBox
-                        from: -1
-                        to: 1e9
-                        value: -1
-                    }
-                }
-            }
-
-            Label {
-                text: "TimeBasedFilter"
-                font.bold: true
-            }
-            Row {
-                Label {
-                    text: "filter_fn in seconds: "
-                }
-                SpinBox {
-                    id: timeBasedFilterSpinBox
-                    to: 1e9
-                    value: 0
-                }
-            }
-
-            Label {
-                text: "IgnoreLocal"
-                font.bold: true
-            }
-            ComboBox {
-                id: ignoreLocalComboId
-                model: ["Nothing", "Participant", "Process"]
-                width: readerTesterDiaId.width - 30
-            }
-
-            Label {
-                text: "Userdata"
-                font.bold: true
-            }
-            TextField {
-                leftPadding: 10
-                id: userdataField
-                placeholderText: "Enter Userdata"
-                text: ""
-            }
-
-            Label {
-                text: "Groupdata"
-                font.bold: true
-            }
-            TextField {
-                leftPadding: 10
-                id: groupdataField
-                placeholderText: "Enter Groupdata"
-                text: ""
-            }
-
-            Label {
-                text: "EntityName"
-                font.bold: true
-            }
-            TextField {
-                leftPadding: 10
-                id: entityNameField
-                placeholderText: "Enter EntityName"
-                text: ""
-            }
-
-            Label {
-                text: "Property"
-                font.bold: true
-            }
-            Row {
-                TextField {
-                    leftPadding: 10
-                    id: propertyKeyField
-                    placeholderText: "Enter key"
-                    text: ""
-                }
-                TextField {
-                    leftPadding: 10
-                    id: propertyValueField
-                    placeholderText: "Enter value"
-                    text: ""
-                }
-            }
-
-            Label {
-                text: "BinaryProperty"
-                font.bold: true
-            }
-            Row {
-                TextField {
-                    leftPadding: 10
-                    id: binaryPropertyKeyField
-                    placeholderText: "Enter key"
-                    text: ""
-                }
-                TextField {
-                    leftPadding: 10
-                    id: binaryPropertyValueField
-                    placeholderText: "Enter value"
-                    text: ""
-                }
-            }
-
-            Label {
-                text: "DurabilityService"
-                font.bold: true
-            }
-            Column {
-                Row {
-                    Label {
-                        text: "cleanup_delay in minutes: "
-                    }
-                    SpinBox {
-                        id: cleanup_delaySpinBox
-                        to: 1e9
-                        value: 0
-                        enabled: !cleanup_delayCheckbox.checked
-                    }
-                    CheckBox {
-                        id: cleanup_delayCheckbox
-                        checked: false
-                        text: qsTr("infinite")
-                    }
-                }
-                Column {
-                    Label {
-                        text: "History"
-                    }
                     Column {
+                        id: endpointTabCol
+
+                        Label {
+                            text: "Reliability"
+                            font.bold: true
+                        }
+                        Column {
+                            ComboBox {
+                                id: reliabilityComboId
+                                model: ["DDS_RELIABILITY_BEST_EFFORT", "DDS_RELIABILITY_RELIABLE"]
+                                width: readerTesterDiaId.width - 30
+                            }
+                            Row {
+                                visible: reliabilityComboId.currentText === "DDS_RELIABILITY_RELIABLE" 
+                                Label {
+                                    text: "max_blocking_time in milliseconds: "
+                                }
+                                SpinBox {
+                                    id: reliabilitySpinBox
+                                    to: 1e9
+                                    value: 100
+                                    enabled: !reliabilityCheckbox.checked
+                                }
+                                CheckBox {
+                                    id: reliabilityCheckbox
+                                    checked: false
+                                    text: qsTr("infinite")
+                                }
+                            }
+                        }
+
+                        Label {
+                            text: "Durability"
+                            font.bold: true
+                        }
                         ComboBox {
-                            id: durabilityServiceHistoryComboId
-                            model: ["KeepLast", "KeepAll"]
+                            id: durabilityComboId
+                            model: ["DDS_DURABILITY_VOLATILE", "DDS_DURABILITY_TRANSIENT_LOCAL", "DDS_DURABILITY_TRANSIENT", "DDS_DURABILITY_PERSISTENT"]
                             width: readerTesterDiaId.width - 30
+                        }
+
+                        Label {
+                            text: "Ownership"
+                            font.bold: true
+                        }
+                        ComboBox {
+                            id: ownershipComboId
+                            model: ["DDS_OWNERSHIP_SHARED", "DDS_OWNERSHIP_EXCLUSIVE"]
+                            width: readerTesterDiaId.width - 30
+                        }
+
+
+
+                        Label {
+                            text: "DataRepresentation"
+                            font.bold: true
+                        }
+                        Row {
+                            CheckBox {
+                                id: dataReprDefaultCheckbox
+                                checked: true
+                                text: qsTr("Default")
+                                onCheckedChanged: {
+                                    if (checked) {
+                                        dataReprXcdr1Checkbox.checked = false;
+                                        dataReprXcdr2Checkbox.checked = false;
+                                    }
+                                    if (!dataReprXcdr1Checkbox.checked && !dataReprXcdr2Checkbox.checked) {
+                                        checked = true;
+                                    }
+                                }
+                            }
+                            CheckBox {
+                                id: dataReprXcdr1Checkbox
+                                checked: false
+                                text: qsTr("XCDR1")
+                                onCheckedChanged: {
+                                    if (checked) {
+                                        dataReprDefaultCheckbox.checked = false;
+                                    } else {
+                                        if (!dataReprXcdr2Checkbox.checked) {
+                                            dataReprDefaultCheckbox.checked = true;
+                                        }
+                                    }
+                                }
+                            }
+                            CheckBox {
+                                id: dataReprXcdr2Checkbox
+                                checked: false
+                                text: qsTr("XCDR2")
+                                onCheckedChanged: {
+                                    if (checked) {
+                                        dataReprDefaultCheckbox.checked = false;
+                                    } else {
+                                        if (!dataReprXcdr1Checkbox.checked) {
+                                            dataReprDefaultCheckbox.checked = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Label {
+                            visible: readerTesterDiaId.entityType === 3
+                            text: "TypeConsistency"
+                            font.bold: true
+                        }
+                        Column {
+                            visible: readerTesterDiaId.entityType === 3
+                            ComboBox {
+                                id: typeConsistencyComboId
+                                model: ["AllowTypeCoercion", "DisallowTypeCoercion"]
+                                width: readerTesterDiaId.width - 30
+                            }
+                            Column {
+                                visible: typeConsistencyComboId.currentText === "AllowTypeCoercion"
+                                Row {
+                                    CheckBox {
+                                        id: allowTypeCoercion_ignore_sequence_bounds
+                                        checked: true
+                                        text: qsTr("ignore_sequence_bounds")
+                                    }
+                                    CheckBox {
+                                        id: allowTypeCoercion_ignore_string_bounds
+                                        checked: true
+                                        text: qsTr("ignore_string_bounds")
+                                    }
+                                    CheckBox {
+                                        id: allowTypeCoercion_ignore_member_names
+                                        checked: false
+                                        text: qsTr("ignore_member_names")
+                                    }
+                                }
+                                Row {
+                                    CheckBox {
+                                        id: allowTypeCoercion_prevent_type_widening
+                                        checked: false
+                                        text: qsTr("prevent_type_widening")
+                                    }
+                                    CheckBox {
+                                        id: allowTypeCoercion_force_type_validation
+                                        checked: false
+                                        text: qsTr("force_type_validation")
+                                    }
+                                }
+                            }
+
+                            CheckBox {
+                                id: disallowTypeCoercionForce_type_validationCheckbox
+                                checked: false
+                                text: qsTr("force_type_validation")
+                                visible: typeConsistencyComboId.currentText === "DisallowTypeCoercion" 
+                            }
+                        }
+
+                        Label {
+                            text: "History"
+                            font.bold: true
+                        }
+                        Column {
+                            ComboBox {
+                                id: historyComboId
+                                model: ["KeepLast", "KeepAll"]
+                                width: readerTesterDiaId.width - 30
+                            }
+                            Row {
+                                Label {
+                                    text: "depth"
+                                    visible: historyComboId.currentText === "KeepLast"
+                                }
+                                SpinBox {
+                                    id: keepLastSpinBox
+                                    from: 1
+                                    to: 1e9
+                                    value: 1
+                                    visible: historyComboId.currentText === "KeepLast"
+                                }
+                            }
+                        }
+
+                        Label {
+                            text: "DestinationOrder"
+                            font.bold: true
+                        }
+                        ComboBox {
+                            id: destinationOrderComboId
+                            model: ["ByReceptionTimestamp", "BySourceTimestamp"]
+                            width: readerTesterDiaId.width - 30
+                        }
+
+                        Label {
+                            text: "Liveliness"
+                            font.bold: true
+                        }
+                        Column {
+                            ComboBox {
+                                id: livelinessComboId
+                                model: ["Automatic", "ManualByParticipant", "ManualByTopic"]
+                                width: readerTesterDiaId.width - 30
+                            }
+                            Row {
+                                Label {
+                                    text: "Seconds: "
+                                }
+                                SpinBox {
+                                    id: livelinessSpinBox
+                                    to: 1e9
+                                    value: 1
+                                    enabled: !livelinessCheckbox.checked
+                                }
+                                CheckBox {
+                                    id: livelinessCheckbox
+                                    checked: true
+                                    text: qsTr("infinite")
+                                }
+                            }
+                        }
+
+                        Label {
+                            visible: readerTesterDiaId.entityType === 4
+                            text: "Lifespan"
+                            font.bold: true
+                        }
+                        Row {
+                            visible: readerTesterDiaId.entityType === 4
+                            Label {
+                                text: "Seconds: "
+                            }
+                            SpinBox {
+                                id: lifespanSpinBox
+                                to: 1e9
+                                value: 2
+                                enabled: !lifespanCheckbox.checked
+                            }
+                            CheckBox {
+                                id: lifespanCheckbox
+                                checked: true
+                                text: qsTr("infinite")
+                            }
+                        }
+
+                        Label {
+                            text: "Deadline"
+                            font.bold: true
                         }
                         Row {
                             Label {
-                                text: "depth"
-                                enabled: durabilityServiceHistoryComboId.currentText === "KeepLast"
+                                text: "Seconds: "
                             }
                             SpinBox {
-                                id: durabilityServiceKeepLastSpinBox
-                                from: 1
+                                id: deadlineSpinBox
                                 to: 1e9
-                                value: 1
-                                enabled: durabilityServiceHistoryComboId.currentText === "KeepLast"
+                                value: 2
+                                enabled: !deadlineCheckbox.checked
+                            }
+                            CheckBox {
+                                id: deadlineCheckbox
+                                checked: true
+                                text: qsTr("infinite")
+                            }
+                        }
+
+                        Label {
+                            text: "LatencyBudget"
+                            font.bold: true
+                        }
+                        Row {
+                            Label {
+                                text: "Seconds: "
+                            }
+                            SpinBox {
+                                id: latencyBudgetSpinBox
+                                to: 1e9
+                                value: 0
+                                enabled: !latencyBudgetCheckbox.checked
+                            }
+                            CheckBox {
+                                id: latencyBudgetCheckbox
+                                checked: false
+                                text: qsTr("infinite")
+                            }
+                        }
+
+                        Label {
+                            visible: readerTesterDiaId.entityType === 4
+                            text: "OwnershipStrength"
+                            font.bold: true
+                        }
+                        SpinBox {
+                            visible: readerTesterDiaId.entityType === 4
+                            id: ownershipStrengthSpinBox
+                            to: 1e9
+                            value: 0
+                        }
+
+                        Label {
+                            visible: readerTesterDiaId.entityType === 4
+                            text: "WriterDataLifecycle"
+                            font.bold: true
+                        }
+                        CheckBox {
+                            visible: readerTesterDiaId.entityType === 4
+                            id: writerDataLifecycleCheckbox
+                            checked: true
+                            text: qsTr("autodispose")
+                        }
+
+                        Label {
+                            visible: readerTesterDiaId.entityType === 3
+                            text: "ReaderDataLifecycle"
+                            font.bold: true
+                        }
+                        Column {
+                            visible: readerTesterDiaId.entityType === 3
+                            Row {
+                                Label {
+                                    text: "autopurge_nowriter_samples_delay in minutes: "
+                                }
+                                SpinBox {
+                                    id: autopurge_nowriter_samples_delaySpinBox
+                                    to: 1e9
+                                    value: 1
+                                    enabled: !autopurge_nowriter_samples_delayCheckbox.checked
+                                }
+                                CheckBox {
+                                    id: autopurge_nowriter_samples_delayCheckbox
+                                    checked: true
+                                    text: qsTr("infinite")
+                                }
+                            }
+                            Row {
+                                Label {
+                                    text: "autopurge_disposed_samples_delay in minutes: "
+                                }
+                                SpinBox {
+                                    id: autopurge_disposed_samples_delaySpinBox
+                                    to: 1e9
+                                    value: 1
+                                    enabled: !autopurge_disposed_samples_delaySpinBoxCheckbox.checked
+                                }
+                                CheckBox {
+                                    id: autopurge_disposed_samples_delaySpinBoxCheckbox
+                                    checked: true
+                                    text: qsTr("infinite")
+                                }
+                            }
+
+                        }
+
+                        Label {
+                            text: "TransportPriority"
+                            font.bold: true
+                        }
+                        SpinBox {
+                            id: transportPrioritySpinBox
+                            to: 1e9
+                            value: 0
+                        }
+                        
+                        Label {
+                            text: "ResourceLimits"
+                            font.bold: true
+                        }
+                        Column {
+                            Row {
+                                Label {
+                                    text: "max_samples"
+                                }
+                                SpinBox {
+                                    id: max_samplesSpinBox
+                                    from: -1
+                                    to: 1e9
+                                    value: -1
+                                }
+                            }
+                            Row {
+                                Label {
+                                    text: "max_instances"
+                                }
+                                SpinBox {
+                                    id: max_instancesSpinBox
+                                    from: -1
+                                    to: 1e9
+                                    value: -1
+                                }
+                            }
+                            Row {
+                                Label {
+                                    text: "max_samples_per_instance"
+                                }
+                                SpinBox {
+                                    id: max_samples_per_instanceSpinBox
+                                    from: -1
+                                    to: 1e9
+                                    value: -1
+                                }
+                            }
+                        }
+
+                        Label {
+                            visible: readerTesterDiaId.entityType === 3
+                            text: "TimeBasedFilter"
+                            font.bold: true
+                        }
+                        Row {
+                            visible: readerTesterDiaId.entityType === 3
+                            Label {
+                                text: "filter_fn in seconds: "
+                            }
+                            SpinBox {
+                                id: timeBasedFilterSpinBox
+                                to: 1e9
+                                value: 0
+                            }
+                        }
+
+                        Label {
+                            text: "IgnoreLocal"
+                            font.bold: true
+                        }
+                        ComboBox {
+                            id: ignoreLocalComboId
+                            model: ["Nothing", "Participant", "Process"]
+                            width: readerTesterDiaId.width - 30
+                        }
+
+                        Label {
+                            visible: readerTesterDiaId.entityType === 4
+                            text: "DurabilityService"
+                            font.bold: true
+                        }
+                        Column {
+                            visible: readerTesterDiaId.entityType === 4
+                            Row {
+                                Label {
+                                    text: "cleanup_delay in minutes: "
+                                }
+                                SpinBox {
+                                    id: cleanup_delaySpinBox
+                                    to: 1e9
+                                    value: 0
+                                    enabled: !cleanup_delayCheckbox.checked
+                                }
+                                CheckBox {
+                                    id: cleanup_delayCheckbox
+                                    checked: false
+                                    text: qsTr("infinite")
+                                }
+                            }
+                            Column {
+                                Label {
+                                    text: "History"
+                                }
+                                Column {
+                                    ComboBox {
+                                        id: durabilityServiceHistoryComboId
+                                        model: ["KeepLast", "KeepAll"]
+                                        width: readerTesterDiaId.width - 30
+                                    }
+                                    Row {
+                                        Label {
+                                            text: "depth"
+                                            enabled: durabilityServiceHistoryComboId.currentText === "KeepLast"
+                                        }
+                                        SpinBox {
+                                            id: durabilityServiceKeepLastSpinBox
+                                            from: 1
+                                            to: 1e9
+                                            value: 1
+                                            enabled: durabilityServiceHistoryComboId.currentText === "KeepLast"
+                                        }
+                                    }
+                                }
+                                Row {
+                                    Label {
+                                        text: "max_samples"
+                                    }
+                                    SpinBox {
+                                        id: durabilityServiceMaxSamplesSpinBox
+                                        to: 1e9
+                                        from: -1
+                                        value: -1
+                                    }
+                                }
+                                Row {
+                                    Label {
+                                        text: "max_instances"
+                                    }
+                                    SpinBox {
+                                        id: durabilityServiceMaxInstancesSpinBox
+                                        to: 1e9
+                                        from: -1
+                                        value: -1
+                                    }
+                                }
+                                Row {
+                                    Label {
+                                        text: "max_samples_per_instance"
+                                    }
+                                    SpinBox {
+                                        id: durabilityServiceMaxSamplesPerInstanceSpinBox
+                                        to: 1e9
+                                        from: -1
+                                        value: -1
+                                    }
+                                }
+                            }
+                        }
+
+                        Label {
+                            text: "UserData"
+                            font.bold: true
+                        }
+                        TextField {
+                            leftPadding: 10
+                            id: userdataField
+                            placeholderText: "Enter Userdata"
+                            text: ""
+                        }
+
+                        Label {
+                            text: "EntityName"
+                            font.bold: true
+                        }
+                        TextField {
+                            leftPadding: 10
+                            id: entityNameField
+                            placeholderText: "Enter EntityName"
+                            text: ""
+                        }
+
+                        Label {
+                            text: "Property"
+                            font.bold: true
+                        }
+                        Row {
+                            TextField {
+                                leftPadding: 10
+                                id: propertyKeyField
+                                placeholderText: "Enter key"
+                                text: ""
+                            }
+                            TextField {
+                                leftPadding: 10
+                                id: propertyValueField
+                                placeholderText: "Enter value"
+                                text: ""
+                            }
+                        }
+
+                        Label {
+                            text: "BinaryProperty"
+                            font.bold: true
+                        }
+                        Row {
+                            TextField {
+                                leftPadding: 10
+                                id: binaryPropertyKeyField
+                                placeholderText: "Enter key"
+                                text: ""
+                            }
+                            TextField {
+                                leftPadding: 10
+                                id: binaryPropertyValueField
+                                placeholderText: "Enter value"
+                                text: ""
                             }
                         }
                     }
-                    Row {
-                        Label {
-                            text: "max_samples"
+                }
+
+                Item {
+                    id: pubSubTab
+                    implicitHeight: pubSubTabCol.implicitHeight
+
+                    Column {
+                        id: pubSubTabCol
+                        
+                        Column {
+                            Label {
+                                text: "Partitions"
+                                font.bold: true
+                            }
+
+                            Button {
+                                text: "Add Partition"
+                                onClicked: partitionModel.append({"partition": ""})
+                            }
                         }
-                        SpinBox {
-                            id: durabilityServiceMaxSamplesSpinBox
-                            to: 1e9
-                            from: -1
-                            value: -1
+                        Repeater {
+                            model: partitionModel
+
+                            Row {
+                                spacing: 10
+                                Rectangle {
+                                    width: 20
+                                    height: partitionField.height
+                                    color: "transparent"
+                                }
+                                TextField {
+                                    leftPadding: 10
+                                    id: partitionField
+                                    placeholderText: "Enter partition"
+                                    text: modelData
+                                    onTextChanged: partitionModel.set(index, {"partition": text})
+                                }
+                                Button {
+                                    text: "Remove"
+                                    onClicked: partitionModel.remove(index)
+                                }
+                            }
+                        }
+
+                        Label {
+                            text: "Presentation"
+                            font.bold: true
+                        }
+                        Column {
+                            ComboBox {
+                                id: pubSubPresentationAccessScopeComboId
+                                model: ["Instance", "Topic", "Group"]
+                                width: readerTesterDiaId.width - 30
+                            }
+                            Row {
+                                CheckBox {
+                                    id: pubSubCoherent_accessCheckbox
+                                    checked: false
+                                    text: qsTr("coherent_access")
+                                }
+                                CheckBox {
+                                    id: pubSubOrdered_accessCheckbox
+                                    checked: false
+                                    text: qsTr("ordered_access")
+                                }
+                            }
+                        }
+
+                        Label {
+                            text: "Groupdata"
+                            font.bold: true
+                        }
+                        TextField {
+                            leftPadding: 10
+                            id: puSubGroupdataField
+                            placeholderText: "Enter Groupdata"
+                            text: ""
+                        }
+
+                        Label {
+                            text: "UserData"
+                            font.bold: true
+                        }
+                        TextField {
+                            leftPadding: 10
+                            id: pubSubUserdataField
+                            placeholderText: "Enter Userdata"
+                            text: ""
+                        }
+
+                        Label {
+                            text: "EntityFactory"
+                            enabled: false
+                            font.bold: true
+                        }
+                        CheckBox {
+                            id: pubSubEntityFactoryAutoenableCreatedEntitiesCheckbox
+                            enabled: false
+                            checked: true
+                            text: "autoenable_created_entities"
                         }
                     }
-                    Row {
+                }
+
+                Item {
+                    id: topicTab
+                    implicitHeight: topicTabCol.implicitHeight
+
+                    Column {
+                        id: topicTabCol
+
                         Label {
-                            text: "max_instances"
+                            text: "Reliability"
+                            font.bold: true
+                        }
+                        Column {
+                            ComboBox {
+                                id: topicQosReliabilityComboId
+                                model: ["DDS_RELIABILITY_BEST_EFFORT", "DDS_RELIABILITY_RELIABLE"]
+                                width: readerTesterDiaId.width - 30
+                            }
+                            Row {
+                                visible: topicQosReliabilityComboId.currentText === "DDS_RELIABILITY_RELIABLE" 
+                                Label {
+                                    text: "max_blocking_time in milliseconds: "
+                                }
+                                SpinBox {
+                                    id: topicQosReliabilitySpinBox
+                                    to: 1e9
+                                    value: 100
+                                    enabled: !topicQosReliabilityCheckbox.checked
+                                }
+                                CheckBox {
+                                    id: topicQosReliabilityCheckbox
+                                    checked: false
+                                    text: qsTr("infinite")
+                                }
+                            }
+                        }
+
+                        Label {
+                            text: "Durability"
+                            font.bold: true
+                        }
+                        ComboBox {
+                            id: topicQosDurabilityComboId
+                            model: ["DDS_DURABILITY_VOLATILE", "DDS_DURABILITY_TRANSIENT_LOCAL", "DDS_DURABILITY_TRANSIENT", "DDS_DURABILITY_PERSISTENT"]
+                            width: readerTesterDiaId.width - 30
+                        }
+
+                        Label {
+                            text: "Ownership"
+                            font.bold: true
+                        }
+                        ComboBox {
+                            id: topicQosOwnershipComboId
+                            model: ["DDS_OWNERSHIP_SHARED", "DDS_OWNERSHIP_EXCLUSIVE"]
+                            width: readerTesterDiaId.width - 30
+                        }
+
+
+
+                        Label {
+                            text: "DataRepresentation"
+                            font.bold: true
+                        }
+                        Row {
+                            CheckBox {
+                                id: topicQosDataReprDefaultCheckbox
+                                checked: true
+                                text: qsTr("Default")
+                                onCheckedChanged: {
+                                    if (checked) {
+                                        topicQosDataReprXcdr1Checkbox.checked = false;
+                                        topicQosDataReprXcdr2Checkbox.checked = false;
+                                    }
+                                    if (!topicQosDataReprXcdr1Checkbox.checked && !topicQosDataReprXcdr2Checkbox.checked) {
+                                        checked = true;
+                                    }
+                                }
+                            }
+                            CheckBox {
+                                id: topicQosDataReprXcdr1Checkbox
+                                checked: false
+                                text: qsTr("XCDR1")
+                                onCheckedChanged: {
+                                    if (checked) {
+                                        topicQosDataReprDefaultCheckbox.checked = false;
+                                    } else {
+                                        if (!topicQosDataReprXcdr2Checkbox.checked) {
+                                            topicQosDataReprDefaultCheckbox.checked = true;
+                                        }
+                                    }
+                                }
+                            }
+                            CheckBox {
+                                id: topicQosDataReprXcdr2Checkbox
+                                checked: false
+                                text: qsTr("XCDR2")
+                                onCheckedChanged: {
+                                    if (checked) {
+                                        topicQosDataReprDefaultCheckbox.checked = false;
+                                    } else {
+                                        if (!topicQosDataReprXcdr1Checkbox.checked) {
+                                            topicQosDataReprDefaultCheckbox.checked = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Label {
+                            text: "History"
+                            font.bold: true
+                        }
+                        Column {
+                            ComboBox {
+                                id: topicQosHistoryComboId
+                                model: ["KeepLast", "KeepAll"]
+                                width: readerTesterDiaId.width - 30
+                            }
+                            Row {
+                                Label {
+                                    text: "depth"
+                                    visible: topicQosHistoryComboId.currentText === "KeepLast"
+                                }
+                                SpinBox {
+                                    id: topicQosKeepLastSpinBox
+                                    from: 1
+                                    to: 1e9
+                                    value: 1
+                                    visible: topicQosHistoryComboId.currentText === "KeepLast"
+                                }
+                            }
+                        }
+
+                        Label {
+                            text: "DestinationOrder"
+                            font.bold: true
+                        }
+                        ComboBox {
+                            id: topicQosDestinationOrderComboId
+                            model: ["ByReceptionTimestamp", "BySourceTimestamp"]
+                            width: readerTesterDiaId.width - 30
+                        }
+
+                        Label {
+                            text: "Liveliness"
+                            font.bold: true
+                        }
+                        Column {
+                            ComboBox {
+                                id: topicQosLivelinessComboId
+                                model: ["Automatic", "ManualByParticipant", "ManualByTopic"]
+                                width: readerTesterDiaId.width - 30
+                            }
+                            Row {
+                                Label {
+                                    text: "Seconds: "
+                                }
+                                SpinBox {
+                                    id: topicQosLivelinessSpinBox
+                                    to: 1e9
+                                    value: 1
+                                    enabled: !topicQosLivelinessCheckbox.checked
+                                }
+                                CheckBox {
+                                    id: topicQosLivelinessCheckbox
+                                    checked: true
+                                    text: qsTr("infinite")
+                                }
+                            }
+                        }
+
+                        Label {
+                            text: "Lifespan"
+                            font.bold: true
+                        }
+                        Row {
+                            Label {
+                                text: "Seconds: "
+                            }
+                            SpinBox {
+                                id: topicQosLifespanSpinBox
+                                to: 1e9
+                                value: 2
+                                enabled: !topicQosLifespanCheckbox.checked
+                            }
+                            CheckBox {
+                                id: topicQosLifespanCheckbox
+                                checked: true
+                                text: qsTr("infinite")
+                            }
+                        }
+
+                        Label {
+                            text: "Deadline"
+                            font.bold: true
+                        }
+                        Row {
+                            Label {
+                                text: "Seconds: "
+                            }
+                            SpinBox {
+                                id: topicQosDeadlineSpinBox
+                                to: 1e9
+                                value: 2
+                                enabled: !topicQosDeadlineCheckbox.checked
+                            }
+                            CheckBox {
+                                id: topicQosDeadlineCheckbox
+                                checked: true
+                                text: qsTr("infinite")
+                            }
+                        }
+
+                        Label {
+                            text: "LatencyBudget"
+                            font.bold: true
+                        }
+                        Row {
+                            Label {
+                                text: "Seconds: "
+                            }
+                            SpinBox {
+                                id: topicQosLatencyBudgetSpinBox
+                                to: 1e9
+                                value: 0
+                                enabled: !topicQosLatencyBudgetCheckbox.checked
+                            }
+                            CheckBox {
+                                id: topicQosLatencyBudgetCheckbox
+                                checked: false
+                                text: qsTr("infinite")
+                            }
+                        }
+
+                        Label {
+                            text: "TransportPriority"
+                            font.bold: true
                         }
                         SpinBox {
-                            id: durabilityServiceMaxInstancesSpinBox
+                            id: topicQosTransportPrioritySpinBox
                             to: 1e9
-                            from: -1
-                            value: -1
+                            value: 0
+                        }
+
+                        Label {
+                            text: "ResourceLimits"
+                            font.bold: true
+                        }
+                        Column {
+                            Row {
+                                Label {
+                                    text: "max_samples"
+                                }
+                                SpinBox {
+                                    id: topicQosMax_samplesSpinBox
+                                    from: -1
+                                    to: 1e9
+                                    value: -1
+                                }
+                            }
+                            Row {
+                                Label {
+                                    text: "max_instances"
+                                }
+                                SpinBox {
+                                    id: topicQosMax_instancesSpinBox
+                                    from: -1
+                                    to: 1e9
+                                    value: -1
+                                }
+                            }
+                            Row {
+                                Label {
+                                    text: "max_samples_per_instance"
+                                }
+                                SpinBox {
+                                    id: topicQosMax_samples_per_instanceSpinBox
+                                    from: -1
+                                    to: 1e9
+                                    value: -1
+                                }
+                            }
+                        }
+
+                        Label {
+                            text: "DurabilityService"
+                            font.bold: true
+                        }
+                        Column {
+                            Row {
+                                Label {
+                                    text: "cleanup_delay in minutes: "
+                                }
+                                SpinBox {
+                                    id: topicQosCleanup_delaySpinBox
+                                    to: 1e9
+                                    value: 0
+                                    enabled: !topicQosCleanup_delayCheckbox.checked
+                                }
+                                CheckBox {
+                                    id: topicQosCleanup_delayCheckbox
+                                    checked: false
+                                    text: qsTr("infinite")
+                                }
+                            }
+                            Column {
+                                Label {
+                                    text: "History"
+                                }
+                                Column {
+                                    ComboBox {
+                                        id: topicQosDurabilityServiceHistoryComboId
+                                        model: ["KeepLast", "KeepAll"]
+                                        width: readerTesterDiaId.width - 30
+                                    }
+                                    Row {
+                                        Label {
+                                            text: "depth"
+                                            enabled: topicQosDurabilityServiceHistoryComboId.currentText === "KeepLast"
+                                        }
+                                        SpinBox {
+                                            id: topicQosDurabilityServiceKeepLastSpinBox
+                                            from: 1
+                                            to: 1e9
+                                            value: 1
+                                            enabled: topicQosDurabilityServiceHistoryComboId.currentText === "KeepLast"
+                                        }
+                                    }
+                                }
+                                Row {
+                                    Label {
+                                        text: "max_samples"
+                                    }
+                                    SpinBox {
+                                        id: topicQosDurabilityServiceMaxSamplesSpinBox
+                                        to: 1e9
+                                        from: -1
+                                        value: -1
+                                    }
+                                }
+                                Row {
+                                    Label {
+                                        text: "max_instances"
+                                    }
+                                    SpinBox {
+                                        id: topicQosDurabilityServiceMaxInstancesSpinBox
+                                        to: 1e9
+                                        from: -1
+                                        value: -1
+                                    }
+                                }
+                                Row {
+                                    Label {
+                                        text: "max_samples_per_instance"
+                                    }
+                                    SpinBox {
+                                        id: topicQosDurabilityServiceMaxSamplesPerInstanceSpinBox
+                                        to: 1e9
+                                        from: -1
+                                        value: -1
+                                    }
+                                }
+                            }
+                        }
+
+                        Label {
+                            text: "TopicData"
+                            font.bold: true
+                        }
+                        TextField {
+                            leftPadding: 10
+                            id: topicQosDataField
+                            placeholderText: "Enter TopicData"
+                            text: ""
                         }
                     }
-                    Row {
+                }
+
+                Item {
+                    id: participantTab
+                    implicitHeight: participantTabCol.implicitHeight
+
+                    Column {
+                        id: participantTabCol
+
                         Label {
-                            text: "max_samples_per_instance"
+                            text: "Participant Handling"
+                            font.bold: true
                         }
-                        SpinBox {
-                            id: durabilityServiceMaxSamplesPerInstanceSpinBox
-                            to: 1e9
-                            from: -1
-                            value: -1
+                        CheckBox {
+                            id: dpReuseParticipantCheckbox
+                            checked: true
+                            text: "Use the default participant (otherwise create a new one)"
+                        }
+
+                        Label {
+                            visible: !dpReuseParticipantCheckbox.checked
+                            text: "UserData"
+                            font.bold: true
+                        }
+                        TextField {
+                            visible: !dpReuseParticipantCheckbox.checked
+                            leftPadding: 10
+                            id: dpUserdataField
+                            placeholderText: "Enter Userdata"
+                            text: ""
+                        }
+
+                        Label {
+                            text: "EntityFactory"
+                            enabled: false
+                            visible: !dpReuseParticipantCheckbox.checked
+                            font.bold: true
+                        }
+                        CheckBox {
+                            id: dpEntityFactoryAutoenableCreatedEntitiesCheckbox
+                            enabled: false
+                            checked: true
+                            visible: !dpReuseParticipantCheckbox.checked
+                            text: "autoenable_created_entities"
                         }
                     }
                 }
             }
-
-
-
         }
     }
 
@@ -774,21 +1289,24 @@ Popup {
         Button {
             text: buttonName
             onClicked: {
-                var partitions = [];
+                var pubSubPartitions = [];
                 for (var i = 0; i < partitionModel.count; i++) {
-                    partitions.push(partitionModel.get(i).partition);
+                    pubSubPartitions.push(partitionModel.get(i).partition);
                 }
                 model.setQosSelection(
-                    readerDomainIdSpinBox.value,
+                    // General
+                    domainIdTextField.text,
                     topicNameTextFieldId.text,
                     topicType,
+                    entityType,
+
+                    // Reader/Writer
                     ownershipComboId.currentText,
                     durabilityComboId.currentText,
                     reliabilityComboId.currentText,
                     reliabilityCheckbox.checked ? -1 : reliabilitySpinBox.value,
                     dataReprXcdr1Checkbox.checked,
                     dataReprXcdr2Checkbox.checked,
-                    partitions,
                     typeConsistencyComboId.currentText,
                     allowTypeCoercion_ignore_sequence_bounds.checked,
                     allowTypeCoercion_ignore_string_bounds.checked,
@@ -805,9 +1323,6 @@ Popup {
                     deadlineCheckbox.checked ? -1 : deadlineSpinBox.value,
                     latencyBudgetCheckbox.checked ? -1 : latencyBudgetSpinBox.value,
                     ownershipStrengthSpinBox.value,
-                    presentationAccessScopeComboId.currentText,
-                    coherent_accessCheckbox.checked,
-                    ordered_accessCheckbox.checked,
                     writerDataLifecycleCheckbox.checked,
                     autopurge_nowriter_samples_delayCheckbox.checked ? -1 : autopurge_nowriter_samples_delaySpinBox.value,
                     autopurge_disposed_samples_delaySpinBoxCheckbox.checked ? -1 : autopurge_disposed_samples_delaySpinBox.value,
@@ -818,7 +1333,6 @@ Popup {
                     timeBasedFilterSpinBox.value,
                     ignoreLocalComboId.currentText,
                     userdataField.text,
-                    groupdataField.text,
                     entityNameField.text,
                     propertyKeyField.text,
                     propertyValueField.text,
@@ -830,7 +1344,45 @@ Popup {
                     durabilityServiceMaxSamplesSpinBox.value,
                     durabilityServiceMaxInstancesSpinBox.value,
                     durabilityServiceMaxSamplesPerInstanceSpinBox.value,
-                    entityType
+
+                    // Pub/Sub
+                    pubSubPartitions,
+                    pubSubPresentationAccessScopeComboId.currentText,
+                    pubSubCoherent_accessCheckbox.checked,
+                    pubSubOrdered_accessCheckbox.checked,
+                    puSubGroupdataField.text,
+
+                    // Topic
+                    topicQosOwnershipComboId.currentText,
+                    topicQosDurabilityComboId.currentText,
+                    topicQosReliabilityComboId.currentText,
+                    topicQosReliabilityCheckbox.checked ? -1 : topicQosReliabilitySpinBox.value,
+                    topicQosDataReprXcdr1Checkbox.checked,
+                    topicQosDataReprXcdr2Checkbox.checked,
+                    topicQosHistoryComboId.currentText,
+                    topicQosKeepLastSpinBox.value,
+                    topicQosDestinationOrderComboId.currentText,
+                    topicQosLivelinessComboId.currentText,
+                    topicQosLivelinessCheckbox.checked ? -1 : topicQosLivelinessSpinBox.value,
+                    topicQosLifespanCheckbox.checked ? -1 : topicQosLifespanSpinBox.value,
+                    topicQosDeadlineCheckbox.checked ? -1 : topicQosDeadlineSpinBox.value,
+                    topicQosLatencyBudgetCheckbox.checked ? -1 : topicQosLatencyBudgetSpinBox.value,
+                    topicQosTransportPrioritySpinBox.value,
+                    topicQosMax_samplesSpinBox.value,
+                    topicQosMax_instancesSpinBox.value,
+                    topicQosMax_samples_per_instanceSpinBox.value,
+                    topicQosDataField.text,
+                    topicQosCleanup_delayCheckbox.checked ? -1 : topicQosCleanup_delaySpinBox.value,
+                    topicQosDurabilityServiceHistoryComboId.currentText,
+                    topicQosDurabilityServiceKeepLastSpinBox.value,
+                    topicQosDurabilityServiceMaxSamplesSpinBox.value,
+                    topicQosDurabilityServiceMaxInstancesSpinBox.value,
+                    topicQosDurabilityServiceMaxSamplesPerInstanceSpinBox.value,
+
+                    // Participant
+                    dpReuseParticipantCheckbox.checked,
+                    dpUserdataField.text,
+                    dpEntityFactoryAutoenableCreatedEntitiesCheckbox.checked
                 )
                 readerTesterDiaId.close()
             }

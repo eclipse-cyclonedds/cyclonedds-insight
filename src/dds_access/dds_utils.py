@@ -128,23 +128,38 @@ def normalizeGuid(guid: str) -> str:
 
     return f"{part0}-{part1[:4]}-{part1[4:8]}-{part2[:4]}-{part2[4:8]}{part3}"
 
-def toQos(q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partitions,
+def toQos(
+        # Reader/Writer
+        q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2,
         type_consis, ig_seq_bnds, ig_str_bnds, ign_mem_nam, prev_ty_wide, fore_type_vali, fore_type_vali_allow,
         history, history_keep_last_nr,
         destination_order,
         liveliness, liveliness_seconds,
         lifespan_seconds, deadline_seconds, latencybudget_seconds, owner_strength,
-        presentation_access_scope, pres_acc_scope_coherent, pres_acc_scope_ordered,
         writer_life_autodispose,
         reader_life_nowriter_delay, reader_life_disposed, transport_prio,
         limit_max_samples, limit_max_instances, limit_max_samples_per_instance,
         timebased_filter_time_sec, ignore_local,
-        user_data, group_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value,
+        user_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value,
         durserv_cleanup_delay_minutes, durserv_history, durserv_history_keep_last_nr,
-        durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance):
+        durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance,
+        # Pub/Sub
+        partitions,
+        presentation_access_scope, pres_acc_scope_coherent, pres_acc_scope_ordered,
+        pubSubGroupData,
+        # Topic
+        topicQosOwn, topicQosDur, topicQosRel, topicQosRelMaxBlockMsec, topicQosXcdr1, topicQosXcdr2,
+        topicQosHistory, topicQosHistoryKeepLastNr, topicQosDestinationOrder,
+        topicQosLiveliness, topicQosLivelinessSeconds,
+        topicQosLifespanSeconds, topicQosDeadlineSeconds, topicQosLatencybudgetSeconds, topicQosTransportPrio,
+        topicQosLimitMaxSamples, topicQosLimitMaxInstances, topicQosLimitMaxSamplesPerInstance,
+        topicQosTopicData, topicQosDurservCleanupDelayMinutes, topicQosDurservHistory, topicQosDurservHistoryKeepLastNr,
+        topicQosDurservMaxSamples, topicQosDurservMaxInstances, topicQosDurservMaxSamplesPerInstance,
+        # Participant
+        dpUserdataField, dpAutoEnable):
 
+        # Reader/Writer
         qos = Qos()
-
         if q_own == "DDS_OWNERSHIP_SHARED":
             qos += Qos(Policy.Ownership.Shared)
         elif q_own == "DDS_OWNERSHIP_EXCLUSIVE":
@@ -164,9 +179,6 @@ def toQos(q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partition
         elif q_rel == "DDS_RELIABILITY_RELIABLE":
             qos += Qos(Policy.Reliability.Reliable(
                 max_blocking_time=duration(milliseconds=q_rel_max_block_msec) if q_rel_max_block_msec >= 0 else duration(infinite=True)))
-
-        if len(partitions) > 0:
-            qos += Qos(Policy.Partition(partitions=partitions))
 
         if q_xcdr1 or q_xcdr2:
             qos += Qos(Policy.DataRepresentation(use_cdrv0_representation=q_xcdr1, use_xcdrv2_representation=q_xcdr2))
@@ -204,13 +216,6 @@ def toQos(q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partition
         qos += Qos(Policy.LatencyBudget(duration(seconds=latencybudget_seconds) if latencybudget_seconds >= 0 else duration(infinite=True)))
         qos += Qos(Policy.OwnershipStrength(owner_strength))
 
-        if presentation_access_scope == "Instance":
-            qos += Qos(Policy.PresentationAccessScope.Instance(coherent_access=pres_acc_scope_coherent, ordered_access=pres_acc_scope_ordered))
-        elif presentation_access_scope == "Topic":
-            qos += Qos(Policy.PresentationAccessScope.Topic(coherent_access=pres_acc_scope_coherent, ordered_access=pres_acc_scope_ordered))
-        elif presentation_access_scope == "Group":
-            qos += Qos(Policy.PresentationAccessScope.Group(coherent_access=pres_acc_scope_coherent, ordered_access=pres_acc_scope_ordered))
-
         qos += Qos(Policy.WriterDataLifecycle(autodispose=writer_life_autodispose))
 
         qos += Qos(Policy.ReaderDataLifecycle(
@@ -233,9 +238,6 @@ def toQos(q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partition
         if user_data:
             qos += Qos(Policy.Userdata(data=user_data.encode('utf-8')))
 
-        if group_data:
-            qos += Qos(Policy.Groupdata(data=group_data.encode('utf-8')))
-
         if entity_name:
             qos += Qos(Policy.EntityName(name=entity_name))
 
@@ -252,4 +254,87 @@ def toQos(q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partition
             max_instances=durserv_max_instances,
             max_samples_per_instance=durserv_max_samples_per_instance))
 
-        return qos
+        # Pub/Sub
+        pubSubQos = Qos()
+        if len(partitions) > 0:
+            pubSubQos += Qos(Policy.Partition(partitions=partitions))
+
+        if presentation_access_scope == "Instance":
+            pubSubQos += Qos(Policy.PresentationAccessScope.Instance(coherent_access=pres_acc_scope_coherent, ordered_access=pres_acc_scope_ordered))
+        elif presentation_access_scope == "Topic":
+            pubSubQos += Qos(Policy.PresentationAccessScope.Topic(coherent_access=pres_acc_scope_coherent, ordered_access=pres_acc_scope_ordered))
+        elif presentation_access_scope == "Group":
+            pubSubQos += Qos(Policy.PresentationAccessScope.Group(coherent_access=pres_acc_scope_coherent, ordered_access=pres_acc_scope_ordered))
+
+        if pubSubGroupData:
+            pubSubQos += Qos(Policy.Groupdata(data=pubSubGroupData.encode('utf-8')))
+
+        # Topic
+        topicQos = Qos()
+        if topicQosOwn == "DDS_OWNERSHIP_SHARED":
+            topicQos += Qos(Policy.Ownership.Shared)
+        elif topicQosOwn == "DDS_OWNERSHIP_EXCLUSIVE":
+            topicQos += Qos(Policy.Ownership.Exclusive)
+
+        if topicQosDur == "DDS_DURABILITY_VOLATILE":
+            topicQos += Qos(Policy.Durability.Volatile)
+        elif topicQosDur == "DDS_DURABILITY_TRANSIENT_LOCAL":
+            topicQos += Qos(Policy.Durability.TransientLocal)
+        elif topicQosDur == "DDS_DURABILITY_TRANSIENT":
+            topicQos += Qos(Policy.Durability.Transient)
+        elif topicQosDur == "DDS_DURABILITY_PERSISTENT":
+            topicQos += Qos(Policy.Durability.Persistent)
+
+        if topicQosRel == "DDS_RELIABILITY_BEST_EFFORT":
+            topicQos += Qos(Policy.Reliability.BestEffort)
+        elif topicQosRel == "DDS_RELIABILITY_RELIABLE":
+            topicQos += Qos(Policy.Reliability.Reliable(
+                max_blocking_time=duration(milliseconds=topicQosRelMaxBlockMsec) if topicQosRelMaxBlockMsec >= 0 else duration(infinite=True)))
+
+        if topicQosXcdr1 or topicQosXcdr2:
+            topicQos += Qos(Policy.DataRepresentation(use_cdrv0_representation=topicQosXcdr1, use_xcdrv2_representation=topicQosXcdr2))
+
+        if topicQosHistory == "KeepAll":
+            topicQos += Qos(Policy.History.KeepAll)
+        elif topicQosHistory == "KeepLast":
+            topicQos += Qos(Policy.History.KeepLast(topicQosHistoryKeepLastNr))
+
+        if topicQosDestinationOrder == "ByReceptionTimestamp":
+            topicQos += Qos(Policy.DestinationOrder.ByReceptionTimestamp)
+        elif topicQosDestinationOrder == "BySourceTimestamp":
+            topicQos += Qos(Policy.DestinationOrder.BySourceTimestamp)
+
+        topicQosLivelinessDuration = duration(seconds=topicQosLivelinessSeconds) if topicQosLivelinessSeconds >= 0 else duration(infinite=True)
+        if topicQosLiveliness == "Automatic":
+            topicQos += Qos(Policy.Liveliness.Automatic(topicQosLivelinessDuration))
+        elif topicQosLiveliness == "ManualByParticipant":
+            topicQos += Qos(Policy.Liveliness.ManualByParticipant(topicQosLivelinessDuration))
+        elif topicQosLiveliness == "ManualByTopic":
+            topicQos += Qos(Policy.Liveliness.ManualByTopic(topicQosLivelinessDuration))
+
+        topicQos += Qos(Policy.Lifespan(duration(seconds=topicQosLifespanSeconds) if topicQosLifespanSeconds >= 0 else duration(infinite=True)))
+        topicQos += Qos(Policy.Deadline(duration(seconds=topicQosDeadlineSeconds) if topicQosDeadlineSeconds >= 0 else duration(infinite=True)))
+        topicQos += Qos(Policy.LatencyBudget(duration(seconds=topicQosLatencybudgetSeconds) if topicQosLatencybudgetSeconds >= 0 else duration(infinite=True)))
+        topicQos += Qos(Policy.TransportPriority(topicQosTransportPrio))
+        topicQos += Qos(Policy.ResourceLimits(
+            max_samples=topicQosLimitMaxSamples, max_instances=topicQosLimitMaxInstances, max_samples_per_instance=topicQosLimitMaxSamplesPerInstance))
+        topicQos += Qos(Policy.DurabilityService(
+            cleanup_delay=duration(minutes=topicQosDurservCleanupDelayMinutes) if topicQosDurservCleanupDelayMinutes >= 0 else duration(infinite=True),
+            history=Policy.History.KeepLast(topicQosDurservHistoryKeepLastNr) if topicQosDurservHistory == "KeepLast" else Policy.History.KeepAll,
+            max_samples=topicQosDurservMaxSamples,
+            max_instances=topicQosDurservMaxInstances,
+            max_samples_per_instance=topicQosDurservMaxSamplesPerInstance))
+
+        if topicQosTopicData:
+            topicQos += Qos(Policy.Topicdata(data=topicQosTopicData.encode('utf-8')))
+
+        # Participant
+        dpQps = Qos()
+        if dpUserdataField:
+            dpQps += Qos(Policy.Userdata(data=dpUserdataField.encode('utf-8')))
+
+        if dpAutoEnable:
+            # dpQps += Qos(Policy.AutoEnable()) # CycloneDDS does not support this policy
+            pass
+
+        return dpQps, topicQos, pubSubQos, qos

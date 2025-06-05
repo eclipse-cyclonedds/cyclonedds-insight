@@ -41,10 +41,6 @@ Window {
         target: shapesDemoModel
         function onShapeUpdateSignale(id, shape, color, x, y, size, rotation, fillKind, disposed, fromDds) {
 
-            if (shapeDemoViewId.paused) {
-                return
-            }
-
             var realSize = size;
             if (shape === "Triangle") {
                 realSize = size * (2-shapeDemoViewId.triangleScale);
@@ -518,6 +514,11 @@ Window {
                         anchors.fill: parent
                         onClicked: {
                             shapeDemoViewId.paused = !shapeDemoViewId.paused
+                            if (shapeDemoViewId.paused) {
+                                shapesDemoModel.pause()
+                            } else {
+                                shapesDemoModel.resume()
+                            }
                         }
                     }               
                 }

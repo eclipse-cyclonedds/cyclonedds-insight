@@ -72,9 +72,10 @@ class ShapesDemoModel(QAbstractListModel):
             return f"{endpTypeName} {self.threads[row][1].topic_name} {color}"
         elif role == self.QosRole:
             split = ""
-            for idx, q in enumerate(thread.qos):
+            threadQos = thread.topicQos + thread.pubSubQos + thread.endpQos
+            for idx, q in enumerate(threadQos):
                 split += "  " + str(q)
-                if idx < len(thread.qos) - 1:
+                if idx < len(threadQos) - 1:
                     split += "\n"
             return split
         return None
@@ -166,58 +167,26 @@ class ShapesDemoModel(QAbstractListModel):
             thread.stop()
             thread.wait()
 
-    @Slot(int, str, str,
-          str, str, str, int, bool, bool, list,
-          str, bool, bool, bool, bool, bool, bool,
-          str, int,
-          str,
-          str, int,
-          int, int, int, int,
-          str, bool, bool,
-          bool, int, int, int,
-          int, int, int,
-          int, str,
-          str,
-          str, str, str, str, str, str,
-          int, str, int,
-          int, int, int,
-          int)
-    def setQosSelection(self, domain_id, topic_name, topic_type,
-        q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partitions,
-        type_consis, ig_seq_bnds, ig_str_bnds, ign_mem_nam, prev_ty_wide, fore_type_vali, fore_type_vali_allow,
-        history, history_keep_last_nr,
-        destination_order,
-        liveliness, liveliness_seconds,
-        lifespan_seconds, deadline_seconds, latencybudget_seconds, owner_strength,
-        presentation_access_scope, pres_acc_scope_coherent, pres_acc_scope_ordered,
-        writer_life_autodispose,
-        reader_life_nowriter_delay, reader_life_disposed, transport_prio,
-        limit_max_samples, limit_max_instances, limit_max_samples_per_instance,
-        timebased_filter_time_sec, ignore_local,
-        user_data, group_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value,
-        durserv_cleanup_delay_minutes, durserv_history, durserv_history_keep_last_nr,
-        durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance,
-        entityTypeInteger):
+    @Slot(int, str, str, int,
+        str, str, str, int, bool, bool, str, bool, bool, bool, bool, bool, bool, str, int, str, str, int, int, int, int, int, bool, int, int, int, int, int, int, int, str, str, str, str, str, str, str, int, str, int, int, int, int, 
+        list, str, bool, bool, str,
+        str, str, str, int, bool, bool, str, int, str, str, int, int, int, int, int, int, int, int, str, int, str, int, int, int, int,
+        bool, str, bool)
+    def setQosSelection(self, domain_id, topic_name, topic_type, entityTypeInteger,
+        q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, type_consis, ig_seq_bnds, ig_str_bnds, ign_mem_nam, prev_ty_wide, fore_type_vali, fore_type_vali_allow, history, history_keep_last_nr, destination_order, liveliness, liveliness_seconds, lifespan_seconds, deadline_seconds, latencybudget_seconds, owner_strength, writer_life_autodispose, reader_life_nowriter_delay, reader_life_disposed, transport_prio, limit_max_samples, limit_max_instances, limit_max_samples_per_instance, timebased_filter_time_sec, ignore_local, user_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value, durserv_cleanup_delay_minutes, durserv_history, durserv_history_keep_last_nr, durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance,
+        partitions, presentation_access_scope, pres_acc_scope_coherent, pres_acc_scope_ordered, pubSubGroupData,
+        topicQosOwn, topicQosDur, topicQosRel, topicQosRelMaxBlockMsec, topicQosXcdr1, topicQosXcdr2, topicQosHistory, topicQosHistoryKeepLastNr, topicQosDestinationOrder, topicQosLiveliness, topicQosLivelinessSeconds, topicQosLifespanSeconds, topicQosDeadlineSeconds, topicQosLatencybudgetSeconds, topicQosTransportPrio, topicQosLimitMaxSamples, topicQosLimitMaxInstances, topicQosLimitMaxSamplesPerInstance, topicQosTopicData, topicQosDurservCleanupDelayMinutes, topicQosDurservHistory, topicQosDurservHistoryKeepLastNr, topicQosDurservMaxSamples, topicQosDurservMaxInstances, topicQosDurservMaxSamplesPerInstance,
+        dpUseDefault, dpUserdataField, dpAutoEnable):
 
         logging.debug("set qos" + str(domain_id) + " " + str(topic_name) + " " + str(topic_type))
 
-        qos = dds_utils.toQos(
-            q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, partitions,
-            type_consis, ig_seq_bnds, ig_str_bnds, ign_mem_nam, prev_ty_wide, fore_type_vali, fore_type_vali_allow,
-            history, history_keep_last_nr,
-            destination_order,
-            liveliness, liveliness_seconds,
-            lifespan_seconds, deadline_seconds, latencybudget_seconds, owner_strength,
-            presentation_access_scope, pres_acc_scope_coherent, pres_acc_scope_ordered,
-            writer_life_autodispose,
-            reader_life_nowriter_delay, reader_life_disposed, transport_prio,
-            limit_max_samples, limit_max_instances, limit_max_samples_per_instance,
-            timebased_filter_time_sec, ignore_local,
-            user_data, group_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value,
-            durserv_cleanup_delay_minutes, durserv_history, durserv_history_keep_last_nr,
-            durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance
+        dpQps, topicQos, pubSubQos, endpQos = dds_utils.toQos(
+            q_own, q_dur, q_rel, q_rel_max_block_msec, q_xcdr1, q_xcdr2, type_consis, ig_seq_bnds, ig_str_bnds, ign_mem_nam, prev_ty_wide, fore_type_vali, fore_type_vali_allow, history, history_keep_last_nr, destination_order, liveliness, liveliness_seconds, lifespan_seconds, deadline_seconds, latencybudget_seconds, owner_strength, writer_life_autodispose, reader_life_nowriter_delay, reader_life_disposed, transport_prio, limit_max_samples, limit_max_instances, limit_max_samples_per_instance, timebased_filter_time_sec, ignore_local, user_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value, durserv_cleanup_delay_minutes, durserv_history, durserv_history_keep_last_nr, durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance,
+            partitions, presentation_access_scope, pres_acc_scope_coherent, pres_acc_scope_ordered, pubSubGroupData,
+            topicQosOwn, topicQosDur, topicQosRel, topicQosRelMaxBlockMsec, topicQosXcdr1, topicQosXcdr2, topicQosHistory, topicQosHistoryKeepLastNr, topicQosDestinationOrder, topicQosLiveliness, topicQosLivelinessSeconds, topicQosLifespanSeconds, topicQosDeadlineSeconds, topicQosLatencybudgetSeconds, topicQosTransportPrio, topicQosLimitMaxSamples, topicQosLimitMaxInstances, topicQosLimitMaxSamplesPerInstance, topicQosTopicData, topicQosDurservCleanupDelayMinutes, topicQosDurservHistory, topicQosDurservHistoryKeepLastNr, topicQosDurservMaxSamples, topicQosDurservMaxInstances, topicQosDurservMaxSamplesPerInstance,
+            dpUserdataField, dpAutoEnable
         )
-
+        qos = (dpQps, topicQos, pubSubQos, endpQos)
         entityType = EntityType(entityTypeInteger)
 
         if entityType == EntityType.WRITER:
@@ -225,6 +194,15 @@ class ShapesDemoModel(QAbstractListModel):
         elif entityType == EntityType.READER:
             self.subscibe(qos, domain_id)
 
+    @Slot()
+    def pause(self):
+        for (_, thread) in self.threads:
+            thread.pause()
+
+    @Slot()
+    def resume(self):
+        for (_, thread) in self.threads:
+            thread.resume()
 
 class ShapeDynamicThread(QThread):
 
@@ -233,8 +211,13 @@ class ShapeDynamicThread(QThread):
     def __init__(self, domainParticipant, qos, shapeType: str, color: str, size: int, speed: int, rotation: float, rotationSpeed, fillKind, parent=None):
         super().__init__()
         self.running = False
+        self.paused = False
         self.domain_participant = domainParticipant
-        self.qos = qos
+        (dpQps, topicQos, pubSubQos, endpQos) = qos
+        self.dpQps = dpQps
+        self.topicQos = topicQos
+        self.pubSubQos = pubSubQos
+        self.endpQos = endpQos
         self.topic_name = shapeType
         self.color = color
         self.size = size
@@ -247,20 +230,26 @@ class ShapeDynamicThread(QThread):
 
     def run(self):
         self.running = True
+        shape = ishape.ShapeTypeExtended(self.color, 0, 0, self.size, self.fillKind, self.rotation)
+        widthBound = 266
+        heightBound = 234
+        angle = random.uniform(0.1, 1.0)
+        alpha = random.uniform(0.1, 1.0)
+
         try:
-            topic = Topic(self.domain_participant, self.topic_name, self.dataType)
-            publisher = Publisher(self.domain_participant, self.qos)
-            writer = DataWriter(publisher, topic, self.qos)
-            shape = ishape.ShapeTypeExtended(self.color, 0, 0, self.size, self.fillKind, self.rotation)
-            widthBound = 266
-            heightBound = 234
-            angle = random.uniform(0.1, 1.0)
-            alpha = random.uniform(0.1, 1.0)
+            topic = Topic(self.domain_participant, self.topic_name, self.dataType, self.topicQos)
+            publisher = Publisher(self.domain_participant, self.pubSubQos)
+            writer = DataWriter(publisher, topic, self.endpQos)
 
             if self.rotationSpeed > 0 and shape.angle == 0:
                 shape.angle = 1
 
             while self.running:
+                time.sleep(0.04)
+
+                if self.paused:
+                    continue
+
                 shape.x = round(shape.x + self.speed * math.cos(angle))
                 shape.y = round(shape.y + self.speed * math.sin(angle))
 
@@ -285,7 +274,7 @@ class ShapeDynamicThread(QThread):
                     writer.write(shape)
                 except Exception as e:
                     logging.error(f"Error while writing Shape: {e}")
-                time.sleep(0.04)
+
         except Exception as e:
             logging.error(f"Error in ShapeDynamicThread: {e}")
 
@@ -297,6 +286,13 @@ class ShapeDynamicThread(QThread):
     def stop(self):
         self.running = False
 
+    @Slot()
+    def pause(self):
+        self.paused = True
+
+    @Slot()
+    def resume(self):
+        self.paused = False
 
 class ShapeDispatcherThread(QThread):
 
@@ -306,9 +302,14 @@ class ShapeDispatcherThread(QThread):
         super().__init__()
         self.domain_participant = domainParticipant
         self.running = False
+        self.paused = False
         self.topic_name = topic_name
         self.topic_type = topic_type
-        self.qos = qos
+        (dpQps, topicQos, pubSubQos, endpQos) = qos
+        self.dpQps = dpQps
+        self.topicQos = topicQos
+        self.pubSubQos = pubSubQos
+        self.endpQos = endpQos
 
     def run(self):
         self.running = True
@@ -321,12 +322,15 @@ class ShapeDispatcherThread(QThread):
         createdShapeIds = set()
 
         try:
-            topic = Topic(self.domain_participant, self.topic_name, self.topic_type)
-            subscriber = Subscriber(self.domain_participant, self.qos)
-            reader = DataReader(subscriber, topic, self.qos)
+            topic = Topic(self.domain_participant, self.topic_name, self.topic_type, self.topicQos)
+            subscriber = Subscriber(self.domain_participant, self.pubSubQos)
+            reader = DataReader(subscriber, topic, self.endpQos)
 
             while self.running:
                 time.sleep(0.04)
+
+                if self.paused:
+                    continue
 
                 count_per_instance = {}
                 try:
@@ -365,3 +369,11 @@ class ShapeDispatcherThread(QThread):
 
     def stop(self):
         self.running = False
+
+    @Slot()
+    def pause(self):
+        self.paused = True
+
+    @Slot()
+    def resume(self):
+        self.paused = False
