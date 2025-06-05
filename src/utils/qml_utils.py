@@ -32,9 +32,9 @@ class QmlUtils(QObject):
         QApplication.styleHints().setColorScheme(Qt.ColorScheme(scheme))
 
     @Slot(str, result=str)
-    def loadFileContent(self, file_path: str) -> str:
-        if file_path.startswith("file://"):
-            file_path = file_path[7:]
+    def loadFileContent(self, url: str) -> str:
+        uri = QUrl(url)
+        file_path = uri.toLocalFile()
 
         if not os.path.isfile(file_path):
             logging.error(f"File does not exist: {file_path}")
@@ -49,14 +49,12 @@ class QmlUtils(QObject):
             return ""
 
     @Slot(str, str)
-    def saveFileContent(self, file_path, content):
-        if file_path.startswith("file://"):
-            file_path = file_path[7:]
-
+    def saveFileContent(self, url, content):
+        uri = QUrl(url)
+        file_path = uri.toLocalFile()
         if not os.path.isfile(file_path):
             logging.error(f"File does not exist: {file_path}")
             return ""
-
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content)
@@ -68,12 +66,16 @@ class QmlUtils(QObject):
         return os.path.expanduser("~")
 
     @Slot(str, result=bool)
-    def isValidFile(self, file_path):
-        if file_path.startswith("file://"):
-            file_path = file_path[7:]
+    def isValidFile(self, url):
+        uri = QUrl(url)
+        file_path = uri.toLocalFile()
         if os.path.isfile(file_path):
             return True
         return False
+
+    @Slot(QUrl, result=str)
+    def toLocalFile(self, uri):
+        return uri.toLocalFile()
 
     @Slot(QUrl)
     def createFile(self, url):
