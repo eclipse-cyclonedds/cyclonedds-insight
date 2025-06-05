@@ -52,6 +52,13 @@ Rectangle {
                 readOnly: true
             }
 
+            Item  {}
+            Button {
+                id: editConfigButton
+                text: "Edit Configuration File"
+                onClicked: layout.currentIndex = 2
+            }
+
             Label {
                 text: qsTr("Appearance:")
             }

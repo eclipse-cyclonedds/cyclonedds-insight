@@ -19,6 +19,7 @@ import QtQuick.Dialogs
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views/selection_details"
 import "qrc:/src/views/shapes_demo"
+import "qrc:/src/views/config_editor"
 
 
 ApplicationWindow {
@@ -37,6 +38,10 @@ ApplicationWindow {
         visible: Qt.platform.os === "osx"
         Menu {
             title: "View"
+            MenuItem {
+                text: "Show Configuration Editor"
+                onTriggered: layout.currentIndex = 2
+            }
             MenuItem {
                 text: "Show Shapes Demo"
                 onTriggered: shapeDemoViewId.visible = true
@@ -95,6 +100,10 @@ ApplicationWindow {
 
         Overview {
             id: overviewId
+        }
+
+        ConfigEditorView {
+            id: configEditorViewId
         }
     }
 
