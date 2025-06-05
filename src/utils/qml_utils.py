@@ -32,9 +32,8 @@ class QmlUtils(QObject):
         QApplication.styleHints().setColorScheme(Qt.ColorScheme(scheme))
 
     @Slot(str, result=str)
-    def loadFileContent(self, url: str) -> str:
-        uri = QUrl(url)
-        file_path = uri.toLocalFile()
+    def loadFileContent(self, file_path: str) -> str:
+        file_path = self.removeFilePrefix(file_path)
 
         if not os.path.isfile(file_path):
             logging.error(f"File does not exist: {file_path}")
@@ -49,9 +48,8 @@ class QmlUtils(QObject):
             return ""
 
     @Slot(str, str)
-    def saveFileContent(self, url, content):
-        uri = QUrl(url)
-        file_path = uri.toLocalFile()
+    def saveFileContent(self, file_path, content):
+        file_path = self.removeFilePrefix(file_path)
         if not os.path.isfile(file_path):
             logging.error(f"File does not exist: {file_path}")
             return ""
@@ -66,19 +64,16 @@ class QmlUtils(QObject):
         return os.path.expanduser("~")
 
     @Slot(str, result=bool)
-    def isValidFile(self, url):
-        uri = QUrl(url)
-        file_path = uri.toLocalFile()
-        if os.path.isfile(file_path):
-            return True
-        return False
+    def isValidFile(self, path):
+        file_info = QFileInfo(self.removeFilePrefix(path))
+        return file_info.exists() and file_info.isFile()
 
     @Slot(QUrl, result=str)
     def toLocalFile(self, uri):
         return uri.toLocalFile()
 
     @Slot(QUrl)
-    def createFile(self, url):
+    def createFileFromQUrl(self, url):
         path = url.toLocalFile()
         file = QFile(path)
         info = QFileInfo(file)
@@ -95,3 +90,8 @@ class QmlUtils(QObject):
                 logging.error(f"Failed to create file: {path}")
         else:
             logging.info(f"File already exists: {path}")
+
+    def removeFilePrefix(self, file_path: str) -> str:
+        if file_path.startswith("file://"):
+            return file_path[7:]
+        return file_path

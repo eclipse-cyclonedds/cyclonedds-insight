@@ -127,8 +127,9 @@ Rectangle {
         defaultSuffix: "xml"
         title: "Create New Configuration File"
         onAccepted: {
-            qmlUtils.createFile(selectedFile)
-            envHintText.text = "The new configuration file has been created.\n\nSet the env-variable:\nCYCLONEDDS_URI=file://" + qmlUtils.toLocalFile(selectedFile) + "\n\nAnd restart the application."
+            qmlUtils.createFileFromQUrl(selectedFile)
+            var localPath = qmlUtils.toLocalFile(selectedFile);
+            envHintText.text = "The new configuration file has been created.\n\nSet the env-variable:\nCYCLONEDDS_URI=file://" + localPath + "\n\nAnd restart the application."
             envHintText.visible = true
             var defaultConfig = `<?xml version="1.0" encoding="UTF-8" ?>
 <CycloneDDS xmlns="https://cdds.io/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
@@ -141,7 +142,7 @@ Rectangle {
     </Domain>
 </CycloneDDS>
 `;
-            qmlUtils.saveFileContent(selectedFile, defaultConfig);
+            qmlUtils.saveFileContent(localPath, defaultConfig);
         }
     }
 
