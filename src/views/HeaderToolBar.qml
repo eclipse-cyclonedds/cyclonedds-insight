@@ -22,19 +22,46 @@ ToolBar {
     bottomPadding: 10
     leftPadding: 10
     rightPadding: 10
+    property bool isHeaderSpinning: false
 
     background: Rectangle {
         anchors.fill: parent
         color: rootWindow.isDarkMode ? Constants.darkHeaderBackground : Constants.lightHeaderBackground
     }
 
+    Connections {
+        target: treeModel
+        function onDiscover_domains_running_signal(active) {
+            isHeaderSpinning = active;
+        }
+    }
+
     RowLayout {
         anchors.fill: parent
-        Image {
-            source: "qrc:/res/images/cyclonedds.png"
-            sourceSize.width: 30
-            sourceSize.height: 30
+
+        Item {
+            Layout.preferredWidth: 30
+            Layout.preferredHeight: 30
+
+            Image {
+                visible: !isHeaderSpinning
+                source: "qrc:/res/images/cyclonedds.png"
+                sourceSize.width: 30
+                sourceSize.height: 30
+            }
+            AnimatedImage {
+                id: headerLoadingId
+                source: "qrc:/res/images/spinning.gif"
+                visible: isHeaderSpinning
+                playing: isHeaderSpinning
+                paused: !isHeaderSpinning
+                sourceSize.height: 30
+                sourceSize.width: 30
+                height: 30
+                width: 30
+            }
         }
+
         Label {
             text: rootWindow.title
         }

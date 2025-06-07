@@ -67,6 +67,7 @@ class TreeModel(QAbstractItemModel):
     IsTopicRole = Qt.UserRole + 4
 
     remove_domain_request_signal = Signal(int)
+    discover_domains_running_signal = Signal(bool)
 
     def __init__(self, rootItem: TreeNode, parent=None):
         super(TreeModel, self).__init__(parent)
@@ -273,6 +274,7 @@ class TreeModel(QAbstractItemModel):
 
     @Slot()
     def scanDomains(self):
+        self.discover_domains_running_signal.emit(True)
         for domain_id in range(0, 233):
             if domain_id not in self.domainFinderThreads:
                 self.domainFinderThreads[domain_id] = DomainFinder(domain_id)
@@ -288,6 +290,9 @@ class TreeModel(QAbstractItemModel):
 
         if found:
             self.dds_data.add_domain(domain_id)
+
+        if len(self.domainFinderThreads) == 0:
+            self.discover_domains_running_signal.emit(False)
 
     @Slot(result=None)
     def aboutToClose(self):
