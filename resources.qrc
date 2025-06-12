@@ -53,5 +53,6 @@
         <file>src/views/shapes_demo/ShapesDemoCircle.qml</file>
         <file>src/views/shapes_demo/ShapesDemoSquare.qml</file>
         <file>src/views/shapes_demo/ShapesDemoTriangle.qml</file>
+        <file>src/views/config_editor/ConfigEditorView.qml</file>
     </qresource>
 </RCC>

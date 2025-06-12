@@ -92,6 +92,10 @@ ToolBar {
                     onClicked: layout.currentIndex = 0
                 }
                 MenuItem {
+                    text: "Configuration Editor"
+                    onTriggered: layout.currentIndex = 2
+                }
+                MenuItem {
                     text: "Show Log Window"
                     onTriggered: logViewId.visible = true
                 }

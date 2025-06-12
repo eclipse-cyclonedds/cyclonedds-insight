@@ -11,7 +11,7 @@
 """
 
 from PySide6 import QtCore
-from PySide6.QtCore import QStandardPaths, QDir, QObject, Slot, Signal
+from PySide6.QtCore import QStandardPaths, QDir, QObject, Slot, Signal, QFile, QFileInfo, QUrl
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import Qt
 from loguru import logger as logging
@@ -30,3 +30,68 @@ class QmlUtils(QObject):
     @Slot(int)
     def setColorScheme(self, scheme):
         QApplication.styleHints().setColorScheme(Qt.ColorScheme(scheme))
+
+    @Slot(str, result=str)
+    def loadFileContent(self, file_path: str) -> str:
+        file_path = self.removeFilePrefix(file_path)
+
+        if not os.path.isfile(file_path):
+            logging.error(f"File does not exist: {file_path}")
+            return ""
+
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                content = file.read()
+                return content
+        except Exception as e:
+            logging.error(f"Error reading file {file_path}: {e}")
+            return ""
+
+    @Slot(str, str)
+    def saveFileContent(self, file_path, content):
+        file_path = self.removeFilePrefix(file_path)
+        if not os.path.isfile(file_path):
+            logging.error(f"File does not exist: {file_path}")
+            return ""
+        try:
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+        except Exception as e:
+            logging.error(f"Error writing file: {e}")
+
+    @Slot(result=str)
+    def getUserHome(self):
+        return os.path.expanduser("~")
+
+    @Slot(str, result=bool)
+    def isValidFile(self, path):
+        file_info = QFileInfo(self.removeFilePrefix(path))
+        return file_info.exists() and file_info.isFile()
+
+    @Slot(QUrl, result=str)
+    def toLocalFile(self, uri):
+        return uri.toLocalFile()
+
+    @Slot(QUrl)
+    def createFileFromQUrl(self, url):
+        path = url.toLocalFile()
+        file = QFile(path)
+        info = QFileInfo(file)
+        if not info.exists():
+            dir_path = info.absolutePath()
+            if not QDir().mkpath(dir_path):
+                logging.error(f"Failed to create directories: {dir_path}")
+                return
+
+            if file.open(QFile.WriteOnly):
+                logging.debug(f"Created new file: {path}")
+                file.close()
+            else:
+                logging.error(f"Failed to create file: {path}")
+        else:
+            logging.info(f"File already exists: {path}")
+
+    def removeFilePrefix(self, file_path: str) -> str:
+        if file_path.startswith("file://"):
+            return file_path[7:]
+        return file_path
