@@ -14,9 +14,9 @@ import sys
 from loguru import logger as logging
 from queue import Queue
 from PySide6.QtCore import QThread
-from cyclonedds import core, builtin
+from cyclonedds import core, builtin, internal
 from cyclonedds.util import duration
-from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
+from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant, DcpsTopic
 from cyclonedds.core import Qos, Policy
 from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
@@ -42,6 +42,9 @@ class BuiltInDataItem():
         self.new_participants: Tuple[int, DcpsParticipant] = []
         self.remove_participants: Tuple[int, DcpsParticipant] = []
         self.update_participants: Tuple[int, DcpsParticipant] = []
+
+        # Topics
+        self.new_topics: Tuple[int, DcpsTopic] = []
 
         # Endpoints
         self.new_endpoints: Tuple[int, DcpsEndpoint, EntityType] = []
@@ -88,6 +91,11 @@ class BuiltInObserver(QThread):
                 rdr, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
             waitset.attach(rcr)
 
+            if internal.feature_topic_discovery:
+                rdt = builtin.BuiltinDataReader(domain_participant, builtin.BuiltinTopicDcpsTopic)
+                rct = core.ReadCondition(rdt, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
+                waitset.attach(rct)
+
             # OpenSplice-BuiltIn
             sys.modules["kernelModule"] = kernelModule
             ospl_qos = Qos(
@@ -126,6 +134,7 @@ class BuiltInObserver(QThread):
                 for pub in rdw.take(condition=rcw):
                     if pub.sample_info.sample_state == core.SampleState.NotRead and pub.sample_info.instance_state == core.InstanceState.Alive:
                         if pub.topic_name not in IGNORE_TOPICS:
+                            logging.trace(str(pub))
                             dataItem.new_endpoints.append((self.domain_id, pub, EntityType.WRITER))
                     elif pub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
                         dataItem.remove_endpoints.append((self.domain_id, pub))
@@ -133,9 +142,19 @@ class BuiltInObserver(QThread):
                 for sub in rdr.take(condition=rcr):
                     if sub.sample_info.sample_state == core.SampleState.NotRead and sub.sample_info.instance_state == core.InstanceState.Alive:
                         if sub.topic_name not in IGNORE_TOPICS:
+                            logging.trace(str(sub))
                             dataItem.new_endpoints.append((self.domain_id, sub, EntityType.READER))
                     elif sub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
                         dataItem.remove_endpoints.append((self.domain_id, sub))
+
+                if internal.feature_topic_discovery:
+                    for topic in rdt.take(condition=rct):
+                        if topic.sample_info.sample_state == core.SampleState.NotRead and topic.sample_info.instance_state == core.InstanceState.Alive:
+                            if topic.topic_name not in IGNORE_TOPICS:
+                                logging.trace(str(topic))
+                                dataItem.new_topics.append((self.domain_id, topic))
+                        elif topic.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
+                            pass # topics are automatically removed when last endpoint is gone
 
                 for ospl_participant in ospl_reader.take(condition=ospl_read_condition):
                     if ospl_participant.sample_info.sample_state == core.SampleState.NotRead and ospl_participant.sample_info.instance_state == core.InstanceState.Alive:

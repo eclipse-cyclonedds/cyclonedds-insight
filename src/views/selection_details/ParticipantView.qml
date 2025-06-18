@@ -24,6 +24,22 @@ Rectangle {
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
 
     property int domainId
+    property string participantKey
+
+    ParticipantDetailsModel {
+        id: participantModel
+    }
+
+    Component.onCompleted: {
+        participantModel.start(domainId, participantKey)
+    }
+
+    Connections {
+        target: participantModel
+        function onUpdateQosSignal(qos) {
+            qosTextField.text = qos
+        }
+    }
 
     ColumnLayout  {
         anchors.fill: parent
@@ -38,6 +54,21 @@ Rectangle {
         }
         Label {
             text: qsTr("Domain ID: ") + participantViewId.domainId
+        }
+
+        Label {
+            id: pkeyLabelId
+            text: qsTr("Participant-Key: ") + participantViewId.participantKey
+        }
+
+        TextEdit {
+            id: qosTextField
+            text: ""
+            readOnly: true
+            wrapMode: Text.WordWrap
+            selectByMouse: true
+            //padding: 10
+            color: pkeyLabelId.color
         }
 
         Item {

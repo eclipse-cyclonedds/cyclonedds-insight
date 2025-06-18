@@ -27,6 +27,7 @@ TreeView {
         onCurrentIndexChanged: {
             console.log("Selection changed to:", currentIndex);
             var domainId = participantModel.getDomain(currentIndex);
+            var name = participantModel.getName(currentIndex);
             if (participantModel.getIsRowDomain(currentIndex)) {
                 showDomainView(domainId)
             } else if (participantModel.getIsHost(currentIndex)) {
@@ -34,11 +35,13 @@ TreeView {
             } else if (participantModel.getIsProcess(currentIndex)) {
                 showProcessView(domainId)
             } else if (participantModel.getIsParticipant(currentIndex)) {
-                showParticipantView(domainId)
+                name.slice(13)
+                showParticipantView(domainId, name)
             } else if (participantModel.getIsTopic(currentIndex)) {
-                showTopicEndpointView(domainId, participantModel.getName(currentIndex))
+                showTopicEndpointView(domainId, name)
             } else if (participantModel.getIsEndpoint(currentIndex)) {
-                showEndpointView(domainId)
+                name.slice(8)
+                showEndpointView(domainId, name)
             } else {
                 console.log("Nothing found, clear view.")
                 clearView()
