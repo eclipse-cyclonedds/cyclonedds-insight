@@ -25,6 +25,7 @@ Rectangle {
     id: settingsViewId
     color: rootWindow.isDarkMode ? Constants.darkOverviewBackground : Constants.lightOverviewBackground
     property string fileContent: ""
+    property string lastSavedTime: ""
     property bool configFileAvailable: false
 
     ColumnLayout {
@@ -79,7 +80,10 @@ Rectangle {
                 wrapMode: TextEdit.Wrap
                 selectByMouse: true
                 selectByKeyboard: true
-                onTextChanged: qmlUtils.saveFileContent(CYCLONEDDS_URI, text)
+                onTextChanged: {
+                    qmlUtils.saveFileContent(CYCLONEDDS_URI, text)
+                    lastSavedTime = new Date().toLocaleString()
+                }
             }
         }
 
@@ -98,9 +102,24 @@ Rectangle {
             }
         }
 
-        Label {
+        RowLayout {
             visible: configFileAvailable
-            text: "Changes will take effect after restarting the application."
+            spacing: 0
+            Label {
+                visible: configFileAvailable
+                text: "Changes will take effect after restarting the application."
+            }
+            Item {
+                visible: configFileAvailable
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+            Label {
+                text: "Last saved: "
+            }
+            Label {
+                text: lastSavedTime
+            }
         }
 
         TextEdit {
