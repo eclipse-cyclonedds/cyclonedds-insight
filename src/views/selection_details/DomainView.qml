@@ -14,9 +14,11 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Shapes
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
+import "qrc:/src/views/nodes"
 
 
 Rectangle {
@@ -40,9 +42,49 @@ Rectangle {
             text: qsTr("Domain ID: ") + domainViewId.domainId
         }
 
-        Item {
+        Rectangle {
+            id: root
             Layout.fillWidth: true
             Layout.fillHeight: true
+            color: "transparent"
+
+            Shape {
+                anchors.fill: parent
+                ShapePath {
+                    strokeWidth: 2
+                    strokeColor: "black"
+                    startX: bubble1.x + bubble1.width / 2
+                    startY: bubble1.y + bubble1.height / 2
+
+                    PathLine {
+                        x: bubble2.x + bubble2.width / 2
+                        y: bubble2.y + bubble2.height / 2
+                    }
+                }
+            }
+
+            Bubble {
+                id: bubble1
+                x: 100
+                y: 100
+                color: "lightblue"
+
+                border.color: "gray"
+                border.width: 1
+            }
+
+            Bubble {
+                id: bubble2
+                x: 400
+                y: 200
+                color: "lightgreen"
+            }
+
         }
+
+        /*Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+        }*/
     }
 }
