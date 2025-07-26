@@ -68,26 +68,27 @@ Rectangle {
             font.bold: true
         }
 
-        ScrollView {
-            id: scrollView
+        Frame {
             visible: configFileAvailable
             Layout.fillWidth: true
             Layout.fillHeight: true
+            background: Rectangle {
+                color: rootWindow.isDarkMode ? "black" : "white"
+            }
+            ScrollView {
+                id: scrollView
+                anchors.fill: parent
 
-            TextArea {
-                id: textArea
-                text: fileContent
-                wrapMode: TextEdit.Wrap
-                selectByMouse: true
-                selectByKeyboard: true
-                onTextChanged: {
-                    qmlUtils.saveFileContent(CYCLONEDDS_URI, text)
-                    lastSavedTime = new Date().toLocaleString()
-                }
-                background: Loader {
-                    active: Qt.platform.os !== "osx"
-                    sourceComponent: Rectangle {
-                        color: rootWindow.isDarkMode ? "black" : "white"
+                TextArea {
+                    id: textArea
+                    anchors.fill: parent
+                    text: fileContent
+                    wrapMode: TextEdit.Wrap
+                    selectByMouse: true
+                    selectByKeyboard: true
+                    onTextChanged: {
+                        qmlUtils.saveFileContent(CYCLONEDDS_URI, text)
+                        lastSavedTime = new Date().toLocaleString()
                     }
                 }
             }
