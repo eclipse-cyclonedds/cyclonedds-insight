@@ -84,6 +84,12 @@ Rectangle {
                     qmlUtils.saveFileContent(CYCLONEDDS_URI, text)
                     lastSavedTime = new Date().toLocaleString()
                 }
+                background: Loader {
+                    active: Qt.platform.os !== "osx"
+                    sourceComponent: Rectangle {
+                        color: rootWindow.isDarkMode ? "black" : "white"
+                    }
+                }
             }
         }
 
