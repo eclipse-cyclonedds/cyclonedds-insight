@@ -68,28 +68,19 @@ Rectangle {
             font.bold: true
         }
 
-        Frame {
-            visible: configFileAvailable
+        ScrollView {
+            id: scrollView
             Layout.fillWidth: true
             Layout.fillHeight: true
-            background: Rectangle {
-                color: rootWindow.isDarkMode ? "black" : "white"
-            }
-            ScrollView {
-                id: scrollView
-                anchors.fill: parent
-
-                TextArea {
-                    id: textArea
-                    anchors.fill: parent
-                    text: fileContent
-                    wrapMode: TextEdit.Wrap
-                    selectByMouse: true
-                    selectByKeyboard: true
-                    onTextChanged: {
-                        qmlUtils.saveFileContent(CYCLONEDDS_URI, text)
-                        lastSavedTime = new Date().toLocaleString()
-                    }
+            TextArea {
+                id: textArea
+                text: fileContent
+                wrapMode: TextEdit.Wrap
+                selectByMouse: true
+                selectByKeyboard: true
+                onTextChanged: {
+                    qmlUtils.saveFileContent(CYCLONEDDS_URI, text)
+                    lastSavedTime = new Date().toLocaleString()
                 }
             }
         }
@@ -172,7 +163,18 @@ Rectangle {
         }
     }
 
+    Component {
+        id: textAreaBackgroundComponent
+        Rectangle {
+            color: rootWindow.isDarkMode ? "black" : "white"
+        }
+    }
+
     Component.onCompleted: {
+        if (Qt.platform.os !== "osx") {
+            textArea.background = textAreaBackgroundComponent.createObject(textArea);
+        }
+
         if (qmlUtils.isValidFile(CYCLONEDDS_URI) && CYCLONEDDS_URI !== "<not set>" && CYCLONEDDS_URI !== "") {
             configFileAvailable = true;
             fileContent = qmlUtils.loadFileContent(CYCLONEDDS_URI)
