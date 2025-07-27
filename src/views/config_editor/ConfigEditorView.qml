@@ -70,7 +70,7 @@ Rectangle {
 
         ScrollView {
             id: scrollView
-            visible: configFileAvailable 
+            visible: configFileAvailable
             Layout.fillWidth: true
             Layout.fillHeight: true
             TextArea {
