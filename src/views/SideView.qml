@@ -74,8 +74,8 @@ ColumnLayout {
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             onClicked: {
                 if (viewSelector.currentIndex === 0) {
-                    if (treeModel.getIsRowDomain(topicOverview.getCurrentIndex())) {
-                        treeModel.removeDomainRequest(topicOverview.getCurrentIndex())
+                    if (treeModelProxy.getIsRowDomain(topicOverview.getCurrentIndex())) {
+                        treeModelProxy.removeDomainRequest(topicOverview.getCurrentIndex())
                         stackView.clear()
                     } else {
                         noDomainSelectedDialog.open()
@@ -106,14 +106,48 @@ ColumnLayout {
                 }
             }
         }
+        Button {
+            text: "\u{1F50D}"
+            flat: true
+            highlighted: searchField.visible
+            visible: viewSelector.currentIndex === 0
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            onClicked: {
+                if (viewSelector.currentIndex === 0) {
+                    if (searchField.visible) {
+                        searchField.visible = false
+                        searchField.text = ""
+                    } else {
+                        searchField.visible = true
+                    }
+                }
+            }
+        }
     }
 
-    TopicOverview {
-        id: topicOverview
+    ColumnLayout {
         visible: viewSelector.currentIndex === 0
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        Layout.leftMargin: 10
+        spacing: 0
+        TextField {
+            id: searchField
+            placeholderText: "Search Topic Name ..."
+            visible: false
+            Layout.fillWidth: true
+            onTextChanged: {
+                treeModelProxy.setFilter(searchField.text)
+            }
+            Layout.leftMargin: 10
+            Layout.rightMargin: 10
+            Layout.bottomMargin: 5
+
+        }
+
+        TopicOverview {
+            id: topicOverview
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.leftMargin: 10
+        }
     }
 
     ParticipantsOverview {
