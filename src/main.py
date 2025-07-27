@@ -43,7 +43,9 @@ from PySide6.QtQuickControls2 import QQuickStyle
 from loguru import logger as logging
 from dds_access import dds_data
 from dds_access.dds_utils import getConfiguredDomainIds
-from models.overview_model import TreeModel, TreeNode
+from models.overview_model.tree_filter_proxy_model import TreeFilterProxyModel
+from models.overview_model.tree_model import TreeModel
+from models.overview_model.tree_node import TreeNode
 from models.endpoint_model import EndpointModel
 from models.datamodel_model import DatamodelModel
 from models.tester_model import TesterModel
@@ -101,6 +103,9 @@ if __name__ == "__main__":
 
     rootItem = TreeNode("Root")
     treeModel = TreeModel(rootItem)
+    filterTreeModel = TreeFilterProxyModel()
+    filterTreeModel.setSourceModel(treeModel)
+
     threads = {}
     dataModelHandler: DataModelHandler = DataModelHandler()
     datamodelRepoModel = DatamodelModel(threads, dataModelHandler)
@@ -114,6 +119,7 @@ if __name__ == "__main__":
     app.aboutToQuit.connect(qmlUtils.aboutToQuit)
 
     engine = QQmlApplicationEngine()
+    engine.rootContext().setContextProperty("treeModelProxy", filterTreeModel)
     engine.rootContext().setContextProperty("treeModel", treeModel)
     engine.rootContext().setContextProperty("participantModel", participantModel)
     engine.rootContext().setContextProperty("datamodelRepoModel", datamodelRepoModel)
