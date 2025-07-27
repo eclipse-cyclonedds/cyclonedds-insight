@@ -114,7 +114,7 @@ Rectangle {
                 Layout.fillHeight: true
             }
             Label {
-                text: "Last saved: "
+                text: "Automatically saved: "
             }
             Label {
                 text: lastSavedTime
