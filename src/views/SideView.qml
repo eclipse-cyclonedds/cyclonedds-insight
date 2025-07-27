@@ -122,6 +122,8 @@ ColumnLayout {
                     }
                 }
             }
+            Layout.preferredWidth: Qt.platform.os === "osx" ? 50 : 30
+            Layout.preferredHeight: Qt.platform.os === "osx" ? 30 : 24
         }
     }
 
