@@ -25,6 +25,7 @@ Rectangle {
     id: settingsViewId
     color: rootWindow.isDarkMode ? Constants.darkOverviewBackground : Constants.lightOverviewBackground
     property string fileContent: ""
+    property string lastSavedTime: ""
     property bool configFileAvailable: false
 
     ColumnLayout {
@@ -72,14 +73,16 @@ Rectangle {
             visible: configFileAvailable
             Layout.fillWidth: true
             Layout.fillHeight: true
-
             TextArea {
                 id: textArea
                 text: fileContent
                 wrapMode: TextEdit.Wrap
                 selectByMouse: true
                 selectByKeyboard: true
-                onTextChanged: qmlUtils.saveFileContent(CYCLONEDDS_URI, text)
+                onTextChanged: {
+                    qmlUtils.saveFileContent(CYCLONEDDS_URI, text)
+                    lastSavedTime = new Date().toLocaleString()
+                }
             }
         }
 
@@ -98,9 +101,24 @@ Rectangle {
             }
         }
 
-        Label {
+        RowLayout {
             visible: configFileAvailable
-            text: "Changes will take effect after restarting the application."
+            spacing: 0
+            Label {
+                visible: configFileAvailable
+                text: "Changes will take effect after restarting the application."
+            }
+            Item {
+                visible: configFileAvailable
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+            Label {
+                text: "Automatically saved: "
+            }
+            Label {
+                text: lastSavedTime
+            }
         }
 
         TextEdit {
@@ -146,7 +164,18 @@ Rectangle {
         }
     }
 
+    Component {
+        id: textAreaBackgroundComponent
+        Rectangle {
+            color: rootWindow.isDarkMode ? "black" : "white"
+        }
+    }
+
     Component.onCompleted: {
+        if (Qt.platform.os !== "osx") {
+            textArea.background = textAreaBackgroundComponent.createObject(textArea);
+        }
+
         if (qmlUtils.isValidFile(CYCLONEDDS_URI) && CYCLONEDDS_URI !== "<not set>" && CYCLONEDDS_URI !== "") {
             configFileAvailable = true;
             fileContent = qmlUtils.loadFileContent(CYCLONEDDS_URI)
