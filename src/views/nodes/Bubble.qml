@@ -27,9 +27,18 @@ Rectangle {
     width: 30
     height: 30
     radius: 15
+    property alias text: bubbleText.text
 
     border.color: "gray"
     border.width: 1
+
+    Label {
+        id: bubbleText
+        anchors.centerIn: parent
+        text: ""
+        font.bold: true
+        font.pointSize: 12
+    }
 
     MouseArea {
         id: dragArea

@@ -68,6 +68,7 @@ Rectangle {
                 x: 100
                 y: 100
                 color: "lightblue"
+                text: "Bubble 1"
 
                 border.color: "gray"
                 border.width: 1
@@ -77,6 +78,7 @@ Rectangle {
                 id: bubble2
                 x: 400
                 y: 200
+                text: "Bubble 2"
                 color: "lightgreen"
             }
 
