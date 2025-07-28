@@ -10,54 +10,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt
+from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt, QSortFilterProxyModel
 from PySide6.QtCore import Signal, Slot
 from loguru import logger as logging
 from dds_access import dds_data
 from dds_access.domain_finder import DomainFinder
+from models.overview_model.tree_node import TreeNode
 
-
-class TreeNode:
-    def __init__(self, data: str, is_domain=False, has_qos_mismatch=False, parent=None):
-        self.parentItem = parent
-        self.itemData = data
-        self.childItems = []
-        self.is_domain = is_domain
-        self.has_qos_mismatch = has_qos_mismatch
-
-    def appendChild(self, item):
-        self.childItems.append(item)
-
-    def child(self, row):
-        return self.childItems[row]
-
-    def childCount(self):
-        return len(self.childItems)
-
-    def columnCount(self):
-        return 1
-
-    def data(self, column):
-        return self.itemData
-
-    def parent(self):
-        return self.parentItem
-    def row(self):
-        if self.parentItem:
-            return self.parentItem.childItems.index(self)
-        return 0
-
-    def removeChild(self, row):
-        del self.childItems[row]
-
-    def isDomain(self):
-        return self.is_domain
-
-    def isTopic(self):
-        return not self.is_domain
-
-    def hasQosMismatch(self):
-        return self.has_qos_mismatch
 
 class TreeModel(QAbstractItemModel):
 
@@ -80,7 +39,7 @@ class TreeModel(QAbstractItemModel):
         # Connect to from dds_data to self
         self.dds_data.new_topic_signal.connect(self.new_topic_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.remove_topic_signal.connect(self.remove_topic_slot, Qt.ConnectionType.QueuedConnection)
-        self.dds_data.new_domain_signal.connect(self.addDomain, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.new_domain_signal.connect(self._addDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_domain_signal.connect(self.removeDomain, Qt.ConnectionType.QueuedConnection)
         self.dds_data.no_more_mismatch_in_topic_signal.connect(self.no_more_mismatch_in_topic_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.publish_mismatch_signal.connect(self.publish_mismatch_slot, Qt.ConnectionType.QueuedConnection)
@@ -199,8 +158,7 @@ class TreeModel(QAbstractItemModel):
                         self.endRemoveRows()
                         break
 
-    @Slot(int)
-    def addDomain(self, domain_id: int):
+    def _addDomain(self, domain_id: int):
         # Check if the domain already exists
         for idx in range(self.rootItem.childCount()):
             child: TreeNode = self.rootItem.child(idx)
@@ -231,14 +189,14 @@ class TreeModel(QAbstractItemModel):
             self.endRemoveRows()
 
     @Slot(QModelIndex)
-    def removeDomainRequest(self, indx):
+    def _removeDomainRequest(self, indx):
         domainId = self.data(indx, role=self.DisplayRole)
         isDomain = self.data(indx, role=self.IsDomainRole)
         if domainId != None or isDomain == True:
             self.remove_domain_request_signal.emit(int(domainId))
 
     @Slot(int)
-    def addDomainRequest(self, domain_id):
+    def addDomainRequest(self, domain_id: int):
         self.dds_data.add_domain(domain_id)
 
     @Slot(QModelIndex, result=bool)

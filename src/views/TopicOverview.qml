@@ -30,17 +30,17 @@ TreeView {
         id: treeSelection
         onCurrentIndexChanged: {
             console.log("Selection changed to:", currentIndex);
-            if (treeModel.getIsRowDomain(currentIndex)) {
-                showDomainView(treeModel.getDomain(currentIndex))
-            } else if (treeModel.getIsRowTopic(currentIndex)) {
-                showTopicEndpointView(treeModel.getDomain(currentIndex), treeModel.getName(currentIndex))
+            if (treeModelProxy.getIsRowDomain(currentIndex)) {
+                showDomainView(treeModelProxy.getDomain(currentIndex))
+            } else if (treeModelProxy.getIsRowTopic(currentIndex)) {
+                showTopicEndpointView(treeModelProxy.getDomain(currentIndex), treeModelProxy.getName(currentIndex))
             } else {
                 console.log("Nothing found, clear view.")
                 clearView()
             }
         }
     }
-    model: treeModel
+    model: treeModelProxy
 
     delegate: Item {
         implicitWidth: domainSplit.width
