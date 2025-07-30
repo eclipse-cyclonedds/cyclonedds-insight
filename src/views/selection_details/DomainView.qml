@@ -26,6 +26,60 @@ Rectangle {
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
 
     property int domainId
+    property var nodesMap
+
+    Component.onCompleted: {
+        nodesMap = {};
+        graphModel.setDomainId(domainId);
+    }
+
+    GraphModel {
+        id: graphModel
+    }
+
+    Connections {
+        target: graphModel
+
+        function onNewNodeSignal(name, edgeName) {
+            var nodeComponent = Qt.createComponent("qrc:/src/views/nodes/Bubble.qml");
+            if (nodeComponent.status !== Component.Ready) {
+                console.error("Failed to load Bubble.qml:", nodeComponent.errorString());
+                return;
+            }
+            var randomX = Math.floor(Math.random() * (400 - 200 + 1)) + 200;
+            var randomY = Math.floor(Math.random() * (400 - 200 + 1)) + 200;
+            var nodeInstance = nodeComponent.createObject(root, { x: randomX, y: randomY, text: name, color: "lightblue" });
+            nodesMap[name] = nodeInstance;
+
+            if (edgeName && nodesMap[edgeName]) {
+                var edgeComponent = Qt.createComponent("qrc:/src/views/nodes/Edge.qml");
+                if (edgeComponent.status !== Component.Ready) {
+                    console.error("Failed to load Edge.qml:", edgeComponent.errorString());
+                    return;
+                }
+                var edgeInstance = edgeComponent.createObject(root, { bubble1: nodesMap[edgeName], bubble2: nodeInstance, z: -1 });
+                nodesMap[name + edgeName] = edgeInstance;
+            }
+        }
+
+        function onRemoveNodeSignal(name, edgeName) {
+            if (nodesMap[name]) {
+                nodesMap[name].destroy();
+                delete nodesMap[name];
+            }
+            if (edgeName && nodesMap[name + edgeName]) {
+                nodesMap[name + edgeName].destroy();
+                delete nodesMap[name + edgeName];
+            }
+        }
+    }
+
+    function destroyNode(id) {
+        if (nodesMap !== undefined && nodesMap[id] !== undefined) {
+            nodesMap[id].destroy();
+            delete nodesMap[id];
+        }
+    }
 
     ColumnLayout  {
         anchors.fill: parent
@@ -48,19 +102,10 @@ Rectangle {
             Layout.fillHeight: true
             color: "transparent"
 
-            Shape {
-                anchors.fill: parent
-                ShapePath {
-                    strokeWidth: 2
-                    strokeColor: "black"
-                    startX: bubble1.x + bubble1.width / 2
-                    startY: bubble1.y + bubble1.height / 2
-
-                    PathLine {
-                        x: bubble2.x + bubble2.width / 2
-                        y: bubble2.y + bubble2.height / 2
-                    }
-                }
+/*
+            Edge {
+                bubble1: bubble1
+                bubble2: bubble2
             }
 
             Bubble {
@@ -81,7 +126,7 @@ Rectangle {
                 text: "Bubble 2"
                 color: "lightgreen"
             }
-
+*/
         }
 
         /*Item {

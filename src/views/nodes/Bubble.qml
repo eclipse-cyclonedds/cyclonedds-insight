@@ -34,10 +34,10 @@ Rectangle {
 
     Label {
         id: bubbleText
-        anchors.centerIn: parent
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.top
+        anchors.bottomMargin: 4  // Optional spacing between bubble and text
         text: ""
-        font.bold: true
-        font.pointSize: 12
     }
 
     MouseArea {
