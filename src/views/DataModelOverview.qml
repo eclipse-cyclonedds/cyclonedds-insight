@@ -64,7 +64,37 @@ Rectangle {
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     onClicked: clearDialog.open()
                 }
+                Button {
+                    text: "\u{1F50D}"
+                    flat: true
+                    highlighted: searchField.visible
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    onClicked: {
+                        if (searchField.visible) {
+                            searchField.visible = false
+                            searchField.text = ""
+                        } else {
+                            searchField.visible = true
+                        }
+                    }
+                    Layout.preferredWidth: Qt.platform.os === "osx" ? 50 : 30
+                    Layout.preferredHeight: Qt.platform.os === "osx" ? 30 : 24
+                }
             }
+        }
+
+        TextField {
+            id: searchField
+            placeholderText: "Search Data Model ..."
+            visible: false
+            Layout.fillWidth: true
+            onTextChanged: {
+                datamodelRepoModelProxy.setFilter(searchField.text)
+            }
+            Layout.leftMargin: 8
+            Layout.rightMargin: 8
+            Layout.bottomMargin: 5
+
         }
 
         ListView {
@@ -73,7 +103,7 @@ Rectangle {
             Layout.leftMargin: 10
             clip: true
             ScrollBar.vertical: ScrollBar {}
-            model: datamodelRepoModel
+            model: datamodelRepoModelProxy
             delegate: Item {
                 implicitWidth: dataModelOverviewId.width
                 implicitHeight: nameLabel.implicitHeight * 1.5
