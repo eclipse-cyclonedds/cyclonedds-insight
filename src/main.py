@@ -47,7 +47,8 @@ from models.overview_model.tree_filter_proxy_model import TreeFilterProxyModel
 from models.overview_model.tree_model import TreeModel
 from models.overview_model.tree_node import TreeNode
 from models.endpoint_model import EndpointModel
-from models.datamodel_model import DatamodelModel
+from models.datamodel_model.datamodel_model import DatamodelModel
+from models.datamodel_model.datamodel_proxy_model import DatamodelProxyModel
 from models.tester_model import TesterModel
 from models.shapes_demo_model import ShapesDemoModel
 from models.graph_model import GraphModel
@@ -111,6 +112,9 @@ if __name__ == "__main__":
     threads = {}
     dataModelHandler: DataModelHandler = DataModelHandler()
     datamodelRepoModel = DatamodelModel(threads, dataModelHandler)
+    datamodelRepoModelProxy = DatamodelProxyModel()
+    datamodelRepoModelProxy.setSourceModel(datamodelRepoModel)
+
     testerModel = TesterModel(threads, dataModelHandler)
     datamodelRepoModel.newWriterSignal.connect(testerModel.addWriter)
     participantRootItem = ParticipantTreeNode("Root")
@@ -126,6 +130,7 @@ if __name__ == "__main__":
     engine.rootContext().setContextProperty("treeModel", treeModel)
     engine.rootContext().setContextProperty("participantModel", participantModel)
     engine.rootContext().setContextProperty("datamodelRepoModel", datamodelRepoModel)
+    engine.rootContext().setContextProperty("datamodelRepoModelProxy", datamodelRepoModelProxy)
     engine.rootContext().setContextProperty("testerModel", testerModel)
     engine.rootContext().setContextProperty("shapesDemoModel", shapesDemoModel)
     engine.rootContext().setContextProperty("qmlUtils", qmlUtils)
