@@ -28,13 +28,15 @@ Rectangle {
 
     property int domainId
     property var nodesMap
-    property var edges: []
+    property var edges: []            // array of { source: Item, target: Item }
+    property var edgesMap: ({})       // map edgeId -> edgeItem (for quick duplicate-check + removal)
     property var velocities: ({})
-    property var hostsMap: ({})   // hostName -> [bubbles]
+    property var hostsMap: ({})       // hostName -> [bubbles]
 
     Component.onCompleted: {
         nodesMap = {};
         edges = [];
+        edgesMap = {};
         velocities = {};
         hostsMap = {};
         graphModel.setDomainId(domainId);
@@ -45,74 +47,164 @@ Rectangle {
     Connections {
         target: graphModel
 
+        /*
+         * onNewNodeSignal(name, edgeName, hostName)
+         * - If node already exists: reuse it (don't recreate)
+         * - If hostName provided and node wasn't in that host: add to hostsMap
+         * - If edgeName exists (other node exists), create an edge only if not already present
+         */
         function onNewNodeSignal(name, edgeName, hostName) {
-            var nodeComponent = Qt.createComponent("qrc:/src/views/nodes/Bubble.qml");
-            if (nodeComponent.status !== Component.Ready) {
-                console.error("Failed to load Bubble.qml:", nodeComponent.errorString());
-                return;
-            }
+            // ensure maps are initialized
+            if (!nodesMap) nodesMap = {};
+            if (!hostsMap) hostsMap = {};
+            if (!velocities) velocities = {};
+            if (!edges) edges = [];
+            if (!edgesMap) edgesMap = {};
 
-            var randomX = Math.random() * root.width;
-            var randomY = Math.random() * root.height;
+            var nodeInstance;
 
-            var nodeInstance = nodeComponent.createObject(root, {
-                x: randomX,
-                y: randomY,
-                text: name,
-                color: "lightblue",
-                nodeName: name,
-                hostName: hostName
-            });
+            if (nodesMap[name]) {
+                // reuse existing node
+                nodeInstance = nodesMap[name];
 
-            nodesMap[name] = nodeInstance;
-            velocities[name] = { vx: 0, vy: 0 };
-
-            if (!hostsMap[hostName])
-                hostsMap[hostName] = [];
-            hostsMap[hostName].push(nodeInstance);
-
-            if (edgeName && nodesMap[edgeName]) {
-                var edgeComponent = Qt.createComponent("qrc:/src/views/nodes/Edge.qml");
-                if (edgeComponent.status !== Component.Ready) {
-                    console.error("Failed to load Edge.qml:", edgeComponent.errorString());
+                // update host membership if a non-empty hostName is given
+                if (hostName && hostName !== "") {
+                    // if the node had a different host before, remove from that host list
+                    var prevHost = (typeof nodeInstance.hostName !== "undefined") ? nodeInstance.hostName : "";
+                    if (prevHost !== hostName) {
+                        if (prevHost && hostsMap[prevHost]) {
+                            hostsMap[prevHost] = hostsMap[prevHost].filter(function(n) { return n.nodeName !== name; });
+                            if (hostsMap[prevHost].length === 0)
+                                delete hostsMap[prevHost];
+                        }
+                        // register under new host
+                        if (!hostsMap[hostName]) hostsMap[hostName] = [];
+                        // avoid duplicate entries
+                        var already = false;
+                        for (var i = 0; i < hostsMap[hostName].length; ++i) {
+                            if (hostsMap[hostName][i].nodeName === name) { already = true; break; }
+                        }
+                        if (!already) hostsMap[hostName].push(nodeInstance);
+                        nodeInstance.hostName = hostName;
+                    }
+                }
+            } else {
+                // create new node
+                var nodeComponent = Qt.createComponent("qrc:/src/views/nodes/Bubble.qml");
+                if (nodeComponent.status !== Component.Ready) {
+                    console.error("Failed to load Bubble.qml:", nodeComponent.errorString());
                     return;
                 }
-                var edgeInstance = edgeComponent.createObject(root, {
-                    bubble1: nodesMap[edgeName],
-                    bubble2: nodeInstance,
-                    z: -1
-                });
-                nodesMap[name + edgeName] = edgeInstance;
 
-                edges.push({
-                    source: nodesMap[edgeName],
-                    target: nodeInstance
+                var randomX = Math.random() * root.width;
+                var randomY = Math.random() * root.height;
+
+                nodeInstance = nodeComponent.createObject(root, {
+                    x: randomX,
+                    y: randomY,
+                    text: name,
+                    color: "lightblue",
+                    nodeName: name,
+                    hostName: hostName || ""
                 });
+
+                if (!nodeInstance) {
+                    console.error("Failed to instantiate Bubble.qml for", name);
+                    return;
+                }
+
+                nodesMap[name] = nodeInstance;
+                if (!velocities[name]) velocities[name] = { vx: 0, vy: 0 };
+
+                // add to hostsMap (if host is non-empty)
+                if (hostName && hostName !== "") {
+                    if (!hostsMap[hostName]) hostsMap[hostName] = [];
+                    hostsMap[hostName].push(nodeInstance);
+                }
+            }
+
+            // If edgeName is provided and that node exists, create edge (but don't duplicate)
+            if (edgeName) {
+                if (!nodesMap[edgeName]) {
+                    // other node isn't present yet — skip edge creation.
+                    // This is intentional: only create edges when both endpoints exist.
+                } else {
+                    var a = name;
+                    var b = edgeName;
+                    var edgeId = (a < b) ? (a + "::" + b) : (b + "::" + a);
+
+                    if (!edgesMap[edgeId]) {
+                        var edgeComponent = Qt.createComponent("qrc:/src/views/nodes/Edge.qml");
+                        if (edgeComponent.status !== Component.Ready) {
+                            console.error("Failed to load Edge.qml:", edgeComponent.errorString());
+                            return;
+                        }
+
+                        // create the Edge visual
+                        var edgeInstance = edgeComponent.createObject(root, {
+                            bubble1: nodesMap[edgeName],
+                            bubble2: nodeInstance,
+                            z: -1
+                        });
+                        if (!edgeInstance) {
+                            console.error("Failed to instantiate Edge.qml for", edgeId);
+                            return;
+                        }
+
+                        edges.push({
+                            source: nodesMap[edgeName],
+                            target: nodeInstance
+                        });
+                        edgesMap[edgeId] = edgeInstance;
+                    }
+                }
             }
         }
 
+        /*
+         * onRemoveNodeSignal(name, edgeName)
+         * - destroys node and all edges attached to it
+         * - cleans up hostsMap and velocities
+         */
         function onRemoveNodeSignal(name, edgeName) {
             var hostName = nodesMap[name] ? nodesMap[name].hostName : null;
 
+            // destroy the node
             if (nodesMap[name]) {
-                nodesMap[name].destroy();
+                try { nodesMap[name].destroy(); } catch (e) { /* ignore */ }
                 delete nodesMap[name];
-                delete velocities[name];
             }
-            if (edgeName && nodesMap[name + edgeName]) {
-                nodesMap[name + edgeName].destroy();
-                delete nodesMap[name + edgeName];
+            if (velocities && velocities[name]) delete velocities[name];
+
+            // remove/destroy any edges that include this node (both from edges array and edgesMap)
+            // edgesMap keys are "a::b"
+            for (var id in edgesMap) {
+                if (!edgesMap.hasOwnProperty(id)) continue;
+                var parts = id.split("::");
+                if (parts.length !== 2) continue;
+                if (parts[0] === name || parts[1] === name) {
+                    try { edgesMap[id].destroy(); } catch (e) { /* ignore */ }
+                    delete edgesMap[id];
+                }
             }
             edges = edges.filter(function(e) {
-                return e.source.nodeName !== name && e.target.nodeName !== name;
+                return (e.source && e.source.nodeName !== name) && (e.target && e.target.nodeName !== name);
             });
 
+            // clean up hosts map
             if (hostName && hostsMap[hostName]) {
                 hostsMap[hostName] = hostsMap[hostName].filter(function(n) {
                     return n.nodeName !== name;
                 });
                 if (hostsMap[hostName].length === 0)
                     delete hostsMap[hostName];
+            }
+
+            // Also be safe: remove this node from all host lists (in case hostName was empty or unknown)
+            for (var h in hostsMap) {
+                if (!hostsMap.hasOwnProperty(h)) continue;
+                hostsMap[h] = hostsMap[h].filter(function(n) { return n.nodeName !== name; });
+                if (hostsMap[h].length === 0) delete hostsMap[h];
             }
         }
     }
@@ -135,7 +227,7 @@ Rectangle {
 
                 var fx = 0, fy = 0;
 
-                // REPULSION
+                // REPULSION between all nodes
                 for (var j = 0; j < nodeList.length; j++) {
                     if (i === j) continue;
                     var b2 = nodeList[j];
@@ -164,22 +256,20 @@ Rectangle {
                     }
                 }
 
-                // HOST GROUP ATTRACTION
+                // HOST GROUP ATTRACTION (only for non-empty host names)
                 if (b1.hostName && b1.hostName !== "") {
-                    for (var h in hostsMap) {
-                        if (b1.hostName === h) {
-                            var group = hostsMap[h];
-                            for (var g = 0; g < group.length; g++) {
-                                var b2g = group[g];
-                                if (b2g === b1) continue;
-                                var dxh = b2g.x - b1.x;
-                                var dyh = b2g.y - b1.y;
-                                var distH = Math.sqrt(dxh * dxh + dyh * dyh) || 0.01;
-                                var hostIdeal = 100;
-                                var displacementH = distH - hostIdeal;
-                                fx += (dxh / distH) * displacementH * 0.01;
-                                fy += (dyh / distH) * displacementH * 0.01;
-                            }
+                    var group = hostsMap[b1.hostName];
+                    if (group) {
+                        for (var g = 0; g < group.length; g++) {
+                            var b2g = group[g];
+                            if (b2g === b1) continue;
+                            var dxh = b2g.x - b1.x;
+                            var dyh = b2g.y - b1.y;
+                            var distH = Math.sqrt(dxh * dxh + dyh * dyh) || 0.01;
+                            var hostIdeal = 100;
+                            var displacementH = distH - hostIdeal;
+                            fx += (dxh / distH) * displacementH * 0.01;
+                            fy += (dyh / distH) * displacementH * 0.01;
                         }
                     }
                 }
@@ -199,7 +289,7 @@ Rectangle {
         }
     }
 
-    // Host background canvas
+    // Host background canvas (renders grouped rounded rects and hostname labels)
     Canvas {
         id: hostBackground
         anchors.fill: parent
@@ -228,7 +318,7 @@ Rectangle {
                 if (h === "") continue; // skip rendering for empty hostname
 
                 var group = hostsMap[h];
-                if (group.length === 0) continue;
+                if (!group || group.length === 0) continue;
 
                 var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                 for (var i = 0; i < group.length; i++) {

@@ -238,10 +238,12 @@ class GraphModel(QAbstractItemModel):
 
         if appName not in self.appNames.keys():
             self.appNames[appName] = [str(participant.key)]
-            self.newNodeSignal.emit(appName, domainIdStr, host)
+            
         else:
             if str(participant.key) not in self.appNames[appName]:
                 self.appNames[appName].append(str(participant.key))
+
+        self.newNodeSignal.emit(appName, domainIdStr, host)
 
     @Slot(str, int, DataEndpoint)
     def new_endpoint_slot(self, requestId: str, domain_id: int, endpointData: DataEndpoint):
