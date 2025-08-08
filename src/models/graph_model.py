@@ -51,7 +51,7 @@ class GraphModel(QAbstractItemModel):
     requestEndpointsSignal = Signal(str, int, str, EntityType)
     requestParticipants = Signal(str)
 
-    newNodeSignal = Signal(str, str)
+    newNodeSignal = Signal(str, str, str)
     removeNodeSignal = Signal(str, str)
 
 
@@ -230,7 +230,7 @@ class GraphModel(QAbstractItemModel):
         domainIdStr = f"Domain {domain_id}"
         if domainIdStr not in self.domainIds:
             self.domainIds.append(domainIdStr)
-            self.newNodeSignal.emit(domainIdStr, "")
+            self.newNodeSignal.emit(domainIdStr, "", host)
 
         #if host not in self.hostnames:
         #    self.hostnames.append(host)
@@ -238,7 +238,7 @@ class GraphModel(QAbstractItemModel):
 
         if appName not in self.appNames.keys():
             self.appNames[appName] = [str(participant.key)]
-            self.newNodeSignal.emit(appName, domainIdStr)
+            self.newNodeSignal.emit(appName, domainIdStr, host)
         else:
             if str(participant.key) not in self.appNames[appName]:
                 self.appNames[appName].append(str(participant.key))

@@ -29,6 +29,7 @@ Rectangle {
     radius: 15
     property alias text: bubbleText.text
     property string nodeName: ""
+    property string hostName: ""
 
     border.color: "gray"
     border.width: 1
