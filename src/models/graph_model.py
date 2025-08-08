@@ -230,7 +230,7 @@ class GraphModel(QAbstractItemModel):
         domainIdStr = f"Domain {domain_id}"
         if domainIdStr not in self.domainIds:
             self.domainIds.append(domainIdStr)
-            self.newNodeSignal.emit(domainIdStr, "", host)
+            self.newNodeSignal.emit(domainIdStr, "", "")
 
         #if host not in self.hostnames:
         #    self.hostnames.append(host)

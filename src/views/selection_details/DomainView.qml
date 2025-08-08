@@ -20,7 +20,6 @@ import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
 import "qrc:/src/views/nodes"
 
-
 Rectangle {
     id: domainViewId
     anchors.fill: parent
@@ -165,19 +164,21 @@ Rectangle {
                 }
 
                 // HOST GROUP ATTRACTION
-                for (var h in hostsMap) {
-                    if (b1.hostName === h) {
-                        var group = hostsMap[h];
-                        for (var g = 0; g < group.length; g++) {
-                            var b2g = group[g];
-                            if (b2g === b1) continue;
-                            var dxh = b2g.x - b1.x;
-                            var dyh = b2g.y - b1.y;
-                            var distH = Math.sqrt(dxh * dxh + dyh * dyh) || 0.01;
-                            var hostIdeal = 100;
-                            var displacementH = distH - hostIdeal;
-                            fx += (dxh / distH) * displacementH * 0.01;
-                            fy += (dyh / distH) * displacementH * 0.01;
+                if (b1.hostName && b1.hostName !== "") {
+                    for (var h in hostsMap) {
+                        if (b1.hostName === h) {
+                            var group = hostsMap[h];
+                            for (var g = 0; g < group.length; g++) {
+                                var b2g = group[g];
+                                if (b2g === b1) continue;
+                                var dxh = b2g.x - b1.x;
+                                var dyh = b2g.y - b1.y;
+                                var distH = Math.sqrt(dxh * dxh + dyh * dyh) || 0.01;
+                                var hostIdeal = 100;
+                                var displacementH = distH - hostIdeal;
+                                fx += (dxh / distH) * displacementH * 0.01;
+                                fy += (dyh / distH) * displacementH * 0.01;
+                            }
                         }
                     }
                 }
@@ -223,6 +224,8 @@ Rectangle {
             var hostNames = Object.keys(hostsMap);
             for (var hIndex = 0; hIndex < hostNames.length; hIndex++) {
                 var h = hostNames[hIndex];
+                if (h === "") continue; // skip rendering for empty hostname
+
                 var group = hostsMap[h];
                 if (group.length === 0) continue;
 
