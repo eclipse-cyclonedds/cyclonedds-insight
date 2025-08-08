@@ -24,7 +24,7 @@ import "qrc:/src/views/nodes"
 Rectangle {
     id: domainViewId
     anchors.fill: parent
-    color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
+    color: "transparent"
 
     property int domainId
     property var nodesMap
@@ -42,7 +42,9 @@ Rectangle {
         graphModel.setDomainId(domainId);
     }
 
-    GraphModel { id: graphModel }
+    GraphModel {
+        id: graphModel
+    }
 
     Connections {
         target: graphModel
@@ -98,12 +100,13 @@ Rectangle {
 
                 var randomX = Math.random() * root.width;
                 var randomY = Math.random() * root.height;
+                var bubbleColor = (hostName && hostName !== "") ? "lightblue" : "lightblue";
 
                 nodeInstance = nodeComponent.createObject(root, {
                     x: randomX,
                     y: randomY,
                     text: name,
-                    color: "lightblue",
+                    color: bubbleColor,
                     nodeName: name,
                     hostName: hostName || ""
                 });

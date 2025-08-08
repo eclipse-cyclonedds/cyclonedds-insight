@@ -198,7 +198,6 @@ class GraphModel(QAbstractItemModel):
 
         self.endResetModel()
 
-
         self.requestParticipants.emit(self.currentRequestId)
 
     @Slot(int, str)
@@ -218,11 +217,17 @@ class GraphModel(QAbstractItemModel):
         for participant in participants:
             self.newParticipant(domain_id, participant)
 
+    def acceptDomainId(self, domain_id: int):
+        return self.domain_id == -1 or self.domain_id == domain_id
+
     @Slot(int, DcpsParticipant)
     def newParticipantSlot(self, domain_id: int, participant: DcpsParticipant):
         self.newParticipant(domain_id, participant)
 
     def newParticipant(self, domain_id: int, participant: DcpsParticipant):
+
+        if not self.acceptDomainId(domain_id):
+            return
 
         appName: str = getAppName(participant)
         host: str = getHostname(participant)
@@ -249,13 +254,14 @@ class GraphModel(QAbstractItemModel):
     def new_endpoint_slot(self, requestId: str, domain_id: int, endpointData: DataEndpoint):
         if self.currentRequestId != requestId and requestId != "":
             return
-        if domain_id != self.domain_id:
+        if not self.acceptDomainId(domain_id):
             return
 
 
     @Slot(int, str)
     def remove_endpoint_slot(self, domain_id, endpoint_key):
-        if domain_id != self.domain_id:
+        if not self.acceptDomainId(domain_id):
             return
+
 
 

@@ -138,7 +138,7 @@ SplitView {
             childView = childComponent.createObject(stackView, data);
             stackView.replace(childView);
         } else {
-            console.log("Failed to create component " + name)
+            console.log("Failed to create component " + name, childComponent.errorString())
         }
     }
 
