@@ -67,7 +67,6 @@ Rectangle {
             readOnly: true
             wrapMode: Text.WordWrap
             selectByMouse: true
-            //padding: 10
             color: pkeyLabelId.color
         }
 
