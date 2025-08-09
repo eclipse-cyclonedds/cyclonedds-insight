@@ -13,6 +13,7 @@
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt, Slot, Signal
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 from loguru import logger as logging
+from pathlib import Path
 import uuid
 import psutil
 
@@ -42,7 +43,7 @@ class GraphModel(QAbstractItemModel):
         self.ignoreSelf = False
 
         proc = psutil.Process()
-        self.selfName = f"{proc.name()}:{proc.pid}"
+        self.selfName = f"{Path(proc.name()).stem}:{proc.pid}"
 
         self.dds_data = dds_data.DdsData()
 

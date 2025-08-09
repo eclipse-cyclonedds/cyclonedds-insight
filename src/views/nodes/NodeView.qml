@@ -423,6 +423,7 @@ Rectangle {
         onTriggered: calculatePhysics()
     }
 
+    // Timer for repainting host background
     Timer {
         interval: 33
         running: true
