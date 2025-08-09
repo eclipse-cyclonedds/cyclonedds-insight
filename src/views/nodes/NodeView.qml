@@ -52,14 +52,7 @@ Rectangle {
     Connections {
         target: graphModel
 
-        /*
-         * onNewNodeSignal(name, edgeName, hostName)
-         * - If node already exists: reuse it (don't recreate)
-         * - If hostName provided and node wasn't in that host: add to hostsMap
-         * - If edgeName exists (other node exists), create an edge only if not already present
-         */
         function onNewNodeSignal(name, edgeName, hostName) {
-            // ensure maps are initialized
             if (!nodesMap) nodesMap = {};
             if (!hostsMap) hostsMap = {};
             if (!velocities) velocities = {};
@@ -166,10 +159,7 @@ Rectangle {
                 }
             }
         }
-        /*
-         * removeEdgeBetweenNodes(nodeA, nodeB)
-         * - Removes the edge (if any) between nodeA and nodeB, but does not remove the nodes themselves.
-         */
+
         function onRemoveEdgeBetweenNodes(nodeA, nodeB) {
             if (!nodeA || !nodeB) return;
             var a = nodeA;
@@ -189,11 +179,7 @@ Rectangle {
             );
             });
         }
-        /*
-         * onRemoveNodeSignal(name, edgeName)
-         * - destroys node and all edges attached to it
-         * - cleans up hostsMap and velocities
-         */
+
         function onRemoveNodeSignal(name, edgeName) {
             var hostName = nodesMap[name] ? nodesMap[name].hostName : null;
 

@@ -27,12 +27,6 @@ Rectangle {
 
     property int domainId
 
-    property var architectureView: null 
-
-    Component.onCompleted: {
-
-    }
-
     ColumnLayout  {
         anchors.fill: parent
         anchors.margins: 10
@@ -54,30 +48,5 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
-
-        /*Item {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-        }*/
     }
-
-    function createArchitectureView(domainIdValue) {
-
-        var component = Qt.createComponent("qrc:/src/views/nodes/NodeView.qml")
-        if (component.status === Component.Ready) {
-            var newView = component.createObject(root, {
-                domainId: domainIdValue
-            })
-            if (newView === null) {
-                console.log("Failed to create NodeView")
-                return null
-            }
-            newView.idealLength = idealLengthSlider.value
-            return newView
-        } else {
-            console.log("Component loading failed:", component.errorString())
-            return null
-        }
-    }
-
 }

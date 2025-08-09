@@ -125,7 +125,6 @@ if __name__ == "__main__":
     app.aboutToQuit.connect(qmlUtils.aboutToQuit)
 
     engine = QQmlApplicationEngine()
-    engine.rootContext().setContextProperty("ddsData", data)
     engine.rootContext().setContextProperty("treeModelProxy", filterTreeModel)
     engine.rootContext().setContextProperty("treeModel", treeModel)
     engine.rootContext().setContextProperty("participantModel", participantModel)
