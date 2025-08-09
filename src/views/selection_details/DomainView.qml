@@ -42,8 +42,7 @@ Rectangle {
             text: qsTr("Domain ID: ") + domainViewId.domainId
         }
 
-        NodeControlView {
-            id: nodeControlViewId
+        NodeView {
             domainId: domainViewId.domainId
             Layout.fillWidth: true
             Layout.fillHeight: true
