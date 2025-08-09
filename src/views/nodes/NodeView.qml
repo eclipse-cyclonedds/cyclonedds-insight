@@ -27,6 +27,7 @@ Rectangle {
     color: "transparent"
 
     property int domainId
+    property bool hideSelf
     property var nodesMap
     property var edges: []            // array of { source: Item, target: Item }
     property var edgesMap: ({})       // map edgeId -> edgeItem (for quick duplicate-check + removal)
@@ -41,7 +42,7 @@ Rectangle {
         edgesMap = {};
         velocities = {};
         hostsMap = {};
-        graphModel.setDomainId(domainId);
+        graphModel.setDomainId(domainId, hideSelf);
     }
 
     GraphModel {

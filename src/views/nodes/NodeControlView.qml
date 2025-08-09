@@ -40,8 +40,6 @@ Rectangle {
         GroupBox {
             title: qsTr("Node View")
             spacing: 0
-            Layout.fillWidth: true
-            Layout.fillHeight: true
 
             ColumnLayout {
                 anchors.fill: parent
@@ -53,7 +51,19 @@ Rectangle {
                     onCheckedChanged: {
                         if (architectureView !== null) {
                             architectureView.destroy()
-                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId)
+                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId, hideSelfCheckbox.checked)
+                        }
+                    }
+                }
+
+                CheckBox {
+                    id: hideSelfCheckbox
+                    text: qsTr("Hide self")
+                    checked: false
+                    onCheckedChanged: {
+                        if (architectureView !== null) {
+                            architectureView.destroy()
+                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId, hideSelfCheckbox.checked)
                         }
                     }
                 }
@@ -89,32 +99,35 @@ Rectangle {
                         if (architectureView !== null) {
                             architectureView.destroy()
                         } else {
-                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId)
+                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId, hideSelfCheckbox.checked)
                         }   
                     }
-                }
-
-                Rectangle {
-                    id: root
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    color: "transparent"
                 }
             }
         }
 
-        Item {
+        Rectangle {
+            id: root
             Layout.fillWidth: true
             Layout.fillHeight: true
+            color: "transparent"
+            border.color: rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
+            border.width: architectureView !== null ? 1 : 0
         }
+
+        /*Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+        }*/
     }
 
-    function createArchitectureView(domainIdValue) {
+    function createArchitectureView(domainIdValue, hideSelf) {
 
         var component = Qt.createComponent("qrc:/src/views/nodes/NodeView.qml")
         if (component.status === Component.Ready) {
             var newView = component.createObject(root, {
-                domainId: domainIdValue
+                domainId: domainIdValue,
+                hideSelf: hideSelf
             })
             if (newView === null) {
                 console.log("Failed to create NodeView")
