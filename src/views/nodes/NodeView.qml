@@ -94,7 +94,7 @@ Rectangle {
                 }
 
                 Button {
-                    text: architectureView === null ? "Open" : "Close"
+                    text: architectureView === null ? "Show" : "Hide"
                     onClicked: {
                         if (architectureView !== null) {
                             architectureView.destroy()
@@ -114,11 +114,6 @@ Rectangle {
             border.color: rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
             border.width: architectureView !== null ? 1 : 0
         }
-
-        /*Item {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-        }*/
     }
 
     function createArchitectureView(domainIdValue, hideSelf) {
