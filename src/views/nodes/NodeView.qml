@@ -22,7 +22,7 @@ import "qrc:/src/views/nodes"
 
 
 Rectangle {
-    id: domainViewId
+    id: nodeViewId
     anchors.fill: parent
     color: "transparent"
 
@@ -32,6 +32,8 @@ Rectangle {
     property var edgesMap: ({})       // map edgeId -> edgeItem (for quick duplicate-check + removal)
     property var velocities: ({})
     property var hostsMap: ({})       // hostName -> [bubbles]
+    property int idealLength: 110
+    property var hostColors: ({}) 
 
     Component.onCompleted: {
         nodesMap = {};
@@ -100,7 +102,7 @@ Rectangle {
 
                 var randomX = Math.random() * root.width;
                 var randomY = Math.random() * root.height;
-                var bubbleColor = (hostName && hostName !== "") ? "lightblue" : "lightblue";
+                var bubbleColor = (hostName && hostName !== "") ? "#5E92F3" : "#29B6F6";
 
                 nodeInstance = nodeComponent.createObject(root, {
                     x: randomX,
@@ -212,83 +214,76 @@ Rectangle {
         }
     }
 
-    // Physics Timer
-    Timer {
-        interval: 16
-        running: true
-        repeat: true
-        onTriggered: {
-            var nodeList = Object.values(nodesMap);
-            var idealLength = 150;
+    function calculatePhysics() {
+        var nodeList = Object.values(nodesMap);
 
-            for (var i = 0; i < nodeList.length; i++) {
-                var b1 = nodeList[i];
-                var nodeName = b1.nodeName;
-                if (!velocities[nodeName])
-                    velocities[nodeName] = { vx: 0, vy: 0 };
-                var vel = velocities[nodeName];
+        for (var i = 0; i < nodeList.length; i++) {
+            var b1 = nodeList[i];
+            var nodeName = b1.nodeName;
+            if (!velocities[nodeName])
+                velocities[nodeName] = { vx: 0, vy: 0 };
+            var vel = velocities[nodeName];
 
-                var fx = 0, fy = 0;
+            var fx = 0, fy = 0;
 
-                // REPULSION between all nodes
-                for (var j = 0; j < nodeList.length; j++) {
-                    if (i === j) continue;
-                    var b2 = nodeList[j];
-                    var dx = b1.x - b2.x;
-                    var dy = b1.y - b2.y;
-                    var distSq = dx*dx + dy*dy + 0.01;
-                    var dist = Math.sqrt(distSq);
-                    if (dist > 0) {
-                        var force = 2000 / distSq;
-                        fx += (dx / dist) * force;
-                        fy += (dy / dist) * force;
-                    }
+            // REPULSION between all nodes
+            for (var j = 0; j < nodeList.length; j++) {
+                if (i === j) continue;
+                var b2 = nodeList[j];
+                var dx = b1.x - b2.x;
+                var dy = b1.y - b2.y;
+                var distSq = dx*dx + dy*dy + 0.01;
+                var dist = Math.sqrt(distSq);
+                if (dist > 0) {
+                    var force = 2000 / distSq;
+                    fx += (dx / dist) * force;
+                    fy += (dy / dist) * force;
                 }
-
-                // EDGE SPRING
-                for (var e = 0; e < edges.length; e++) {
-                    var edge = edges[e];
-                    if (edge.source === b1 || edge.target === b1) {
-                        var other = (edge.source === b1) ? edge.target : edge.source;
-                        var dx2 = other.x - b1.x;
-                        var dy2 = other.y - b1.y;
-                        var dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) || 0.01;
-                        var displacement = dist2 - idealLength;
-                        fx += (dx2 / dist2) * displacement * 0.02;
-                        fy += (dy2 / dist2) * displacement * 0.02;
-                    }
-                }
-
-                // HOST GROUP ATTRACTION (only for non-empty host names)
-                if (b1.hostName && b1.hostName !== "") {
-                    var group = hostsMap[b1.hostName];
-                    if (group) {
-                        for (var g = 0; g < group.length; g++) {
-                            var b2g = group[g];
-                            if (b2g === b1) continue;
-                            var dxh = b2g.x - b1.x;
-                            var dyh = b2g.y - b1.y;
-                            var distH = Math.sqrt(dxh * dxh + dyh * dyh) || 0.01;
-                            var hostIdeal = 100;
-                            var displacementH = distH - hostIdeal;
-                            fx += (dxh / distH) * displacementH * 0.01;
-                            fy += (dyh / distH) * displacementH * 0.01;
-                        }
-                    }
-                }
-
-                // Update velocity & position
-                vel.vx += fx * 0.05;
-                vel.vy += fy * 0.05;
-                vel.vx *= 0.85;
-                vel.vy *= 0.85;
-
-                b1.x += vel.vx;
-                b1.y += vel.vy;
-
-                b1.x = Math.max(0, Math.min(root.width - b1.width, b1.x));
-                b1.y = Math.max(0, Math.min(root.height - b1.height, b1.y));
             }
+
+            // EDGE SPRING
+            for (var e = 0; e < edges.length; e++) {
+                var edge = edges[e];
+                if (edge.source === b1 || edge.target === b1) {
+                    var other = (edge.source === b1) ? edge.target : edge.source;
+                    var dx2 = other.x - b1.x;
+                    var dy2 = other.y - b1.y;
+                    var dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) || 0.01;
+                    var displacement = dist2 - nodeViewId.idealLength;
+                    fx += (dx2 / dist2) * displacement * 0.02;
+                    fy += (dy2 / dist2) * displacement * 0.02;
+                }
+            }
+
+            // HOST GROUP ATTRACTION (only for non-empty host names)
+            if (b1.hostName && b1.hostName !== "") {
+                var group = hostsMap[b1.hostName];
+                if (group) {
+                    for (var g = 0; g < group.length; g++) {
+                        var b2g = group[g];
+                        if (b2g === b1) continue;
+                        var dxh = b2g.x - b1.x;
+                        var dyh = b2g.y - b1.y;
+                        var distH = Math.sqrt(dxh * dxh + dyh * dyh) || 0.01;
+                        var hostIdeal = 100;
+                        var displacementH = distH - hostIdeal;
+                        fx += (dxh / distH) * displacementH * 0.01;
+                        fy += (dyh / distH) * displacementH * 0.01;
+                    }
+                }
+            }
+
+            // Update velocity & position
+            vel.vx += fx * 0.05;
+            vel.vy += fy * 0.05;
+            vel.vx *= 0.85;
+            vel.vy *= 0.85;
+
+            b1.x += vel.vx;
+            b1.y += vel.vy;
+
+            b1.x = Math.max(0, Math.min(root.width - b1.width, b1.x));
+            b1.y = Math.max(0, Math.min(root.height - b1.height, b1.y));
         }
     }
 
@@ -332,12 +327,61 @@ Rectangle {
                     maxY = Math.max(maxY, n.y + n.height);
                 }
 
+                function hsvToRgb(h, s, v) {
+                    var r, g, b;
+
+                    var i = Math.floor(h * 6);
+                    var f = h * 6 - i;
+                    var p = v * (1 - s);
+                    var q = v * (1 - f * s);
+                    var t = v * (1 - (1 - f) * s);
+
+                    switch(i % 6) {
+                        case 0: r = v; g = t; b = p; break;
+                        case 1: r = q; g = v; b = p; break;
+                        case 2: r = p; g = v; b = t; break;
+                        case 3: r = p; g = q; b = v; break;
+                        case 4: r = t; g = p; b = v; break;
+                        case 5: r = v; g = p; b = q; break;
+                    }
+                    return [ Math.round(r * 255), Math.round(g * 255), Math.round(b * 255) ];
+                }
+
                 var pad = 20;
-                var hue = (hIndex * 77) % 360;
-                ctx.fillStyle = "hsl(" + hue + ", 70%, 60%)";
-                ctx.globalAlpha = 0.15;
-                drawRoundedRect(minX - pad, minY - pad, (maxX - minX) + pad*2, (maxY - minY) + pad*2, 15);
+
+                // Generate pseudo-random H, S, V based on hIndex for consistency
+                function getColor(hIndex) {
+                    var randomSeed = (hIndex * 9301 + 49297) % 233280;  // simple deterministic seed
+                    // Simple deterministic PRNG for consistent host colors
+                    function random() {
+                        return Math.random();
+                    }
+
+                    var h = random();                  // hue: 0-1
+                    var s = 0.5 + 0.5 * random();     // saturation: 0.5-1.0
+                    var v = 0.7 + 0.3 * random();     // value: 0.7-1.0
+
+                    var rgb = hsvToRgb(h, s, v);
+                    return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.25)`;
+                }
+
+                // Store and reuse host color for consistent coloring
+                if (!hostColors)
+                    hostColors = {};
+                if (!hostColors[h]) {
+                    hostColors[h] = getColor(hIndex);
+                }
+                ctx.fillStyle = hostColors[h];
+
+                drawRoundedRect(
+                    minX - pad,
+                    minY - pad,
+                    (maxX - minX) + pad * 2,
+                    (maxY - minY) + pad * 2,
+                    15
+                );
                 ctx.fill();
+
 
                 // Draw hostname text
                 ctx.globalAlpha = 1.0;
@@ -346,6 +390,14 @@ Rectangle {
                 ctx.fillText(h, minX - pad + 5, minY - pad - 5);
             }
         }
+    }
+
+    // Physics Timer
+    Timer {
+        interval: 16
+        running: true
+        repeat: true
+        onTriggered: calculatePhysics()
     }
 
     Timer {

@@ -26,7 +26,7 @@ Shape {
 
     // Optional: color and width customization
     property color edgeColor: rootWindow.isDarkMode ? "white": "black"
-    property real edgeWidth: 2
+    property real edgeWidth: 1
 
     // Fill entire space of parent (you can also position manually if needed)
     anchors.fill: parent

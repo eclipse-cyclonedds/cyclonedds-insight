@@ -48,64 +48,31 @@ Rectangle {
             text: qsTr("Domain ID: ") + domainViewId.domainId
         }
 
-        GroupBox {
-            title: qsTr("Architecture View")
-            spacing: 0
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-
-            ColumnLayout {
-                anchors.fill: parent
-
-                CheckBox {
-                    id: useAllDomainsCheckBox
-                    text: qsTr("Show all domains")
-                    checked: false
-                    onCheckedChanged: {
-                        if (architectureView !== null) {
-                            architectureView.destroy()
-                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId)
-                        }
-                    }
-                }
-
-                Button {
-                    text: architectureView === null ? "Open" : "Close"
-                    onClicked: {
-                        if (architectureView !== null) {
-                            architectureView.destroy()
-                        } else {
-                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId)
-                        }   
-                    }
-                }
-
-                Rectangle {
-                    id: root
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    color: "transparent"
-                }
-            }
-        }
-
-        Item {
+        NodeControlView {
+            id: nodeControlViewId
+            domainId: domainViewId.domainId
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
+
+        /*Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+        }*/
     }
 
     function createArchitectureView(domainIdValue) {
 
-        var component = Qt.createComponent("qrc:/src/views/nodes/ArchitectureView.qml")
+        var component = Qt.createComponent("qrc:/src/views/nodes/NodeView.qml")
         if (component.status === Component.Ready) {
             var newView = component.createObject(root, {
                 domainId: domainIdValue
             })
             if (newView === null) {
-                console.log("Failed to create ArchitectureView")
+                console.log("Failed to create NodeView")
                 return null
             }
+            newView.idealLength = idealLengthSlider.value
             return newView
         } else {
             console.log("Component loading failed:", component.errorString())
