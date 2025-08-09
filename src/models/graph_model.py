@@ -43,7 +43,7 @@ class GraphModel(QAbstractItemModel):
         self.ignoreSelf = False
 
         proc = psutil.Process()
-        self.selfName = f"{Path(proc.name()).stem}:{proc.pid}"
+        self.selfName = f"{Path(proc.exe()).stem}:{proc.pid}"
 
         self.dds_data = dds_data.DdsData()
 
@@ -54,6 +54,7 @@ class GraphModel(QAbstractItemModel):
         self.dds_data.new_participant_signal.connect(self.newParticipantSlot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_participant_signal.connect(self.removedParticipantSlot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.response_participants_signal.connect(self.response_participants_slot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.new_domain_signal.connect(self.newDomainSlot, Qt.ConnectionType.QueuedConnection)
 
     def acceptDomainId(self, domain_id: int):
         return self.domain_id == -1 or self.domain_id == domain_id
@@ -71,6 +72,16 @@ class GraphModel(QAbstractItemModel):
         self.currentRequestId = str(uuid.uuid4())
 
         self.requestParticipants.emit(self.currentRequestId)
+
+    @Slot(int)
+    def newDomainSlot(self, domain_id: int):
+        if not self.acceptDomainId(domain_id):
+            return
+        
+        domainIdStr = f"Domain {domain_id}"
+        if domain_id not in self.domainIds.keys():
+            self.domainIds[domain_id] = []
+            self.newNodeSignal.emit(domainIdStr, "", "")
 
     @Slot(str, int, object)
     def response_participants_slot(self, request_id: str, domain_id: int, participants):

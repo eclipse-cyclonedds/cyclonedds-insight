@@ -405,7 +405,6 @@ Rectangle {
                 );
                 ctx.fill();
 
-
                 // Draw hostname text
                 ctx.globalAlpha = 1.0;
                 ctx.fillStyle = rootWindow.isDarkMode ? "#FFFFFF" : "#000000";
