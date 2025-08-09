@@ -20,14 +20,13 @@ import "qrc:/src/views"
 
 
 Rectangle {
-    id: bubble2
     x: 400
     y: 200
     color: "lightgreen"
     width: 30
     height: 30
     radius: 15
-    property alias text: bubbleText.text
+    property alias text: nodeText.text
     property string nodeName: ""
     property string hostName: ""
 
@@ -35,10 +34,10 @@ Rectangle {
     border.width: 1
 
     Label {
-        id: bubbleText
+        id: nodeText
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.top
-        anchors.bottomMargin: 4  // Optional spacing between bubble and text
+        anchors.bottomMargin: 4  // Optional spacing between node and text
         text: ""
     }
 

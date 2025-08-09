@@ -38,7 +38,7 @@ Rectangle {
         anchors.margins: 0
 
         GroupBox {
-            title: qsTr("Architecture View")
+            title: qsTr("Node View")
             spacing: 0
             Layout.fillWidth: true
             Layout.fillHeight: true

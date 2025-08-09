@@ -31,7 +31,7 @@ Rectangle {
     property var edges: []            // array of { source: Item, target: Item }
     property var edgesMap: ({})       // map edgeId -> edgeItem (for quick duplicate-check + removal)
     property var velocities: ({})
-    property var hostsMap: ({})       // hostName -> [bubbles]
+    property var hostsMap: ({})       // hostName -> [nodes]
     property int idealLength: 110
     property var hostColors: ({}) 
 
@@ -94,27 +94,27 @@ Rectangle {
                 }
             } else {
                 // create new node
-                var nodeComponent = Qt.createComponent("qrc:/src/views/nodes/Bubble.qml");
+                var nodeComponent = Qt.createComponent("qrc:/src/views/nodes/Node.qml");
                 if (nodeComponent.status !== Component.Ready) {
-                    console.error("Failed to load Bubble.qml:", nodeComponent.errorString());
+                    console.error("Failed to load Node.qml:", nodeComponent.errorString());
                     return;
                 }
 
                 var randomX = Math.random() * root.width;
                 var randomY = Math.random() * root.height;
-                var bubbleColor = (hostName && hostName !== "") ? "#5E92F3" : "#29B6F6";
+                var nodeColor = (hostName && hostName !== "") ? "#5E92F3" : "#29B6F6";
 
                 nodeInstance = nodeComponent.createObject(root, {
                     x: randomX,
                     y: randomY,
                     text: name,
-                    color: bubbleColor,
+                    color: nodeColor,
                     nodeName: name,
                     hostName: hostName || ""
                 });
 
                 if (!nodeInstance) {
-                    console.error("Failed to instantiate Bubble.qml for", name);
+                    console.error("Failed to instantiate Node.qml for", name);
                     return;
                 }
 
@@ -147,8 +147,8 @@ Rectangle {
 
                         // create the Edge visual
                         var edgeInstance = edgeComponent.createObject(root, {
-                            bubble1: nodesMap[edgeName],
-                            bubble2: nodeInstance,
+                            node1: nodesMap[edgeName],
+                            node2: nodeInstance,
                             z: -1
                         });
                         if (!edgeInstance) {
@@ -165,7 +165,29 @@ Rectangle {
                 }
             }
         }
+        /*
+         * removeEdgeBetweenNodes(nodeA, nodeB)
+         * - Removes the edge (if any) between nodeA and nodeB, but does not remove the nodes themselves.
+         */
+        function onRemoveEdgeBetweenNodes(nodeA, nodeB) {
+            if (!nodeA || !nodeB) return;
+            var a = nodeA;
+            var b = nodeB;
+            var edgeId = (a < b) ? (a + "::" + b) : (b + "::" + a);
 
+            if (edgesMap[edgeId]) {
+            try { edgesMap[edgeId].destroy(); } catch (e) { /* ignore */ }
+            delete edgesMap[edgeId];
+            }
+
+            edges = edges.filter(function(e) {
+            return !(
+                (e.source && e.target) &&
+                ((e.source.nodeName === a && e.target.nodeName === b) ||
+                 (e.source.nodeName === b && e.target.nodeName === a))
+            );
+            });
+        }
         /*
          * onRemoveNodeSignal(name, edgeName)
          * - destroys node and all edges attached to it
@@ -407,7 +429,7 @@ Rectangle {
         onTriggered: hostBackground.requestPaint()
     }
 
-    // Root area for bubbles and edges
+    // Root area for nodes and edges
     Item {
         id: root
         anchors.fill: parent

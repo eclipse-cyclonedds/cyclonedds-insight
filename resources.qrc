@@ -56,7 +56,7 @@
         <file>src/views/config_editor/ConfigEditorView.qml</file>
         <file>src/views/nodes/NodeView.qml</file>
         <file>src/views/nodes/NodeControlView.qml</file>
-        <file>src/views/nodes/Bubble.qml</file>
+        <file>src/views/nodes/Node.qml</file>
         <file>src/views/nodes/Edge.qml</file>
     </qresource>
 </RCC>

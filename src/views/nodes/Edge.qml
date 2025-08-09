@@ -20,9 +20,9 @@ import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
 
 Shape {
-    // External properties to specify the two items (bubbles)
-    property Item bubble1
-    property Item bubble2
+    // External properties to specify the two items (nodes)
+    property Item node1
+    property Item node2
 
     // Optional: color and width customization
     property color edgeColor: rootWindow.isDarkMode ? "white": "black"
@@ -35,14 +35,14 @@ Shape {
         strokeWidth: edgeWidth
         strokeColor: edgeColor
 
-        // Dynamically bind the center of bubble1
-        startX: bubble1 ? bubble1.x + bubble1.width / 2 : 0
-        startY: bubble1 ? bubble1.y + bubble1.height / 2 : 0
+        // Dynamically bind the center of node1
+        startX: node1 ? node1.x + node1.width / 2 : 0
+        startY: node1 ? node1.y + node1.height / 2 : 0
 
         PathLine {
-            // Dynamically bind the center of bubble2
-            x: bubble2 ? bubble2.x + bubble2.width / 2 : 0
-            y: bubble2 ? bubble2.y + bubble2.height / 2 : 0
+            // Dynamically bind the center of node2
+            x: node2 ? node2.x + node2.width / 2 : 0
+            y: node2 ? node2.y + node2.height / 2 : 0
         }
     }
 }
