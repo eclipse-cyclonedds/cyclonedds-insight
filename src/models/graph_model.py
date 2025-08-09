@@ -25,8 +25,8 @@ from dds_access.dds_utils import getProperty, DEBUG_MONITORS, getAppName, getHos
 
 class GraphModel(QAbstractItemModel):
 
-    requestEndpointsSignal = Signal(str, int, str, EntityType)
     requestParticipants = Signal(str)
+    requestDomainIds = Signal(str)
 
     newNodeSignal = Signal(str, str, str)
     removeNodeSignal = Signal(str, str)
@@ -49,12 +49,15 @@ class GraphModel(QAbstractItemModel):
 
         # self to dds_data
         self.requestParticipants.connect(self.dds_data.requestParticipants, Qt.ConnectionType.QueuedConnection)
+        self.requestDomainIds.connect(self.dds_data.requestDomainIds, Qt.ConnectionType.QueuedConnection)
 
         # From dds_data to self
         self.dds_data.new_participant_signal.connect(self.newParticipantSlot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_participant_signal.connect(self.removedParticipantSlot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.response_participants_signal.connect(self.response_participants_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.new_domain_signal.connect(self.newDomainSlot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.removed_domain_signal.connect(self.removedDomainSlot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.response_domain_ids_signal.connect(self.responseDomainIdsSlot, Qt.ConnectionType.QueuedConnection)
 
     def acceptDomainId(self, domain_id: int):
         return self.domain_id == -1 or self.domain_id == domain_id
@@ -71,6 +74,7 @@ class GraphModel(QAbstractItemModel):
         self.appNames = {}
         self.currentRequestId = str(uuid.uuid4())
 
+        self.requestDomainIds.emit(self.currentRequestId)
         self.requestParticipants.emit(self.currentRequestId)
 
     @Slot(int)
@@ -102,10 +106,11 @@ class GraphModel(QAbstractItemModel):
 
         appName: str = getAppName(participant)
         host: str = getHostname(participant)
-        domainIdStr = f"Domain {domain_id}"
 
         if appName == self.selfName and self.ignoreSelf:
             return
+
+        domainIdStr = f"Domain {domain_id}"
 
         if domain_id not in self.domainIds.keys():
             self.domainIds[domain_id] = [str(participant.key)]
@@ -128,15 +133,46 @@ class GraphModel(QAbstractItemModel):
 
     @Slot(int, str)
     def removedParticipantSlot(self, domainId: int, participantKey: str):
+        logging.debug(f"removedParticipantSlot {domainId} {participantKey}")
+        toBeRemovedApps = []
         for appName in list(self.appNames.keys()):
             if domainId in self.appNames[appName]:
                 if participantKey in self.appNames[appName][domainId]:
                     self.appNames[appName][domainId].remove(participantKey)
 
+                    # Check if appName is present in any other domain with participants
+                    found_in_other_domain = any(
+                        domain != domainId and len(self.appNames[appName][domain]) > 0
+                        for domain in self.appNames[appName]
+                    )
+                    if not found_in_other_domain:
+                        if len(self.appNames[appName][domainId]) == 0:
+                            toBeRemovedApps.append(appName)
+
                     if len(self.appNames[appName][domainId]) == 0:
-                        del self.appNames[appName][domainId]
                         self.removeEdgeBetweenNodes.emit(appName, f"Domain {domainId}")
 
-                        if len(self.appNames[appName].keys()) == 0:
-                            del self.appNames[appName]
-                            self.removeNodeSignal.emit(appName, "")
+        for remApp in toBeRemovedApps:
+            if remApp in self.appNames.keys():
+                del self.appNames[remApp]
+                self.removeNodeSignal.emit(remApp, "")
+
+    @Slot(int)
+    def removedDomainSlot(self, domainId: int):
+        if domainId in self.domainIds.keys():
+            del self.domainIds[domainId]
+            self.removeNodeSignal.emit(f"Domain {domainId}", "")
+
+    @Slot(str, list)
+    def responseDomainIdsSlot(self, requestId: str, domainIds):
+        logging.debug(f"responseDomainIdsSlot {requestId} {domainIds}")
+        if requestId != self.currentRequestId:
+            return
+
+        for domainId in domainIds:
+
+            if self.acceptDomainId(domainId):
+                if domainId not in self.domainIds.keys():
+                    self.domainIds[domainId] = []
+                    domainIdStr = f"Domain {domainId}"
+                    self.newNodeSignal.emit(domainIdStr, "", "")

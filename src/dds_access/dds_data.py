@@ -298,6 +298,7 @@ class DdsData(QObject):
     removed_participant_signal = Signal(int, str)
     update_participant_signal = Signal(int, DcpsParticipant)
 
+    response_domain_ids_signal = Signal(str, list)
     response_data_type_signal = Signal(str, object)
     response_endpoints_by_participant_key_signal = Signal(str, int, DataEndpoint)
     response_participants_signal = Signal(str, int, object)
@@ -464,3 +465,9 @@ class DdsData(QObject):
             participant = self.the_domains[domainId].getParticipantByKey(pkey)
 
         self.response_participant_by_key.emit(requestId, participant)
+
+    @Slot(str)
+    def requestDomainIds(self, requestId: str):
+        logging.debug(f"requestDomainIds {requestId}")
+        domains = list(self.the_domains.keys())
+        self.response_domain_ids_signal.emit(requestId, domains)
