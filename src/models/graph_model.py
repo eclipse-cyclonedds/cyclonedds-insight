@@ -10,17 +10,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt, Slot, Signal
-from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
+from PySide6.QtCore import Qt, QAbstractItemModel, Qt, Slot, Signal
+from cyclonedds.builtin import DcpsParticipant
 from loguru import logger as logging
 from pathlib import Path
 import uuid
 import psutil
 
 from dds_access import dds_data
-from dds_access.dds_utils import getProperty, getHostname, PROCESS_NAMES, PIDS, ADDRESSES
-from dds_access.datatypes.entity_type import EntityType
-from dds_access.dds_utils import getProperty, DEBUG_MONITORS, getAppName, getHostname
+from dds_access.dds_utils import getAppName, getHostname
 
 
 class GraphModel(QAbstractItemModel):
@@ -133,7 +131,6 @@ class GraphModel(QAbstractItemModel):
 
     @Slot(int, str)
     def removedParticipantSlot(self, domainId: int, participantKey: str):
-        logging.debug(f"removedParticipantSlot {domainId} {participantKey}")
         toBeRemovedApps = []
         for appName in list(self.appNames.keys()):
             if domainId in self.appNames[appName]:
@@ -165,12 +162,10 @@ class GraphModel(QAbstractItemModel):
 
     @Slot(str, list)
     def responseDomainIdsSlot(self, requestId: str, domainIds):
-        logging.debug(f"responseDomainIdsSlot {requestId} {domainIds}")
         if requestId != self.currentRequestId:
             return
 
         for domainId in domainIds:
-
             if self.acceptDomainId(domainId):
                 if domainId not in self.domainIds.keys():
                     self.domainIds[domainId] = []
