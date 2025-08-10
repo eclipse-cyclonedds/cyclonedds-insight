@@ -19,7 +19,7 @@ import psutil
 import socket
 
 from dds_access import dds_data
-from dds_access.dds_utils import getAppName, getHostname
+from dds_access.dds_utils import getAppName, getHostname, isVendorCycloneDDS
 
 
 class GraphModel(QAbstractItemModel):
@@ -27,7 +27,7 @@ class GraphModel(QAbstractItemModel):
     requestParticipants = Signal(str)
     requestDomainIds = Signal(str)
 
-    newNodeSignal = Signal(str, str, str, str)
+    newNodeSignal = Signal(str, str, str, str, bool)
     removeNodeSignal = Signal(str, str)
     removeEdgeBetweenNodes = Signal(str, str)
 
@@ -85,7 +85,7 @@ class GraphModel(QAbstractItemModel):
         domainIdStr = f"Domain {domain_id}"
         if domain_id not in self.domainIds.keys():
             self.domainIds[domain_id] = []
-            self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "")
+            self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "", False)
 
     @Slot(str, int, object)
     def response_participants_slot(self, request_id: str, domain_id: int, participants):
@@ -115,7 +115,7 @@ class GraphModel(QAbstractItemModel):
 
         if domain_id not in self.domainIds.keys():
             self.domainIds[domain_id] = [str(participant.key)]
-            self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "")
+            self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "", False)
         else:
             if str(participant.key) not in self.domainIds[domain_id]:
                 self.domainIds[domain_id].append(str(participant.key))
@@ -130,7 +130,7 @@ class GraphModel(QAbstractItemModel):
             else:
                 self.appNames[nodeKey][domain_id].append(str(participant.key))
 
-        self.newNodeSignal.emit(nodeKey, appName, domainIdStr, host)
+        self.newNodeSignal.emit(nodeKey, appName, domainIdStr, host, isVendorCycloneDDS(participant))
 
     @Slot(int, str)
     def removedParticipantSlot(self, domainId: int, participantKey: str):
@@ -173,4 +173,4 @@ class GraphModel(QAbstractItemModel):
                 if domainId not in self.domainIds.keys():
                     self.domainIds[domainId] = []
                     domainIdStr = f"Domain {domainId}"
-                    self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "")
+                    self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "", False)

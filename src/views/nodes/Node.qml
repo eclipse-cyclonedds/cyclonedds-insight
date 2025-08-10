@@ -22,7 +22,6 @@ import "qrc:/src/views"
 Rectangle {
     x: 400
     y: 200
-    color: "lightgreen"
     width: 30
     height: 30
     radius: 15
@@ -30,9 +29,13 @@ Rectangle {
     property string nodeName: ""
     property string hostName: ""
     property string nodeKey: ""
+    property bool isVendorCycloneDDS: false
+    property bool isDomain: false
 
     border.color: "gray"
     border.width: 1
+
+    color: isDomain ? "#14B4FF" : rootWindow.isDarkMode ? "black" : "white"
 
     Label {
         id: nodeText
@@ -40,6 +43,14 @@ Rectangle {
         anchors.bottom: parent.top
         anchors.bottomMargin: 4  // Optional spacing between node and text
         text: ""
+    }
+
+    Image {
+        visible: isVendorCycloneDDS
+        source: "qrc:/res/images/cyclonedds.png"
+        sourceSize.width: 20
+        sourceSize.height: 20
+        anchors.centerIn: parent
     }
 
     MouseArea {

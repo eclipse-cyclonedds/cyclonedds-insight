@@ -61,6 +61,22 @@ def getHostname(p: Optional[DcpsParticipant]):
     return hostnameRaw
 
 
+def isVendorCycloneDDS(p: Optional[DcpsParticipant]) -> bool:
+
+    if p is not None:
+        try:
+            cyc_prop_host = p.qos[core.Policy.Property(HOSTNAMES[0], "Unknown")]
+            cyc_prop_proc = p.qos[core.Policy.Property(PROCESS_NAMES[0], "Unknown")]
+            cyc_prop_pid = p.qos[core.Policy.Property(PIDS[0], "Unknown")]
+            if None in [cyc_prop_host, cyc_prop_proc, cyc_prop_pid]:
+                return False
+            else:
+                return True
+        except Exception:
+            pass
+
+    return False
+
 def getConfiguredDomainIds():
 
     def expandEnvVariable(value):

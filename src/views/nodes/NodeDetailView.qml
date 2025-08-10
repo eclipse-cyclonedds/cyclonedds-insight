@@ -52,7 +52,7 @@ Rectangle {
     Connections {
         target: graphModel
 
-        function onNewNodeSignal(key, name, edgeName, hostName) {
+        function onNewNodeSignal(key, name, edgeName, hostName, isVendorCycloneDDS) {
             if (!nodesMap) nodesMap = {};
             if (!hostsMap) hostsMap = {};
             if (!velocities) velocities = {};
@@ -96,16 +96,16 @@ Rectangle {
 
                 var randomX = Math.random() * root.width;
                 var randomY = Math.random() * root.height;
-                var nodeColor = (hostName && hostName !== "") ? "#5E92F3" : "#29B6F6";
 
                 nodeInstance = nodeComponent.createObject(root, {
                     x: randomX,
                     y: randomY,
                     text: name,
-                    color: nodeColor,
+                    isDomain: !(hostName && hostName !== ""),
                     nodeName: name,
                     hostName: hostName || "",
-                    nodeKey: key
+                    nodeKey: key,
+                    isVendorCycloneDDS: isVendorCycloneDDS
                 });
 
                 if (!nodeInstance) {
