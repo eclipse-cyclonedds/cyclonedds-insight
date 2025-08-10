@@ -29,6 +29,7 @@ Rectangle {
     property alias text: nodeText.text
     property string nodeName: ""
     property string hostName: ""
+    property string nodeKey: ""
 
     border.color: "gray"
     border.width: 1

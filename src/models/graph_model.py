@@ -16,6 +16,7 @@ from loguru import logger as logging
 from pathlib import Path
 import uuid
 import psutil
+import socket
 
 from dds_access import dds_data
 from dds_access.dds_utils import getAppName, getHostname
@@ -26,7 +27,7 @@ class GraphModel(QAbstractItemModel):
     requestParticipants = Signal(str)
     requestDomainIds = Signal(str)
 
-    newNodeSignal = Signal(str, str, str)
+    newNodeSignal = Signal(str, str, str, str)
     removeNodeSignal = Signal(str, str)
     removeEdgeBetweenNodes = Signal(str, str)
 
@@ -41,7 +42,8 @@ class GraphModel(QAbstractItemModel):
         self.ignoreSelf = False
 
         proc = psutil.Process()
-        self.selfName = f"{Path(proc.exe()).stem}:{proc.pid}"
+        hostName = socket.gethostname()
+        self.selfName = f"{hostName}:{Path(proc.exe()).stem}:{proc.pid}"
 
         self.dds_data = dds_data.DdsData()
 
@@ -83,7 +85,7 @@ class GraphModel(QAbstractItemModel):
         domainIdStr = f"Domain {domain_id}"
         if domain_id not in self.domainIds.keys():
             self.domainIds[domain_id] = []
-            self.newNodeSignal.emit(domainIdStr, "", "")
+            self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "")
 
     @Slot(str, int, object)
     def response_participants_slot(self, request_id: str, domain_id: int, participants):
@@ -104,30 +106,31 @@ class GraphModel(QAbstractItemModel):
 
         appName: str = getAppName(participant)
         host: str = getHostname(participant)
+        nodeKey = f"{host}:{appName}"
 
-        if appName == self.selfName and self.ignoreSelf:
+        if nodeKey == self.selfName and self.ignoreSelf:
             return
 
         domainIdStr = f"Domain {domain_id}"
 
         if domain_id not in self.domainIds.keys():
             self.domainIds[domain_id] = [str(participant.key)]
-            self.newNodeSignal.emit(domainIdStr, "", "")
+            self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "")
         else:
             if str(participant.key) not in self.domainIds[domain_id]:
                 self.domainIds[domain_id].append(str(participant.key))
 
-        if appName not in self.appNames.keys():
-            self.appNames[appName] = {
+        if nodeKey not in self.appNames.keys():
+            self.appNames[nodeKey] = {
                 domain_id: [str(participant.key)]
             }
         else:
-            if domain_id not in self.appNames[appName]:
-                self.appNames[appName][domain_id] = [str(participant.key)]
+            if domain_id not in self.appNames[nodeKey]:
+                self.appNames[nodeKey][domain_id] = [str(participant.key)]
             else:
-                self.appNames[appName][domain_id].append(str(participant.key))
+                self.appNames[nodeKey][domain_id].append(str(participant.key))
 
-        self.newNodeSignal.emit(appName, domainIdStr, host)
+        self.newNodeSignal.emit(nodeKey, appName, domainIdStr, host)
 
     @Slot(int, str)
     def removedParticipantSlot(self, domainId: int, participantKey: str):
@@ -170,4 +173,4 @@ class GraphModel(QAbstractItemModel):
                 if domainId not in self.domainIds.keys():
                     self.domainIds[domainId] = []
                     domainIdStr = f"Domain {domainId}"
-                    self.newNodeSignal.emit(domainIdStr, "", "")
+                    self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "")

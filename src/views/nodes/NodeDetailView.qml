@@ -52,7 +52,7 @@ Rectangle {
     Connections {
         target: graphModel
 
-        function onNewNodeSignal(name, edgeName, hostName) {
+        function onNewNodeSignal(key, name, edgeName, hostName) {
             if (!nodesMap) nodesMap = {};
             if (!hostsMap) hostsMap = {};
             if (!velocities) velocities = {};
@@ -61,9 +61,9 @@ Rectangle {
 
             var nodeInstance;
 
-            if (nodesMap[name]) {
+            if (nodesMap[key]) {
                 // reuse existing node
-                nodeInstance = nodesMap[name];
+                nodeInstance = nodesMap[key];
 
                 // update host membership if a non-empty hostName is given
                 if (hostName && hostName !== "") {
@@ -71,7 +71,7 @@ Rectangle {
                     var prevHost = (typeof nodeInstance.hostName !== "undefined") ? nodeInstance.hostName : "";
                     if (prevHost !== hostName) {
                         if (prevHost && hostsMap[prevHost]) {
-                            hostsMap[prevHost] = hostsMap[prevHost].filter(function(n) { return n.nodeName !== name; });
+                            hostsMap[prevHost] = hostsMap[prevHost].filter(function(n) { return n.nodeKey !== key; });
                             if (hostsMap[prevHost].length === 0)
                                 delete hostsMap[prevHost];
                         }
@@ -80,7 +80,7 @@ Rectangle {
                         // avoid duplicate entries
                         var already = false;
                         for (var i = 0; i < hostsMap[hostName].length; ++i) {
-                            if (hostsMap[hostName][i].nodeName === name) { already = true; break; }
+                            if (hostsMap[hostName][i].nodeKey === key) { already = true; break; }
                         }
                         if (!already) hostsMap[hostName].push(nodeInstance);
                         nodeInstance.hostName = hostName;
@@ -104,16 +104,17 @@ Rectangle {
                     text: name,
                     color: nodeColor,
                     nodeName: name,
-                    hostName: hostName || ""
+                    hostName: hostName || "",
+                    nodeKey: key
                 });
 
                 if (!nodeInstance) {
-                    console.error("Failed to instantiate Node.qml for", name);
+                    console.error("Failed to instantiate Node.qml for", key);
                     return;
                 }
 
-                nodesMap[name] = nodeInstance;
-                if (!velocities[name]) velocities[name] = { vx: 0, vy: 0 };
+                nodesMap[key] = nodeInstance;
+                if (!velocities[key]) velocities[key] = { vx: 0, vy: 0 };
 
                 // add to hostsMap (if host is non-empty)
                 if (hostName && hostName !== "") {
@@ -128,7 +129,7 @@ Rectangle {
                     // other node isn't present yet — skip edge creation.
                     // This is intentional: only create edges when both endpoints exist.
                 } else {
-                    var a = name;
+                    var a = key;
                     var b = edgeName;
                     var edgeId = (a < b) ? (a + "::" + b) : (b + "::" + a);
 
@@ -174,21 +175,21 @@ Rectangle {
             edges = edges.filter(function(e) {
             return !(
                 (e.source && e.target) &&
-                ((e.source.nodeName === a && e.target.nodeName === b) ||
-                 (e.source.nodeName === b && e.target.nodeName === a))
+                ((e.source.nodeKey === a && e.target.nodeKey === b) ||
+                 (e.source.nodeKey === b && e.target.nodeKey === a))
             );
             });
         }
 
-        function onRemoveNodeSignal(name, edgeName) {
-            var hostName = nodesMap[name] ? nodesMap[name].hostName : null;
+        function onRemoveNodeSignal(key, edgeName) {
+            var hostName = nodesMap[key] ? nodesMap[key].hostName : null;
 
             // destroy the node
-            if (nodesMap[name]) {
-                try { nodesMap[name].destroy(); } catch (e) { /* ignore */ }
-                delete nodesMap[name];
+            if (nodesMap[key]) {
+                try { nodesMap[key].destroy(); } catch (e) { /* ignore */ }
+                delete nodesMap[key];
             }
-            if (velocities && velocities[name]) delete velocities[name];
+            if (velocities && velocities[key]) delete velocities[key];
 
             // remove/destroy any edges that include this node (both from edges array and edgesMap)
             // edgesMap keys are "a::b"
@@ -196,19 +197,19 @@ Rectangle {
                 if (!edgesMap.hasOwnProperty(id)) continue;
                 var parts = id.split("::");
                 if (parts.length !== 2) continue;
-                if (parts[0] === name || parts[1] === name) {
+                if (parts[0] === key || parts[1] === key) {
                     try { edgesMap[id].destroy(); } catch (e) { /* ignore */ }
                     delete edgesMap[id];
                 }
             }
             edges = edges.filter(function(e) {
-                return (e.source && e.source.nodeName !== name) && (e.target && e.target.nodeName !== name);
+                return (e.source && e.source.nodeKey !== key) && (e.target && e.target.nodeKey !== key);
             });
 
             // clean up hosts map
             if (hostName && hostsMap[hostName]) {
                 hostsMap[hostName] = hostsMap[hostName].filter(function(n) {
-                    return n.nodeName !== name;
+                    return n.nodeKey !== key;
                 });
                 if (hostsMap[hostName].length === 0)
                     delete hostsMap[hostName];
@@ -217,7 +218,7 @@ Rectangle {
             // Also be safe: remove this node from all host lists (in case hostName was empty or unknown)
             for (var h in hostsMap) {
                 if (!hostsMap.hasOwnProperty(h)) continue;
-                hostsMap[h] = hostsMap[h].filter(function(n) { return n.nodeName !== name; });
+                hostsMap[h] = hostsMap[h].filter(function(n) { return n.nodeKey !== key; });
                 if (hostsMap[h].length === 0) delete hostsMap[h];
             }
         }
@@ -228,10 +229,10 @@ Rectangle {
 
         for (var i = 0; i < nodeList.length; i++) {
             var b1 = nodeList[i];
-            var nodeName = b1.nodeName;
-            if (!velocities[nodeName])
-                velocities[nodeName] = { vx: 0, vy: 0 };
-            var vel = velocities[nodeName];
+            var nodeKey = b1.nodeKey;
+            if (!velocities[nodeKey])
+                velocities[nodeKey] = { vx: 0, vy: 0 };
+            var vel = velocities[nodeKey];
 
             var fx = 0, fy = 0;
 
