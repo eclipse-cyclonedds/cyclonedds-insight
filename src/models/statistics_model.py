@@ -53,6 +53,7 @@ class PollingThread(QThread):
     def poll(self):
         logging.trace("Debug monitor timer triggered")
 
+        ag_sent_bytes = {}
         ag_rexmit_bytes = {}
         ag_n_nacks_received = {}
         ag_rexmit_count = {}
@@ -120,6 +121,12 @@ class PollingThread(QThread):
                                 else:
                                     ag_rexmit_bytes[aggkey] = writer["rexmit_bytes"]
 
+                            if "sent_bytes" in writer:
+                                if aggkey in ag_sent_bytes:
+                                    ag_sent_bytes[aggkey] += writer["sent_bytes"]
+                                else:
+                                    ag_sent_bytes[aggkey] = writer["sent_bytes"]
+
                             if "ack" in writer:
                                 ack = writer["ack"]
                                 if "n_acks_received" in ack:
@@ -146,6 +153,7 @@ class PollingThread(QThread):
                                     else:
                                         ag_n_reliable_readers[aggkey] = heartbeat["n_reliable_readers"]
 
+        self.onData.emit("sent_bytes", ag_sent_bytes.copy(), self.color_mapping.copy())
         self.onData.emit("rexmit_bytes", ag_rexmit_bytes.copy(), self.color_mapping.copy())
         self.onData.emit("n_acks_received", ag_n_acks_received.copy(), self.color_mapping.copy())
         self.onData.emit("n_nacks_received", ag_n_nacks_received.copy(), self.color_mapping.copy())
@@ -232,6 +240,7 @@ class StatisticsModel(QAbstractTableModel):
         self.request_ids = []
 
         self.unitModels = {}
+        self.unitModels["sent_bytes"] = StatisticsUnitModel(self.pollingThread, "sent_bytes")
         self.unitModels["rexmit_bytes"] = StatisticsUnitModel(self.pollingThread, "rexmit_bytes")
         self.unitModels["rexmit_count"] = StatisticsUnitModel(self.pollingThread, "rexmit_count")
         self.unitModels["n_acks_received"] = StatisticsUnitModel(self.pollingThread, "n_acks_received")
@@ -239,6 +248,10 @@ class StatisticsModel(QAbstractTableModel):
         self.unitModels["n_reliable_readers"] = StatisticsUnitModel(self.pollingThread, "n_reliable_readers")
 
         self.unitDescriptions = {
+            "sent_bytes": {
+                "description": "Total number of bytes sent by a writer (excluding retransmits).",
+                "unit": "bytes"
+            },
             "rexmit_bytes": {
                 "description": "Total number of bytes retransmitted for a writer.",
                 "unit": "bytes"
@@ -376,7 +389,7 @@ class StatisticsModel(QAbstractTableModel):
 
 
 class StatisticsUnitModel(QAbstractTableModel):
-    newData = Signal(str, int, int, int, int, bool)
+    newData = Signal(str, float, int, int, int, bool)
 
     NameRole = Qt.UserRole + 1
     ValueRole = Qt.UserRole + 2
@@ -449,7 +462,7 @@ class StatisticsUnitModel(QAbstractTableModel):
         self.beginResetModel()
         self.data_list.clear()
         for topc_guid in aggregated_data.keys():
-            value = aggregated_data[topc_guid]
+            value = float(aggregated_data[topc_guid]) # in qml there is no uint64, so we use float aka. double in qml
             (r, g, b) = color_mapping[topc_guid]
             self.newData.emit(topc_guid, value, r, g, b, self.clearOnNextData)
             self.data_list.append([topc_guid, value, r, g, b])
