@@ -24,6 +24,7 @@ Rectangle {
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
 
     property int domainId
+    property string endpointKey
 
     ColumnLayout  {
         anchors.fill: parent
@@ -38,6 +39,10 @@ Rectangle {
         }
         Label {
             text: qsTr("Domain ID: ") + endpointViewId.domainId
+        }
+
+        Label {
+            text: qsTr("Endpoint-Key: ") + endpointViewId.endpointKey
         }
 
         Item {

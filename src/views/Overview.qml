@@ -138,7 +138,7 @@ SplitView {
             childView = childComponent.createObject(stackView, data);
             stackView.replace(childView);
         } else {
-            console.log("Failed to create component " + name)
+            console.log("Failed to create component " + name, childComponent.errorString())
         }
     }
 
@@ -160,9 +160,10 @@ SplitView {
                         })
     }
 
-    function showParticipantView(domainId) {
+    function showParticipantView(domainId, pkey) {
         showView("selection_details/ParticipantView.qml", {
-                            domainId: domainId
+                            domainId: domainId,
+                            participantKey: pkey
                         })
     }
 
@@ -173,9 +174,10 @@ SplitView {
                         })
     }
 
-    function showEndpointView(domainId) {
+    function showEndpointView(domainId, endpKey) {
         showView("selection_details/EndpointView.qml", {
-                            domainId: domainId
+                            domainId: domainId,
+                            endpointKey: endpKey
                         })
     }
 

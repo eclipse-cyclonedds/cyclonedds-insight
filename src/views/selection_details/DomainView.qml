@@ -14,9 +14,11 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Shapes
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
+import "qrc:/src/views/nodes"
 
 
 Rectangle {
@@ -40,7 +42,8 @@ Rectangle {
             text: qsTr("Domain ID: ") + domainViewId.domainId
         }
 
-        Item {
+        NodeView {
+            domainId: domainViewId.domainId
             Layout.fillWidth: true
             Layout.fillHeight: true
         }

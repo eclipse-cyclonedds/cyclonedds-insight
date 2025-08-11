@@ -51,8 +51,10 @@ from models.datamodel_model.datamodel_model import DatamodelModel
 from models.datamodel_model.datamodel_proxy_model import DatamodelProxyModel
 from models.tester_model import TesterModel
 from models.shapes_demo_model import ShapesDemoModel
+from models.graph_model import GraphModel
 from utils.logger_config import LoggerConfig
 from models.participant_model import ParticipantTreeModel, ParticipantTreeNode
+from models.selection_details.participant_details_model import ParticipantDetailsModel
 import utils.build_info_helper as build_info_helper
 from utils.qml_utils import QmlUtils
 from version import CYCLONEDDS_INSIGHT_VERSION
@@ -147,6 +149,8 @@ if __name__ == "__main__":
     qmlRegisterType(EndpointModel, "org.eclipse.cyclonedds.insight", 1, 0, "EndpointModel")
     qmlRegisterType(StatisticsModel, "org.eclipse.cyclonedds.insight", 1, 0, "StatisticsModel")
     qmlRegisterType(StatisticsUnitModel, "org.eclipse.cyclonedds.insight", 1, 0, "StatisticsUnitModel")
+    qmlRegisterType(ParticipantDetailsModel, "org.eclipse.cyclonedds.insight", 1, 0, "ParticipantDetailsModel")
+    qmlRegisterType(GraphModel, "org.eclipse.cyclonedds.insight", 1, 0, "GraphModel")
 
     engine.load(QUrl("qrc:/src/views/main.qml"))
     if not engine.rootObjects():
