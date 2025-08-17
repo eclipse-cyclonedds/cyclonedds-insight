@@ -183,6 +183,9 @@ SplitView {
 
     function aboutToClose() {
         statisticsWindow.aboutToClose()
+        if (childView && typeof childView.aboutToClose === "function") {
+            childView.aboutToClose()
+        }
         clearView()
     }
 }

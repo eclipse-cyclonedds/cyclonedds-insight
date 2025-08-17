@@ -28,13 +28,16 @@ Rectangle {
 
     property int domainId
     property bool hideSelf
+    property bool speedEnabled
+    property string currentSpeedUnit
+
     property var nodesMap
     property var edges: []            // array of { source: Item, target: Item }
     property var edgesMap: ({})       // map edgeId -> edgeItem (for quick duplicate-check + removal)
     property var velocities: ({})
     property var hostsMap: ({})       // hostName -> [nodes]
     property int idealLength: 110
-    property var hostColors: ({}) 
+    property var hostColors: ({})
 
     Component.onCompleted: {
         nodesMap = {};
@@ -42,7 +45,7 @@ Rectangle {
         edgesMap = {};
         velocities = {};
         hostsMap = {};
-        graphModel.setDomainId(domainId, hideSelf);
+        graphModel.setDomainId(domainId, hideSelf, speedEnabled);
     }
 
     GraphModel {
@@ -144,7 +147,9 @@ Rectangle {
                         var edgeInstance = edgeComponent.createObject(root, {
                             node1: nodesMap[edgeName],
                             node2: nodeInstance,
-                            z: -1
+                            z: -1,
+                            speedEnabled: speedEnabled,
+                            currentUnit: currentSpeedUnit
                         });
                         if (!edgeInstance) {
                             console.error("Failed to instantiate Edge.qml for", edgeId);
@@ -220,6 +225,49 @@ Rectangle {
                 if (!hostsMap.hasOwnProperty(h)) continue;
                 hostsMap[h] = hostsMap[h].filter(function(n) { return n.nodeKey !== key; });
                 if (hostsMap[h].length === 0) delete hostsMap[h];
+            }
+        }
+
+        function onUpdateEdgeSignal(nodeKey, edgeName, t, bps) {
+            console.debug("Updating edge:", nodeKey, edgeName, t, bps);
+            if (!edgesMap || !nodesMap) return;
+
+            var a = nodeKey;
+            var b = edgeName;
+            var edgeId = (a < b) ? (a + "::" + b) : (b + "::" + a);
+
+            if (edgesMap[edgeId]) {
+                if (t === "sent") {
+                    edgesMap[edgeId].updateUpBps(bps);
+                } else if (t === "recv") {
+                    edgesMap[edgeId].updateDownBps(bps);
+                }
+            } else {
+                console.warn("Tried to update non-existing edge:", edgeId);
+            }
+        }
+    }
+
+    function enableSpeeds(enabled) {
+        if (enabled) {
+            graphModel.start()
+        } else {
+            graphModel.stop();
+        }
+        if (!edgesMap) return;
+        for (var edgeId in edgesMap) {
+            if (edgesMap.hasOwnProperty(edgeId)) {
+                edgesMap[edgeId].enableSpeeds(enabled);
+            }
+        }
+    }
+
+    function setSpeedUnit(unit) {
+        nodeDetailViewId.currentSpeedUnit = unit;
+        if (!edgesMap) return;
+        for (var edgeId in edgesMap) {
+            if (edgesMap.hasOwnProperty(edgeId)) {
+                edgesMap[edgeId].setCurrentUnit(unit);
             }
         }
     }
@@ -422,5 +470,9 @@ Rectangle {
         id: root
         anchors.fill: parent
         z: 1
+    }
+
+    function stop() {
+        graphModel.stop();
     }
 }

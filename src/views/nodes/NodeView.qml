@@ -51,7 +51,7 @@ Rectangle {
                     onCheckedChanged: {
                         if (architectureView !== null) {
                             architectureView.destroy()
-                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId, hideSelfCheckbox.checked)
+                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId, hideSelfCheckbox.checked, showSpeedsCheckBox.checked, speedSelectComboBox.currentText)
                         }
                     }
                 }
@@ -62,8 +62,37 @@ Rectangle {
                     checked: false
                     onCheckedChanged: {
                         if (architectureView !== null) {
+                            architectureView.stop()
                             architectureView.destroy()
-                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId, hideSelfCheckbox.checked)
+                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId, hideSelfCheckbox.checked, showSpeedsCheckBox.checked, speedSelectComboBox.currentText)
+                        }
+                    }
+                }
+
+                RowLayout {
+                    spacing: 10
+
+                    CheckBox {
+                        id: showSpeedsCheckBox
+                        text: qsTr("Show Speeds")
+                        checked: false
+                        onCheckedChanged: {
+                            if (architectureView !== null) {
+                                architectureView.enableSpeeds(showSpeedsCheckBox.checked);
+                                architectureView.setSpeedUnit(speedSelectComboBox.currentText);
+                            }
+                        }
+                    }
+
+                    ComboBox {
+                        id: speedSelectComboBox
+                        enabled: showSpeedsCheckBox.checked
+                        model: ["B/s", "KB/s", "MB/s", "GB/s", "TB/s", "PB/s"]
+                        currentIndex: 2
+                        onCurrentTextChanged: {
+                            if (architectureView !== null && showSpeedsCheckBox.checked) {
+                                architectureView.setSpeedUnit(currentText);
+                            }
                         }
                     }
                 }
@@ -97,9 +126,11 @@ Rectangle {
                     text: architectureView === null ? "Show" : "Hide"
                     onClicked: {
                         if (architectureView !== null) {
+                            architectureView.stop()
                             architectureView.destroy()
                         } else {
-                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId, hideSelfCheckbox.checked)
+                            architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId, hideSelfCheckbox.checked, showSpeedsCheckBox.checked, speedSelectComboBox.currentText)
+                            architectureView.setSpeedUnit(speedSelectComboBox.currentText);
                         }   
                     }
                 }
@@ -116,13 +147,15 @@ Rectangle {
         }
     }
 
-    function createArchitectureView(domainIdValue, hideSelf) {
+    function createArchitectureView(domainIdValue, hideSelf, enableSpeeds, currentSpeedUnit) {
 
         var component = Qt.createComponent("qrc:/src/views/nodes/NodeDetailView.qml")
         if (component.status === Component.Ready) {
             var newView = component.createObject(root, {
                 domainId: domainIdValue,
-                hideSelf: hideSelf
+                hideSelf: hideSelf,
+                speedEnabled: enableSpeeds,
+                currentSpeedUnit: currentSpeedUnit
             })
             if (newView === null) {
                 console.log("Failed to create NodeDetailView")
@@ -136,4 +169,10 @@ Rectangle {
         }
     }
 
+    function aboutToClose() {
+        console.log("DomainView: about to close!!!")
+        if (architectureView !== null) {
+            architectureView.stop()
+        }
+    }
 }
