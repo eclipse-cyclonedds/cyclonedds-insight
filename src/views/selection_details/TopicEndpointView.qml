@@ -17,6 +17,7 @@ import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
+import "qrc:/src/views/icons"
 
 
 Rectangle {

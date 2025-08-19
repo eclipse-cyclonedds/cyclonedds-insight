@@ -33,7 +33,7 @@
         <file>src/views/SettingsView.qml</file>
         <file>src/views/TopicOverview.qml</file>
         <file>src/views/selection_details/TopicEndpointView.qml</file>
-        <file>src/views/WarningTriangle.qml</file>
+        <file>src/views/icons/WarningTriangle.qml</file>
         <file>src/views/IdlDropArea.qml</file>
         <file>src/views/Overview.qml</file>
         <file>src/views/DataModelOverview.qml</file>
