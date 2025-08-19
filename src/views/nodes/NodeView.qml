@@ -19,6 +19,7 @@ import QtQuick.Shapes
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
 import "qrc:/src/views/nodes"
+import "qrc:/src/views/icons"
 
 
 Rectangle {
@@ -94,6 +95,12 @@ Rectangle {
                                 architectureView.setSpeedUnit(currentText);
                             }
                         }
+                    }
+
+                    InfoIcon {
+                        width: 15
+                        height: 15
+                        tooltipText: qsTr("This feature is only available for Cyclone DDS endpoints which have enabled Internal/MonitorPort.")
                     }
                 }
 

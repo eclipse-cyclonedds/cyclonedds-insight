@@ -58,5 +58,6 @@
         <file>src/views/nodes/NodeDetailView.qml</file>
         <file>src/views/nodes/Node.qml</file>
         <file>src/views/nodes/Edge.qml</file>
+        <file>src/views/icons/InfoIcon.qml</file>
     </qresource>
 </RCC>

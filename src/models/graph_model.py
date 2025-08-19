@@ -36,8 +36,6 @@ class GraphStatisticThread(QThread):
         self.running = False
         self.mutex = Lock()
         self.pollIntervalSeconds = 3
-        self.sent_bytes = {}
-        self.received_bytes = {}
         self.dgbPorts = {}
         self.dgbPortsRequest = {}
         self.dgbPortChangeRequest = False
@@ -46,8 +44,8 @@ class GraphStatisticThread(QThread):
         logging.debug("GraphStatisticThread: Polling data")
 
         # reset current counters for this poll
-        self.sent_bytes = {}
-        self.received_bytes = {}
+        sent_bytes = {}
+        received_bytes = {}
         already_processed_ip_port = []
 
         for participant_key in self.dgbPorts.keys():
@@ -78,25 +76,25 @@ class GraphStatisticThread(QThread):
                         continue
 
                     (_, _, nodeKey, domainId) = self.dgbPorts[pKeyCurrent]
-                    if domainId not in self.sent_bytes.keys():
-                        self.sent_bytes[domainId] = {}
-                        self.received_bytes[domainId] = {}
+                    if domainId not in sent_bytes.keys():
+                        sent_bytes[domainId] = {}
+                        received_bytes[domainId] = {}
 
                     if "writers" in participant:
                         for writer in participant["writers"]:
                             if "sent_bytes" in writer:
-                                if nodeKey in self.sent_bytes[domainId]:
-                                    self.sent_bytes[domainId][nodeKey] += writer["sent_bytes"]
+                                if nodeKey in sent_bytes[domainId]:
+                                    sent_bytes[domainId][nodeKey] += writer["sent_bytes"]
                                 else:
-                                    self.sent_bytes[domainId][nodeKey] = writer["sent_bytes"]
+                                    sent_bytes[domainId][nodeKey] = writer["sent_bytes"]
 
                     if "readers" in participant:
                         for reader in participant["readers"]:
                             if "received_bytes" in reader:
-                                if nodeKey in self.received_bytes[domainId]:
-                                    self.received_bytes[domainId][nodeKey] += reader["received_bytes"]
+                                if nodeKey in received_bytes[domainId]:
+                                    received_bytes[domainId][nodeKey] += reader["received_bytes"]
                                 else:
-                                    self.received_bytes[domainId][nodeKey] = reader["received_bytes"]
+                                    received_bytes[domainId][nodeKey] = reader["received_bytes"]
 
         # Calculate bytes per second for sent and received
         bps_sent = {}
@@ -105,28 +103,28 @@ class GraphStatisticThread(QThread):
         current_time = time.monotonic()
         if not hasattr(self, "last_poll_time"):
             self.last_poll_time = current_time
-            self.last_sent_bytes = {k: v.copy() for k, v in self.sent_bytes.items()}
-            self.last_received_bytes = {k: v.copy() for k, v in self.received_bytes.items()}
+            self.last_sent_bytes = {k: v.copy() for k, v in sent_bytes.items()}
+            self.last_received_bytes = {k: v.copy() for k, v in received_bytes.items()}
             return
 
         elapsed = current_time - self.last_poll_time
-        for domain_id in self.sent_bytes:
+        for domain_id in sent_bytes:
             bps_sent[domain_id] = {}
-            for nodeKey in self.sent_bytes[domain_id]:
+            for nodeKey in sent_bytes[domain_id]:
                 prev = self.last_sent_bytes.get(domain_id, {}).get(nodeKey, 0)
-                curr = self.sent_bytes[domain_id][nodeKey]
+                curr = sent_bytes[domain_id][nodeKey]
                 bps_sent[domain_id][nodeKey] = max(0, (curr - prev)) / elapsed if elapsed > 0 else 0
 
-        for domain_id in self.received_bytes:
+        for domain_id in received_bytes:
             bps_received[domain_id] = {}
-            for nodeKey in self.received_bytes[domain_id]:
+            for nodeKey in received_bytes[domain_id]:
                 prev = self.last_received_bytes.get(domain_id, {}).get(nodeKey, 0)
-                curr = self.received_bytes[domain_id][nodeKey]
+                curr = received_bytes[domain_id][nodeKey]
                 bps_received[domain_id][nodeKey] = max(0, (curr - prev)) / elapsed if elapsed > 0 else 0
 
         self.last_poll_time = current_time
-        self.last_sent_bytes = {k: v.copy() for k, v in self.sent_bytes.items()}
-        self.last_received_bytes = {k: v.copy() for k, v in self.received_bytes.items()}
+        self.last_sent_bytes = {k: v.copy() for k, v in sent_bytes.items()}
+        self.last_received_bytes = {k: v.copy() for k, v in received_bytes.items()}
 
         for domain_id in bps_sent.keys():
             for nodeKey in bps_sent[domain_id].keys():
