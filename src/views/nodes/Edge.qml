@@ -21,11 +21,10 @@ import "qrc:/src/views"
 
 Shape {
     id: edgeShape
-    // External properties to specify the two items (nodes)
+
     property Item node1
     property Item node2
 
-    // Optional: color and width customization
     property color edgeColor: rootWindow.isDarkMode ? "white": "black"
     property real edgeWidth: 1
 
@@ -41,16 +40,12 @@ Shape {
     property real uploadSpeedBytes: 0.0
     property real downloadSpeedBytes: 0.0
 
-    // Fill entire space of parent (you can also position manually if needed)
     anchors.fill: parent
     property string uploadText: ""
     property string downloadText: ""
     property string currentUnit: "B/s"
-
     property bool speedEnabled: false
-
     property bool isVertical: Math.abs(dx) < Math.abs(dy)
-
     property real labelOffset: 8 // distance above/below line
 
     property real startXPos: node1 ? node1.x + node1.width / 2 : 0
@@ -84,7 +79,6 @@ Shape {
         }
     }
 
-    // Upload label ABOVE line
     Label {
         id: uploadLabel
         text: "↑" + (edgeShape.uploadSpeedBytes / edgeShape.currentCalc).toFixed(2) + " " + edgeShape.currentUnit
@@ -107,17 +101,9 @@ Shape {
                 return (edgeShape.startYPos + edgeShape.endYPos) / 2 + edgeShape.ny * edgeShape.labelOffset - height / 2
             }
         }
-        rotation: 0 // keep horizontal
-
-        /*Rectangle {
-            anchors.fill: parent
-            color: rootWindow.isDarkMode ? "#333333cc" : "#f0f0f0cc"
-            radius: 4
-            z: -1
-        }*/
+        rotation: 0
     }
 
-    // Download label BELOW line
     Label {
         id: downloadLabel
         text:  "↓"  + (edgeShape.downloadSpeedBytes / edgeShape.currentCalc).toFixed(2) + " " + edgeShape.currentUnit
@@ -125,7 +111,6 @@ Shape {
         color: "#2f62b9"
         visible: node1 && node2 && edgeShape.downloadSpeedBytes > 0.00 && edgeShape.speedEnabled
 
-        // midpoint - perpendicular offset down
         x: {
             if (edgeShape.isVertical) {
                 return (edgeShape.startXPos + edgeShape.endXPos) / 2 - width / 2
@@ -140,14 +125,7 @@ Shape {
                 return (edgeShape.startYPos + edgeShape.endYPos) / 2 - edgeShape.ny * edgeShape.labelOffset - height / 2
             }
         }
-        rotation: 0 // keep horizontal
-
-        /*Rectangle {
-            anchors.fill: parent
-            color: rootWindow.isDarkMode ? "#333333cc" : "#f0f0f0cc"
-            radius: 4
-            z: -1
-        }*/
+        rotation: 0
     }
 
     function updateDownBps(bps) {
