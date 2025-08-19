@@ -25,7 +25,7 @@ Shape {
     property Item node1
     property Item node2
 
-    property color edgeColor: rootWindow.isDarkMode ? "white": "black"
+    property color edgeColor: rootWindow.isDarkMode ? "grey": "black"
     property real edgeWidth: 1
 
     property real bytesPerSecCalc: 1.0
