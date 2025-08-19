@@ -44,11 +44,17 @@ class GraphStatisticThread(QThread):
 
     def pollData(self):
         logging.debug("GraphStatisticThread: Polling data")
+
         # reset current counters for this poll
         self.sent_bytes = {}
         self.received_bytes = {}
         already_processed_ip_port = []
+
         for participant_key in self.dgbPorts.keys():
+
+            if not self.running:
+                return # fast exit
+
             (ip, port, _, _) = self.dgbPorts[participant_key]
             if f"{ip}:{port}" in already_processed_ip_port:
                 continue
