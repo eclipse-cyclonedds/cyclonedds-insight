@@ -12,6 +12,7 @@
 
 from PySide6.QtCore import QObject, Signal, Slot, QThread, Qt
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant, DcpsTopic
+from cyclonedds import qos
 from loguru import logger as logging
 import time
 import copy
@@ -234,25 +235,37 @@ class DataDomain:
     def toJson(self):
         domain_data = {
             "domain_id": self.domain_id,
-            "topic_count": len(self.topics.keys()),
-            "topics": {},
-            #"participants": []
+            "participants": {}
         }
 
-        for topic_name, topic in self.topics.items():
-            topic_data = {
-                "topic_name": topic_name,
-                "topic_types": []
+        for pKey, _ in self.participants.items():
+            domain_data["participants"][pKey] = {
+                "participant_key": pKey,
+                "readers": {},
+                "writers": {}
             }
-            processed_topic_types = set()
+
+        for _, topic in self.topics.items():
             for endpoints in [topic.reader_endpoints, topic.writer_endpoints]:
                 for _, endp in endpoints.items():
-                    if endp.endpoint.type_name not in processed_topic_types:
-                        processed_topic_types.add(endp.endpoint.type_name)
-                        topic_data["topic_types"].append({
-                            "type_name": endp.endpoint.type_name
-                        })
-            domain_data["topics"][topic_name] = topic_data
+
+                    readWriteJsonKey = "writers"
+                    if endp.isReader():
+                        readWriteJsonKey = "readers"
+
+                    partitions = []
+                    if qos.Policy.Partition in endp.endpoint.qos:
+                        for i in range(len(endp.endpoint.qos[qos.Policy.Partition].partitions)):
+                            partitions.append(str(endp.endpoint.qos[qos.Policy.Partition].partitions[i]))
+
+                    domain_data["participants"][str(endp.participant.key)][readWriteJsonKey][str(endp.endpoint.key)] = {
+                        "endpoint_key": str(endp.endpoint.key),
+                        "topic": endp.endpoint.topic_name,
+                        "type": endp.endpoint.type_name,
+                        "qos": {
+                            "partitions": partitions
+                        }
+                    }
 
         return domain_data
 
@@ -501,11 +514,9 @@ class DdsData(QObject):
 
     @Slot(str)
     def requestDdsDataToJson(self, requestId: str):
-
         logging.debug(f"requestDdsDataToJson {requestId}")
 
         dds_data = {
-            "domain_count": len(self.the_domains.keys()),
             "domains": {}
         }
         for domainId, domain in self.the_domains.items():
