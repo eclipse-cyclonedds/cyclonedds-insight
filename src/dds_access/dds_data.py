@@ -12,12 +12,14 @@
 
 from PySide6.QtCore import QObject, Signal, Slot, QThread, Qt
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant, DcpsTopic
+from cyclonedds import qos
 from loguru import logger as logging
 import time
 import copy
 from queue import Queue
 from typing import Dict, List, Optional
 import gc
+import json
 
 from dds_access.builtin_observer import BuiltInObserver
 from dds_access.dds_utils import getDataType
@@ -230,6 +232,43 @@ class DataDomain:
         self.obs_thread.stop()
         self.obs_thread.wait()
 
+    def toJson(self):
+        domain_data = {
+            "domain_id": self.domain_id,
+            "participants": {}
+        }
+
+        for pKey, _ in self.participants.items():
+            domain_data["participants"][pKey] = {
+                "participant_key": pKey,
+                "readers": {},
+                "writers": {}
+            }
+
+        for _, topic in self.topics.items():
+            for endpoints in [topic.reader_endpoints, topic.writer_endpoints]:
+                for _, endp in endpoints.items():
+
+                    readWriteJsonKey = "writers"
+                    if endp.isReader():
+                        readWriteJsonKey = "readers"
+
+                    partitions = []
+                    if qos.Policy.Partition in endp.endpoint.qos:
+                        for i in range(len(endp.endpoint.qos[qos.Policy.Partition].partitions)):
+                            partitions.append(str(endp.endpoint.qos[qos.Policy.Partition].partitions[i]))
+
+                    domain_data["participants"][str(endp.participant.key)][readWriteJsonKey][str(endp.endpoint.key)] = {
+                        "endpoint_key": str(endp.endpoint.key),
+                        "topic": endp.endpoint.topic_name,
+                        "type": endp.endpoint.type_name,
+                        "qos": {
+                            "partitions": partitions
+                        }
+                    }
+
+        return domain_data
+
 class BuiltInReceiver(QObject):
 
     newParticipantSignal = Signal(int, DcpsParticipant)
@@ -303,6 +342,7 @@ class DdsData(QObject):
     response_endpoints_by_participant_key_signal = Signal(str, int, DataEndpoint)
     response_participants_signal = Signal(str, int, object)
     response_participant_by_key = Signal(str, object)
+    response_dds_data_json_signal = Signal(str, str)
 
     no_more_mismatch_in_topic_signal = Signal(int, str)
     publish_mismatch_signal = Signal(int, str, list)
@@ -471,3 +511,15 @@ class DdsData(QObject):
         logging.debug(f"requestDomainIds {requestId}")
         domains = list(self.the_domains.keys())
         self.response_domain_ids_signal.emit(requestId, domains)
+
+    @Slot(str)
+    def requestDdsDataToJson(self, requestId: str):
+        logging.debug(f"requestDdsDataToJson {requestId}")
+
+        dds_data = {
+            "domains": {}
+        }
+        for domainId, domain in self.the_domains.items():
+            dds_data["domains"][domainId] = domain.toJson()
+
+        self.response_dds_data_json_signal.emit(requestId, json.dumps(dds_data, indent=4))
