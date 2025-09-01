@@ -100,6 +100,10 @@ ToolBar {
                     onTriggered: logViewId.visible = true
                 }
                 MenuItem {
+                    text: "Export DDS Entities (JSON)"
+                    onTriggered: exportDdsSystemFileDialog.open()
+                }
+                MenuItem {
                     text: "Check for Updates"
                     onTriggered: checkForUpdatesWindow.visible = true
                 }

@@ -16,16 +16,24 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import Qt
 from loguru import logger as logging
 import os
+import uuid
 import sys
 from enum import Enum
+from dds_access import dds_data
 
 
 class QmlUtils(QObject):
 
     aboutToQuit = Signal()
+    requestDdsDataJsonSignal = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        self.ddsDataJsonRequests = {}
+        self.dds_data = dds_data.DdsData()
+        self.requestDdsDataJsonSignal.connect(self.dds_data.requestDdsDataToJson, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.response_dds_data_json_signal.connect(self.providedDdsDataJson, Qt.ConnectionType.QueuedConnection)
 
     @Slot(int)
     def setColorScheme(self, scheme):
@@ -95,3 +103,15 @@ class QmlUtils(QObject):
         if file_path.startswith("file://"):
             return file_path[7:]
         return file_path
+
+    @Slot(str)
+    def exportDdsDataAsJson(self, filePath):
+        logging.info("Request export dds data as json ...")
+        reqId = str(uuid.uuid4())
+        self.ddsDataJsonRequests[reqId] = filePath
+        self.requestDdsDataJsonSignal.emit(reqId)
+
+    @Slot(str, str,)
+    def providedDdsDataJson(self, reqId, content):
+        if reqId in self.ddsDataJsonRequests.keys():
+            self.saveFileContent(self.ddsDataJsonRequests[reqId], content)

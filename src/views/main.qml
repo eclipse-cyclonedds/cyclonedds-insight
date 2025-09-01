@@ -10,6 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 */
 
+import QtCore
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
@@ -36,6 +37,13 @@ ApplicationWindow {
 
     menuBar: MenuBar {
         visible: Qt.platform.os === "osx"
+        Menu {
+            title: "File"
+            MenuItem {
+                text: "Export DDS Entities (JSON)"
+                onTriggered: exportDdsSystemFileDialog.open()
+            }
+        }
         Menu {
             title: "View"
             MenuItem {
@@ -177,5 +185,18 @@ ApplicationWindow {
     ShapesDemoView {
         id: shapeDemoViewId
         visible: false
+    }
+
+    FileDialog {
+        id: exportDdsSystemFileDialog
+        currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "json"
+        title: "Export DDS System to json"
+        onAccepted: {
+            qmlUtils.createFileFromQUrl(selectedFile)
+            var localPath = qmlUtils.toLocalFile(selectedFile);
+            qmlUtils.exportDdsDataAsJson(localPath);
+        }
     }
 }
