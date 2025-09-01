@@ -177,7 +177,7 @@ Rectangle {
     }
 
     function aboutToClose() {
-        console.log("DomainView: about to close!!!")
+        console.log("NodeView: about to close.")
         if (architectureView !== null) {
             architectureView.stop()
         }

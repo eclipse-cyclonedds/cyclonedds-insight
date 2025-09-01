@@ -51,8 +51,7 @@ Rectangle {
     }
 
     function aboutToClose() {
-        console.log("DomainView: about to close!!!")
+        console.log("DomainView: about to close.")
         nodeViewId.aboutToClose()
-        // Perform any cleanup or state saving here if necessary
     }
 }
