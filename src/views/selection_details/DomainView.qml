@@ -43,9 +43,15 @@ Rectangle {
         }
 
         NodeView {
+            id: nodeViewId
             domainId: domainViewId.domainId
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
+    }
+
+    function aboutToClose() {
+        console.log("DomainView: about to close.")
+        nodeViewId.aboutToClose()
     }
 }

@@ -33,7 +33,7 @@
         <file>src/views/SettingsView.qml</file>
         <file>src/views/TopicOverview.qml</file>
         <file>src/views/selection_details/TopicEndpointView.qml</file>
-        <file>src/views/WarningTriangle.qml</file>
+        <file>src/views/icons/WarningTriangle.qml</file>
         <file>src/views/IdlDropArea.qml</file>
         <file>src/views/Overview.qml</file>
         <file>src/views/DataModelOverview.qml</file>
@@ -58,5 +58,6 @@
         <file>src/views/nodes/NodeDetailView.qml</file>
         <file>src/views/nodes/Node.qml</file>
         <file>src/views/nodes/Edge.qml</file>
+        <file>src/views/icons/InfoIcon.qml</file>
     </qresource>
 </RCC>

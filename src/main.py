@@ -171,9 +171,13 @@ if __name__ == "__main__":
     logging.info("qt ... DONE")
 
     logging.info("Clean up ...")
+    logging.debug("Shutdown shapes demo ...")
     shapesDemoModel.stop()
+    logging.debug("Shutdown data model ...")
     datamodelRepoModel.shutdownEndpoints()
+    logging.debug("Shutdown data ...")
     data.join_observer()
+    logging.debug("Shutdown worker thread ...")
     worker_thread.quit()
     worker_thread.wait()
     logging.info("Clean up ... DONE")

@@ -54,6 +54,7 @@ class PollingThread(QThread):
         logging.trace("Debug monitor timer triggered")
 
         ag_sent_bytes = {}
+        ag_received_bytes = {}
         ag_rexmit_bytes = {}
         ag_n_nacks_received = {}
         ag_rexmit_count = {}
@@ -153,7 +154,25 @@ class PollingThread(QThread):
                                     else:
                                         ag_n_reliable_readers[aggkey] = heartbeat["n_reliable_readers"]
 
+                    if "readers" in participant:
+                        for reader in participant["readers"]:
+                            if self.aggregateBy == "reader":
+                                aggkey = dds_utils.normalizeGuid(reader["guid"])
+                            if self.aggregateBy == "topic":
+                                topic = reader["topic"]
+                                aggkey = topic
+
+                            if aggkey not in self.color_mapping:
+                                self.color_mapping[aggkey] = self.getRandomColor()
+
+                            if "received_bytes" in reader:
+                                if aggkey in ag_received_bytes:
+                                    ag_received_bytes[aggkey] += reader["received_bytes"]
+                                else:
+                                    ag_received_bytes[aggkey] = reader["received_bytes"]
+
         self.onData.emit("sent_bytes", ag_sent_bytes.copy(), self.color_mapping.copy())
+        self.onData.emit("received_bytes", ag_received_bytes.copy(), self.color_mapping.copy())
         self.onData.emit("rexmit_bytes", ag_rexmit_bytes.copy(), self.color_mapping.copy())
         self.onData.emit("n_acks_received", ag_n_acks_received.copy(), self.color_mapping.copy())
         self.onData.emit("n_nacks_received", ag_n_nacks_received.copy(), self.color_mapping.copy())
@@ -241,6 +260,7 @@ class StatisticsModel(QAbstractTableModel):
 
         self.unitModels = {}
         self.unitModels["sent_bytes"] = StatisticsUnitModel(self.pollingThread, "sent_bytes")
+        self.unitModels["received_bytes"] = StatisticsUnitModel(self.pollingThread, "received_bytes")
         self.unitModels["rexmit_bytes"] = StatisticsUnitModel(self.pollingThread, "rexmit_bytes")
         self.unitModels["rexmit_count"] = StatisticsUnitModel(self.pollingThread, "rexmit_count")
         self.unitModels["n_acks_received"] = StatisticsUnitModel(self.pollingThread, "n_acks_received")
@@ -250,6 +270,10 @@ class StatisticsModel(QAbstractTableModel):
         self.unitDescriptions = {
             "sent_bytes": {
                 "description": "Total number of bytes sent by a writer (excluding retransmits).",
+                "unit": "bytes"
+            },
+            "received_bytes": {
+                "description": "Total number of bytes received by a reader (excluding retransmits).",
                 "unit": "bytes"
             },
             "rexmit_bytes": {
