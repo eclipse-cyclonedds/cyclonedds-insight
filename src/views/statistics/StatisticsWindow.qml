@@ -155,6 +155,57 @@ Rectangle {
                 }
             }
 
+            GroupBox {
+                id: chatGroubBox
+                title: qsTr("Chart Size")
+                spacing: 0
+
+                ColumnLayout {
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    spacing: 0
+
+                    Button {
+                        text: "Increase Width"
+                        width: 36
+                        height: 36
+                        onClicked: {
+                            statisticsView.itemChartWidth += 50
+                        }
+                    }
+                    Button {
+                        text: "Decrease Width"
+                        width: 36
+                        height: 36
+                        onClicked: {
+                            if (statisticsView.itemChartWidth >= 400) {
+                                statisticsView.itemChartWidth -= 50
+                            }
+                        }
+                    }
+                    Button {
+                        text: "Increase Height"
+                        width: 36
+                        height: 36
+                        onClicked: {
+                            statisticsView.itemCellHeight += 50
+                        }
+                    }
+                    Button {
+                        text: "Decrease Height"
+                        width: 36
+                        height: 36
+                        onClicked: {
+                            if (statisticsView.itemCellHeight >= 300) {
+                                statisticsView.itemCellHeight -= 50
+                            }
+                        }
+                    }
+
+                }
+
+            }
+
             Rectangle {
                 id: statErrorWindow
                 color: "transparent"

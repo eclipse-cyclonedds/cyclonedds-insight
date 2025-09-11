@@ -26,6 +26,8 @@ Rectangle {
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
     property var statisticModel: Object.create(null)
     property int keepHistoryMinutes: 10
+    property int itemCellHeight: 400
+    property int itemChartWidth: 450
 
     function startStatistics() {
         if (statisticModel) {
@@ -66,7 +68,7 @@ Rectangle {
                 model: statisticModel
                 delegate: Item {
                     id: currentStatUnitId
-                    Layout.preferredHeight: 400
+                    Layout.preferredHeight: itemCellHeight
                     Layout.preferredWidth: rootStatViewId.width
 
                     property var lineSeriesDict: Object.create(null)
@@ -142,17 +144,19 @@ Rectangle {
                             Layout.fillWidth: true
                             spacing: 0
 
+
                             ChartView {
                                 id: myChart
 
-                                Layout.preferredHeight: 350
-                                Layout.preferredWidth: 450
+                                Layout.preferredHeight: itemCellHeight * 0.9
+                                Layout.preferredWidth: itemChartWidth
                                 Layout.alignment: Qt.AlignTop
                                 
                                 title: name_role
                                 antialiasing: true
                                 legend.visible: false
                                 legend.alignment: Qt.AlignRight
+                                localizeNumbers: true
 
                                 ValueAxis {
                                     id: axisY
@@ -160,6 +164,8 @@ Rectangle {
                                     tickCount: 5
                                     min: 500
                                     max: 10
+
+                                    
                                 }
 
                                 DateTimeAxis {
@@ -172,8 +178,9 @@ Rectangle {
                             }
 
                             ColumnLayout {
-                                Layout.preferredHeight: 350
-                                Layout.preferredWidth: rootStatViewId.width - 450
+                                id: tableLayout
+                                Layout.preferredHeight: itemCellHeight * 0.9
+                                Layout.preferredWidth: rootStatViewId.width - itemChartWidth
                                 Layout.alignment: Qt.AlignTop
                                 spacing: 0
 
@@ -197,7 +204,7 @@ Rectangle {
                                     model: table_model_role
 
                                     delegate: Item {
-                                        implicitWidth: model.column === 0 ? (rootStatViewId.width - 450) * 0.7 : (rootStatViewId.width - 450) * 0.3
+                                        implicitWidth: model.column === 0 ? (tableLayout.implicitWidth) * 0.7 : (tableLayout.implicitWidth) * 0.3
                                         implicitHeight: 25
    
                                         Label {
