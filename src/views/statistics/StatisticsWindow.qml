@@ -159,49 +159,58 @@ Rectangle {
                 id: chatGroubBox
                 title: qsTr("Chart Size")
                 spacing: 0
+                Layout.preferredHeight: settingsGroubBox.height
+                Layout.preferredWidth: 100
 
-                ColumnLayout {
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    spacing: 0
+                Button {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.top
+                    anchors.topMargin: 16
+                    text: "↑"
+                    width: 40
+                    height: 40
+                    onClicked: {
+                        if (statisticsView.itemCellHeight >= 300) {
+                            statisticsView.itemCellHeight -= 50
+                        }
+                    }
+                }
+                Button {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 1
+                    text: "←"
+                    width: 40
+                    height: 40
+                    onClicked: {
+                        if (statisticsView.itemChartWidth >= 400) {
+                            statisticsView.itemChartWidth -= 50
+                        }
+                    }
+                }
+                Button {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.right: parent.right
+                    anchors.rightMargin: 1
+                    text: "→"
+                    width: 40
+                    height: 40
+                    onClicked: {
+                        statisticsView.itemChartWidth += 50
+                    }
+                }
 
-                    Button {
-                        text: "Increase Width"
-                        width: 36
-                        height: 36
-                        onClicked: {
-                            statisticsView.itemChartWidth += 50
-                        }
-                    }
-                    Button {
-                        text: "Decrease Width"
-                        width: 36
-                        height: 36
-                        onClicked: {
-                            if (statisticsView.itemChartWidth >= 400) {
-                                statisticsView.itemChartWidth -= 50
-                            }
-                        }
-                    }
-                    Button {
-                        text: "Increase Height"
-                        width: 36
-                        height: 36
-                        onClicked: {
-                            statisticsView.itemCellHeight += 50
-                        }
-                    }
-                    Button {
-                        text: "Decrease Height"
-                        width: 36
-                        height: 36
-                        onClicked: {
-                            if (statisticsView.itemCellHeight >= 300) {
-                                statisticsView.itemCellHeight -= 50
-                            }
-                        }
-                    }
 
+                Button {
+                    text: "↓"
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 16
+                    width: 40
+                    height: 40
+                    onClicked: {
+                        statisticsView.itemCellHeight += 50
+                    }
                 }
 
             }

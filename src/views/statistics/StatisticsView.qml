@@ -10,9 +10,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 */
 
+import QtCore
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtCharts
 import Qt.labs.qmlmodels
@@ -144,7 +146,6 @@ Rectangle {
                             Layout.fillWidth: true
                             spacing: 0
 
-
                             ChartView {
                                 id: myChart
 
@@ -164,8 +165,6 @@ Rectangle {
                                     tickCount: 5
                                     min: 500
                                     max: 10
-
-                                    
                                 }
 
                                 DateTimeAxis {
@@ -174,6 +173,29 @@ Rectangle {
                                     tickCount: 5
                                     min: (Date.now() / 1000) - (60 * keepHistoryMinutes);
                                     max: (Date.now() / 1000) + (60 * keepHistoryMinutes);
+                                }
+
+                                Rectangle {
+                                    anchors.top: parent.top
+                                    anchors.right: parent.right
+                                    anchors.margins: 10
+                                    width: 80
+                                    height: 20
+                                    color: chartControlMiniMouseArea.pressed ? "lightgrey" : "transparent"
+                                    
+                                    Label {
+                                        text: "Export CSV"
+                                        anchors.centerIn: parent
+                                        color: "black"
+                                    }
+                                    MouseArea {
+                                        id: chartControlMiniMouseArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onClicked: {
+                                            exportCsvDialog.open()
+                                        }
+                                    }
                                 }
                             }
 
@@ -218,6 +240,68 @@ Rectangle {
                                     }
                                 }
                             }
+                        }
+                    }
+
+                    FileDialog {
+                        id: exportCsvDialog
+                        currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
+                        fileMode: FileDialog.SaveFile
+                        defaultSuffix: "json"
+                        title: "Export Tester Preset"
+                        nameFilters: ["CSV files (*.csv)"]
+                        selectedFile: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0] + "/" + name_role + ".json"
+                        onAccepted: {
+                            console.info("Export CSV to " + selectedFile)
+                            qmlUtils.createFileFromQUrl(selectedFile)
+                            var localPath = qmlUtils.toLocalFile(selectedFile);
+                            var csv = "Timestamp";
+
+                            // CSV Header
+                            for (var guid in currentStatUnitId.lineSeriesDict) {
+                                csv += "," + guid;
+                            }
+                            csv += "\n";
+
+                            // Collect all unique timestamps
+                            var timestampSet = new Set();
+                            var guidList = [];
+                            for (var guid in currentStatUnitId.lineSeriesDict) {
+                                guidList.push(guid);
+                                var line = currentStatUnitId.lineSeriesDict[guid];
+                                for (var i = 0; i < line.count; ++i) {
+                                    var point = line.at(i);
+                                    timestampSet.add(point.x);
+                                }
+                            }
+                            var timestamps = Array.from(timestampSet);
+                            timestamps.sort(function(a, b) { return a - b; });
+
+                            // Build a lookup: guid -> {timestamp -> value}
+                            var valueMap = {};
+                            for (var g = 0; g < guidList.length; ++g) {
+                                var guid = guidList[g];
+                                var line = currentStatUnitId.lineSeriesDict[guid];
+                                valueMap[guid] = {};
+                                for (var i = 0; i < line.count; ++i) {
+                                    var point = line.at(i);
+                                    valueMap[guid][point.x] = point.y;
+                                }
+                            }
+
+                            // Write CSV rows
+                            var lastValues = {};
+                            for (var t = 0; t < timestamps.length; ++t) {
+                                var row = "" + timestamps[t];
+                                for (var g = 0; g < guidList.length; ++g) {
+                                    var guid = guidList[g];
+                                    var val = valueMap[guid][timestamps[t]];
+                                    row += "," + (val !== undefined ? val : "");
+                                }
+                                csv += row + "\n";
+                            }
+
+                            qmlUtils.saveFileContent(localPath, csv);
                         }
                     }
                 }
