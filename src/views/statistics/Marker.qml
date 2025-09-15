@@ -13,7 +13,6 @@
 import QtQuick
 import QtCharts
 import QtQuick.Controls
-
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
 
@@ -22,8 +21,8 @@ Item {
     id: root
     property var chart
     property var axisX
-    property double time: 0    // ms since epoch
-    property string text: ""   // label text
+    property double time: 0
+    property string text: ""
 
     // normalize everything to ms
     function toMs(v) {
@@ -56,7 +55,7 @@ Item {
         text: root.text
         color: "red"
         font.pixelSize: 12
-        x: root.xPos - width / 2   // follow same x as line
+        x: root.xPos - width / 2
         y: chart.plotArea.y - height - 4
     }
 }
