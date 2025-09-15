@@ -296,7 +296,10 @@ Rectangle {
                                 for (var g = 0; g < guidList.length; ++g) {
                                     var guid = guidList[g];
                                     var val = valueMap[guid][timestamps[t]];
-                                    row += "," + (val !== undefined ? val : "");
+                                    if (val !== undefined) {
+                                        lastValues[guid] = val; // update last known value
+                                    }
+                                    row += "," + (lastValues[guid] !== undefined ? lastValues[guid] : "");
                                 }
                                 csv += row + "\n";
                             }
