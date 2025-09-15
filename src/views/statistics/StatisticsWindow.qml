@@ -157,7 +157,7 @@ Rectangle {
 
             GroupBox {
                 id: chatGroubBox
-                title: qsTr("Chart Size")
+                title: qsTr("Chart Controls")
                 spacing: 0
                 Layout.preferredHeight: settingsGroubBox.height
 
@@ -166,40 +166,63 @@ Rectangle {
                     Layout.fillWidth: true
                     spacing: 0
 
-                    Button {
-                        text: "↑"
-                        onClicked: {
-                            if (statisticsView.itemCellHeight >= 300) {
-                                statisticsView.itemCellHeight -= 50
-                            }
-                        }
-                    }
-                    Button {
-                        text: "↓"
-                        onClicked: {
-                            statisticsView.itemCellHeight += 50
-                        }
-                    }
-                RowLayout {
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    spacing: 0
+                    RowLayout {
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                        spacing: 0
 
-                    Button {
-                        text: "←"
-                        onClicked: {
-                            if (statisticsView.itemChartWidth >= 400) {
-                                statisticsView.itemChartWidth -= 50
+                        Button {
+                            text: "←"
+                            onClicked: {
+                                if (statisticsView.itemChartWidth >= 400) {
+                                    statisticsView.itemChartWidth -= 50
+                                }
+                            }
+                        }
+                        Button {
+                            text: "→"
+                            onClicked: {
+                                statisticsView.itemChartWidth += 50
+                            }
+                        }
+                        Button {
+                            text: "↑"
+                            onClicked: {
+                                if (statisticsView.itemCellHeight >= 300) {
+                                    statisticsView.itemCellHeight -= 50
+                                }
+                            }
+                        }
+                        Button {
+                            text: "↓"
+                            onClicked: {
+                                statisticsView.itemCellHeight += 50
                             }
                         }
                     }
-                    Button {
-                        text: "→"
-                        onClicked: {
-                            statisticsView.itemChartWidth += 50
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 30
+                        spacing: 0
+
+                        Button {
+                            text: "Add Marker"
+                            enabled: statsRunning
+                            onClicked: {
+                                statisticsView.addMarkerToAllCharts(markerTextField.text, Date.now()); 
+                            }
                         }
-                    
+                        Button {
+                            text: "Clear Markers"
+                            onClicked: {
+                                statisticsView.clearMarkers()
+                            }
+                        }
                     }
+                    TextField {
+                        id: markerTextField
+                        placeholderText: "Enter Marker Name"
+                        Layout.fillWidth: true
                     }
                 }
             }
