@@ -31,6 +31,8 @@ Rectangle {
     property int itemCellHeight: 400
     property int itemChartWidth: 450
 
+    property var markers: []
+
     function startStatistics() {
         if (statisticModel) {
             console.log("Starting statistics");
@@ -57,6 +59,23 @@ Rectangle {
         keepHistoryMinutes = minutes
     }
 
+    function addMarkerToAllCharts(time, text) {
+        for (let i = 0; i < chartRepeater.count; i++) {
+            let chartObj = chartRepeater.itemAt(i);
+            if (chartObj && chartObj.addMarker) {
+                chartObj.addMarker(time, text);
+            }
+        }
+    }
+
+    function clearMarkers() {
+        console.debug("Clear markers, count:", markers.length);
+        for (var i = 0; i < markers.length; i++) {
+            markers[i].destroy();
+        }
+        markers = [];
+    }
+
     ScrollView {
         anchors.fill: parent
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -67,6 +86,7 @@ Rectangle {
             spacing: 0
 
             Repeater {
+                id: chartRepeater
                 model: statisticModel
                 delegate: Item {
                     id: currentStatUnitId
@@ -78,6 +98,23 @@ Rectangle {
                     Component.onCompleted: {
                         axisX.min = new Date(Date.now() - 2 * 60 * 1000)
                         axisX.max = new Date(Date.now())
+                    }
+
+                    function addMarker(labelText, timeMs) {
+                        var comp = Qt.createComponent("qrc:/src/views/statistics/Marker.qml");
+                        if (comp.status === Component.Ready) {
+                            var m = comp.createObject(markersLayer, {
+                                chart: myChart,
+                                axisX: axisX,
+                                time: timeMs,
+                                text: labelText
+                            });
+                            if (m) {
+                                markers.push(m);
+                            }
+                        } else {
+                            console.log("Marker error:", comp.errorString());
+                        }
                     }
 
                     Connections {
@@ -196,6 +233,11 @@ Rectangle {
                                             exportCsvDialog.open()
                                         }
                                     }
+                                }
+                                Item {
+                                    id: markersLayer
+                                    anchors.fill: parent
+                                    z: 1000
                                 }
                             }
 

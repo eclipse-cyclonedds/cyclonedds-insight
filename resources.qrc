@@ -48,6 +48,7 @@
         <file>src/views/LogWindow.qml</file>
         <file>src/views/statistics/StatisticsView.qml</file>
         <file>src/views/statistics/StatisticsWindow.qml</file>
+        <file>src/views/statistics/Marker.qml</file>
         <file>src/views/selection_details/DomainView.qml</file>
         <file>src/views/shapes_demo/ShapesDemoView.qml</file>
         <file>src/views/shapes_demo/ShapesDemoCircle.qml</file>
