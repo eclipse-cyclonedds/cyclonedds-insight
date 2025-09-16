@@ -69,6 +69,7 @@ Rectangle {
     }
 
     function clearMarkers() {
+        console.debug("Clear markers, count:", markers.length);
         for (var i = 0; i < markers.length; i++) {
             markers[i].destroy();
         }
