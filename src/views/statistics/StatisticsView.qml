@@ -269,7 +269,7 @@ Rectangle {
                                     model: table_model_role
 
                                     delegate: Item {
-                                        implicitWidth: model.column === 0 ? 50 : model.column === 1 ? (tableLayout.implicitWidth) * 0.6 : (tableLayout.implicitWidth) * 0.3
+                                        implicitWidth: model.column === 0 ? 60 : model.column === 1 ? (tableLayout.implicitWidth) * 0.6 : (tableLayout.implicitWidth) * 0.3
                                         implicitHeight: 25
    
                                         Label {
