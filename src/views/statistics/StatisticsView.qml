@@ -292,7 +292,7 @@ Rectangle {
                         defaultSuffix: "json"
                         title: "Export Tester Preset"
                         nameFilters: ["CSV files (*.csv)"]
-                        selectedFile: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0] + "/" + name_role + ".json"
+                        selectedFile: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0] + "/" + name_role + ".csv"
                         onAccepted: {
                             console.info("Export CSV to " + selectedFile)
                             qmlUtils.createFileFromQUrl(selectedFile)
