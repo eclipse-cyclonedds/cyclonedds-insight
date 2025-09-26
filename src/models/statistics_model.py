@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import Qt, QModelIndex, Qt, QThread, Signal, Slot, QAbstractTableModel, QAbstractListModel, QObject
+from PySide6.QtCore import Qt, QModelIndex, Qt, QThread, Signal, Slot, QAbstractTableModel, QLocale
 from PySide6.QtGui import QColor
 from loguru import logger as logging
 import uuid
@@ -491,7 +491,11 @@ class StatisticsUnitModel(QAbstractTableModel):
                 return True
         elif role == Qt.DisplayRole:
             column = index.column()
-            return item[column-1]
+            curItem = item[index.column()-1]
+            if column == 2:
+                if isinstance(curItem, float) or (isinstance(curItem, int) and not isinstance(curItem, bool)):
+                    return QLocale().toString(curItem)
+            return curItem
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
