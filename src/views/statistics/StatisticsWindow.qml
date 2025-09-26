@@ -214,9 +214,7 @@ Rectangle {
                         }
                         Button {
                             text: "Clear Markers"
-                            onClicked: {
-                                statisticsView.clearMarkers()
-                            }
+                            onClicked: clearMarkerDialog.open()
                         }
                     }
                     TextField {
@@ -291,6 +289,18 @@ Rectangle {
             visible: true
             Layout.fillWidth: true
             Layout.fillHeight: true
+        }
+    }
+
+    MessageDialog {
+        id: clearMarkerDialog
+        title: qsTr("Alert");
+        text: qsTr("Sure to clear all markers?");
+        buttons: MessageDialog.Ok | MessageDialog.Cancel;
+        onButtonClicked: function (button, role) {
+            if (role === MessageDialog.AcceptRole || role === MessageDialog.YesRole) {
+                statisticsView.clearMarkers()
+            }
         }
     }
 
