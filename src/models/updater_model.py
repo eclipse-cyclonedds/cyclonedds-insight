@@ -34,6 +34,7 @@ class WorkerThread(QThread):
         super().__init__()
         self.running = False
         self.mutex = Lock()
+        self.success = False
 
     def run(self):
         self.running = True
@@ -57,10 +58,11 @@ class WorkerThread(QThread):
         return local_filename
 
     @Slot(str, str, str)
-    def setDownloadInfo(self, organization, project, buildId):
+    def setDownloadInfo(self, organization, project, buildId, appDir):
         self.organization = organization
         self.project = project
         self.buildId = buildId
+        self.appDir = appDir
 
     @Slot()
     def stop(self):
@@ -124,11 +126,14 @@ class WorkerThread(QThread):
                     logging.info(f"Unzipped artifact to: {path}")
 
                     # Extract .tar.gz files in the artifact directory
-                    appPath = sys._MEIPASS
+                    appPath = self.appDir
+                    if self.appDir == "":
+                        appPath = sys._MEIPASS
                     # appPath = "/Users/sventrittler/test/CycloneDDS Insight.app/Contents/Frameworks"
                     if appPath.endswith("/Contents/Frameworks"):
                         appPath = appPath[:appPath.rfind("/Contents/Frameworks")]
 
+                    logging.debug(f"appPath={appPath}")
                     artifact_dir = os.path.dirname(appPath)
                     logging.debug(f"Artifact directory: {artifact_dir}")
 
@@ -137,9 +142,26 @@ class WorkerThread(QThread):
 
                     self.installCompleted.emit()
                     self.message.emit("Installing ...")
-                    with tarfile.open(tar_gz_path, "r:gz") as tar:
-                        tar.extractall(artifact_dir)
-                    logging.info(f"Extracted {tar_gz_path} to {artifact_dir}")
+
+                    if platform == "darwin":
+                        with tarfile.open(tar_gz_path, "r:gz") as tar:
+                            tar.extractall(artifact_dir)
+                        logging.info(f"Extracted {tar_gz_path} to {artifact_dir}")
+                    else:
+                        tempUnarchivedFolder = QTemporaryDir()
+                        logging.info(f"Extract {tar_gz_path} to {tempUnarchivedFolder.path()}")
+                        with tarfile.open(tar_gz_path, "r:gz") as tar:
+                            tar.extractall(tempUnarchivedFolder.path())
+                        
+                        logging.info(f"Copy files to {artifact_dir}")
+                        shutil.copytree(tempUnarchivedFolder.path(), artifact_dir, dirs_exist_ok=True)
+                        logging.info(f"Copy done")
+
+                    if platform == "darwin":
+                        openCmd = "open"
+                    else:
+                        openCmd = ""
+                        appPath = f"{appPath}{os.sep}CycloneDDS Insight"
 
                     # Launch the application
                     self.installCompleted.emit()
@@ -147,15 +169,15 @@ class WorkerThread(QThread):
                     logging.info(f"Launching the new application instance... {appPath}")
                     process = QProcess()
                     process.setProgram("sh")
-                    process.setArguments(["-c", f"sleep 2 && open \"{appPath}\""])
+                    process.setArguments(["-c", f"sleep 2 && {openCmd} \"{appPath}\""])
 
                     success = process.startDetached()
                     if not success:
                         logging.error("Failed to launch the new application instance.")
                         raise ValueError("Failed to launch the new application instance.")
 
-                    logging.info("Exiting the current application instance...")
-                    QApplication.quit()
+                    logging.info("Update success")
+                    self.success = True
 
                 else:
                     logging.error("No suitable artifact found for platform.")
@@ -175,11 +197,11 @@ class UpdaterModel(QObject):
         super().__init__(parent)
         self.worker = None
 
-    @Slot(str, str, str)
-    def downloadFile(self, organization, project, buildId):
+    @Slot(str, str, str, str)
+    def downloadFile(self, organization, project, buildId, appDir):
 
-        if sys.platform == "darwin":
-            logging.info("Running on Apple macOS")
+        if sys.platform == "darwin" or appDir != "":
+            logging.info("Running update directly")
 
             self.updateStepCompleted.emit("Downloading...")
             self.worker = WorkerThread()
@@ -187,21 +209,22 @@ class UpdaterModel(QObject):
             self.worker.installCompleted.connect(self.installCompleted)
             self.worker.error.connect(self.installError)
             self.worker.message.connect(self.installMessage)
-            self.worker.setDownloadInfo(organization, project, buildId)
+            self.worker.setDownloadInfo(organization, project, buildId, appDir)
             self.worker.start()
 
             self.worker.finished.connect(self.onWorkerFinished)
 
         else:
-            logging.info(f"Not running on Apple macOS, platform: {sys.platform}, using Updater executable")
+            logging.info(f"Update via Updater exe")
 
             tempdir = QTemporaryDir()
             tempdir.setAutoRemove(False)
 
             appPath = sys._MEIPASS
+            logging.debug(f"appPath raw: {appPath}")
             if appPath.endswith("/_internal"):
                 appPath = appPath[:appPath.rfind("/_internal")]
-            appDir = os.path.dirname(appPath)
+            appDir = appPath
 
             # Copy a file to cxyz
             updaterExe = "Updater.exe" if sys.platform.startswith("win") else "Updater"
@@ -210,9 +233,11 @@ class UpdaterModel(QObject):
             logging.info(f"Copied {updaterFilePath} to {updaterFilePathDest}")
             shutil.copy2(updaterFilePath, updaterFilePathDest)
 
-            process = QProcess()
-            process.setWorkingDirectory(appDir)
-            process.setProgram("Updater")
+            logging.debug(f"appDir: {appDir}")
+
+            process: QProcess = QProcess()
+            process.setWorkingDirectory(tempdir.path())
+            process.setProgram("./Updater")
             process.setArguments(["--appDir", appDir, "--organization", organization, "--project", project, "--buildId", buildId])
 
             success = process.startDetached()
@@ -224,6 +249,11 @@ class UpdaterModel(QObject):
     @Slot()
     def onWorkerFinished(self):
         logging.debug("Worker thread finished")
+
+        if self.worker:
+            logging.info("Exiting the current application instance after successful update...")
+            if self.worker.success:
+                QApplication.quit()
 
     @Slot(int)
     def onDownloadedBytes(self, bytes: int):

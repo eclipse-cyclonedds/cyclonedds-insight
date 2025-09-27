@@ -38,7 +38,8 @@ ApplicationWindow {
     property bool shutdownInitiated: false
 
     Component.onCompleted: {
-        //updaterView.startUpdate(organization, project, newBuildId)
+        console.info("Target app dir:", APPDIR)
+        updaterView.startUpdate(ORGANIZATION, PROJECT, NEWBUILDID, APPDIR)
     }
 
     UpdaterView {

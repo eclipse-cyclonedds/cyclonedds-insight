@@ -34,12 +34,14 @@ Window {
     minimumWidth: width
     minimumHeight: height
 
-    function startUpdate(organization, project, newBuildId) {
+    function startUpdate(organization, project, newBuildId, isExternUpdater) {
         console.log("Starting update process...");
+        if (Qt.platform.os === "osx") {
+            checkForUpdatesWindow.visible = false
+        }
         updaterView.visible = true
-        checkForUpdatesWindow.visible = false
         rootWindow.hide()
-        updaterModel.downloadFile(organization, project, newBuildId)
+        updaterModel.downloadFile(organization, project, newBuildId, isExternUpdater)
     }
 
     Connections {
