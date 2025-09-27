@@ -17,6 +17,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 
+import "qrc:/src/views"
+
 
 Window {
     id: updaterRootWindow

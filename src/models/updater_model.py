@@ -13,17 +13,7 @@
 from PySide6.QtCore import QModelIndex, Qt, QThread, Signal, Slot, QProcess, QObject, QTemporaryDir
 from PySide6.QtWidgets import QApplication
 from loguru import logger as logging
-import uuid
 import requests
-import json
-from dds_access import dds_data
-from cyclonedds.builtin import DcpsParticipant
-from dds_access import dds_utils
-from dds_access.dds_utils import getProperty, DEBUG_MONITORS, getAppName, getHostname
-import random
-import colorsys
-import datetime
-import time
 import os
 import sys
 from threading import Lock
@@ -31,7 +21,6 @@ import zipfile
 import shutil
 import tarfile
 import subprocess
-
 
 
 class WorkerThread(QThread):
@@ -173,7 +162,7 @@ class WorkerThread(QThread):
 
         except Exception as e:
             self.error.emit(str(e))
-            logging.error(f"Error downloading file from {url}: {e}")
+            logging.error(f"Error: {e}")
 
 
 class UpdaterModel(QObject):
@@ -184,19 +173,53 @@ class UpdaterModel(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.worker = None
 
     @Slot(str, str, str)
     def downloadFile(self, organization, project, buildId):
-        self.updateStepCompleted.emit("Downloading...")
-        self.worker = WorkerThread()
-        self.worker.downloadedBytes.connect(self.onDownloadedBytes)
-        self.worker.installCompleted.connect(self.installCompleted)
-        self.worker.error.connect(self.installError)
-        self.worker.message.connect(self.installMessage)
-        self.worker.setDownloadInfo(organization, project, buildId)
-        self.worker.start()
 
-        self.worker.finished.connect(self.onWorkerFinished)
+        if sys.platform == "darwin":
+            logging.info("Running on Apple macOS")
+
+            self.updateStepCompleted.emit("Downloading...")
+            self.worker = WorkerThread()
+            self.worker.downloadedBytes.connect(self.onDownloadedBytes)
+            self.worker.installCompleted.connect(self.installCompleted)
+            self.worker.error.connect(self.installError)
+            self.worker.message.connect(self.installMessage)
+            self.worker.setDownloadInfo(organization, project, buildId)
+            self.worker.start()
+
+            self.worker.finished.connect(self.onWorkerFinished)
+
+        else:
+            logging.info(f"Not running on Apple macOS, platform: {sys.platform}, using Updater executable")
+
+            tempdir = QTemporaryDir()
+            tempdir.setAutoRemove(False)
+
+            appPath = sys._MEIPASS
+            if appPath.endswith("/_internal"):
+                appPath = appPath[:appPath.rfind("/_internal")]
+            appDir = os.path.dirname(appPath)
+
+            # Copy a file to cxyz
+            updaterExe = "Updater.exe" if sys.platform.startswith("win") else "Updater"
+            updaterFilePath = os.path.join(appDir, updaterExe)
+            updaterFilePathDest = os.path.join(tempdir.path(), updaterExe)
+            logging.info(f"Copied {updaterFilePath} to {updaterFilePathDest}")
+            shutil.copy2(updaterFilePath, updaterFilePathDest)
+
+            process = QProcess()
+            process.setWorkingDirectory(appDir)
+            process.setProgram("Updater")
+            process.setArguments(["--appDir", appDir, "--organization", organization, "--project", project, "--buildId", buildId])
+
+            success = process.startDetached()
+            if success:
+                QApplication.quit()
+            else:
+                logging.error("Failed to launch the Updater executable.")
 
     @Slot()
     def onWorkerFinished(self):
@@ -210,8 +233,9 @@ class UpdaterModel(QObject):
     @Slot()
     def cancel(self):
         self.updateStepCompleted.emit("Cancelling...")
-        self.worker.stop()
-        self.worker.wait()
+        if self.worker:
+            self.worker.stop()
+            self.worker.wait()
 
     @Slot(str)
     def installMessage(self, message: str):
