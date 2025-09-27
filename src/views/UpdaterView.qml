@@ -1,0 +1,104 @@
+/*
+ * Copyright(c) 2024 Sven Trittler
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Eclipse Distribution License
+ * v. 1.0 which is available at
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
+*/
+
+import QtCore
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQuick.Dialogs
+
+
+Window {
+    id: updaterRootWindow
+    width: 300
+    height: 350
+    visible: true
+    title: "CycloneDDS Insight Updater"
+    color: rootWindow.isDarkMode ? Constants.darkOverviewBackground : Constants.lightOverviewBackground
+    flags: Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint
+    modality: Qt.ApplicationModal
+    maximumWidth: width
+    maximumHeight: height
+    minimumWidth: width
+    minimumHeight: height
+
+    function startUpdate(organization, project, newBuildId) {
+        console.log("Starting update process...");
+        updaterView.visible = true
+        checkForUpdatesWindow.visible = false
+        rootWindow.hide()
+        updaterModel.downloadFile(organization, project, newBuildId)
+    }
+
+    Connections {
+        target: updaterModel
+        function onUpdateStepCompleted(msg) {
+            statusText.text = msg;
+        }
+        function onCompleted() {
+            progressBar.value += 1
+        }
+        function onError(error) {
+            statusText.text = error;
+        }
+    }
+
+    Item {
+        anchors.fill: parent
+
+        AnimatedImage {
+            id: animatedLoadingId
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 40
+            source: "qrc:/res/images/spinning.gif"
+            sourceSize.height: 100
+            sourceSize.width: 100
+            height: 100
+            width: 100
+        }
+
+        ColumnLayout {
+            anchors.topMargin: 50
+            anchors.top: animatedLoadingId.bottom
+            anchors.horizontalCenter: animatedLoadingId.horizontalCenter
+            
+            Label {
+                text: "Zap! Pow! Update!"
+                font.bold: true
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            Label {
+                id: statusText
+                text: "Init ..."
+                Layout.alignment: Qt.AlignHCenter
+            }
+            ProgressBar {
+                id: progressBar
+                Layout.alignment: Qt.AlignHCenter
+                from: 0
+                to: 4
+                value: 0
+            }
+            Button {
+                text: "Cancel"
+                Layout.alignment: Qt.AlignHCenter
+                onClicked: {
+                    updaterModel.cancel()
+                    Qt.quit()
+                }
+            }
+        }
+    }
+}

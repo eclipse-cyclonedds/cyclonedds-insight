@@ -93,6 +93,15 @@ Window {
             anchors.margins: 10
 
             Button {
+                id: updaterButton
+                visible: updateAvailable && !updateCheckRunning && !updateError && IS_FROZEN
+                text: "Update Now"
+                onClicked: {
+                    updaterView.startUpdate(organization, project, newBuildId)
+                }
+            }
+
+            Button {
                 text: "Check for Updates"
                 visible: checkedForUpdate
                 onClicked: getLatestBuildArtifacts()
@@ -123,6 +132,7 @@ Window {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200) {
                     var response = JSON.parse(xhr.responseText)
+                    console.debug("Fetched builds: " + JSON.stringify(response))
                     if (response.value.length > 0) {
                         var latestBuild = response.value[0]
                         if (parseInt(latestBuild.id) > parseInt(CYCLONEDDS_INSIGHT_BUILD_ID) || CYCLONEDDS_INSIGHT_GIT_BRANCH !== branch) {

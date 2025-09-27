@@ -60,5 +60,6 @@
         <file>src/views/nodes/Node.qml</file>
         <file>src/views/nodes/Edge.qml</file>
         <file>src/views/icons/InfoIcon.qml</file>
+        <file>src/views/UpdaterView.qml</file>
     </qresource>
 </RCC>

@@ -85,6 +85,11 @@ ApplicationWindow {
         id: checkForUpdatesWindow
     }
 
+    UpdaterView {
+        id: updaterView
+        visible: false
+    }
+
     SystemPalette {
         id: mySysPalette
         onDarkChanged: {
