@@ -20,7 +20,42 @@ from threading import Lock
 import zipfile
 import shutil
 import tarfile
-import subprocess
+
+
+def getWindowsInstallPath(app_name: str):
+    import winreg
+    path = None
+
+    uninstall_keys = [
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+    ]
+
+    for root in [winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER]:
+        for uninstall_key in uninstall_keys:
+            try:
+                with winreg.OpenKey(root, uninstall_key) as key:
+                    for i in range(0, winreg.QueryInfoKey(key)[0]):
+                        subkey_name = winreg.EnumKey(key, i)
+                        if subkey_name.endswith("_is1") and app_name.lower() in subkey_name.lower():
+                            with winreg.OpenKey(key, subkey_name) as subkey:
+                                try:
+                                    path = winreg.QueryValueEx(subkey, "InstallLocation")[0]
+                                    if os.path.exists(path):
+                                        return path
+                                except FileNotFoundError:
+                                    # fallback: parse from UninstallString
+                                    try:
+                                        uninstall_str = winreg.QueryValueEx(subkey, "UninstallString")[0]
+                                        path = os.path.dirname(uninstall_str)
+                                        if os.path.exists(path):
+                                            return path
+                                    except FileNotFoundError:
+                                        pass
+            except FileNotFoundError:
+                continue
+
+    return None
 
 
 class WorkerThread(QThread):
@@ -129,7 +164,6 @@ class WorkerThread(QThread):
                     appPath = self.appDir
                     if self.appDir == "":
                         appPath = sys._MEIPASS
-                    # appPath = "/Users/sventrittler/test/CycloneDDS Insight.app/Contents/Frameworks"
                     if appPath.endswith("/Contents/Frameworks"):
                         appPath = appPath[:appPath.rfind("/Contents/Frameworks")]
 
@@ -138,38 +172,50 @@ class WorkerThread(QThread):
                     logging.debug(f"Artifact directory: {artifact_dir}")
 
                     tar_gz_path = os.path.join(path, artifactName)
-                    tar_gz_path = os.path.join(tar_gz_path, f"{artifactName}.tar.gz")
+                    pkgFileEnding = ".exe" if platform.startswith("win") else ".tar.gz"
+                    tar_gz_path = os.path.join(tar_gz_path, f"{artifactName}{pkgFileEnding}")
 
                     self.installCompleted.emit()
                     self.message.emit("Installing ...")
 
+                    # Install the application
                     if platform == "darwin":
                         with tarfile.open(tar_gz_path, "r:gz") as tar:
                             tar.extractall(artifact_dir)
                         logging.info(f"Extracted {tar_gz_path} to {artifact_dir}")
-                    else:
+                    elif platform.startswith("linux"):
                         tempUnarchivedFolder = QTemporaryDir()
                         logging.info(f"Extract {tar_gz_path} to {tempUnarchivedFolder.path()}")
                         with tarfile.open(tar_gz_path, "r:gz") as tar:
                             tar.extractall(tempUnarchivedFolder.path())
-                        
                         logging.info(f"Copy files to {artifact_dir}")
                         shutil.copytree(tempUnarchivedFolder.path(), artifact_dir, dirs_exist_ok=True)
                         logging.info(f"Copy done")
-
-                    if platform == "darwin":
-                        openCmd = "open"
-                    else:
-                        openCmd = ""
                         appPath = f"{appPath}{os.sep}CycloneDDS Insight"
+                    elif platform.startswith("win"):
+                        logging.info(f"Running windows installer {tar_gz_path}")
+                        winInstallProcess = QProcess()
+                        winInstallProcess.setProgram(tar_gz_path)
+                        winInstallProcess.setArguments(["/SP-", "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/FORCECLOSEAPPLICATIONS"])
+                        winInstallProcess.start()
+                        winInstallProcess.waitForFinished(-1)
+                        appPath = f"{appPath}{os.sep}CycloneDDS Insight.exe"
+                        install_path = getWindowsInstallPath("{FC901B87-B2DD-4DB7-B317-ADA9B708841F}")
+                        if install_path:
+                            appPath = install_path + os.sep + "CycloneDDS Insight.exe"
+                        else:
+                            raise ValueError("Could not determine installation path from registry.")
 
                     # Launch the application
                     self.installCompleted.emit()
                     self.message.emit("Launch ...")
                     logging.info(f"Launching the new application instance... {appPath}")
                     process = QProcess()
-                    process.setProgram("sh")
-                    process.setArguments(["-c", f"sleep 2 && {openCmd} \"{appPath}\""])
+                    if platform == "darwin":
+                        process.setProgram("sh")
+                        process.setArguments(["-c", f"sleep 2 && open \"{appPath}\""])
+                    else:
+                        process.setProgram(appPath)
 
                     success = process.startDetached()
                     if not success:
