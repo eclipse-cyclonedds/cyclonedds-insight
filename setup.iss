@@ -42,7 +42,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "dist\CycloneDDS Insight\{#TheAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\Updater.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\CycloneDDS Insight\Updater.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "dist\CycloneDDS Insight\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

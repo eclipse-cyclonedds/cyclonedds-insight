@@ -71,7 +71,7 @@ Window {
             }
 
             Label {
-                text: "click here to download"
+                text: "download manually here"
                 font.underline: true
                 font.bold: true
                 visible: updateAvailable && !updateCheckRunning && !updateError
