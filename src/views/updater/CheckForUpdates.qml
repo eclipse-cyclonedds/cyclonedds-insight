@@ -98,6 +98,7 @@ Window {
                 visible: updateAvailable && !updateCheckRunning && !updateError && IS_FROZEN
                 text: "Update Now"
                 onClicked: {
+                    checkForUpdatesWindow.visible = false
                     updaterView.startUpdate(organization, project, newBuildId, "")
                 }
             }

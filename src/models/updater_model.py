@@ -183,6 +183,9 @@ class WorkerThread(QThread):
                         with tarfile.open(tar_gz_path, "r:gz") as tar:
                             tar.extractall(artifact_dir)
                         logging.info(f"Extracted {tar_gz_path} to {artifact_dir}")
+                    # Debian
+                    elif False:
+                        pass # pkexec env DEBIAN_FRONTEND=noninteractive apt install /tmp/svxyz/cyclonedds-insight_0.0.0_amd64.deb -y
                     elif platform.startswith("linux"):
                         tempUnarchivedFolder = QTemporaryDir()
                         logging.info(f"Extract {tar_gz_path} to {tempUnarchivedFolder.path()}")

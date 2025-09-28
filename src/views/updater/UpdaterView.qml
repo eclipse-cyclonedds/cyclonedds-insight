@@ -36,9 +36,6 @@ Window {
 
     function startUpdate(organization, project, newBuildId, isExternUpdater) {
         console.log("Starting update process...");
-        if (Qt.platform.os === "osx") {
-            checkForUpdatesWindow.visible = false
-        }
         updaterView.visible = true
         rootWindow.hide()
         updaterModel.downloadFile(organization, project, newBuildId, isExternUpdater)
