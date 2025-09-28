@@ -268,8 +268,8 @@ class UpdaterModel(QObject):
 
             appPath = sys._MEIPASS
             logging.debug(f"appPath raw: {appPath}")
-            if appPath.endswith("/_internal"):
-                appPath = appPath[:appPath.rfind("/_internal")]
+            if appPath.endswith(f"{os.sep}_internal"):
+                appPath = appPath[:appPath.rfind(f"{os.sep}_internal")]
             appDir = appPath
 
             # Copy a file to cxyz
@@ -283,7 +283,7 @@ class UpdaterModel(QObject):
 
             process: QProcess = QProcess()
             process.setWorkingDirectory(tempdir.path())
-            process.setProgram("./Updater")
+            process.setProgram(f".{os.sep}Updater")
             process.setArguments(["--appDir", appDir, "--organization", organization, "--project", project, "--buildId", buildId])
 
             success = process.startDetached()
