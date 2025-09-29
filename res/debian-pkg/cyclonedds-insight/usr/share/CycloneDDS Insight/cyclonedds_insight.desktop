@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=CycloneDDS Insight
+Exec=/usr/share/CycloneDDS\\ Insight/CycloneDDS\\ Insight
+Icon=/usr/share/CycloneDDS Insight/cyclonedds.png
+Type=Application
+StartupWMClass=CycloneDDS Insight
+Path=/usr/bin

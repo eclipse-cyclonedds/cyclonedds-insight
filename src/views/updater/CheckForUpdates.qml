@@ -15,6 +15,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views"
 
 
 Window {
@@ -70,7 +71,7 @@ Window {
             }
 
             Label {
-                text: "click here to download"
+                text: "download manually here"
                 font.underline: true
                 font.bold: true
                 visible: updateAvailable && !updateCheckRunning && !updateError
@@ -91,6 +92,16 @@ Window {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             anchors.margins: 10
+
+            Button {
+                id: updaterButton
+                visible: updateAvailable && !updateCheckRunning && !updateError && IS_FROZEN
+                text: "Update Now"
+                onClicked: {
+                    checkForUpdatesWindow.visible = false
+                    updaterView.startUpdate(organization, project, newBuildId, "")
+                }
+            }
 
             Button {
                 text: "Check for Updates"
@@ -123,6 +134,7 @@ Window {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200) {
                     var response = JSON.parse(xhr.responseText)
+                    console.debug("Fetched builds: " + JSON.stringify(response))
                     if (response.value.length > 0) {
                         var latestBuild = response.value[0]
                         if (parseInt(latestBuild.id) > parseInt(CYCLONEDDS_INSIGHT_BUILD_ID) || CYCLONEDDS_INSIGHT_GIT_BRANCH !== branch) {
