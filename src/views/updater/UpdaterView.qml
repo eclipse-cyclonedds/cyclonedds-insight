@@ -34,6 +34,8 @@ Window {
     minimumWidth: width
     minimumHeight: height
 
+    property bool isError: false
+
     function startUpdate(organization, project, newBuildId, isExternUpdater) {
         console.log("Starting update process...");
         updaterView.visible = true
@@ -50,6 +52,7 @@ Window {
             progressBar.value += 1
         }
         function onError(error) {
+            updaterRootWindow.isError = true
             statusText.text = error;
         }
     }
@@ -67,6 +70,7 @@ Window {
             sourceSize.width: 100
             height: 100
             width: 100
+            paused: isError
         }
 
         ColumnLayout {
@@ -75,7 +79,7 @@ Window {
             anchors.horizontalCenter: animatedLoadingId.horizontalCenter
             
             Label {
-                text: "Zap! Pow! Update!"
+                text: isError ? "Error" : "Zap! Pow! Update!"
                 font.bold: true
                 Layout.alignment: Qt.AlignHCenter
             }
@@ -93,7 +97,7 @@ Window {
                 value: 0
             }
             Button {
-                text: "Cancel"
+                text: isError ? "Exit" : "Cancel"
                 Layout.alignment: Qt.AlignHCenter
                 onClicked: {
                     updaterModel.cancel()

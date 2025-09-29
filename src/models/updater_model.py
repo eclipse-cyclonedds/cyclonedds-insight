@@ -246,6 +246,9 @@ class UpdaterModel(QObject):
         super().__init__(parent)
         self.worker = None
 
+    def requiresRoot(self, appDir):
+        return not os.access(appDir, os.R_OK | os.W_OK)
+
     @Slot(str, str, str, str)
     def downloadFile(self, organization, project, buildId, appDir):
 
@@ -283,6 +286,13 @@ class UpdaterModel(QObject):
             shutil.copy2(updaterFilePath, updaterFilePathDest)
 
             logging.debug(f"appDir: {appDir}")
+
+            if sys.platform.startswith("linux"):
+                if self.requiresRoot(appDir):
+                    errMsg = f"Requires root: {appDir}"
+                    logging.error(errMsg)
+                    self.installError(errMsg)
+                    return
 
             process: QProcess = QProcess()
             process.setWorkingDirectory(tempdir.path())
