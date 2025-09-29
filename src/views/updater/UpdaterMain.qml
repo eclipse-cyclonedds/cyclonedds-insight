@@ -38,8 +38,22 @@ ApplicationWindow {
     property bool shutdownInitiated: false
 
     Component.onCompleted: {
+        rootWindow.isDarkMode = getDarkMode()
         console.info("Target app dir:", APPDIR)
         updaterView.startUpdate(ORGANIZATION, PROJECT, NEWBUILDID, APPDIR)
+    }
+
+    function getDarkMode() {
+        var isDarkModeVal = (mySysPalette.windowText.hsvValue > mySysPalette.window.hsvValue)
+        console.log("darkmode:", isDarkModeVal)
+        return isDarkModeVal
+    }
+
+    SystemPalette {
+        id: mySysPalette
+        onDarkChanged: {
+            rootWindow.isDarkMode = getDarkMode()
+        }
     }
 
     UpdaterView {
