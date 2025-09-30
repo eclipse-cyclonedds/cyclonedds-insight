@@ -28,8 +28,8 @@ jobs:
     matrix:
       'Ubuntu_22.04_LTS_x64':
         image: ubuntu-22.04
-      'macOS_13_x64':
-        image: macOS-13
+      'macOS_15_x64':
+        image: macos-15-intel
       'Windows_Server_2022_x64':
         image: windows-2022
   steps:
