@@ -228,7 +228,6 @@ SplitView {
     function switchToTab(targetIndex) {
         mainLayoutId.currentIndex = targetIndex
         bar.currentIndex = targetIndex
-        //bar.contentItem.children[targetIndex].forceActiveFocus()
     }
 
 }
