@@ -188,4 +188,46 @@ SplitView {
         }
         clearView()
     }
+
+    Shortcut {
+        sequences: [ StandardKey.New ]
+        sequence: "Ctrl+1"
+        onActivated: {
+            console.log("Ctrl+1 pressed!")
+            switchToTab(0)
+        }
+    }
+
+    Shortcut {
+        sequences: [ StandardKey.New ]
+        sequence: "Ctrl+2"
+        onActivated: {
+            console.debug("Ctrl+2 pressed!")
+            switchToTab(1)
+        }
+    }
+
+    Shortcut {
+        sequences: [ StandardKey.New ]
+        sequence: "Ctrl+3"
+        onActivated: {
+            console.debug("Ctrl+3 pressed!")
+            switchToTab(2)
+        }
+    }
+
+    Shortcut {
+        sequences: [ StandardKey.New ]
+        sequence: "Ctrl+4"
+        onActivated: {
+            console.debug("Ctrl+4 pressed!")
+            switchToTab(3)
+        }
+    }
+
+    function switchToTab(targetIndex) {
+        mainLayoutId.currentIndex = targetIndex
+        bar.currentIndex = targetIndex
+    }
+
 }
