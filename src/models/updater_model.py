@@ -11,6 +11,10 @@
 """
 
 from PySide6.QtCore import QModelIndex, Qt, QThread, Signal, Slot, QProcess, QObject, QTemporaryDir
+from PySide6.QtCore import QUrl
+from PySide6.QtNetwork import (
+    QNetworkProxy, QNetworkAccessManager, QNetworkRequest, QAuthenticator, QNetworkReply
+)
 from PySide6.QtWidgets import QApplication
 from loguru import logger as logging
 import requests
@@ -20,6 +24,7 @@ from threading import Lock
 import zipfile
 import shutil
 import tarfile
+import json
 
 
 def getWindowsInstallPath(app_name: str):
@@ -242,9 +247,22 @@ class UpdaterModel(QObject):
     completed = Signal()
     error = Signal(str)
 
-    def __init__(self, parent=None):
+    newBuildFound = Signal(str)
+    newBuildError = Signal()
+
+    def __init__(self, pipelineId, buildId, parent=None):
         super().__init__(parent)
         self.worker = None
+        self.manager = QNetworkAccessManager()
+
+        # Azure DevOps project details
+        self.organization = "eclipse-cyclonedds"
+        self.project = "cyclonedds-insight"
+        self.masterBranch = "refs/heads/master"
+        self.pipelineId = pipelineId
+        self.currentBuildId = buildId
+        self.latestBuildUrl = QUrl(f"https://dev.azure.com/{self.organization}/{self.project}/_apis/build/builds" +
+                        f"?definitions={self.pipelineId}&branchName={self.masterBranch}&statusFilter=succeeded&$top=1&api-version=7.0")
 
     def requiresRoot(self, appDir):
         return not os.access(appDir, os.R_OK | os.W_OK)
@@ -337,3 +355,42 @@ class UpdaterModel(QObject):
     @Slot(str)
     def installError(self, error: str):
         self.error.emit(f"Error: {error}")
+
+    @Slot()
+    def checkForUpdate(self):
+        logging.info(f"Check for updates: {self.latestBuildUrl.toString()}")
+
+        #proxy = QNetworkProxy(QNetworkProxy.HttpProxy, "proxy.example.com", 8080)
+        #self.manager.setProxy(proxy)
+
+        req = QNetworkRequest(self.latestBuildUrl)
+        reply = self.manager.get(req)
+        reply.finished.connect(lambda: self.checkForUpdateRequestFinished(reply))
+
+    @Slot(QNetworkReply)
+    def checkForUpdateRequestFinished(self, reply):
+        if reply.error() != QNetworkReply.NetworkError.NoError:
+            logging.error(f"Network error: {reply.errorString()}")
+            reply.deleteLater()
+            self.newBuildError.emit()
+            return
+
+        try:
+            body = bytes(reply.readAll()).decode(errors="ignore")
+            data = json.loads(body)
+            logging.debug(f"Fetched builds: {json.dumps(data)}")
+            if "value" in data and len(data["value"]) > 0:
+                latestBuild = data["value"][0]
+                latestBuildId = str(latestBuild.get("id", ""))
+
+            if (int(latestBuildId) > int(self.currentBuildId)) or (self.currentBranch != self.masterBranch):
+                logging.info(f"New update available, build id: {latestBuildId}")
+                self.newBuildFound.emit(latestBuildId)
+            else:
+                logging.info("No new update available")
+                self.newBuildFound.emit("")
+        except Exception as e:
+            logging.error(f"Failed in update check: {e}")
+            self.newBuildError.emit()
+
+        reply.deleteLater()
