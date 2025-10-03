@@ -77,6 +77,23 @@ ApplicationWindow {
         }
     }
 
+    Shortcut {
+        sequences: [ StandardKey.New ]
+        sequence: "Ctrl+0"
+        onActivated: {
+            console.debug("Ctrl+1 pressed!")
+            layout.currentIndex = 1
+        }
+    }
+
+    Shortcut {
+        sequences: [ StandardKey.New ]
+        sequence: "Ctrl+,"
+        onActivated: {
+            console.debug("Ctrl+, pressed → Open Preferences")
+        }
+    }
+
     AboutWindow {
         id: aboutWindow
     }
