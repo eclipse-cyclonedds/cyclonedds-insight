@@ -11,7 +11,7 @@
 """
 
 from PySide6 import QtCore
-from PySide6.QtCore import QStandardPaths, QDir, QObject, Slot, Signal, QFile, QFileInfo, QUrl
+from PySide6.QtCore import QStandardPaths, QDir, QObject, Slot, Signal, QFile, QFileInfo, QUrl, QTemporaryDir
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import Qt
 from loguru import logger as logging
@@ -20,6 +20,7 @@ import uuid
 import sys
 from enum import Enum
 from dds_access import dds_data
+import requests
 
 
 class QmlUtils(QObject):
