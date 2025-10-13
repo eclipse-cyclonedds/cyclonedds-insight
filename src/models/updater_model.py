@@ -149,7 +149,7 @@ class WorkerThread(QThread):
                         path = temp_dir.path()
                         logging.debug(f"Temporary folder created at: {path}")
                     else:
-                        logging.error("Failed to create temporary folder")
+                        raise SystemError("Failed to create temporary folder")
                     file_path = os.path.join(path, file_name)
                     self._download_file(download_url, file_path)
 
