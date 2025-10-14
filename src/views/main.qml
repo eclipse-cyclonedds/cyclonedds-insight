@@ -78,6 +78,24 @@ ApplicationWindow {
         }
     }
 
+    Shortcut {
+        sequences: [ StandardKey.New ]
+        sequence: "Ctrl+,"
+        onActivated: {
+            console.debug("Ctrl+, pressed!")
+            layout.currentIndex = 0
+        }
+    }
+
+    Shortcut {
+        sequences: [ StandardKey.New ]
+        sequence: "Ctrl+0"
+        onActivated: {
+            console.debug("Ctrl+0 pressed!")
+            layout.currentIndex = 1
+        }
+    }
+
     AboutWindow {
         id: aboutWindow
     }

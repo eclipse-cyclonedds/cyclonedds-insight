@@ -137,6 +137,7 @@ Rectangle {
                                     currentStatUnitId.lineSeriesDict[guid].remove(0);
                                 }
                                 currentStatUnitId.lineSeriesDict[guid].append(timestamp, value);
+                                currentStatUnitId.lineSeriesDict[guid].color = Qt.rgba(r/255, g/255, b/255, 1);
                             } else {
                                 var line = myChart.createSeries(ChartView.SeriesTypeLine, guid, axisX, axisY);
                                 line.color = Qt.rgba(r/255, g/255, b/255, 1);
@@ -268,16 +269,51 @@ Rectangle {
                                     model: table_model_role
 
                                     delegate: Item {
-                                        implicitWidth: model.column === 0 ? (tableLayout.implicitWidth) * 0.7 : (tableLayout.implicitWidth) * 0.3
+                                        implicitWidth: model.column === 0 ? 60 : model.column === 1 ? (tableLayout.implicitWidth) * 0.6 : (tableLayout.implicitWidth) * 0.3
                                         implicitHeight: 25
    
                                         Label {
+                                            visible: model.column !== 0
+                                            id: displayLabel
                                             text: display
                                             anchors.fill: parent
                                             color: Qt.rgba(model.color_r / 255, model.color_g / 255, model.color_b / 255, 1)
                                             horizontalAlignment: Text.AlignLeft
                                             verticalAlignment: Text.AlignVCenter
                                             clip: true
+                                        }
+
+                                        RowLayout {
+                                            visible: model.column === 0
+                                            CheckBox {
+                                                checked: is_visible
+                                                text: ""
+                                                onCheckedChanged: {
+                                                    statisticModel.setItemVisible(name, checked)
+                                                    if (name in currentStatUnitId.lineSeriesDict) {
+                                                        currentStatUnitId.lineSeriesDict[name].visible = checked
+                                                    }
+                                                }
+                                            }
+                                            Rectangle {
+                                                
+                                                width: 20
+                                                height: 20
+                                                color: Qt.rgba(model.color_r / 255, model.color_g / 255, model.color_b / 255, 1)
+                                                border.width: 1
+                                                border.color: "black"
+
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    onClicked: {
+                                                        colorDialog.selectedColor = Qt.rgba(model.color_r / 255, model.color_g / 255, model.color_b / 255, 1)
+                                                        colorDialog.name = name
+                                                        colorDialog.open()
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -292,7 +328,7 @@ Rectangle {
                         defaultSuffix: "json"
                         title: "Export Tester Preset"
                         nameFilters: ["CSV files (*.csv)"]
-                        selectedFile: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0] + "/" + name_role + ".json"
+                        selectedFile: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0] + "/" + name_role + ".csv"
                         onAccepted: {
                             console.info("Export CSV to " + selectedFile)
                             qmlUtils.createFileFromQUrl(selectedFile)
@@ -351,6 +387,24 @@ Rectangle {
                     }
                 }
             }
+        }
+    }
+
+    ColorDialog {
+        id: colorDialog
+        property string name: ""
+        onAccepted: {
+            console.info("Change color to", selectedColor)
+            statisticModel.changeColors(name, selectedColor)
+            for (let i = 0; i < chartRepeater.count; i++) {
+                let chartObj = chartRepeater.itemAt(i);
+                if (chartObj && chartObj.lineSeriesDict && name in chartObj.lineSeriesDict) {
+                    chartObj.lineSeriesDict[name].color = selectedColor;
+                }
+            }
+        }
+        onRejected: {
+            console.info("Color change cancelled")
         }
     }
 

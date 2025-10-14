@@ -10,7 +10,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import Qt, QModelIndex, Qt, QThread, Signal, Slot, QAbstractTableModel, QAbstractListModel, QObject
+from PySide6.QtCore import Qt, QModelIndex, Qt, QThread, Signal, Slot, QAbstractTableModel, QLocale
+from PySide6.QtGui import QColor
 from loguru import logger as logging
 import uuid
 import requests
@@ -221,6 +222,11 @@ class PollingThread(QThread):
             logging.trace(f"Set aggregateByRequest to: {aggre}")
             self.aggregateByRequest = aggre
 
+    def changeColor(self, aggkey: str, color: QColor):
+        with self.mutex:
+            if aggkey in self.color_mapping:
+                self.color_mapping[aggkey] = color.red(), color.green(), color.blue()
+
 
 class StatisticsModel(QAbstractTableModel):
 
@@ -411,6 +417,18 @@ class StatisticsModel(QAbstractTableModel):
         for key in self.unitModels.keys():
             self.unitModels[key].clearStatistics()
 
+    @Slot(str, QColor)
+    def changeColors(self, item: str, color: QColor):
+        logging.debug(f"Change colors for: {item} to {color.red()},{color.green()},{color.blue()}")
+        self.pollingThread.changeColor(item, color)
+
+        for k in self.unitModels.keys():
+            self.unitModels[k].updateColors(item, color)
+
+    @Slot(str, bool)
+    def setItemVisible(self, item: str, isVisible: bool):
+        for k in self.unitModels.keys():
+            self.unitModels[k].setItemVisible(item, isVisible)
 
 class StatisticsUnitModel(QAbstractTableModel):
     newData = Signal(str, float, int, int, int, bool)
@@ -420,6 +438,7 @@ class StatisticsUnitModel(QAbstractTableModel):
     RoleColorR = Qt.UserRole + 3
     RoleColorG = Qt.UserRole + 4
     RoleColorB = Qt.UserRole + 5
+    IsVisibleRole = Qt.UserRole + 6
 
     def roleNames(self):
         roles = {
@@ -428,13 +447,15 @@ class StatisticsUnitModel(QAbstractTableModel):
             self.ValueRole: b'value',
             self.RoleColorR: b'color_r',
             self.RoleColorG: b'color_g',
-            self.RoleColorB: b'color_b'
+            self.RoleColorB: b'color_b',
+            self.IsVisibleRole: b'is_visible'
         }
         return roles
 
     def __init__(self, pollingThread, prop, parent=None):
         super().__init__(parent)
         self.data_list = []
+        self.visibleItems = {}
         self.prop = prop
         self.clearOnNextData = False
         self.pollingThread = pollingThread
@@ -444,7 +465,7 @@ class StatisticsUnitModel(QAbstractTableModel):
         return len(self.data_list)
 
     def columnCount(self, parent=QModelIndex()):
-        return 2
+        return 3
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
@@ -463,16 +484,25 @@ class StatisticsUnitModel(QAbstractTableModel):
             return item[3]
         elif role == self.RoleColorB:
             return item[4]
+        elif role == self.IsVisibleRole:
+            if item[0] in self.visibleItems:
+                return self.visibleItems[item[0]]
+            else:
+                return True
         elif role == Qt.DisplayRole:
             column = index.column()
-            return item[column]
+            curItem = item[index.column()-1]
+            if column == 2:
+                if isinstance(curItem, float) or (isinstance(curItem, int) and not isinstance(curItem, bool)):
+                    return QLocale().toString(curItem)
+            return curItem
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role != Qt.DisplayRole:
             return None
         if orientation == Qt.Horizontal:
-            headers = ["Name", "Value"]
+            headers = ["", "Name", "Value"]
             if section < len(headers):
                 return headers[section]
         return None
@@ -490,9 +520,36 @@ class StatisticsUnitModel(QAbstractTableModel):
             (r, g, b) = color_mapping[topc_guid]
             self.newData.emit(topc_guid, value, r, g, b, self.clearOnNextData)
             self.data_list.append([topc_guid, value, r, g, b])
+            self.visibleItems[topc_guid] = True if topc_guid not in self.visibleItems else self.visibleItems[topc_guid]
         self.endResetModel()
 
         self.clearOnNextData = False
 
     def clearStatistics(self):
         self.clearOnNextData = True
+
+    def updateColors(self, item: str, color: QColor):
+        for i in range(len(self.data_list)):
+            if self.data_list[i][0] == item:
+                self.data_list[i][2] = color.red()
+                self.data_list[i][3] = color.green()
+                self.data_list[i][4] = color.blue()
+                self.dataChanged.emit(self.index(i, 0), self.index(i, self.columnCount() - 1), [self.RoleColorR, self.RoleColorG, self.RoleColorB, self.ValueRole, self.NameRole, self.IsVisibleRole])
+                logging.debug(f"Updated color for {item} to {color.red()},{color.green()},{color.blue()}")
+                break
+
+    @Slot(str, bool)
+    def setItemVisible(self, item: str, is_visible: bool):
+        if item not in self.visibleItems:
+            return # unknown
+
+        if self.visibleItems[item] == is_visible:
+            return # no change
+
+        self.visibleItems[item] = is_visible
+
+        for i in range(len(self.data_list)):
+            if self.data_list[i][0] == item:
+                self.dataChanged.emit(self.index(i, 0), self.index(i, self.columnCount() - 1), [self.RoleColorR, self.RoleColorG, self.RoleColorB, self.ValueRole, self.NameRole, self.IsVisibleRole])
+                logging.debug(f"Set visibility for {item} to {is_visible}")
+                break
