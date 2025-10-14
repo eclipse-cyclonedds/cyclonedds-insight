@@ -42,7 +42,7 @@
         <file>src/views/LoadingView.qml</file>
         <file>src/views/TesterView.qml</file>
         <file>src/views/AboutWindow.qml</file>
-        <file>src/views/CheckForUpdates.qml</file>
+        <file>src/views/updater/CheckForUpdates.qml</file>
         <file>src/views/ParticipantsOverview.qml</file>
         <file>src/views/SideView.qml</file>
         <file>src/views/LogWindow.qml</file>
@@ -60,5 +60,7 @@
         <file>src/views/nodes/Node.qml</file>
         <file>src/views/nodes/Edge.qml</file>
         <file>src/views/icons/InfoIcon.qml</file>
+        <file>src/views/updater/UpdaterView.qml</file>
+        <file>src/views/updater/UpdaterMain.qml</file>
     </qresource>
 </RCC>

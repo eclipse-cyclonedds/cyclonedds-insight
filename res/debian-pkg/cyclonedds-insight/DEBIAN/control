@@ -1,0 +1,6 @@
+Package: cyclonedds-insight
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Eclipse Cyclone DDS
+Description: A graphical tool to visualize the current DDS system.

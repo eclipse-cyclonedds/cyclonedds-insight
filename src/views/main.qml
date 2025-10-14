@@ -21,6 +21,7 @@ import org.eclipse.cyclonedds.insight
 import "qrc:/src/views/selection_details"
 import "qrc:/src/views/shapes_demo"
 import "qrc:/src/views/config_editor"
+import "qrc:/src/views/updater"
 
 
 ApplicationWindow {
@@ -101,6 +102,11 @@ ApplicationWindow {
 
     CheckForUpdates {
         id: checkForUpdatesWindow
+    }
+
+    UpdaterView {
+        id: updaterView
+        visible: false
     }
 
     SystemPalette {
