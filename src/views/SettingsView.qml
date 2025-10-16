@@ -22,6 +22,15 @@ import org.eclipse.cyclonedds.insight
 Rectangle {
     id: settingsViewId
     color: rootWindow.isDarkMode ? Constants.darkOverviewBackground : Constants.lightOverviewBackground
+    property int port: 8080
+
+    Settings {
+        id: proxySettings
+        category: "proxy"
+        property alias enabled: useProxyCheckBox.checked
+        property alias host: httpProxy.text
+        property alias port: settingsViewId.port
+    }
 
     ScrollView {
         anchors.fill: parent
@@ -102,6 +111,78 @@ Rectangle {
                 text: "Open Folder"
                 onClicked: Qt.openUrlExternally(StandardPaths.writableLocation(StandardPaths.AppDataLocation));
             }
+
+            Label {
+                id: proxySettingsLabelId
+                text: qsTr("Proxy Settings:")
+            }
+            CheckBox {
+                id: useProxyCheckBox
+                checked: false
+                text: qsTr("Use HTTP Proxy")
+                onCheckedChanged: {
+                    proxySettings.enabled = checked
+                }
+                Component.onCompleted: {
+                    checked = proxySettings.enabled
+                }
+            }
+
+            Item {}
+            Row {
+                enabled: useProxyCheckBox.checked
+                spacing: 0
+                Label {
+                    id: proxyLabelId
+                    text: "HTTP proxy:"
+                    rightPadding: 5
+                }
+                TextField {
+                    id: httpProxy
+                    text: ""
+                    placeholderText: ""
+                    width: 200
+                    Component.onCompleted: {
+                        text = proxySettings.host
+                    }
+                    onTextChanged: {
+                        proxySettings.host = text
+                    }
+                }
+                Label {
+                    id: portLabelId
+                    text: "Port:"
+                    leftPadding: 5
+                    rightPadding: 5
+                }
+                TextField {
+                    id: portTextField
+                    text: "0"
+                    validator: IntValidator {
+                        bottom: 0
+                        top: 65535
+                    }
+                    width: 60
+                    Component.onCompleted: {
+                        portTextField.text = proxySettings.port
+                    }
+                    onTextChanged: {
+                        var port = parseInt(text)
+                        if (isNaN(port)) {
+                            settingsViewId.port = 0
+                        } else {
+                            settingsViewId.port = port
+                        }
+                    }
+                }
+            }
+
+            Item {}
+            Label {
+                enabled: useProxyCheckBox.checked
+                text: "The proxy is used for update checks and downloading updates."
+            }
+
             Item {
                 Layout.columnSpan: 2
                 Layout.fillHeight: true

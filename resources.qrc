@@ -62,5 +62,6 @@
         <file>src/views/icons/InfoIcon.qml</file>
         <file>src/views/updater/UpdaterView.qml</file>
         <file>src/views/updater/UpdaterMain.qml</file>
+        <file>src/views/updater/ProxyAuthWindow.qml</file>
     </qresource>
 </RCC>

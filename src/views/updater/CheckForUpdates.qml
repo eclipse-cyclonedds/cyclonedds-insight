@@ -47,14 +47,25 @@ Window {
     property bool updateError: false
     property string newBuildId: "0"
 
-    onVisibleChanged: {
-        if (visible) {
-            getLatestBuildArtifacts()
-        }
+    function proxyAuthRequired() {
+        checkForUpdatesWindow.close()
+        proxyAuthWindow.visible = true
+    }
+
+    function showAndCheckForUpdates() {
+        checkForUpdatesWindow.visible = true
+        getLatestBuildArtifacts()
+    }
+
+    function showWithoutUpdate() {
+        checkForUpdatesWindow.visible = true
     }
 
     Connections {
         target: updaterModel
+        function onProxyAuthRequired() {
+            proxyAuthRequired()
+        }
         function onNewBuildFound(newBuildIdFromModel) {
             if (newBuildIdFromModel === "") {
                 updateCheckRunning = false

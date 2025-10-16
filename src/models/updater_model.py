@@ -11,7 +11,7 @@
 """
 
 from PySide6.QtCore import QModelIndex, Qt, QThread, Signal, Slot, QProcess, QObject, QTemporaryDir
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QUrl, QSettings
 from PySide6.QtNetwork import (
     QNetworkProxy, QNetworkAccessManager, QNetworkRequest, QAuthenticator, QNetworkReply
 )
@@ -25,6 +25,7 @@ import zipfile
 import shutil
 import tarfile
 import json
+import urllib.parse
 
 
 def getWindowsInstallPath(app_name: str):
@@ -75,6 +76,7 @@ class WorkerThread(QThread):
         self.running = False
         self.mutex = Lock()
         self.success = False
+        self.settings = QSettings()
 
     def run(self):
         self.running = True
@@ -84,7 +86,18 @@ class WorkerThread(QThread):
         logging.trace("WorkerThread stopped")
 
     def _download_file(self, url, local_filename):
-        with requests.get(url, stream=True) as r:
+        logging.info(f"Downloading file from {url} to {local_filename}")
+        proxy = self.setupProxy()
+        if proxy:
+            logging.info(f"Using proxy for download file: {proxy}")
+            session = requests.Session()
+            session.proxies.update(proxy)
+            requests_get = session.get
+        else:
+            logging.info("No proxy for download file")
+            requests_get = requests.get
+
+        with requests_get(url, stream=True) as r:
             r.raise_for_status()
             with open(local_filename, 'wb') as f:
                 total_bytes = 0
@@ -108,11 +121,37 @@ class WorkerThread(QThread):
     def stop(self):
         self.running = False
 
+    def setupProxy(self):
+        enabled = self.settings.value("proxy/enabled", False, type=bool)
+        if enabled:
+            host = self.settings.value("proxy/host", "", type=str)
+            port = self.settings.value("proxy/port", 8080, type=int)
+            logging.info(f"Set proxy: {host}:{port}")
+            proxy = {
+                "http": f"http://{host}:{port}",
+                "https": f"http://{host}:{port}",
+            }
+            username = self.settings.value("proxy/username", "", type=str)
+            password = self.settings.value("proxy/password", "", type=str)
+            if username != "" and password != "":
+                proxy["http"] = f"http://{username}:{urllib.parse.quote(password)}@{host}:{port}"
+                proxy["https"] = f"http://{username}:{urllib.parse.quote(password)}@{host}:{port}"
+            logging.debug(f"Using proxy: {proxy}")
+            return proxy
+        return None
+
     @Slot(str, str, str)
     def downloadFile(self, organization, project, buildId):
         try:
             url = f"https://dev.azure.com/{organization}/{project}/_apis/build/builds/{buildId}/artifacts?api-version=7.0"
-            response = requests.get(url)
+            proxy = self.setupProxy()
+            if proxy:
+                logging.info(f"Using proxy for download: {proxy}")
+                response = requests.get(url, proxies=proxy)
+            else:
+                logging.info("No proxy for download")
+                response = requests.get(url)
+
             response.raise_for_status()
 
             data = response.json()
@@ -244,12 +283,18 @@ class UpdaterModel(QObject):
     completed = Signal()
     error = Signal(str)
 
+    proxyAuthRequired = Signal()
+
     newBuildFound = Signal(str)
     newBuildError = Signal()
 
     def __init__(self, pipelineId, buildId, parent=None):
         super().__init__(parent)
         self.worker = None
+        self.proxyUsername = ""
+        self.proxyPassword = ""
+        self.settings = QSettings()
+        self.proxy = QNetworkProxy()
         self.manager = QNetworkAccessManager()
 
         # Azure DevOps project details
@@ -353,12 +398,31 @@ class UpdaterModel(QObject):
     def installError(self, error: str):
         self.error.emit(f"Error: {error}")
 
+    @Slot(str, str)
+    def setProxyCredentials(self, username: str, password: str):
+        logging.info("Set proxy credentials")
+        self.proxyUsername = username
+        self.proxyPassword = password
+        self.proxy.setUser(self.username)
+        self.proxy.setPassword(self.password)
+
+    def setProxy(self):
+        enabled = self.settings.value("proxy/enabled", False, type=bool)
+        if enabled:
+            host = self.settings.value("proxy/host", "", type=str)
+            port = self.settings.value("proxy/port", 8080, type=int)
+            logging.info(f"Set proxy: {host}:{port}")
+            self.proxy = QNetworkProxy(QNetworkProxy.HttpProxy, host, port)
+            self.manager.setProxy(self.proxy)
+        else:
+            logging.info("Clear proxy")
+            self.manager.setProxy(QNetworkProxy())
+
     @Slot()
     def checkForUpdate(self):
         logging.info(f"Check for updates: {self.latestBuildUrl.toString()}")
 
-        #proxy = QNetworkProxy(QNetworkProxy.HttpProxy, "proxy.example.com", 8080)
-        #self.manager.setProxy(proxy)
+        self.setProxy()
 
         req = QNetworkRequest(self.latestBuildUrl)
         reply = self.manager.get(req)
@@ -366,10 +430,16 @@ class UpdaterModel(QObject):
 
     @Slot(QNetworkReply)
     def checkForUpdateRequestFinished(self, reply):
+
         if reply.error() != QNetworkReply.NetworkError.NoError:
             logging.error(f"Network error: {reply.errorString()}")
-            reply.deleteLater()
             self.newBuildError.emit()
+
+            if reply.error() == QNetworkReply.NetworkError.ProxyAuthenticationRequiredError:
+                logging.warning("Proxy authentication required")
+                self.proxyAuthRequired.emit()
+
+            reply.deleteLater()
             return
 
         try:
