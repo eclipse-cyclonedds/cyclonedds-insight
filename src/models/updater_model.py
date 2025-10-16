@@ -418,7 +418,7 @@ class UpdaterModel(QObject):
             self.manager.setProxy(self.proxy)
         else:
             logging.info("Clear proxy")
-            self.manager.setProxy(QNetworkProxy())
+            self.manager.setProxy(QNetworkProxy(QNetworkProxy.NoProxy))
 
     @Slot()
     def checkForUpdate(self):
