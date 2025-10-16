@@ -403,8 +403,6 @@ class UpdaterModel(QObject):
         logging.info("Set proxy credentials")
         self.proxyUsername = username
         self.proxyPassword = password
-        self.proxy.setUser(self.username)
-        self.proxy.setPassword(self.password)
 
     def setProxy(self):
         enabled = self.settings.value("proxy/enabled", False, type=bool)
@@ -413,6 +411,10 @@ class UpdaterModel(QObject):
             port = self.settings.value("proxy/port", 8080, type=int)
             logging.info(f"Set proxy: {host}:{port}")
             self.proxy = QNetworkProxy(QNetworkProxy.HttpProxy, host, port)
+            if self.proxyUsername != "":
+                self.proxy.setUser(self.proxyUsername)
+            if self.proxyPassword != "":
+                self.proxy.setPassword(self.proxyPassword)
             self.manager.setProxy(self.proxy)
         else:
             logging.info("Clear proxy")
