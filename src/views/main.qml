@@ -226,6 +226,13 @@ ApplicationWindow {
 
     ProxyAuthWindow {
         id: proxyAuthWindow
+        resultHandler: checkForUpdatesWindow
+        visible: false
+    }
+
+    ProxyAuthWindow {
+        id: proxyAuthWindowUpdater
+        resultHandler: updaterView
         visible: false
     }
 }

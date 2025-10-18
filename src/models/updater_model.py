@@ -10,10 +10,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import QModelIndex, Qt, QThread, Signal, Slot, QProcess, QObject, QTemporaryDir
+from PySide6.QtCore import QThread, Signal, Slot, QProcess, QObject, QTemporaryDir
 from PySide6.QtCore import QUrl, QSettings
 from PySide6.QtNetwork import (
-    QNetworkProxy, QNetworkAccessManager, QNetworkRequest, QAuthenticator, QNetworkReply
+    QNetworkProxy, QNetworkAccessManager, QNetworkRequest, QNetworkReply
 )
 from PySide6.QtWidgets import QApplication
 from loguru import logger as logging
@@ -26,42 +26,7 @@ import shutil
 import tarfile
 import json
 import urllib.parse
-
-
-def getWindowsInstallPath(app_name: str):
-    import winreg
-    path = None
-
-    uninstall_keys = [
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
-    ]
-
-    for root in [winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER]:
-        for uninstall_key in uninstall_keys:
-            try:
-                with winreg.OpenKey(root, uninstall_key) as key:
-                    for i in range(0, winreg.QueryInfoKey(key)[0]):
-                        subkey_name = winreg.EnumKey(key, i)
-                        if subkey_name.endswith("_is1") and app_name.lower() in subkey_name.lower():
-                            with winreg.OpenKey(key, subkey_name) as subkey:
-                                try:
-                                    path = winreg.QueryValueEx(subkey, "InstallLocation")[0]
-                                    if os.path.exists(path):
-                                        return path
-                                except FileNotFoundError:
-                                    # fallback: parse from UninstallString
-                                    try:
-                                        uninstall_str = winreg.QueryValueEx(subkey, "UninstallString")[0]
-                                        path = os.path.dirname(uninstall_str)
-                                        if os.path.exists(path):
-                                            return path
-                                    except FileNotFoundError:
-                                        pass
-            except FileNotFoundError:
-                continue
-
-    return None
+import platform
 
 
 class WorkerThread(QThread):
@@ -70,6 +35,7 @@ class WorkerThread(QThread):
     message = Signal(str)
     installCompleted = Signal()
     error = Signal(str)
+    proxyAuthRequired = Signal()
 
     def __init__(self, parent=None):
         super().__init__()
@@ -77,27 +43,29 @@ class WorkerThread(QThread):
         self.mutex = Lock()
         self.success = False
         self.settings = QSettings()
+        self.proxyUsername = ""
+        self.proxyPassword = ""
+
+    @Slot(str, str)
+    def setProxyCredentials(self, username: str, password: str):
+        logging.info(f"Worker: Set proxy credentials {username} {password}")
+        self.proxyUsername = username
+        self.proxyPassword = password
 
     def run(self):
         self.running = True
-
         self.downloadFile(self.organization, self.project, self.buildId)
-
         logging.trace("WorkerThread stopped")
 
     def _download_file(self, url, local_filename):
         logging.info(f"Downloading file from {url} to {local_filename}")
         proxy = self.setupProxy()
         if proxy:
-            logging.info(f"Using proxy for download file: {proxy}")
-            session = requests.Session()
-            session.proxies.update(proxy)
-            requests_get = session.get
+            logging.info(f"Using proxy for download file")
         else:
             logging.info("No proxy for download file")
-            requests_get = requests.get
 
-        with requests_get(url, stream=True) as r:
+        with requests.get(url, proxies=proxy ,stream=True) as r:
             r.raise_for_status()
             with open(local_filename, 'wb') as f:
                 total_bytes = 0
@@ -131,26 +99,36 @@ class WorkerThread(QThread):
                 "http": f"http://{host}:{port}",
                 "https": f"http://{host}:{port}",
             }
-            username = self.settings.value("proxy/username", "", type=str)
-            password = self.settings.value("proxy/password", "", type=str)
+            username = urllib.parse.quote(self.proxyUsername)
+            password = urllib.parse.quote(self.proxyPassword)
             if username != "" and password != "":
-                proxy["http"] = f"http://{username}:{urllib.parse.quote(password)}@{host}:{port}"
-                proxy["https"] = f"http://{username}:{urllib.parse.quote(password)}@{host}:{port}"
-            logging.debug(f"Using proxy: {proxy}")
+                logging.info("Using proxy with credentials.")
+                proxy["http"] = f"http://{username}:{password}@{host}:{port}"
+                proxy["https"] = f"http://{username}:{password}@{host}:{port}"
+            else:
+                logging.info("No Credentials provided.")
             return proxy
         return None
 
     @Slot(str, str, str)
     def downloadFile(self, organization, project, buildId):
         try:
-            url = f"https://dev.azure.com/{organization}/{project}/_apis/build/builds/{buildId}/artifacts?api-version=7.0"
             proxy = self.setupProxy()
             if proxy:
-                logging.info(f"Using proxy for download: {proxy}")
-                response = requests.get(url, proxies=proxy)
+                logging.info(f"Using proxy for download")
             else:
                 logging.info("No proxy for download")
-                response = requests.get(url)
+
+            url = f"https://dev.azure.com/{organization}/{project}/_apis/build/builds/{buildId}/artifacts?api-version=7.0"
+            response = None
+            try:
+                response = requests.get(url, proxies=proxy)
+            except Exception as e:
+                errorMsg = str(e)
+                if "407" in errorMsg:
+                    logging.info("Proxy Auth needed.")
+                    self.proxyAuthRequired.emit()
+                raise ValueError(errorMsg)
 
             response.raise_for_status()
 
@@ -165,23 +143,28 @@ class WorkerThread(QThread):
                     if "name" in artifact:
                         artifactName = artifact["name"]
 
-                        platform = sys.platform
-                        
-                        if platform.startswith("linux"):
+                        arch = platform.machine().lower()
+                        if arch == "amd64" or arch == "x86_64":
+                            arch = "x64"
+
+                        if sys.platform.startswith("linux"):
                             logging.info("Running on Linux")
-                            targetName = "linux"
-                        elif platform == "darwin":
+                            if arch in artifactName.lower():
+                                targetName = "linux"
+                        elif sys.platform == "darwin":
                             logging.info("Running on macOS")
+                            # on mac os the arch does not matter because of rosetta.
                             targetName = "macos"
-                        elif platform.startswith("win"):
+                        elif sys.platform.startswith("win"):
                             logging.info("Running on Windows")
-                            targetName = "windows"
+                            if arch in artifactName.lower():
+                                targetName = "windows"
                         else:
-                            logging.info(f"Unknown platform: {platform}")
-                            raise ValueError(f"Unknown platform: {platform}")
+                            logging.info(f"Unknown platform: {sys.platform} {arch}")
+                            raise ValueError(f"Unknown platform: {sys.platform} {arch}")
 
                         if targetName in artifactName.lower():
-                            logging.info(f"saw artifact: {artifactName} for platform: {targetName}")
+                            logging.info(f"saw artifact: {artifactName} for platform: {targetName} {arch}")
                             break
 
                 logging.info(f"Downloading artifact for platform: {targetName} ...")
@@ -189,6 +172,7 @@ class WorkerThread(QThread):
                     download_url = artifact["resource"]["downloadUrl"]
                     file_name = artifactName + ".zip"
                     temp_dir = QTemporaryDir()
+                    temp_dir.setAutoRemove(False)
                     if temp_dir.isValid():
                         path = temp_dir.path()
                         logging.debug(f"Temporary folder created at: {path}")
@@ -216,18 +200,21 @@ class WorkerThread(QThread):
                     logging.debug(f"Artifact directory: {artifact_dir}")
 
                     tar_gz_path = os.path.join(path, artifactName)
-                    pkgFileEnding = ".exe" if platform.startswith("win") else ".tar.gz"
+                    pkgFileEnding = ".exe" if sys.platform.startswith("win") else ".tar.gz"
                     tar_gz_path = os.path.join(tar_gz_path, f"{artifactName}{pkgFileEnding}")
 
                     self.installCompleted.emit()
                     self.message.emit("Installing ...")
 
                     # Install the application
-                    if platform == "darwin":
+                    process = QProcess()
+                    if sys.platform == "darwin":
                         with tarfile.open(tar_gz_path, "r:gz") as tar:
                             tar.extractall(artifact_dir)
                         logging.info(f"Extracted {tar_gz_path} to {artifact_dir}")
-                    elif platform.startswith("linux"):
+                        process.setProgram("sh")
+                        process.setArguments(["-c", f"sleep 2 && open \"{appPath}\""])
+                    elif sys.platform.startswith("linux"):
                         tempUnarchivedFolder = QTemporaryDir()
                         logging.info(f"Extract {tar_gz_path} to {tempUnarchivedFolder.path()}")
                         with tarfile.open(tar_gz_path, "r:gz") as tar:
@@ -236,31 +223,16 @@ class WorkerThread(QThread):
                         shutil.copytree(tempUnarchivedFolder.path(), artifact_dir, dirs_exist_ok=True)
                         logging.info(f"Copy done")
                         appPath = f"{appPath}{os.sep}CycloneDDS Insight"
-                    elif platform.startswith("win"):
-                        logging.info(f"Running windows installer {tar_gz_path}")
-                        winInstallProcess = QProcess()
-                        winInstallProcess.setProgram(tar_gz_path)
-                        winInstallProcess.setArguments(["/SP-", "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/FORCECLOSEAPPLICATIONS"])
-                        winInstallProcess.start()
-                        winInstallProcess.waitForFinished(-1)
-                        appPath = f"{appPath}{os.sep}CycloneDDS Insight.exe"
-                        install_path = getWindowsInstallPath("{FC901B87-B2DD-4DB7-B317-ADA9B708841F}")
-                        if install_path:
-                            appPath = install_path + os.sep + "CycloneDDS Insight.exe"
-                        else:
-                            raise ValueError("Could not determine installation path from registry.")
+                        process.setProgram(appPath)
+                    elif sys.platform.startswith("win"):
+                        # Windows installer install and launch the application on the same call
+                        process.setProgram(tar_gz_path)
+                        process.setArguments(["/SP-", "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/FORCECLOSEAPPLICATIONS", "/NOCANCEL"])
 
                     # Launch the application
                     self.installCompleted.emit()
                     self.message.emit("Launch ...")
-                    logging.info(f"Launching the new application instance... {appPath}")
-                    process = QProcess()
-                    if platform == "darwin":
-                        process.setProgram("sh")
-                        process.setArguments(["-c", f"sleep 2 && open \"{appPath}\""])
-                    else:
-                        process.setProgram(appPath)
-
+                    logging.info(f"Launching the new application instance...")
                     success = process.startDetached()
                     if not success:
                         logging.error("Failed to launch the new application instance.")
@@ -284,9 +256,12 @@ class UpdaterModel(QObject):
     error = Signal(str)
 
     proxyAuthRequired = Signal()
+    proxyAuthRequiredUpdater = Signal()
 
     newBuildFound = Signal(str)
     newBuildError = Signal()
+
+    workerSetProxyCredentialsSignal = Signal(str, str)
 
     def __init__(self, pipelineId, buildId, parent=None):
         super().__init__(parent)
@@ -312,22 +287,26 @@ class UpdaterModel(QObject):
     @Slot(str, str, str, str)
     def downloadFile(self, organization, project, buildId, appDir):
 
-        if sys.platform == "darwin" or appDir != "":
-            logging.info("Running update directly")
+        if sys.platform == "darwin" or appDir != "" or sys.platform.startswith("win"):
+            # MacOS and Windows (via installer) can run directly
 
+            logging.info("Running update ...")
             self.updateStepCompleted.emit("Downloading...")
             self.worker = WorkerThread()
             self.worker.downloadedBytes.connect(self.onDownloadedBytes)
             self.worker.installCompleted.connect(self.installCompleted)
+            self.worker.proxyAuthRequired.connect(self.workerProxyRequestSlot)
+            self.workerSetProxyCredentialsSignal.connect(self.worker.setProxyCredentials)
             self.worker.error.connect(self.installError)
             self.worker.message.connect(self.installMessage)
             self.worker.setDownloadInfo(organization, project, buildId, appDir)
+            self.worker.setProxyCredentials(self.proxyUsername, self.proxyPassword)
             self.worker.start()
-
             self.worker.finished.connect(self.onWorkerFinished)
 
         else:
-            logging.info(f"Update via Updater exe")
+            # Only on linux needed
+            logging.info(f"Running Updater exe ...")
 
             tempdir = QTemporaryDir()
             tempdir.setAutoRemove(False)
@@ -347,18 +326,16 @@ class UpdaterModel(QObject):
 
             logging.debug(f"appDir: {appDir}")
 
-            if sys.platform.startswith("linux"):
-                if self.requiresRoot(appDir):
-                    errMsg = f"Requires root: {appDir}"
-                    logging.error(errMsg)
-                    self.installError(errMsg)
-                    return
+            if self.requiresRoot(appDir):
+                errMsg = f"Requires root: {appDir}"
+                logging.error(errMsg)
+                self.installError(errMsg)
+                return
 
             process: QProcess = QProcess()
             process.setWorkingDirectory(tempdir.path())
             process.setProgram(f".{os.sep}Updater")
             process.setArguments(["--appDir", appDir, "--organization", organization, "--project", project, "--buildId", buildId])
-
             success = process.startDetached()
             if success:
                 QApplication.quit()
@@ -368,10 +345,9 @@ class UpdaterModel(QObject):
     @Slot()
     def onWorkerFinished(self):
         logging.debug("Worker thread finished")
-
         if self.worker:
-            logging.info("Exiting the current application instance after successful update...")
             if self.worker.success:
+                logging.info("Exiting the current application instance after successful update...")
                 QApplication.quit()
 
     @Slot(int)
@@ -398,11 +374,17 @@ class UpdaterModel(QObject):
     def installError(self, error: str):
         self.error.emit(f"Error: {error}")
 
+    @Slot()
+    def workerProxyRequestSlot(self):
+        logging.info("Update worker needs auth.")
+        self.proxyAuthRequiredUpdater.emit()
+
     @Slot(str, str)
     def setProxyCredentials(self, username: str, password: str):
         logging.info("Set proxy credentials")
         self.proxyUsername = username
         self.proxyPassword = password
+        self.workerSetProxyCredentialsSignal.emit(username, password)
 
     def setProxy(self):
         enabled = self.settings.value("proxy/enabled", False, type=bool)

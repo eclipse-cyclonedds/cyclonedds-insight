@@ -36,10 +36,18 @@ Window {
 
     property bool isError: false
 
+    property string organization: ""
+    property string project: ""
+    property string newBuildId: "0"
+    property bool isExternUpdater: false
+
     function startUpdate(organization, project, newBuildId, isExternUpdater) {
+        updaterRootWindow.organization = organization
+        updaterRootWindow.project = project
+        updaterRootWindow.newBuildId = newBuildId
+        updaterRootWindow.isExternUpdater = isExternUpdater
         console.log("Starting update process...");
         updaterView.visible = true
-        rootWindow.hide()
         updaterModel.downloadFile(organization, project, newBuildId, isExternUpdater)
     }
 
@@ -55,6 +63,20 @@ Window {
             updaterRootWindow.isError = true
             statusText.text = error;
         }
+        function onProxyAuthRequiredUpdater() {
+            console.info("Proxy auth needed, show auth window ...")
+            updaterRootWindow.visible = false
+            proxyAuthWindowUpdater.visible = true
+        }
+    }
+
+    function showAndCheckForUpdates() {
+        updaterRootWindow.visible = true
+        updaterRootWindow.startUpdate(updaterRootWindow.organization, updaterRootWindow.project, updaterRootWindow.newBuildId, updaterRootWindow.isExternUpdater)
+    }
+
+    function showWithoutUpdate() {
+        updaterRootWindow.visible = true
     }
 
     Item {

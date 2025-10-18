@@ -39,8 +39,9 @@ import qrc_file
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon(QPixmap(":/res/images/cyclonedds.png")))
-    app.setApplicationName("CycloneDDS Insight Updater")
-    app.setApplicationDisplayName("CycloneDDS Insight Updater")
+    # Updater needs the same names here to share the settings file
+    app.setApplicationName("CycloneDDS Insight")
+    app.setApplicationDisplayName("CycloneDDS Insight")
     app.setOrganizationName("cyclonedds")
     app.setOrganizationDomain("org.eclipse.cyclonedds.insight")
 

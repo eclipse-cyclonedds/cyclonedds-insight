@@ -14,7 +14,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
 
 
@@ -29,6 +28,7 @@ Window {
 
     property int proxyAuthWidth: 300
     property int proxyAuthHeight: 150
+    property var resultHandler
 
     width: proxyAuthWidth
     height: proxyAuthHeight
@@ -79,7 +79,7 @@ Window {
                     console.log("Submit button clicked")
                     updaterModel.setProxyCredentials(proxyUsername.text, proxyPassword.text)
                     proxyAuthWindow.visible = false
-                    checkForUpdatesWindow.showAndCheckForUpdates()
+                    resultHandler.showAndCheckForUpdates()
                     proxyUsername.text = ""
                     proxyPassword.text = ""
                 }
@@ -90,7 +90,7 @@ Window {
                 Layout.alignment: Qt.AlignHCenter
                 onClicked: {
                     proxyAuthWindow.visible = false
-                    checkForUpdatesWindow.showWithoutUpdate()
+                    resultHandler.showWithoutUpdate()
                     proxyUsername.text = ""
                     proxyPassword.text = ""
                 }

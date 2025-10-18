@@ -42,7 +42,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "dist\CycloneDDS Insight\{#TheAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\CycloneDDS Insight\Updater.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "dist\CycloneDDS Insight\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
@@ -58,5 +57,8 @@ Name: "{autoprograms}\{#TheAppName}"; Filename: "{app}\{#TheAppExeName}"
 Name: "{autodesktop}\{#TheAppName}"; Filename: "{app}\{#TheAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#TheAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(TheAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+; For normal installs (checkbox on finished page)
+Filename: "{app}\{#TheAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(TheAppName, '&', '&&')}}"; Flags: nowait runasoriginaluser postinstall skipifsilent
 
+; For silent installs (run automatically)
+Filename: "{app}\{#TheAppExeName}"; Flags: nowait runasoriginaluser shellexec skipifnotsilent
