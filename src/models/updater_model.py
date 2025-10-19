@@ -48,7 +48,7 @@ class WorkerThread(QThread):
 
     @Slot(str, str)
     def setProxyCredentials(self, username: str, password: str):
-        logging.info(f"Worker: Set proxy credentials {username} {password}")
+        logging.info(f"Worker: Set proxy credentials")
         self.proxyUsername = username
         self.proxyPassword = password
 
