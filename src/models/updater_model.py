@@ -263,7 +263,7 @@ class UpdaterModel(QObject):
 
     workerSetProxyCredentialsSignal = Signal(str, str)
 
-    def __init__(self, pipelineId, buildId, parent=None):
+    def __init__(self, pipelineId, buildId, currentBranch, parent=None):
         super().__init__(parent)
         self.worker = None
         self.proxyUsername = ""
@@ -278,6 +278,7 @@ class UpdaterModel(QObject):
         self.masterBranch = "refs/heads/master"
         self.pipelineId = pipelineId
         self.currentBuildId = buildId
+        self.currentBranch = currentBranch
         self.latestBuildUrl = QUrl(f"https://dev.azure.com/{self.organization}/{self.project}/_apis/build/builds" +
                         f"?definitions={self.pipelineId}&branchName={self.masterBranch}&statusFilter=succeeded&$top=1&api-version=7.0")
 

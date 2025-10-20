@@ -63,7 +63,7 @@ if __name__ == "__main__":
     else:
         QQuickStyle.setStyle("Fusion")
 
-    updaterModel = UpdaterModel(build_info_helper.getBuildPipelineId(), build_info_helper.getBuildId())
+    updaterModel = UpdaterModel(build_info_helper.getBuildPipelineId(), build_info_helper.getBuildId(), build_info_helper.getBuildInfoGitBranch())
 
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("updaterModel", updaterModel)

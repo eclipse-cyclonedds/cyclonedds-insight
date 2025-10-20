@@ -124,7 +124,7 @@ if __name__ == "__main__":
     participantModel = ParticipantTreeModel(participantRootItem)
     shapesDemoModel = ShapesDemoModel()
 
-    updaterModel = UpdaterModel(build_info_helper.getBuildPipelineId(), build_info_helper.getBuildId())
+    updaterModel = UpdaterModel(build_info_helper.getBuildPipelineId(), build_info_helper.getBuildId(), build_info_helper.getBuildInfoGitBranch())
 
     qmlUtils = QmlUtils()
     app.aboutToQuit.connect(qmlUtils.aboutToQuit)
