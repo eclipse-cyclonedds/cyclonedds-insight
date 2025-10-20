@@ -49,11 +49,13 @@ Popup {
                     domainIdTextField.text = 232
                 }
             }
+            onAccepted: addButton.clicked()
         }
         Row {
             Button {
                 id: addButton
                 text: qsTr("Add")
+                highlighted: true
                 onClicked: {
                     treeModel.addDomainRequest(parseInt(domainIdTextField.text))
                     domainIdTextField.text = parseInt(domainIdTextField.text) + 1

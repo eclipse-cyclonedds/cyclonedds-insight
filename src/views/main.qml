@@ -73,7 +73,7 @@ ApplicationWindow {
             }
             MenuItem {
                 text: "Check for Updates"
-                onTriggered: checkForUpdatesWindow.visible = true
+                onTriggered: checkForUpdatesWindow.showAndCheckForUpdates()
             }
         }
     }
@@ -222,5 +222,17 @@ ApplicationWindow {
             var localPath = qmlUtils.toLocalFile(selectedFile);
             qmlUtils.exportDdsDataAsJson(localPath);
         }
+    }
+
+    ProxyAuthWindow {
+        id: proxyAuthWindow
+        resultHandler: checkForUpdatesWindow
+        visible: false
+    }
+
+    ProxyAuthWindow {
+        id: proxyAuthWindowUpdater
+        resultHandler: updaterView
+        visible: false
     }
 }

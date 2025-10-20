@@ -39,6 +39,10 @@ ApplicationWindow {
 
     Component.onCompleted: {
         rootWindow.isDarkMode = getDarkMode()
+        rootWindow.startUpdate()
+    }
+
+    function startUpdate() {
         console.info("Target app dir:", APPDIR)
         updaterView.startUpdate(ORGANIZATION, PROJECT, NEWBUILDID, APPDIR)
     }
@@ -59,6 +63,12 @@ ApplicationWindow {
     UpdaterView {
         id: updaterView
         visible: true
+    }
+
+    ProxyAuthWindow {
+        id: proxyAuthWindowUpdater
+        resultHandler: updaterView
+        visible: false
     }
 
 }

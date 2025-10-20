@@ -18,6 +18,6 @@ pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && \
 DYLD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
 LD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib:$LD_LIBRARY_PATH" \
 pyinstaller main.spec --noconfirm --clean
-if [ "$(uname)" != "Darwin" ]; then
+if [ "$(uname)" == "Linux" ]; then
     pyinstaller src/updater.py --onefile --name Updater -i "NONE" --distpath "./dist/CycloneDDS Insight" --noconsole --noconfirm --clean
 fi

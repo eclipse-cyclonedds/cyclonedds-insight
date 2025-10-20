@@ -105,7 +105,7 @@ ToolBar {
                 }
                 MenuItem {
                     text: "Check for Updates"
-                    onTriggered: checkForUpdatesWindow.visible = true
+                    onTriggered: checkForUpdatesWindow.showAndCheckForUpdates()
                 }
                 MenuItem {
                     text: "About"

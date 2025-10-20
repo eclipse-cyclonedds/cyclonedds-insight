@@ -47,9 +47,45 @@ Window {
     property bool updateError: false
     property string newBuildId: "0"
 
-    onVisibleChanged: {
-        if (visible) {
-            getLatestBuildArtifacts()
+    function proxyAuthRequired() {
+        checkForUpdatesWindow.close()
+        proxyAuthWindow.visible = true
+    }
+
+    function showAndCheckForUpdates() {
+        checkForUpdatesWindow.visible = true
+        getLatestBuildArtifacts()
+    }
+
+    function showWithoutUpdate() {
+        checkForUpdatesWindow.visible = true
+    }
+
+    Connections {
+        target: updaterModel
+        function onProxyAuthRequired() {
+            proxyAuthRequired()
+        }
+        function onNewBuildFound(newBuildIdFromModel) {
+            if (newBuildIdFromModel === "") {
+                updateCheckRunning = false
+                checkedForUpdate = true
+                updateAvailable = false
+                updateError = false
+            } else {
+                updateCheckRunning = false
+                checkedForUpdate = true
+                updateAvailable = true
+                newBuildId = newBuildIdFromModel
+                updateError = false
+            }
+            lastUpdateTime = new Date().toLocaleString()
+        }
+        function onNewBuildError(newBuildIdFromModel) {
+            updateCheckRunning = false
+            checkedForUpdate = true
+            updateAvailable = false
+            updateError = true
         }
     }
 
@@ -117,41 +153,10 @@ Window {
     }
 
     function getLatestBuildArtifacts() {
-
         updateError = false
         checkedForUpdate = true
         updateCheckRunning = true
 
-        var buildsUrl = encodeURI("https://dev.azure.com/" + organization + "/" + project +
-                        "/_apis/build/builds?definitions=" + CYCLONEDDS_INSIGHT_BUILD_PIPELINE_ID +
-                        "&branchName=" + branch + "&statusFilter=succeeded&$top=1&api-version=7.0")
-
-        console.log("Check for updates: ", buildsUrl)
-
-        var xhr = new XMLHttpRequest()
-        xhr.open("GET", buildsUrl)
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    var response = JSON.parse(xhr.responseText)
-                    console.debug("Fetched builds: " + JSON.stringify(response))
-                    if (response.value.length > 0) {
-                        var latestBuild = response.value[0]
-                        if (parseInt(latestBuild.id) > parseInt(CYCLONEDDS_INSIGHT_BUILD_ID) || CYCLONEDDS_INSIGHT_GIT_BRANCH !== branch) {
-                            newBuildId = String(latestBuild.id)
-                            console.log("New update available, build id:", latestBuild.id)
-                            updateAvailable = true
-                        }
-                    }
-                } else {
-                    console.log("Error fetching builds: " + xhr.status)
-                    updateError = true
-                }
-            }
-            var currentDate = new Date()
-            lastUpdateTime = currentDate.toLocaleString()
-            updateCheckRunning = false
-        }
-        xhr.send()
+        updaterModel.checkForUpdate()
     }
 }
