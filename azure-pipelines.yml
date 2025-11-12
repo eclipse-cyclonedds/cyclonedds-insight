@@ -29,7 +29,7 @@ jobs:
       'Ubuntu_22.04_LTS_x64':
         image: ubuntu-22.04
       'macOS_14_x64':
-        image: macOS-14-large
+        image: macOS-14
       'Windows_Server_2022_x64':
         image: windows-2022
   steps:
