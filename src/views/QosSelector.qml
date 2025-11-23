@@ -727,6 +727,11 @@ Popup {
                                 placeholderText: "Enter value"
                                 text: ""
                             }
+                            Switch {
+                                id: prop_propagate
+                                text: qsTr("Propagate")
+                                checked: false
+                            }
                         }
 
                         Label {
@@ -745,6 +750,11 @@ Popup {
                                 id: binaryPropertyValueField
                                 placeholderText: "Enter value"
                                 text: ""
+                            }
+                            Switch {
+                                id: bin_prop_propagate
+                                text: qsTr("Propagate")
+                                checked: false
                             }
                         }
                     }
@@ -1336,8 +1346,10 @@ Popup {
                     entityNameField.text,
                     propertyKeyField.text,
                     propertyValueField.text,
+                    prop_propagate.checked,
                     binaryPropertyKeyField.text,
                     binaryPropertyValueField.text,
+                    bin_prop_propagate.checked,
                     cleanup_delayCheckbox.checked ? -1 : cleanup_delaySpinBox.value,
                     durabilityServiceHistoryComboId.currentText,
                     durabilityServiceKeepLastSpinBox.value,

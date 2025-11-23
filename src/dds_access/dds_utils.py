@@ -156,7 +156,7 @@ def toQos(
         reader_life_nowriter_delay, reader_life_disposed, transport_prio,
         limit_max_samples, limit_max_instances, limit_max_samples_per_instance,
         timebased_filter_time_sec, ignore_local,
-        user_data, entity_name, prop_name, prop_value, bin_prop_name, bin_prop_value,
+        user_data, entity_name, prop_name, prop_value, prop_propagate, bin_prop_name, bin_prop_value, bin_prop_propagate,
         durserv_cleanup_delay_minutes, durserv_history, durserv_history_keep_last_nr,
         durserv_max_samples, durserv_max_instances, durserv_max_samples_per_instance,
         # Pub/Sub
@@ -258,10 +258,10 @@ def toQos(
             qos += Qos(Policy.EntityName(name=entity_name))
 
         if prop_name and prop_value:
-            qos += Qos(Policy.Property(key=prop_name, value=prop_value))
+            qos += Qos(Policy.Property(key=prop_name, value=prop_value, propagate=prop_propagate))
 
         if bin_prop_name and bin_prop_value:
-            qos += Qos(Policy.BinaryProperty(key=bin_prop_name, value=bin_prop_value.encode('utf-8')))
+            qos += Qos(Policy.BinaryProperty(key=bin_prop_name, value=bin_prop_value.encode('utf-8'), propagate=bin_prop_propagate))
 
         qos += Qos(Policy.DurabilityService(
             cleanup_delay=duration(minutes=durserv_cleanup_delay_minutes) if durserv_cleanup_delay_minutes >= 0 else duration(infinite=True),
