@@ -276,6 +276,8 @@ class UpdaterModel(QObject):
         self.organization = "eclipse-cyclonedds"
         self.project = "cyclonedds-insight"
         self.masterBranch = "refs/heads/master"
+        if currentBranch.startswith("refs/tags/"):
+            self.masterBranch = currentBranch
         self.pipelineId = pipelineId
         self.currentBuildId = buildId
         self.currentBranch = currentBranch
