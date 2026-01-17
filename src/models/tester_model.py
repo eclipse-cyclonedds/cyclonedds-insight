@@ -49,6 +49,8 @@ class TesterModel(QAbstractListModel):
     showQml = Signal(str, str)
 
     writeDataSignal = Signal(str, object)
+    disposeDataSignal = Signal(str, object)
+    unregisterDataSignal = Signal(str, object)
 
     requestQosJsonSignal = Signal(str, str)
 
@@ -125,6 +127,8 @@ class TesterModel(QAbstractListModel):
 
         if domainId not in self.alreadyConnectedDomains:
             self.writeDataSignal.connect(self.threads[domainId].write, Qt.ConnectionType.QueuedConnection)
+            self.disposeDataSignal.connect(self.threads[domainId].dispose, Qt.ConnectionType.QueuedConnection)
+            self.unregisterDataSignal.connect(self.threads[domainId].unregisterInstance, Qt.ConnectionType.QueuedConnection)
             self.requestQosJsonSignal.connect(self.threads[domainId].requestQosJson, Qt.ConnectionType.QueuedConnection)
             self.threads[domainId].responseQosJson.connect(self.receiveQosJson, Qt.ConnectionType.QueuedConnection)
             self.alreadyConnectedDomains.append(domainId)
@@ -182,6 +186,20 @@ class TesterModel(QAbstractListModel):
         mId = list(self.dataWriters.keys())[int(currentIndex)]
         (_, _, _, _, _, dataTreeModel, _) = self.dataWriters[mId]
         self.writeDataSignal.emit(mId, dataTreeModel.getDataObj())
+
+    @Slot(int)
+    def disposeData(self, currentIndex: int):
+        logging.trace(f"Dispose Data pressed on index: {str(currentIndex)}")
+        mId = list(self.dataWriters.keys())[int(currentIndex)]
+        (_, _, _, _, _, dataTreeModel, _) = self.dataWriters[mId]
+        self.disposeDataSignal.emit(mId, dataTreeModel.getDataObj())
+
+    @Slot(int)
+    def unregisterData(self, currentIndex: int):
+        logging.trace(f"Unregister Data pressed on index: {str(currentIndex)}")
+        mId = list(self.dataWriters.keys())[int(currentIndex)]
+        (_, _, _, _, _, dataTreeModel, _) = self.dataWriters[mId]
+        self.unregisterDataSignal.emit(mId, dataTreeModel.getDataObj())
 
     @Slot()
     def deleteAllWriters(self):

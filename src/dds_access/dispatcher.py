@@ -55,6 +55,22 @@ class DispatcherThread(QThread):
             writer.write(data)
             logging.debug("Write ... DONE")
 
+    @Slot(str, object)
+    def dispose(self, id, data):
+        if id in self.writerData:
+            logging.debug(f"Dispose {id} {data}")
+            (_, writer, _) = self.writerData[id]
+            writer.dispose(data)
+            logging.debug("Dispose ... DONE")
+
+    @Slot(str, object)
+    def unregisterInstance(self, id, data):
+        if id in self.writerData:
+            logging.debug(f"Unregister {id} {data}")
+            (_, writer, _) = self.writerData[id]
+            writer.unregister_instance(data)
+            logging.debug("Unregister ... DONE")
+
     @Slot()
     def deleteAllWriters(self):
         logging.info(f"Delete all writers")  

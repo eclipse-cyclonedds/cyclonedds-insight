@@ -395,13 +395,37 @@ Rectangle {
                 }
             }
         }
-
-        Button {
-            text: "Write"
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 20
             visible: dataTreeModel !== null
-            onClicked: {
-                console.log("Write Button clicked")
-                testerModel.writeData(librariesCombobox.currentIndex)
+
+            Button {
+                text: "Write"
+                visible: dataTreeModel !== null
+                onClicked: {
+                    console.log("Write Button clicked")
+                    testerModel.writeData(librariesCombobox.currentIndex)
+                }
+            }
+            Item {
+                Layout.fillWidth: true
+            }
+            Button {
+                text: "Dispose"
+                visible: dataTreeModel !== null
+                onClicked: {
+                    console.log("Dispose Button clicked")
+                    testerModel.disposeData(librariesCombobox.currentIndex)
+                }
+            }
+            Button {
+                text: "Unregister"
+                visible: dataTreeModel !== null
+                onClicked: {
+                    console.log("Unregister Button clicked")
+                    testerModel.unregisterData(librariesCombobox.currentIndex)
+                }
             }
         }
     }
