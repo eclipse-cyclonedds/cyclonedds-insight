@@ -437,7 +437,7 @@ Rectangle {
                 var selectedFile = selectedFiles[i];
                 console.debug("Selected file: " + selectedFile)
                 var localPath = qmlUtils.toLocalFile(selectedFile);
-                datamodelRepoModel.setQosSelectionFromFile(localPath);
+                datamodelRepoModel.setQosSelectionFromFile(localPath, 4);
             }
         }
     }

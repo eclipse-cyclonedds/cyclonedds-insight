@@ -24,6 +24,7 @@ from cyclonedds.core import Qos, Policy
 from cyclonedds.util import duration
 from dds_access.datatypes.entity_type import EntityType
 from module_handler import DataModelHandler
+from utils.qml_utils import QmlUtils
 
 
 class DatamodelModel(QAbstractListModel):
@@ -50,6 +51,7 @@ class DatamodelModel(QAbstractListModel):
 
         self.threads = threads
         self.readerRequests = {}
+        self.currentListenerTemplates = {}
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> typing.Any:
         if not index.isValid():
@@ -99,6 +101,7 @@ class DatamodelModel(QAbstractListModel):
 
     @Slot()
     def deleteAllReaders(self):
+        self.currentListenerTemplates.clear()
         for key in list(self.threads.keys()):
             self.threads[key].deleteAllReaders()
 
@@ -146,8 +149,8 @@ class DatamodelModel(QAbstractListModel):
             self.readerRequests[typeRequestId] = (domain_id, topic_type, topic_name, qos, entityType, presetName, msgDict)
             self.requestDataType.emit(typeRequestId, domain_id, topic_type, topic_name)
 
-    @Slot(str)
-    def setQosSelectionFromFile(self, filePath: str):
+    @Slot(str, int)
+    def setQosSelectionFromFile(self, filePath: str, entityType: int):
         logging.info(f"Import preset from {filePath}")
         if not os.path.isfile(filePath):
             logging.error(f"File does not exist: {filePath}")
@@ -177,9 +180,12 @@ class DatamodelModel(QAbstractListModel):
                         endpointQos = Qos.fromdict(allQosDict["endpoint_qos"])
 
                     if "publisher_qos" in allQosDict:
-                        publisherQos = Qos.fromdict(allQosDict["publisher_qos"])
+                        pubSubQos = Qos.fromdict(allQosDict["publisher_qos"])
 
-                    self.handleEndpointCreation(domainId, topic_name, topic_type, (dpQos, topicQos, publisherQos, endpointQos), EntityType.WRITER, presetName, message["root"])
+                    if "subscriber_qos" in allQosDict:
+                        pubSubQos = Qos.fromdict(allQosDict["subscriber_qos"])
+
+                    self.handleEndpointCreation(domainId, topic_name, topic_type, (dpQos, topicQos, pubSubQos, endpointQos), EntityType(entityType), presetName, message["root"])
 
     @Slot(str, object)
     def receiveDataType(self, requestId, dataType):
@@ -204,5 +210,39 @@ class DatamodelModel(QAbstractListModel):
         # Add to Tester tab
         if entityType == EntityType.WRITER:
             self.newWriterSignal.emit(id, domainId, topicName, topic_type, "", "", presetName, msgDict)
+        if entityType == EntityType.READER:
+            self.currentListenerTemplates[id] = (domainId, topicName, dataType, qos, entityType)
 
         logging.debug("try add endpoint ... DONE")
+
+    @Slot(str)
+    def exportListenerPresets(self, filePath: str):
+        logging.info(f"Export listener presets to {filePath}")
+
+        exportData = { "presets": [] }
+        for _, dspThread in self.threads.items():
+            for (_, topic, subscriber, reader, _) in dspThread.readerData:
+                exportData["presets"].append({
+                    "domain_id": dspThread.domain_id,
+                    "topic_name": topic.name,
+                    "topic_type": topic.typename,
+                    "qos": {
+                        "topic_qos": topic.get_qos().asdict(),
+                        "subscriber_qos": subscriber.get_qos().asdict(),
+                        "endpoint_qos": reader.get_qos().asdict()
+                    }
+                })
+
+        qmlUtils = QmlUtils()
+        qmlUtils.saveFileContent(filePath, json.dumps(exportData, indent=4))
+
+    @Slot()
+    def stopListener(self):
+        for key in list(self.threads.keys()):
+            self.threads[key].deleteAllReaders()
+    
+    @Slot()
+    def startListener(self):
+        for listenerId in list(self.currentListenerTemplates.keys()):
+            (domainId, topicName, dataType, qos, entityType) = self.currentListenerTemplates[listenerId]
+            self.threads[domainId].addEndpoint(listenerId, topicName, dataType, qos, entityType)

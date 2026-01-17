@@ -65,6 +65,7 @@ class QmlUtils(QObject):
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content)
+            logging.info(f"Saved content to file: {file_path}")
         except Exception as e:
             logging.error(f"Error writing file: {e}")
 

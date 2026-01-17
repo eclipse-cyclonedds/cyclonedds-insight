@@ -10,6 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 */
 
+import QtCore
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
@@ -23,31 +24,24 @@ Rectangle {
     id: listenerTabId
     anchors.fill: parent
     color: rootWindow.isDarkMode ? Constants.darkOverviewBackground : Constants.lightOverviewBackground
-
+    property bool started: true
     property bool autoScrollEnabled: true
-    property string logCache: ""
-    property int maxLength: 10000
-    property int removeLength: 2500
-
-    border.color : autoScrollEnabled ? "transparent" : "orange"
+    border.color : !started ? "red" : autoScrollEnabled ? "transparent" : "orange"
     border.width : 2
 
-    function logClear() {
-        listenerTextArea.text = ""
-        logCache = ""
+    ListModel {
+        id: receivedDataModel
     }
 
     Connections {
         target: datamodelRepoModel
         function onNewDataArrived(out) {
+            receivedDataModel.append({ text: out })
             if (autoScrollEnabled) {
-                listenerTextArea.append(out)
-                if (listenerTextArea.text.length >= listenerTabId.maxLength) {
-                    listenerTextArea.remove(0, removeLength)
-                    listenerTextArea.insert(0, "Previous output was removed.\n")
-                }
-            } else {
-                logCache += out + "\n"
+                listView.positionViewAtEnd()
+            }
+            if (started === false) {
+                started = true
             }
         }
     }
@@ -66,28 +60,50 @@ Rectangle {
                 implicitWidth: 1
             }
             Button {
-                text: "Clear Log"
-                onClicked: logClear()
+                text: "Clear"
+                onClicked: receivedDataModel.clear()
             }
             Button {
-                text: listenerTabId.autoScrollEnabled ? "Pause Log" : "Resume Log"
+                text: started ? "Stop" : "Start"
                 onClicked: {
-                    listenerTabId.autoScrollEnabled = !listenerTabId.autoScrollEnabled
-                    if (listenerTabId.autoScrollEnabled) {
-                        if (logCache.length > 0) {
-                            listenerTextArea.append(logCache.slice(0, -1))
-                        }
-                        logCache = ""
-                        listenerTextArea.cursorPosition = listenerTextArea.length
-                        scrollView.contentY = listenerTextArea - scrollView.height
+                    started = !started
+                    if (started) {
+                        datamodelRepoModel.startListener()
                     } else {
-                        listenerTextArea.cursorPosition = listenerTextArea.cursorPosition - 1
+                        datamodelRepoModel.stopListener()
                     }
                 }
             }
             Item {
                 implicitHeight: 1
                 Layout.fillWidth: true
+            }
+            Button {
+                text: "Import"
+                onClicked: importMenu.open()
+                Menu {
+                    id: importMenu
+                    MenuItem {
+                        text: "Import Listener Preset"
+                        onClicked: importListenerPresetDialog.open()
+                    }
+                }
+            }
+            Button {
+                text: "Export"
+                onClicked: exportMenu.open()
+
+                Menu {
+                    id: exportMenu
+                    MenuItem {
+                        text: "Export Listener Preset"
+                        onClicked: exportListenerPresetDialog.open()
+                    }
+                    MenuItem {
+                        text: "Export Sample Log"
+                        onClicked: exportSampleLogFileDialog.open()
+                    }
+                }
             }
             Button {
                 text: "Delete All Readers"
@@ -105,29 +121,115 @@ Rectangle {
             Layout.fillHeight: true
             Layout.margins: 3
 
-            Flickable {
-                id: scrollView
+            ListView {
+                id: listView
                 anchors.fill: parent
-                boundsBehavior: Flickable.StopAtBounds
-                interactive: true
-                ScrollBar.vertical: ScrollBar {}
+                model: receivedDataModel
+                anchors.margins: 5
+                clip: true
 
-                TextArea.flickable: TextArea {
-                    id: listenerTextArea
-                    readOnly: true
-                    tabStopDistance: 40
-                    wrapMode: TextArea.Wrap
-                    selectByMouse: true
-                    selectByKeyboard: true
-                    onContentHeightChanged: {
-                        if (listenerTabId.autoScrollEnabled) {
-                            listenerTextArea.cursorPosition = listenerTextArea.length
-                            scrollView.contentY = listenerTextArea.height - scrollView.height
+                delegate: Column {
+                    width: ListView.view.width
+
+                    Item {
+                        height: index > 0 ? 4 : 0
+                        width: parent.width
+                    }
+                    Rectangle {
+                        visible: index > 0
+                        width: parent.width
+                        height: 1
+                        color: rootWindow.isDarkMode ? "#555555" : "#cccccc"
+                    }
+                    Item {
+                        height: index > 0 ? 4 : 0
+                        width: parent.width
+                    }
+
+                    TextEdit {
+                        text: model.text
+                        readOnly: true
+                        color: rootWindow.isDarkMode ? "white" : "black"
+                        wrapMode: Text.Wrap
+                        selectByMouse: true
+                        padding: 2
+                        width: parent.width
+                        onActiveFocusChanged: {
+                            if (activeFocus) {
+                                listenerTabId.autoScrollEnabled = false
+                            }
                         }
                     }
-                    onPressed: listenerTabId.autoScrollEnabled = false
+                }
+                onMovementStarted: {
+                    listenerTabId.autoScrollEnabled = false
+                }
+                ScrollBar.vertical: ScrollBar {
+                    policy: ScrollBar.AsNeeded
                 }
             }
+
+            Button {
+                text: "Auto Scroll"
+                visible: !listenerTabId.autoScrollEnabled
+                onClicked: {
+                    listenerTabId.autoScrollEnabled = true
+                    listView.positionViewAtEnd()
+                }
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.margins: 10
+            }
+        }
+    }
+
+    FileDialog {
+        id: importListenerPresetDialog
+        currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
+        fileMode: FileDialog.OpenFiles
+        title: "Import Listener Presets"
+        nameFilters: ["JSON files (*.json)"]
+        onAccepted: {
+            for (var i = 0; i < selectedFiles.length; i++) {
+                var selectedFile = selectedFiles[i];
+                console.debug("Selected file: " + selectedFile)
+                var localPath = qmlUtils.toLocalFile(selectedFile);
+                datamodelRepoModel.setQosSelectionFromFile(localPath, 3);
+            }
+        }
+    }
+
+    FileDialog {
+        id: exportListenerPresetDialog
+        currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "json"
+        title: "Export Listener Preset"
+        nameFilters: ["JSON files (*.json)"]
+        selectedFile: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0] + "/listener.json"
+        property bool exportAll: false
+        onAccepted: {
+            qmlUtils.createFileFromQUrl(selectedFile)
+            var localPath = qmlUtils.toLocalFile(selectedFile);
+            datamodelRepoModel.exportListenerPresets(localPath);
+        }
+    }
+
+    FileDialog {
+        id: exportSampleLogFileDialog
+        currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0] + "/samples.log"
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "log"
+        title: "Export Sample Log"
+        onAccepted: {
+            qmlUtils.createFileFromQUrl(selectedFile)
+            var localPath = qmlUtils.toLocalFile(selectedFile);
+            var content = ""
+            var count = receivedDataModel.count
+            for (var i = 0; i < count; i++) {
+                content += receivedDataModel.get(i).text + "\n"
+            }
+            qmlUtils.saveFileContent(localPath, content)
         }
     }
 }
