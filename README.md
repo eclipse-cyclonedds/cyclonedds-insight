@@ -13,7 +13,9 @@
 
 A graphical tool to visualize the current DDS system.
 
-![`cyclonedds insight`](res/images/cyclonedds-insight.png)
+Access the documentation [here](https://cyclonedds.io/docs/cyclonedds-insight/latest) for more information, user manuals and more.
+
+![`cyclonedds insight`](docs/manual/_static/images/cyclonedds-insight.png)
 
 Features:
 
