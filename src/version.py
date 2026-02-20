@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-CYCLONEDDS_INSIGHT_VERSION = "0.11.0"
+CYCLONEDDS_INSIGHT_VERSION = "11.0.0"
 
 if __name__ == "__main__":
     print(CYCLONEDDS_INSIGHT_VERSION)
