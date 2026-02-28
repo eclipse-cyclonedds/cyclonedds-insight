@@ -134,16 +134,17 @@ class DatamodelModel(QAbstractListModel):
         qos = (dpQps, topicQos, pubSubQos, endpQos)
         entityType = EntityType(entityTypeInteger)
 
-        self.handleEndpointCreation(domain_id, topic_name, topic_type, qos, entityType, f"Untitled-{DatamodelModel.untitiledCount}", {})
+        id = "m" + str(uuid.uuid4()).replace("-", "_")
+        self.handleEndpointCreation(id, domain_id, topic_name, topic_type, qos, entityType, f"Untitled-{DatamodelModel.untitiledCount}", {})
         DatamodelModel.untitiledCount += 1
 
-    def handleEndpointCreation(self, domain_id, topic_name, topic_type, qos, entityType, presetName, msgDict):
+    def handleEndpointCreation(self, mId, domain_id, topic_name, topic_type, qos, entityType, presetName, msgDict):
         if self.dataModelHandler.hasType(topic_type):
             module_type, class_type = self.dataModelHandler.getType(topic_type)
 
             logging.debug(str(module_type))
             logging.debug(str(class_type))
-            self.createEndpoint(domain_id, topic_name, class_type, qos, entityType, topic_type, presetName, msgDict)
+            self.createEndpoint(mId, domain_id, topic_name, class_type, qos, entityType, topic_type, presetName, msgDict)
         else:
             typeRequestId = str(uuid.uuid4())
             self.readerRequests[typeRequestId] = (domain_id, topic_type, topic_name, qos, entityType, presetName, msgDict)
@@ -162,6 +163,7 @@ class DatamodelModel(QAbstractListModel):
 
             presets = j.get("presets", [])
             for preset in presets:
+                _id = preset.get("id", str(uuid.uuid4()))
                 presetName = preset.get("preset_name", "ImportedPreset")
                 domainId = preset.get("domain_id", 0)
                 topic_name = preset.get("topic_name", "")
@@ -185,20 +187,19 @@ class DatamodelModel(QAbstractListModel):
                     if "subscriber_qos" in allQosDict:
                         pubSubQos = Qos.fromdict(allQosDict["subscriber_qos"])
 
-                    self.handleEndpointCreation(domainId, topic_name, topic_type, (dpQos, topicQos, pubSubQos, endpointQos), EntityType(entityType), presetName, message["root"])
+                    self.handleEndpointCreation(_id, domainId, topic_name, topic_type, (dpQos, topicQos, pubSubQos, endpointQos), EntityType(entityType), presetName, message["root"])
 
     @Slot(str, object)
     def receiveDataType(self, requestId, dataType):
         if requestId in self.readerRequests:
             (domain_id, topic_type, topic_name, qos, entityType, presetName, msgDict) = self.readerRequests[requestId]
             self.dataModelHandler.addTypeFromNetwork(topic_type, dataType)
-            self.createEndpoint(domain_id, topic_name, dataType, qos, entityType, topic_type, presetName, msgDict)
+            id = "m" + str(uuid.uuid4()).replace("-", "_")
+            self.createEndpoint(id, domain_id, topic_name, dataType, qos, entityType, topic_type, presetName, msgDict)
             del self.readerRequests[requestId]
 
-    def createEndpoint(self, domainId: int, topicName: str, dataType, qos, entityType: EntityType, topic_type, presetName: str, msgDict: dict):
+    def createEndpoint(self, id, domainId: int, topicName: str, dataType, qos, entityType: EntityType, topic_type, presetName: str, msgDict: dict):
         logging.debug(f"add endpoint with qos: {str(qos)}")
-
-        id = "m" + str(uuid.uuid4()).replace("-", "_")
 
         if domainId in self.threads:
             self.threads[domainId].addEndpoint(id, topicName, dataType, qos, entityType)

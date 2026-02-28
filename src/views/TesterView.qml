@@ -26,6 +26,8 @@ Rectangle {
     color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
     property var component
     property var dataTreeModel: null
+    property var sequenceModel: null
+    property bool isSequenceEditorVisible: false
 
     Connections {
         target: testerModel
@@ -53,6 +55,11 @@ Rectangle {
             Item {
                 implicitHeight: 1
                 Layout.fillWidth: true
+            }
+
+            Button {
+                text: "Create Sequence"
+                onClicked: testerModel.addSequence()
             }
 
             Button {
@@ -113,7 +120,6 @@ Rectangle {
                         }
                     }
                 }
-
             }
         }
 
@@ -139,6 +145,7 @@ Rectangle {
                 onCurrentIndexChanged: {
                     if (testerModel) {
                         dataTreeModel = testerModel.getTreeModel(currentIndex)
+                        sequenceModel = testerModel.getSequenceModel(currentIndex)
                     }
                 }
                 onCountChanged: {
@@ -156,7 +163,7 @@ Rectangle {
 
         RowLayout {
             spacing: 10
-            visible: dataTreeModel !== null
+            visible: testerModel.count > 0
 
             Item {
                 implicitHeight: 1
@@ -169,7 +176,7 @@ Rectangle {
 
             TextField {
                 id: presetNameField
-                text: dataTreeModel !== null ? testerModel.getPresetName(librariesCombobox.currentIndex) : ""
+                text: testerModel.count > 0 ? testerModel.getPresetName(librariesCombobox.currentIndex) : ""
                 placeholderText: "Enter Preset-Name"
                 Layout.fillWidth: true
                 onTextChanged: {
@@ -181,7 +188,7 @@ Rectangle {
             /* Button {
                 text: "Print tree"
                 onClicked: {
-                    dataTreeModel.printTree()
+                    testerModel.printTree()
                 }
             } */
             Item {
@@ -190,8 +197,15 @@ Rectangle {
             }
         }
 
+        Label {
+            text: testerModel.getDescriptionName(librariesCombobox.currentIndex) 
+            visible: testerModel.count > 0
+            leftPadding: 10
+            topPadding: 5
+        }
+
         Item {
-            visible: dataTreeModel !== null
+            visible: testerModel.count > 0
             implicitHeight: 10
             implicitWidth: 1
         }
@@ -216,10 +230,118 @@ Rectangle {
             Layout.fillHeight: true
             Layout.margins: 3
 
+
+            Rectangle {
+                anchors.fill: parent
+                color: "transparent"
+                visible: dataTreeModel === null && sequenceModel !== null
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 0
+
+                    Button {
+                        text: isSequenceEditorVisible ? "Stop Modify Sequence" : "Modify Sequence"
+                        onClicked: {
+                            isSequenceEditorVisible = !isSequenceEditorVisible
+                        }
+                    }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    id: sequenceEditor
+
+                    // Selection indices
+                    property int availableIndex: -1
+                    property int sequenceIndex: -1
+
+                    GroupBox {
+                        title: "Available"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        visible: isSequenceEditorVisible
+
+                        ListView {
+                            id: availableList
+                            anchors.fill: parent
+                            clip: true
+                            model: testerModel
+                            currentIndex: sequenceEditor.availableIndex
+                            onCurrentIndexChanged: sequenceEditor.availableIndex = currentIndex
+
+                            delegate: ItemDelegate {
+                                enabled: model.isWriter
+                                width: ListView.view.width
+                                text: model.name
+                                highlighted: index === availableList.currentIndex
+                                onClicked: availableList.currentIndex = index
+                                onDoubleClicked: sequenceEditor.addSelected()
+                            }
+
+                            ScrollBar.vertical: ScrollBar { }
+                        }
+                    }
+
+                    // MIDDLE: Buttons
+                    ColumnLayout {
+                        visible: isSequenceEditorVisible
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: 8
+
+                        Button {
+                            text: "Add →"
+                            enabled: availableList.currentIndex >= 0
+                            onClicked: {
+                                if (testerModel && sequenceModel) {
+                                    sequenceModel.addSequenceItem(testerModel.getItemId(availableList.currentIndex))
+                                }
+                            }
+                        }
+
+                        Button {
+                            text: "← Remove"
+                            enabled: sequenceList.currentIndex >= 0
+                            onClicked: {
+                                if (sequenceModel) {
+                                    sequenceModel.removeSequenceItem(sequenceList.currentIndex)
+                                }
+                            }
+                        }
+                    }
+
+                    // RIGHT: Sequence
+                    GroupBox {
+                        title: "Sequence"
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        ListView {
+                            id: sequenceList
+                            anchors.fill: parent
+                            clip: true
+                            model: sequenceModel
+                            currentIndex: sequenceEditor.sequenceIndex
+
+                            delegate: ItemDelegate {
+                                width: ListView.view.width
+                                text: testerModel.getNameById(name)
+                                highlighted: index === sequenceList.currentIndex
+                                onClicked: sequenceList.currentIndex = index
+                            }
+
+                            ScrollBar.vertical: ScrollBar { }
+                        }
+                    }
+                }
+                }
+            }
+
             TreeView {
                 id: treeView
                 model: dataTreeModel
                 anchors.fill: parent
+                visible: dataTreeModel !== null && sequenceModel === null
                 clip: true
                 ScrollBar.vertical: ScrollBar {}
                 selectionModel: ItemSelectionModel {
@@ -420,11 +542,11 @@ Rectangle {
         RowLayout {
             Layout.fillWidth: true
             Layout.preferredHeight: 20
-            visible: dataTreeModel !== null
+            visible: testerModel.count > 0
 
             Button {
                 text: "Write"
-                visible: dataTreeModel !== null
+                visible: testerModel.count > 0
                 onClicked: {
                     console.log("Write Button clicked")
                     testerModel.writeData(librariesCombobox.currentIndex)
@@ -435,7 +557,7 @@ Rectangle {
             }
             Button {
                 text: "Dispose"
-                visible: dataTreeModel !== null
+                visible: testerModel.count > 0
                 onClicked: {
                     console.log("Dispose Button clicked")
                     testerModel.disposeData(librariesCombobox.currentIndex)
@@ -443,7 +565,7 @@ Rectangle {
             }
             Button {
                 text: "Unregister"
-                visible: dataTreeModel !== null
+                visible: testerModel.count > 0
                 onClicked: {
                     console.log("Unregister Button clicked")
                     testerModel.unregisterData(librariesCombobox.currentIndex)
@@ -483,7 +605,7 @@ Rectangle {
                 var selectedFile = selectedFiles[i];
                 console.debug("Selected file: " + selectedFile)
                 var localPath = qmlUtils.toLocalFile(selectedFile);
-                datamodelRepoModel.setQosSelectionFromFile(localPath, 4);
+                testerModel.importJson(localPath);
             }
         }
     }
