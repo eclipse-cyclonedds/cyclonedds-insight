@@ -118,7 +118,7 @@ if __name__ == "__main__":
     datamodelRepoModelProxy = DatamodelProxyModel()
     datamodelRepoModelProxy.setSourceModel(datamodelRepoModel)
 
-    testerModel = TesterModel(threads, dataModelHandler)
+    testerModel = TesterModel(threads, dataModelHandler, datamodelRepoModel)
     datamodelRepoModel.newWriterSignal.connect(testerModel.addWriter)
     participantRootItem = ParticipantTreeNode("Root")
     participantModel = ParticipantTreeModel(participantRootItem)
