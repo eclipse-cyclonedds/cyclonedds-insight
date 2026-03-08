@@ -28,16 +28,15 @@ Rectangle {
     property var dataTreeModel: null
     property var sequenceModel: null
     property bool isSequenceEditorVisible: false
+    property int testerRev: 0
 
     Connections {
         target: testerModel
-        function onShowQml(id, qmlCode) {
-            if (component) {
-                component.destroy()
-            }
-            component = Qt.createQmlObject(qmlCode, contentRec);
-            component.mId = id
-        }
+        function onDataChanged() { testerRev++ }
+        function onModelReset()  { testerRev++ }
+        function onRowsInserted(){ testerRev++ }
+        function onRowsRemoved() { testerRev++ }
+        function onCountChanged() { testerRev++ }
     }
 
     ColumnLayout {
@@ -59,7 +58,10 @@ Rectangle {
 
             Button {
                 text: "Create Sequence"
-                onClicked: testerModel.addSequence()
+                onClicked: {
+                    testerModel.addSequence()
+                    librariesCombobox.currentIndex = librariesCombobox.count - 1
+                }
             }
 
             Button {
@@ -104,18 +106,13 @@ Rectangle {
                     MenuItem {
                         text: "Delete Current"
                         onClicked: {
-                            if (component) {
-                                component.destroy()
-                            }
                             testerModel.deleteWriter(librariesCombobox.currentIndex)
+                            librariesCombobox.currentIndex = librariesCombobox.currentIndex - 1
                         }
                     }
                     MenuItem {
                         text: "Delete All"
                         onClicked: {
-                            if (component) {
-                                component.destroy()
-                            }
                             testerModel.deleteAllWriters()
                         }
                     }
@@ -197,11 +194,32 @@ Rectangle {
             }
         }
 
-        Label {
-            text: testerModel.getDescriptionName(librariesCombobox.currentIndex) 
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 10
             visible: testerModel.count > 0
-            leftPadding: 10
-            topPadding: 5
+
+            Label {
+                text: testerModel.getDescriptionName(librariesCombobox.currentIndex)
+                leftPadding: 10
+                topPadding: 5
+            }
+
+            Item {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+            }
+
+            Button {
+                text: (testerRev, testerModel.getIsStarted(librariesCombobox.currentIndex)) ? "Stop" : "Start"
+                onClicked: {
+                    if (testerModel.getIsStarted(librariesCombobox.currentIndex)) {
+                        testerModel.stopItem(librariesCombobox.currentIndex)
+                    } else {
+                        testerModel.startItem(librariesCombobox.currentIndex)
+                    }
+                }
+            }
         }
 
         Item {
@@ -230,7 +248,6 @@ Rectangle {
             Layout.fillHeight: true
             Layout.margins: 3
 
-
             Rectangle {
                 anchors.fill: parent
                 color: "transparent"
@@ -251,8 +268,6 @@ Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     id: sequenceEditor
-
-                    // Selection indices
                     property int availableIndex: -1
                     property int sequenceIndex: -1
 
@@ -276,14 +291,12 @@ Rectangle {
                                 text: model.name
                                 highlighted: index === availableList.currentIndex
                                 onClicked: availableList.currentIndex = index
-                                onDoubleClicked: sequenceEditor.addSelected()
                             }
 
                             ScrollBar.vertical: ScrollBar { }
                         }
                     }
 
-                    // MIDDLE: Buttons
                     ColumnLayout {
                         visible: isSequenceEditorVisible
                         Layout.alignment: Qt.AlignVCenter
@@ -295,6 +308,7 @@ Rectangle {
                             onClicked: {
                                 if (testerModel && sequenceModel) {
                                     sequenceModel.addSequenceItem(testerModel.getItemId(availableList.currentIndex))
+                                    testerRev++
                                 }
                             }
                         }
@@ -305,6 +319,7 @@ Rectangle {
                             onClicked: {
                                 if (sequenceModel) {
                                     sequenceModel.removeSequenceItem(sequenceList.currentIndex)
+                                    testerRev++
                                 }
                             }
                         }
@@ -494,16 +509,15 @@ Rectangle {
                         visible: dataTreeModel !== null ? dataTreeModel.getIsEnum(treeView.index(row, column)) : false
                         enabled: dataTreeModel !== null ? dataTreeModel.getIsEnum(treeView.index(row, column)) : false
                         model: dataTreeModel !== null ? dataTreeModel.getEnumModel(treeView.index(row, column)) : []
-                        currentIndex: dataTreeModel !== null ? dataTreeModel.getEnumValue(treeView.index(row, column)) : 0
+                        currentIndex: dataTreeModel !== null ? dataTreeModel.getEnumValue(treeView.index(row, column)) : -1
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: label.right
                         anchors.leftMargin: 5
                         implicitContentWidthPolicy: ComboBox.WidestText
-                        onCurrentIndexChanged: {
-                            if (dataTreeModel) {
-                                if (dataTreeModel.getIsEnum(treeView.index(row, column))) {
-                                    dataTreeModel.setData(treeView.index(row, column), enumCombo.currentIndex)
-                                }
+                        onActivated: function(index) {
+                            var modelIndex = treeView.index(row, column)
+                            if (dataTreeModel && dataTreeModel.getIsEnum(modelIndex)) {
+                                dataTreeModel.setData(modelIndex, index)
                             }
                         }
                     }
@@ -543,6 +557,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 20
             visible: testerModel.count > 0
+            enabled: (testerRev, testerModel.getIsStarted(librariesCombobox.currentIndex))
 
             Button {
                 text: "Write"
