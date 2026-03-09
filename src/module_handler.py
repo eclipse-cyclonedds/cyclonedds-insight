@@ -215,7 +215,7 @@ class DataModelHandler(QObject):
             topicType = self.resolveCustomType(topicType)
             topicType = str(topicType).replace(".", "::")
 
-        if topicType in self.allTypes:
+        if topicType in self.allTypes and topicType in self.structMembers:
             initList = []
             for k in self.structMembers[topicType].keys():
                 currentTypeName = self.structMembers[topicType][k]
