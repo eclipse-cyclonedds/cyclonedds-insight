@@ -68,16 +68,29 @@ Rectangle {
                 onClicked: {
                     started = !started
                     if (started) {
-                        datamodelRepoModel.startListener()
+                        listenerModel.startAllReaders()
                     } else {
-                        datamodelRepoModel.stopListener()
+                        listenerModel.stopAllReaders()
                     }
                 }
             }
+
+            Button {
+                id: comboButton
+                text: "Manage Readers"
+                onClicked: {
+                    const p = comboButton.mapToItem(Overlay.overlay, 0, comboButton.height)
+                    popup.x = p.x
+                    popup.y = p.y + 4
+                    popup.open()
+                }
+            }
+
             Item {
                 implicitHeight: 1
                 Layout.fillWidth: true
             }
+
             Button {
                 text: "Import"
                 onClicked: importMenu.open()
@@ -107,7 +120,7 @@ Rectangle {
             }
             Button {
                 text: "Delete All Readers"
-                onClicked: datamodelRepoModel.deleteAllReaders()
+                onClicked: listenerModel.deleteAllReaders()
             }
             Item {
                 implicitHeight: 1
@@ -240,4 +253,105 @@ Rectangle {
             qmlUtils.saveFileContent(localPath, content)
         }
     }
+
+    Popup {
+        id: popup
+        x: {
+            const p = comboButton.mapToItem(Overlay.overlay, 0, 0)
+            return p.x
+        }
+
+        y: {
+            const p = comboButton.mapToItem(Overlay.overlay, 0, comboButton.height)
+            return p.y + 4
+        }
+        width: parent.width * 0.4
+        modal: false
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        parent: Overlay.overlay
+
+        background: Rectangle {
+            radius: 8
+            border.width: 1
+            border.color: "#999"
+            color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 8
+            spacing: 8
+
+            TextField {
+                id: searchField
+                Layout.fillWidth: true
+                placeholderText: "Enter search term and press <enter> ..."
+                onAccepted: listenerProxyModel.searchText = text
+            }
+
+            ListView {
+                id: listViewSelectReaders
+                Layout.fillWidth: true
+                Layout.preferredHeight: listenerTabId.height * 0.6
+                clip: true
+                model: listenerProxyModel
+
+                delegate: Item {
+                    width: listViewSelectReaders.width
+                    height: 44
+
+                    required property int index
+                    required property var model
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 8
+                        anchors.rightMargin: 8
+                        spacing: 8
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 0
+
+                            Label {
+                                text: model.topicName
+                                font.bold: true
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+
+                            Label {
+                                text: model.topicType
+                                color: "#666"
+                                font.pixelSize: 12
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                        }
+
+                        Button {
+                            text: model.stoppedReader ? "Start" : "Stop"
+                            onClicked: {
+                                if (model.stoppedReader) {
+                                    listenerModel.startReader(model.readerId)
+                                } else {
+                                    listenerModel.stopReader(model.readerId)
+                                }
+                            }
+                        }
+                        Button {
+                            text: "Delete"
+                            onClicked: {
+                                listenerModel.deleteReader(model.readerId)
+                            }
+                        }
+                    }
+                }
+
+                ScrollBar.vertical: ScrollBar { }
+            }
+        }
+    }
+
 }

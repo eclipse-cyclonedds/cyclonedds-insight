@@ -52,6 +52,8 @@ from models.endpoint_model import EndpointModel
 from models.datamodel_model.datamodel_model import DatamodelModel
 from models.datamodel_model.datamodel_proxy_model import DatamodelProxyModel
 from models.tester_model import TesterModel
+from models.listener_model import ListenerModel
+from models.listener_proxy_model import ListenerProxyModel
 from models.shapes_demo_model import ShapesDemoModel
 from models.graph_model import GraphModel
 from utils.logger_config import LoggerConfig
@@ -118,6 +120,12 @@ if __name__ == "__main__":
     datamodelRepoModelProxy = DatamodelProxyModel()
     datamodelRepoModelProxy.setSourceModel(datamodelRepoModel)
 
+    listenerModel = ListenerModel(threads)
+    datamodelRepoModel.newReaderSignal.connect(listenerModel.addReader)
+    listenerModel.createEndpointSignal.connect(datamodelRepoModel.createEndpointFromTester)
+    listenerProxyModel = ListenerProxyModel()
+    listenerProxyModel.setSourceModel(listenerModel)
+
     testerModel = TesterModel(threads, dataModelHandler, datamodelRepoModel)
     datamodelRepoModel.newWriterSignal.connect(testerModel.addWriter)
     participantRootItem = ParticipantTreeNode("Root")
@@ -136,6 +144,8 @@ if __name__ == "__main__":
     engine.rootContext().setContextProperty("datamodelRepoModel", datamodelRepoModel)
     engine.rootContext().setContextProperty("datamodelRepoModelProxy", datamodelRepoModelProxy)
     engine.rootContext().setContextProperty("testerModel", testerModel)
+    engine.rootContext().setContextProperty("listenerModel", listenerModel)
+    engine.rootContext().setContextProperty("listenerProxyModel", listenerProxyModel)
     engine.rootContext().setContextProperty("updaterModel", updaterModel)
     engine.rootContext().setContextProperty("shapesDemoModel", shapesDemoModel)
     engine.rootContext().setContextProperty("qmlUtils", qmlUtils)
