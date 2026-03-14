@@ -94,6 +94,20 @@ class DispatcherThread(QThread):
         self.readerData.clear()
         self.guardCondition.set(False)
 
+    @Slot(str)
+    def deleteReader(self, _id: str):
+        for i, (readerId, tp, sub, rd, readCondition) in enumerate(self.readerData):
+            if readerId == _id:
+                logging.info(f"Delete reader {_id} ({tp.name})")
+                self.guardCondition.set(True)
+                self.waitset.detach(readCondition)
+                del rd
+                del sub
+                del tp
+                del self.readerData[i]
+                self.guardCondition.set(False)
+                break
+
     @Slot()
     def addEndpoint(self, id: str, topic_name: str, topic_type, qos, entity_type: EntityType):
         logging.info(f"Add endpoint {id} {topic_name} ...")

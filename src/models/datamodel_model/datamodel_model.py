@@ -35,6 +35,7 @@ class DatamodelModel(QAbstractListModel):
     isLoadingSignal = Signal(bool)
     requestDataType = Signal(str, int, str, str)
     newWriterSignal = Signal(str, int, str, str, object)
+    newReaderSignal = Signal(str, int, str, str, object)
 
     def __init__(self, threads, dataModelHandler, parent=typing.Optional[QObject]) -> None:
         super().__init__()
@@ -49,7 +50,6 @@ class DatamodelModel(QAbstractListModel):
 
         self.threads = threads
         self.readerRequests = {}
-        self.currentListenerTemplates = {}
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> typing.Any:
         if not index.isValid():
@@ -96,12 +96,6 @@ class DatamodelModel(QAbstractListModel):
     @Slot(str)
     def onData(self, data: str):
         self.newDataArrived.emit(data)
-
-    @Slot()
-    def deleteAllReaders(self):
-        self.currentListenerTemplates.clear()
-        for key in list(self.threads.keys()):
-            self.threads[key].deleteAllReaders()
 
     @Slot()
     def shutdownEndpoints(self):
@@ -227,19 +221,20 @@ class DatamodelModel(QAbstractListModel):
                 logging.debug("Waiting for worker thread to set up...")
                 time.sleep(0.01)
 
+        (dpQos, topicQos, pubSubQos, endpointQos) = qos
+        qosDict = {
+            "domain_partition_qos": dpQos.asdict(),
+            "topic_qos": topicQos.asdict(),
+            "endpoint_qos": endpointQos.asdict(),
+            "publisher_qos": pubSubQos.asdict(),
+            "subscriber_qos": pubSubQos.asdict()
+        }
+
         # Add to Tester tab
         if entityType == EntityType.WRITER:
-            (dpQos, topicQos, pubSubQos, endpointQos) = qos
-            qosDict = {
-                "domain_partition_qos": dpQos.asdict(),
-                "topic_qos": topicQos.asdict(),
-                "endpoint_qos": endpointQos.asdict(),
-                "publisher_qos": pubSubQos.asdict(),
-                "subscriber_qos": pubSubQos.asdict()
-            }
             self.newWriterSignal.emit(id, domainId, topicName, topic_type, qosDict)
         if entityType == EntityType.READER:
-            self.currentListenerTemplates[id] = (domainId, topicName, dataType, qos, entityType)
+            self.newReaderSignal.emit(id, domainId, topicName, topic_type, qosDict)
 
         logging.debug("try add endpoint ... DONE")
 
@@ -263,14 +258,3 @@ class DatamodelModel(QAbstractListModel):
 
         qmlUtils = QmlUtils()
         qmlUtils.saveFileContent(filePath, json.dumps(exportData, indent=4))
-
-    @Slot()
-    def stopListener(self):
-        for key in list(self.threads.keys()):
-            self.threads[key].deleteAllReaders()
-    
-    @Slot()
-    def startListener(self):
-        for listenerId in list(self.currentListenerTemplates.keys()):
-            (domainId, topicName, dataType, qos, entityType) = self.currentListenerTemplates[listenerId]
-            self.threads[domainId].addEndpoint(listenerId, topicName, dataType, qos, entityType)
