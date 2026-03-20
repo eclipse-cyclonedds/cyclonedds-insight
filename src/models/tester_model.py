@@ -524,7 +524,12 @@ class TesterModel(QAbstractListModel):
     def exportJson(self, filePath, currentIndex: int):
         if currentIndex < 0:
             return
-        self._exportJsonItem(filePath, currentIndex)
+        self._exportJsonItem(currentIndex)
+
+        self.exportCount = None
+        qmlUtils = QmlUtils()
+        qmlUtils.saveFileContent(filePath, json.dumps(self.exportData, indent=4))
+        self.resetExportData()
 
     @Slot(str)
     def exportJsonAll(self, filePath):
