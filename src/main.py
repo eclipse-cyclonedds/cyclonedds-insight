@@ -39,7 +39,7 @@ else:
 import argparse
 from PySide6.QtWidgets import QApplication
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
-from PySide6.QtCore import qInstallMessageHandler, QUrl, QThread, qVersion
+from PySide6.QtCore import qInstallMessageHandler, QUrl, QThread, qVersion, Qt
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtQuickControls2 import QQuickStyle
 from loguru import logger as logging
@@ -52,8 +52,10 @@ from models.endpoint_model import EndpointModel
 from models.datamodel_model.datamodel_model import DatamodelModel
 from models.datamodel_model.datamodel_proxy_model import DatamodelProxyModel
 from models.tester_model import TesterModel
-from models.listener_model import ListenerModel
-from models.listener_proxy_model import ListenerProxyModel
+from models.listener.listener_model import ListenerModel
+from models.listener.listener_proxy_model import ListenerProxyModel
+from models.listener.receiver_model import ReceiverModel
+from models.listener.receiver_proxy_model import ReceiverProxyModel
 from models.shapes_demo_model import ShapesDemoModel
 from models.graph_model import GraphModel
 from utils.logger_config import LoggerConfig
@@ -120,6 +122,11 @@ if __name__ == "__main__":
     datamodelRepoModelProxy = DatamodelProxyModel()
     datamodelRepoModelProxy.setSourceModel(datamodelRepoModel)
 
+    receiverModel = ReceiverModel()
+    datamodelRepoModel.newDataArrived.connect(receiverModel.addReceivedMsg, Qt.QueuedConnection)
+    receiverProxyModel = ReceiverProxyModel()
+    receiverProxyModel.setSourceModel(receiverModel)
+
     listenerModel = ListenerModel(threads)
     datamodelRepoModel.newReaderSignal.connect(listenerModel.addReader)
     listenerModel.createEndpointSignal.connect(datamodelRepoModel.createEndpointFromTester)
@@ -146,6 +153,8 @@ if __name__ == "__main__":
     engine.rootContext().setContextProperty("testerModel", testerModel)
     engine.rootContext().setContextProperty("listenerModel", listenerModel)
     engine.rootContext().setContextProperty("listenerProxyModel", listenerProxyModel)
+    engine.rootContext().setContextProperty("receiverModel", receiverModel)
+    engine.rootContext().setContextProperty("receiverProxyModel", receiverProxyModel)
     engine.rootContext().setContextProperty("updaterModel", updaterModel)
     engine.rootContext().setContextProperty("shapesDemoModel", shapesDemoModel)
     engine.rootContext().setContextProperty("qmlUtils", qmlUtils)

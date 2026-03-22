@@ -15,7 +15,7 @@ from PySide6.QtCore import QSortFilterProxyModel
 from PySide6.QtCore import Property
 from PySide6.QtCore import Slot
 from loguru import logger as logging
-from models.listener_model import ListenerModel
+from models.listener.listener_model import ListenerModel
 
 
 class ListenerProxyModel(QSortFilterProxyModel):

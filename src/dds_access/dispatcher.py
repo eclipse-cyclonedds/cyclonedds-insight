@@ -27,7 +27,7 @@ from dds_access.datatypes.entity_type import EntityType
 
 class DispatcherThread(QThread):
 
-    onData = Signal(str)
+    onData = Signal(str, str)
 
     def __init__(self, id: str, domain_id: int, topic_name: str, topic_type, qos, entityType, parent=None):
         super().__init__(parent)
@@ -158,12 +158,13 @@ class DispatcherThread(QThread):
                 if amount_triggered == 0:
                     continue
 
-                for (_, _, _, readItem, condItem) in self.readerData:
+                for (_id, _, _, readItem, condItem) in self.readerData:
                     for sample in readItem.take(condition=condItem):
                         logging.trace(f"Received sample: {str(sample)}")
-                        self.onData.emit(f"[{str(datetime.datetime.now().isoformat())}]  -  {str(sample)}")
+                        self.onData.emit(_id, f"[{str(datetime.datetime.now().isoformat())}]  -  {str(sample)}")
 
                 # clean up references to last items
+                _id = None
                 readItem = None
                 condItem = None
 

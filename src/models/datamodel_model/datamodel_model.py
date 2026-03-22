@@ -31,7 +31,7 @@ class DatamodelModel(QAbstractListModel):
 
     NameRole = Qt.UserRole + 1
 
-    newDataArrived = Signal(str)
+    newDataArrived = Signal(str, str)
     isLoadingSignal = Signal(bool)
     requestDataType = Signal(str, int, str, str)
     newWriterSignal = Signal(str, int, str, str, object)
@@ -93,9 +93,9 @@ class DatamodelModel(QAbstractListModel):
     def endInsertModule(self):
         self.endInsertRows()
 
-    @Slot(str)
-    def onData(self, data: str):
-        self.newDataArrived.emit(data)
+    @Slot(str, str)
+    def onData(self, _id: str, data: str):
+        self.newDataArrived.emit(_id, data)
 
     @Slot()
     def shutdownEndpoints(self):
