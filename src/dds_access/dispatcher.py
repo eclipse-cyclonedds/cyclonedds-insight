@@ -20,7 +20,7 @@ from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
 from cyclonedds.pub import Publisher, DataWriter
 from dds_access.dds_listener import DdsListener
-from threading import Lock
+from threading import Lock, Event
 from dds_access.domain_participant_factory import DomainParticipantFactory
 from dds_access.datatypes.entity_type import EntityType
 
@@ -28,7 +28,6 @@ from dds_access.datatypes.entity_type import EntityType
 class DispatcherThread(QThread):
 
     onData = Signal(str)
-    responseQosJson = Signal(str, object)
 
     def __init__(self, id: str, domain_id: int, topic_name: str, topic_type, qos, entityType, parent=None):
         super().__init__(parent)
@@ -39,6 +38,7 @@ class DispatcherThread(QThread):
         self.readerData = []
         self.writerData = {}
         self.mutex = Lock()
+        self.dpSetUpDone = Event()
 
         # initial endpoint
         self.entityType = entityType
@@ -94,9 +94,23 @@ class DispatcherThread(QThread):
         self.readerData.clear()
         self.guardCondition.set(False)
 
+    @Slot(str)
+    def deleteReader(self, _id: str):
+        for i, (readerId, tp, sub, rd, readCondition) in enumerate(self.readerData):
+            if readerId == _id:
+                logging.info(f"Delete reader {_id} ({tp.name})")
+                self.guardCondition.set(True)
+                self.waitset.detach(readCondition)
+                del rd
+                del sub
+                del tp
+                del self.readerData[i]
+                self.guardCondition.set(False)
+                break
+
     @Slot()
     def addEndpoint(self, id: str, topic_name: str, topic_type, qos, entity_type: EntityType):
-        logging.info(f"Add endpoint {id} ...")
+        logging.info(f"Add endpoint {id} {topic_name} ...")
         _, topicQos, pubSubQos, endpQos = qos
         try:
             topic = Topic(self.domain_participant, topic_name, topic_type, listener=self.listener, qos=topicQos)
@@ -115,14 +129,15 @@ class DispatcherThread(QThread):
                 writer = DataWriter(publisher, topic, qos=endpQos, listener=self.listener)
                 self.writerData[id] = (publisher, writer, topic_name)
 
-            logging.info("Add endpoint ... DONE")
+            logging.info(f"Add endpoint {topic_name} ... Success")
 
         except Exception as e:
             logging.error(f"Error creating endpoint {topic_name}: {e}")
 
     def run(self):
+        self.dpSetUpDone.clear()
         with DomainParticipantFactory.get_participant(self.domain_id) as domain_participant:
-            logging.info(f"Worker thread for domain({str(self.domain_id)}) ...")    
+            logging.info(f"Worker thread for domain({str(self.domain_id)}) ...")
             self.running = True
             self.domain_participant = domain_participant
             self.waitset = core.WaitSet(self.domain_participant)
@@ -131,6 +146,8 @@ class DispatcherThread(QThread):
             logging.info(f"Worker thread is set up domain({str(self.domain_id)})")
 
             self.addEndpoint(self.id, self.topic_name, self.topic_type, self.qos, self.entityType)
+
+            self.dpSetUpDone.set()
 
             while self.running:
                 amount_triggered = 0
@@ -146,6 +163,10 @@ class DispatcherThread(QThread):
                         logging.trace(f"Received sample: {str(sample)}")
                         self.onData.emit(f"[{str(datetime.datetime.now().isoformat())}]  -  {str(sample)}")
 
+                # clean up references to last items
+                readItem = None
+                condItem = None
+
             logging.info(f"Worker thread for domain({str(self.domain_id)}) ... DONE")
 
     def stop(self):
@@ -153,13 +174,5 @@ class DispatcherThread(QThread):
         self.running = False
         self.guardCondition.set(True)
 
-    @Slot(str, str)
-    def requestQosJson(self, requestId, endpointId):
-        if endpointId in self.writerData:
-            (pub, writer, _) = self.writerData[endpointId]
-            entJson = {
-                "topic_qos": writer.topic.get_qos().asdict(),
-                "publisher_qos": pub.get_qos().asdict(),
-                "endpoint_qos": writer.get_qos().asdict()
-            }
-            self.responseQosJson.emit(requestId, entJson)
+    def isSetUpDone(self) -> bool:
+        return self.dpSetUpDone.is_set()

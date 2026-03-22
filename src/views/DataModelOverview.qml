@@ -71,8 +71,9 @@ Rectangle {
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     onClicked: {
                         if (searchField.visible) {
+                            searchField.clear()
+                            datamodelRepoModelProxy.setFilter("")
                             searchField.visible = false
-                            searchField.text = ""
                         } else {
                             searchField.visible = true
                         }
@@ -85,16 +86,19 @@ Rectangle {
 
         TextField {
             id: searchField
-            placeholderText: "Search Data Model ..."
+            placeholderText: "Enter search term and press <Enter> ..."
             visible: false
             Layout.fillWidth: true
-            onTextChanged: {
+            onAccepted: {
                 datamodelRepoModelProxy.setFilter(searchField.text)
+            }
+            Keys.onEscapePressed: {
+                searchField.clear()
+                datamodelRepoModelProxy.setFilter("")
             }
             Layout.leftMargin: 8
             Layout.rightMargin: 8
             Layout.bottomMargin: 5
-
         }
 
         ListView {

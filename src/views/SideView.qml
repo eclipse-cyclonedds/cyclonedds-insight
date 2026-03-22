@@ -115,8 +115,9 @@ ColumnLayout {
             onClicked: {
                 if (viewSelector.currentIndex === 0) {
                     if (searchField.visible) {
+                        searchField.clear()
+                        treeModelProxy.setFilter("")
                         searchField.visible = false
-                        searchField.text = ""
                     } else {
                         searchField.visible = true
                     }
@@ -132,11 +133,15 @@ ColumnLayout {
         spacing: 0
         TextField {
             id: searchField
-            placeholderText: "Search Topic Name ..."
+            placeholderText: "Enter search term and press <Enter> ..."
             visible: false
             Layout.fillWidth: true
-            onTextChanged: {
+            onAccepted: {
                 treeModelProxy.setFilter(searchField.text)
+            }
+            Keys.onEscapePressed: {
+                searchField.clear()
+                treeModelProxy.setFilter("")
             }
             Layout.leftMargin: 10
             Layout.rightMargin: 10
