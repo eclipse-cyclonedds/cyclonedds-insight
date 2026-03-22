@@ -255,7 +255,7 @@ class DataModelHandler(QObject):
     def getInitializedDataObj(self, topicType):
         """Returns an default initialized object of the given type"""
 
-        logging.trace(f"get initialized obj for {topicType}")
+        logging.trace(f"get initialized obj for {topicType}, {type(topicType)}")
 
         if isinstance(topicType, cyclonedds.idl._main.IdlMeta):
             topicType = topicType.__idl_typename__
@@ -588,6 +588,8 @@ class DataModelHandler(QObject):
                 # struct
                 elif self.isStruct(realType):
                     subRootNode = DataTreeNode(keyStructMem, tt, DataTreeModel.IsStructRole, parent=rootNode)
+                    if isinstance(realType, cyclonedds.idl.IdlMeta):
+                        realType = realType.__idl_typename__
                     subRootNode.dataType = self.getInitializedDataObj(str(realType).replace(".", "::"))
                     self.toNode(str(realType).replace(".", "::"), subRootNode)
                     rootNode.appendChild(subRootNode)
