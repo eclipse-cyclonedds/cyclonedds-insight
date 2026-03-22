@@ -138,7 +138,7 @@ class DatamodelModel(QAbstractListModel):
             self.createEndpoint(mId, domain_id, topic_name, class_type, qos, entityType, topic_type)
         else:
             typeRequestId = str(uuid.uuid4())
-            self.readerRequests[typeRequestId] = (domain_id, topic_type, topic_name, qos, entityType)
+            self.readerRequests[typeRequestId] = (mId, domain_id, topic_type, topic_name, qos, entityType)
             self.requestDataType.emit(typeRequestId, domain_id, topic_type, topic_name)
 
     @Slot(str, int, str, str, int, str, object, object)
@@ -202,10 +202,9 @@ class DatamodelModel(QAbstractListModel):
     @Slot(str, object)
     def receiveDataType(self, requestId, dataType):
         if requestId in self.readerRequests:
-            (domain_id, topic_type, topic_name, qos, entityType) = self.readerRequests[requestId]
+            (_id, domain_id, topic_type, topic_name, qos, entityType) = self.readerRequests[requestId]
             self.dataModelHandler.addTypeFromNetwork(topic_type, dataType)
-            id = "m" + str(uuid.uuid4()).replace("-", "_")
-            self.createEndpoint(id, domain_id, topic_name, dataType, qos, entityType, topic_type)
+            self.createEndpoint(_id, domain_id, topic_name, dataType, qos, entityType, topic_type)
             del self.readerRequests[requestId]
 
     def createEndpoint(self, id, domainId: int, topicName: str, dataType, qos, entityType: EntityType, topic_type):
