@@ -210,10 +210,10 @@ Rectangle {
         nameFilters: ["JSON files (*.json)"]
         onAccepted: {
             for (var i = 0; i < selectedFiles.length; i++) {
-                var selectedFile = selectedFiles[i];
+                var selectedFile = selectedFiles[i]
                 console.debug("Selected file: " + selectedFile)
-                var localPath = qmlUtils.toLocalFile(selectedFile);
-                datamodelRepoModel.setQosSelectionFromFile(localPath, 3);
+                var localPath = qmlUtils.toLocalFile(selectedFile)
+                datamodelRepoModel.setQosSelectionFromFile(localPath, 3)
             }
         }
     }
@@ -229,8 +229,8 @@ Rectangle {
         property bool exportAll: false
         onAccepted: {
             qmlUtils.createFileFromQUrl(selectedFile)
-            var localPath = qmlUtils.toLocalFile(selectedFile);
-            datamodelRepoModel.exportListenerPresets(localPath);
+            var localPath = qmlUtils.toLocalFile(selectedFile)
+            datamodelRepoModel.exportListenerPresets(localPath)
         }
     }
 
