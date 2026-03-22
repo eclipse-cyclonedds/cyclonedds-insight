@@ -62,9 +62,9 @@ class DataModelHandler(QObject):
         return topicType in self.topLevelTypes
 
     def getType(self, topicTypeStr: str):
-        module_type = importlib.import_module(self.topLevelTypes[topicTypeStr].parts[0])
-        class_type = getattr(module_type, self.topLevelTypes[topicTypeStr].parts[1])
-        return module_type, class_type
+        if topicTypeStr in self.allTypes:
+            return self.allTypes[topicTypeStr]
+        return None
 
     def getName(self, index: int):
         if index < len(list(self.topLevelTypes.keys())):
@@ -124,6 +124,46 @@ class DataModelHandler(QObject):
     def addTypeFromNetwork(self, typeName, dataType):
         self.structMembers[typeName] = self.get_struct_members(dataType)
         self.allTypes[typeName] = dataType
+
+        # Extract all types from within the type.
+        # That is different from idl file import where all types
+        # are at definition level available.
+        self.getAllTypesFromTypeFromNetwork(dataType)
+    
+        # insert in datamodel repo
+        self.beginInsertModuleSignal.emit(self.count())
+        split = typeName.split("::")
+        modName = typeName
+        clsName = typeName
+        if len(split) > 1:
+            modName = split[0]
+            clsName = "::".join(split[1:])
+        self.topLevelTypes[typeName] = DataModelItem(typeName, [modName, clsName])
+        self.endInsertModuleSignal.emit()
+
+    def getAllTypesFromTypeFromNetwork(self, dataType):
+        for name, type_ in dataType.__annotations__.items():
+            self.extractSingleFromNetwork(name, type_)
+
+    def extractSingleFromNetwork(self, name, type_):
+        if isinstance(type_, cyclonedds.idl._main.IdlMeta):
+            cppFullScopeName = type_.__idl_typename__.replace(".", "::")
+            self.allTypes[cppFullScopeName] = type_
+            self.structMembers[cppFullScopeName] = self.get_struct_members(type_)
+            self.getAllTypesFromTypeFromNetwork(type_)
+        elif isinstance(type_, cyclonedds.idl.types.typedef):
+            self.extractSingleFromNetwork("", type_.subtype)
+            self.customTypes[type_.name.replace(".", "::")] = type_.subtype
+        elif isinstance(type_, cyclonedds.idl._main.IdlEnumMeta):
+            cppFullScopeName = type_.__idl_typename__.replace(".", "::")
+            self.allTypes[cppFullScopeName] = type_
+        elif hasattr(type_, "__metadata__"):
+            if len(type_.__metadata__) > 0:
+                x_type = type_.__metadata__[0]
+                if isinstance(x_type, cyclonedds.idl.types.array) or isinstance(x_type, cyclonedds.idl.types.sequence):
+                    self.extractSingleFromNetwork("", x_type.subtype)
+        else:
+            pass # nothing
 
     def import_module_and_nested(self, module_name):
         try:
@@ -199,6 +239,15 @@ class DataModelHandler(QObject):
             if inspect.isclass(type_) and type_ in self.loaded_structs:
                 members[name] = type_
                 self.structMembers[f"{type_.__module__}::{type_.__name__}".replace(".", "::")] = self.get_struct_members(type_)
+            elif isinstance(type_, cyclonedds.idl._main.IdlMeta):
+                fullCppScopeName = type_.__idl_typename__.replace(".", "::")
+                members[name] = fullCppScopeName
+                self.structMembers[fullCppScopeName] = self.get_struct_members(type_)
+            elif isinstance(type_, cyclonedds.idl.types.typedef):
+                members[name] = type_.name
+            elif isinstance(type_, cyclonedds.idl._main.IdlEnumMeta):
+                fullCppScopeName = type_.__idl_typename__.replace(".", "::")
+                members[name] = fullCppScopeName
             else:
                 members[name] = type_
         return members
@@ -207,6 +256,9 @@ class DataModelHandler(QObject):
         """Returns an default initialized object of the given type"""
 
         logging.trace(f"get initialized obj for {topicType}")
+
+        if isinstance(topicType, cyclonedds.idl._main.IdlMeta):
+            topicType = topicType.__idl_typename__
 
         if topicType.replace(".", "::") in self.structMembers or topicType.replace(".", "::") in self.allTypes or topicType.replace(".", "::") in self.customTypes:
             topicType = topicType.replace(".", "::")
@@ -267,6 +319,8 @@ class DataModelHandler(QObject):
                 return None
             elif self.isSequence(topicType):
                 return []
+            elif self.isChar(topicType):
+                return ""
             else:
                 logging.warning(f"Unknown type: {topicType}")
                 initializedObj = None
@@ -361,7 +415,6 @@ class DataModelHandler(QObject):
         return False
 
     def isStr(self, theType):
-        # self.isChar(theType)
         return theType == str or str(theType).replace("::", ".").startswith("typing.Annotated[str") or theType == "str" or theType == "<class 'str'>"
 
     def isBool(self, theType):
@@ -392,6 +445,10 @@ class DataModelHandler(QObject):
             if len(theType.__metadata__) > 0:
                 _type = theType.__metadata__[0]
                 return _type
+
+        if isinstance(theType, cyclonedds.idl.types.sequence) or isinstance(theType, cyclonedds.idl.types.array):
+            return theType
+
         return None
 
     def isSequence(self, theType):
@@ -421,9 +478,10 @@ class DataModelHandler(QObject):
         return False
 
     def isStruct(self, theType):
-        # doted = str(theType).replace(".", "::")
-        # if "::" not in doted:
-        #     return False
+
+        if isinstance(theType, cyclonedds.idl.IdlMeta):
+            return True
+
         return str(theType).replace(".", "::") in self.structMembers
 
     def isBasic(self, theType):
@@ -600,7 +658,10 @@ class DataModelHandler(QObject):
     def getRealType(self, inType):
         outType = inType
 
-        if isinstance(inType, str):
+        if isinstance(inType, cyclonedds.idl.types.typedef):
+            outType = self.getRealType(inType.subtype)
+
+        elif isinstance(inType, str):
             inTypeSemi = inType.replace(".", "::")
             if inTypeSemi in self.customTypes:
                 outType = self.getRealType(self.customTypes[inTypeSemi])

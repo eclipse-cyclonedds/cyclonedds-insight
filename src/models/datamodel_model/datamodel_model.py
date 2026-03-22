@@ -131,9 +131,8 @@ class DatamodelModel(QAbstractListModel):
 
     def handleEndpointCreation(self, mId, domain_id, topic_name, topic_type, qos, entityType):
         if self.dataModelHandler.hasType(topic_type):
-            module_type, class_type = self.dataModelHandler.getType(topic_type)
+            class_type = self.dataModelHandler.getType(topic_type)
 
-            logging.debug(str(module_type))
             logging.debug(str(class_type))
             self.createEndpoint(mId, domain_id, topic_name, class_type, qos, entityType, topic_type)
         else:
