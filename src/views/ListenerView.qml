@@ -29,19 +29,17 @@ Rectangle {
     border.color : !started ? "red" : autoScrollEnabled ? "transparent" : "orange"
     border.width : 2
 
-    ListModel {
-        id: receivedDataModel
-    }
-
     Connections {
-        target: datamodelRepoModel
-        function onNewDataArrived(out) {
-            receivedDataModel.append({ text: out })
-            if (autoScrollEnabled) {
-                listView.positionViewAtEnd()
+        target: receiverProxyModel
+        function onRowsInserted(parent, first, last) {
+            // auto scroll
+            if (listenerTabId.autoScrollEnabled) {
+                Qt.callLater(function() {
+                    listView.positionViewAtEnd()
+                })
             }
-            if (started === false) {
-                started = true
+            if (!listenerTabId.started) {
+                listenerTabId.started = true
             }
         }
     }
@@ -61,7 +59,7 @@ Rectangle {
             }
             Button {
                 text: "Clear"
-                onClicked: receivedDataModel.clear()
+                onClicked: receiverModel.clear()
             }
             Button {
                 text: started ? "Stop" : "Start"
@@ -145,7 +143,7 @@ Rectangle {
             ListView {
                 id: listView
                 anchors.fill: parent
-                model: receivedDataModel
+                model: receiverProxyModel
                 anchors.margins: 5
                 clip: true
 
@@ -168,7 +166,7 @@ Rectangle {
                     }
 
                     TextEdit {
-                        text: model.text
+                        text: model.receivedMsg
                         readOnly: true
                         color: rootWindow.isDarkMode ? "white" : "black"
                         wrapMode: Text.Wrap
@@ -212,10 +210,10 @@ Rectangle {
         nameFilters: ["JSON files (*.json)"]
         onAccepted: {
             for (var i = 0; i < selectedFiles.length; i++) {
-                var selectedFile = selectedFiles[i];
+                var selectedFile = selectedFiles[i]
                 console.debug("Selected file: " + selectedFile)
-                var localPath = qmlUtils.toLocalFile(selectedFile);
-                datamodelRepoModel.setQosSelectionFromFile(localPath, 3);
+                var localPath = qmlUtils.toLocalFile(selectedFile)
+                datamodelRepoModel.setQosSelectionFromFile(localPath, 3)
             }
         }
     }
@@ -231,8 +229,8 @@ Rectangle {
         property bool exportAll: false
         onAccepted: {
             qmlUtils.createFileFromQUrl(selectedFile)
-            var localPath = qmlUtils.toLocalFile(selectedFile);
-            datamodelRepoModel.exportListenerPresets(localPath);
+            var localPath = qmlUtils.toLocalFile(selectedFile)
+            datamodelRepoModel.exportListenerPresets(localPath)
         }
     }
 
@@ -244,13 +242,8 @@ Rectangle {
         title: "Export Sample Log"
         onAccepted: {
             qmlUtils.createFileFromQUrl(selectedFile)
-            var localPath = qmlUtils.toLocalFile(selectedFile);
-            var content = ""
-            var count = receivedDataModel.count
-            for (var i = 0; i < count; i++) {
-                content += receivedDataModel.get(i).text + "\n"
-            }
-            qmlUtils.saveFileContent(localPath, content)
+            var localPath = qmlUtils.toLocalFile(selectedFile)
+            receiverModel.exportToFile(localPath)
         }
     }
 
@@ -297,7 +290,10 @@ Rectangle {
                 clip: true
                 model: listenerProxyModel
 
+                property var receiverProxy: receiverProxyModel
+
                 delegate: Item {
+                    id: delegateRoot
                     width: listViewSelectReaders.width
                     height: 44
 
@@ -309,6 +305,17 @@ Rectangle {
                         anchors.leftMargin: 8
                         anchors.rightMargin: 8
                         spacing: 8
+
+                        CheckBox {
+                            checked: model.isChecked
+                            onCheckedChanged: {
+                                var readerId = model.readerId
+                                if (checked !== model.isChecked) {
+                                    listenerModel.setChecked(readerId, checked)
+                                    delegateRoot.ListView.view.receiverProxy.showReaderId(readerId, checked)
+                                }
+                            }
+                        }
 
                         ColumnLayout {
                             Layout.fillWidth: true

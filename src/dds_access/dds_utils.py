@@ -87,6 +87,8 @@ def looksLikeHostname(s: str) -> bool:
     return True
 
 def isLikelyOpensplice(participant: DcpsParticipant) -> bool:
+    if participant is None:
+        return False
     guid_bytes = participant.key.bytes
     vendor_tuple = (guid_bytes[0], guid_bytes[1])
     if vendor_tuple == (0x01, 0x02) or vendor_tuple not in VENDOR_ID_MAP:
@@ -112,7 +114,7 @@ def getHostname(p: Optional[DcpsParticipant]):
             return hostnameSplit[0]
 
     if hostnameRaw == "Unknown":
-        if isLikelyOpensplice(p):
+        if p is not None and isLikelyOpensplice(p):
             userdata_policy = p.qos[Policy.Userdata(data=b"")]
             if userdata_policy and userdata_policy.data:
                 try:

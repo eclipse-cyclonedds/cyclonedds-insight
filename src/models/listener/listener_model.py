@@ -42,6 +42,7 @@ class ReaderData:
     topic_type: str
     qos: object
     stopped: bool
+    isChecked: bool
 
 
 class ListenerModel(QAbstractListModel):
@@ -49,6 +50,7 @@ class ListenerModel(QAbstractListModel):
     TopicNameRole = Qt.UserRole + 2
     TopicTypeRole = Qt.UserRole + 3
     StoppedRole = Qt.UserRole + 4
+    IsCheckedRole = Qt.UserRole + 5
 
     createEndpointSignal = Signal(str, int, str, str, int, str, object, object)
 
@@ -78,27 +80,10 @@ class ListenerModel(QAbstractListModel):
             return "Domain: " + str(item.domainId) + " | " + item.topic_type
         if role == self.StoppedRole:
             return item.stopped
+        if role == self.IsCheckedRole:
+            return item.isChecked
 
         return None
-
-    def setData(self, index, value, role=Qt.EditRole):
-        if not index.isValid():
-            return False
-
-        item = self._items[index.row()]
-        changed = False
-
-        if role == self.CheckedRole:
-            value = bool(value)
-            if item.checked != value:
-                item.checked = value
-                changed = True
-
-        if changed:
-            self.dataChanged.emit(index, index, [role])
-            return True
-
-        return False
 
     def flags(self, index):
         if not index.isValid():
@@ -110,7 +95,8 @@ class ListenerModel(QAbstractListModel):
             self.IdRole: b"readerId",
             self.TopicNameRole: b"topicName",
             self.TopicTypeRole: b"topicType",
-            self.StoppedRole: b"stoppedReader"
+            self.StoppedRole: b"stoppedReader",
+            self.IsCheckedRole: b"isChecked"
         }
 
     @Slot(str)
@@ -166,9 +152,17 @@ class ListenerModel(QAbstractListModel):
         self.readers.clear()
         self.endResetModel()
 
+    @Slot(str, bool)
+    def setChecked(self, _id: str, checked: bool):
+        if _id in self.readers:
+            logging.info(f"Set checked state of reader {_id} to {checked}")
+            self.beginResetModel()
+            self.readers[_id].isChecked = checked
+            self.endResetModel()
+
     @Slot(int, str, str, str, object)
     def addReader(self, id: str, domainId, topic_name, topic_type: str, qos):
         logging.info("AddReader to ListenerModel")
         self.beginResetModel()
-        self.readers[id] = ReaderData(id, domainId, topic_name, topic_type, qos, False)
+        self.readers[id] = ReaderData(id, domainId, topic_name, topic_type, qos, False, True)
         self.endResetModel()
