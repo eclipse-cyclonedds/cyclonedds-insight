@@ -131,9 +131,8 @@ class DatamodelModel(QAbstractListModel):
 
     def handleEndpointCreation(self, mId, domain_id, topic_name, topic_type, qos, entityType):
         if self.dataModelHandler.hasType(topic_type):
-            module_type, class_type = self.dataModelHandler.getType(topic_type)
+            class_type = self.dataModelHandler.getType(topic_type)
 
-            logging.debug(str(module_type))
             logging.debug(str(class_type))
             self.createEndpoint(mId, domain_id, topic_name, class_type, qos, entityType, topic_type)
         else:
@@ -202,9 +201,13 @@ class DatamodelModel(QAbstractListModel):
     @Slot(str, object)
     def receiveDataType(self, requestId, dataType):
         if requestId in self.readerRequests:
-            (_id, domain_id, topic_type, topic_name, qos, entityType) = self.readerRequests[requestId]
-            self.dataModelHandler.addTypeFromNetwork(topic_type, dataType)
-            self.createEndpoint(_id, domain_id, topic_name, dataType, qos, entityType, topic_type)
+            if dataType is not None:
+                (_id, domain_id, topic_type, topic_name, qos, entityType) = self.readerRequests[requestId]
+                self.dataModelHandler.addTypeFromNetwork(topic_type, dataType)
+                self.createEndpoint(_id, domain_id, topic_name, dataType, qos, entityType, topic_type)
+            else:
+                logging.error("Failed to receive datatype from network.")
+
             del self.readerRequests[requestId]
 
     def createEndpoint(self, id, domainId: int, topicName: str, dataType, qos, entityType: EntityType, topic_type):

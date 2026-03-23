@@ -71,7 +71,7 @@ Rectangle {
 
         ColumnLayout {
             Layout.fillWidth: true
-            spacing: 10
+            spacing: 0
             Layout.leftMargin: 1
 
             RowLayout {
@@ -80,20 +80,12 @@ Rectangle {
                 Layout.topMargin: 10
                 Layout.rightMargin: 10
 
-                Column {
-                    id: headlineLabel
-                    Label {
-                        text: qsTr("Topic")
-                        font.pixelSize: 18
-                        font.bold: true
-                    }
-                    Label {
-                        text: "Domain Id: " + domainId
-                    }
-                    Label {
-                        text: "Topic Name: " + topicName
-                    }
+                Label {
+                    text: qsTr("Topic")
+                    font.pixelSize: 18
+                    font.bold: true
                 }
+
 
                 Item {
                     Layout.preferredHeight: 1
@@ -123,9 +115,8 @@ Rectangle {
                     }
                 }
 
-                // TODO: implement writer creation from network
-                /*Button {
-                    text: "Create Writer"
+                Button {
+                    text: "Create Writer (Tester)"
                     onClicked: {
                         var writerTypes = endpointWriterModel.getAllTopicTypes()
                         var readerTypes = endpointReaderModel.getAllTopicTypes()
@@ -145,7 +136,7 @@ Rectangle {
                         readerTesterDialogId.setTypes(domainId, topicName, combinedArray, 4);
                         readerTesterDialogId.open();
                     }
-                }*/
+                }
 
                 WarningTriangle {
                     id: warning_triangle
@@ -155,6 +146,16 @@ Rectangle {
                     tooltipText: "Qos mismatch detected."
                     visible: topicEndpointView.hasQosMismatch
                 }
+            }
+
+            Label {
+                text: "Domain Id: " + domainId
+                Layout.leftMargin: 10
+            }
+            Label {
+                text: "Topic Name: " + topicName
+                Layout.leftMargin: 10
+                Layout.bottomMargin: 10
             }
 
             RowLayout {
