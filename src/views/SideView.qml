@@ -43,11 +43,11 @@ ColumnLayout {
                 y: addDomainButton.height
 
                 MenuItem {
-                    text: qsTr("Add domain")
+                    text: qsTrId("domain.add")
                     onClicked: addDomainView.open()
                 }
                 MenuItem {
-                    text: qsTr("Automatically discover domains")
+                    text: qsTrId("domain.discover.automatically")
                     onClicked: treeModel.scanDomains()
                 }
             }
@@ -56,7 +56,7 @@ ColumnLayout {
                 parent: addDomainButton
                 visible: addDomainButton.hovered
                 delay: 200
-                text: qsTr("Add domain manually or discover automatically")
+                text: qsTrId("domain.discover.automatically.hint")
                 contentItem: Label {
                     text: addDomainTooltip.text
                 }
@@ -95,7 +95,7 @@ ColumnLayout {
                 parent: removeDomainButton
                 visible: removeDomainButton.hovered
                 delay: 200
-                text: qsTr("Remove the selected domain")
+                text: qsTrId("domain.remove.selected")
                 contentItem: Label {
                     text: removeDomainTooltip.text
                 }
@@ -133,7 +133,7 @@ ColumnLayout {
         spacing: 0
         TextField {
             id: searchField
-            placeholderText: "Enter search term and press <Enter> ..."
+            placeholderText: qsTrId("general.search.placeholder")
             visible: false
             Layout.fillWidth: true
             onAccepted: {

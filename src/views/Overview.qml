@@ -74,17 +74,17 @@ SplitView {
                 }
 
                 InsightTabButton {
-                    tabText: qsTr("Details")
+                    tabText: qsTrId("tab.details")
                     height: parent.height
                 }
                 InsightTabButton {
-                    tabText: qsTr("Statistics")
+                    tabText: qsTrId("tab.statistics")
                 }
                 InsightTabButton {
-                    tabText: qsTr("Tester")
+                    tabText: qsTrId("tab.tester")
                 }
                 InsightTabButton {
-                    tabText: qsTr("Listener")
+                    tabText: qsTrId("tab.listener")
                 }
             }
             StackLayout {
@@ -96,7 +96,7 @@ SplitView {
                     id: inspectTab
 
                     Label {
-                        text: "Nothing Selected"
+                        text: qsTrId("general.nothing.selected")
                         anchors.centerIn: parent
                     }
 

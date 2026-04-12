@@ -43,7 +43,7 @@ Rectangle {
             columnSpacing: 10
 
             Label {
-                text: qsTr("Settings")
+                text: qsTrId("general.settings")
                 font.bold: true
                 Layout.alignment: Qt.AlignHCenter
             }
@@ -69,7 +69,7 @@ Rectangle {
             }
 
             Label {
-                text: qsTr("Appearance:")
+                text: qsTrId("settings.appearance") + ":"
             }
             Row {
                 RadioButton {
@@ -105,7 +105,7 @@ Rectangle {
             }
 
             Label {
-                text: qsTr("AppDataLocation:")
+                text: qsTrId("settings.appdata.location") + ":"
             }
             Button {
                 text: "Open Folder"
@@ -114,12 +114,12 @@ Rectangle {
 
             Label {
                 id: proxySettingsLabelId
-                text: qsTr("Proxy Settings:")
+                text: qsTrId("settings.proxy.settings") + ":"
             }
             CheckBox {
                 id: useProxyCheckBox
                 checked: false
-                text: qsTr("Use HTTP Proxy")
+                text: qsTrId("settings.proxy.use")
                 onCheckedChanged: {
                     proxySettings.enabled = checked
                 }

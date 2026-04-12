@@ -43,14 +43,14 @@ Window {
         spacing: 10
 
         Label {
-            text: qsTr("Proxy Authentication Required")
+            text: qsTrId("update.proxy.required")
             font.bold: true
             Layout.alignment: Qt.AlignHCenter
         }
 
         TextField {
             id: proxyUsername
-            placeholderText: qsTr("Username")
+            placeholderText: qsTrId("update.proxy.username")
             Layout.fillWidth: true
             Layout.leftMargin: 10
             Layout.rightMargin: 10
@@ -58,7 +58,7 @@ Window {
 
         TextField {
             id: proxyPassword
-            placeholderText: qsTr("Password")
+            placeholderText: qsTrId("update.proxy.password")
             echoMode: TextInput.Password
             Layout.fillWidth: true
             Layout.leftMargin: 10
@@ -70,7 +70,7 @@ Window {
             Item { Layout.fillWidth: true }
             Button {
                 id: submitButton
-                text: qsTr("Submit")
+                text: qsTrId("update.proxy.submit")
                 flat: false
                 highlighted: true
                 enabled: proxyUsername.length > 0 && proxyPassword.length > 0
@@ -86,7 +86,7 @@ Window {
             }
             Button {
                 id: cancelButton
-                text: qsTr("Cancel")
+                text: qsTrId("general.cancel")
                 Layout.alignment: Qt.AlignHCenter
                 onClicked: {
                     proxyAuthWindow.visible = false

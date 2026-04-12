@@ -30,14 +30,14 @@ Rectangle {
         anchors.margins: 10
 
         Label {
-            text: qsTr("Process")
+            text: qsTrId("Process")
             font.pixelSize: 18
             font.bold: true
             horizontalAlignment: Text.AlignLeft
             Layout.alignment: Qt.AlignLeft
         }
         Label {
-            text: qsTr("Domain ID: ") + processViewId.domainId
+            text: qsTrId("Domain ID: ") + processViewId.domainId
         }
 
         Item {

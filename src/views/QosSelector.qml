@@ -66,7 +66,7 @@ Popup {
     }
 
     function setButtonNameDefault() {
-        buttonName = readerTesterDiaId.entityType === 3 ? qsTr("Create Reader (Listener)") : qsTr("Create Writer (Tester)")
+        buttonName = readerTesterDiaId.entityType === 3 ? qsTrId("listener.create.reader") : qsTrId("tester.create.writer")
     }
 
     ListModel {
@@ -152,16 +152,16 @@ Popup {
                 width: readerTesterDiaId.width - 40
 
                 TabButton {
-                    text: readerTesterDiaId.entityType === 3 ? qsTr("Reader") : qsTr("Writer")
+                    text: readerTesterDiaId.entityType === 3 ? qsTrId("Reader") : qsTrId("Writer")
                 }
                 TabButton {
-                    text: readerTesterDiaId.entityType === 3 ? qsTr("Subscriber") : qsTr("Publisher")
+                    text: readerTesterDiaId.entityType === 3 ? qsTrId("Subscriber") : qsTrId("Publisher")
                 }
                 TabButton {
-                    text: qsTr("Topic")
+                    text: qsTrId("Topic")
                 }
                 /*TabButton {
-                    text: qsTr("Participant")
+                    text: qsTrId("Participant")
                 }*/
             }
 
@@ -205,7 +205,7 @@ Popup {
                                 CheckBox {
                                     id: reliabilityCheckbox
                                     checked: false
-                                    text: qsTr("infinite")
+                                    text: qsTrId("infinite")
                                 }
                             }
                         }
@@ -240,7 +240,7 @@ Popup {
                             CheckBox {
                                 id: dataReprDefaultCheckbox
                                 checked: true
-                                text: qsTr("Default")
+                                text: qsTrId("Default")
                                 onCheckedChanged: {
                                     if (checked) {
                                         dataReprXcdr1Checkbox.checked = false;
@@ -254,7 +254,7 @@ Popup {
                             CheckBox {
                                 id: dataReprXcdr1Checkbox
                                 checked: false
-                                text: qsTr("XCDR1")
+                                text: "XCDR1"
                                 onCheckedChanged: {
                                     if (checked) {
                                         dataReprDefaultCheckbox.checked = false;
@@ -268,7 +268,7 @@ Popup {
                             CheckBox {
                                 id: dataReprXcdr2Checkbox
                                 checked: false
-                                text: qsTr("XCDR2")
+                                text: "XCDR2"
                                 onCheckedChanged: {
                                     if (checked) {
                                         dataReprDefaultCheckbox.checked = false;
@@ -299,29 +299,29 @@ Popup {
                                     CheckBox {
                                         id: allowTypeCoercion_ignore_sequence_bounds
                                         checked: true
-                                        text: qsTr("ignore_sequence_bounds")
+                                        text: qsTrId("ignore_sequence_bounds")
                                     }
                                     CheckBox {
                                         id: allowTypeCoercion_ignore_string_bounds
                                         checked: true
-                                        text: qsTr("ignore_string_bounds")
+                                        text: qsTrId("ignore_string_bounds")
                                     }
                                     CheckBox {
                                         id: allowTypeCoercion_ignore_member_names
                                         checked: false
-                                        text: qsTr("ignore_member_names")
+                                        text: qsTrId("ignore_member_names")
                                     }
                                 }
                                 Row {
                                     CheckBox {
                                         id: allowTypeCoercion_prevent_type_widening
                                         checked: false
-                                        text: qsTr("prevent_type_widening")
+                                        text: qsTrId("prevent_type_widening")
                                     }
                                     CheckBox {
                                         id: allowTypeCoercion_force_type_validation
                                         checked: false
-                                        text: qsTr("force_type_validation")
+                                        text: qsTrId("force_type_validation")
                                     }
                                 }
                             }
@@ -329,7 +329,7 @@ Popup {
                             CheckBox {
                                 id: disallowTypeCoercionForce_type_validationCheckbox
                                 checked: false
-                                text: qsTr("force_type_validation")
+                                text: qsTrId("force_type_validation")
                                 visible: typeConsistencyComboId.currentText === "DisallowTypeCoercion" 
                             }
                         }
@@ -392,7 +392,7 @@ Popup {
                                 CheckBox {
                                     id: livelinessCheckbox
                                     checked: true
-                                    text: qsTr("infinite")
+                                    text: qsTrId("infinite")
                                 }
                             }
                         }
@@ -416,7 +416,7 @@ Popup {
                             CheckBox {
                                 id: lifespanCheckbox
                                 checked: true
-                                text: qsTr("infinite")
+                                text: qsTrId("infinite")
                             }
                         }
 
@@ -437,7 +437,7 @@ Popup {
                             CheckBox {
                                 id: deadlineCheckbox
                                 checked: true
-                                text: qsTr("infinite")
+                                text: qsTrId("infinite")
                             }
                         }
 
@@ -458,7 +458,7 @@ Popup {
                             CheckBox {
                                 id: latencyBudgetCheckbox
                                 checked: false
-                                text: qsTr("infinite")
+                                text: qsTrId("infinite")
                             }
                         }
 
@@ -483,7 +483,7 @@ Popup {
                             visible: readerTesterDiaId.entityType === 4
                             id: writerDataLifecycleCheckbox
                             checked: true
-                            text: qsTr("autodispose")
+                            text: qsTrId("autodispose")
                         }
 
                         Label {
@@ -506,7 +506,7 @@ Popup {
                                 CheckBox {
                                     id: autopurge_nowriter_samples_delayCheckbox
                                     checked: true
-                                    text: qsTr("infinite")
+                                    text: qsTrId("infinite")
                                 }
                             }
                             Row {
@@ -522,7 +522,7 @@ Popup {
                                 CheckBox {
                                     id: autopurge_disposed_samples_delaySpinBoxCheckbox
                                     checked: true
-                                    text: qsTr("infinite")
+                                    text: qsTrId("infinite")
                                 }
                             }
 
@@ -625,7 +625,7 @@ Popup {
                                 CheckBox {
                                     id: cleanup_delayCheckbox
                                     checked: false
-                                    text: qsTr("infinite")
+                                    text: qsTrId("infinite")
                                 }
                             }
                             Column {
@@ -729,7 +729,7 @@ Popup {
                             }
                             Switch {
                                 id: prop_propagate
-                                text: qsTr("Propagate")
+                                text: qsTrId("Propagate")
                                 checked: false
                             }
                         }
@@ -753,7 +753,7 @@ Popup {
                             }
                             Switch {
                                 id: bin_prop_propagate
-                                text: qsTr("Propagate")
+                                text: qsTrId("Propagate")
                                 checked: false
                             }
                         }
@@ -816,12 +816,12 @@ Popup {
                                 CheckBox {
                                     id: pubSubCoherent_accessCheckbox
                                     checked: false
-                                    text: qsTr("coherent_access")
+                                    text: qsTrId("coherent_access")
                                 }
                                 CheckBox {
                                     id: pubSubOrdered_accessCheckbox
                                     checked: false
-                                    text: qsTr("ordered_access")
+                                    text: qsTrId("ordered_access")
                                 }
                             }
                         }
@@ -893,7 +893,7 @@ Popup {
                                 CheckBox {
                                     id: topicQosReliabilityCheckbox
                                     checked: false
-                                    text: qsTr("infinite")
+                                    text: qsTrId("infinite")
                                 }
                             }
                         }
@@ -928,7 +928,7 @@ Popup {
                             CheckBox {
                                 id: topicQosDataReprDefaultCheckbox
                                 checked: true
-                                text: qsTr("Default")
+                                text: qsTrId("Default")
                                 onCheckedChanged: {
                                     if (checked) {
                                         topicQosDataReprXcdr1Checkbox.checked = false;
@@ -942,7 +942,7 @@ Popup {
                             CheckBox {
                                 id: topicQosDataReprXcdr1Checkbox
                                 checked: false
-                                text: qsTr("XCDR1")
+                                text: "XCDR1"
                                 onCheckedChanged: {
                                     if (checked) {
                                         topicQosDataReprDefaultCheckbox.checked = false;
@@ -956,7 +956,7 @@ Popup {
                             CheckBox {
                                 id: topicQosDataReprXcdr2Checkbox
                                 checked: false
-                                text: qsTr("XCDR2")
+                                text: "XCDR2"
                                 onCheckedChanged: {
                                     if (checked) {
                                         topicQosDataReprDefaultCheckbox.checked = false;
@@ -1027,7 +1027,7 @@ Popup {
                                 CheckBox {
                                     id: topicQosLivelinessCheckbox
                                     checked: true
-                                    text: qsTr("infinite")
+                                    text: qsTrId("infinite")
                                 }
                             }
                         }
@@ -1049,7 +1049,7 @@ Popup {
                             CheckBox {
                                 id: topicQosLifespanCheckbox
                                 checked: true
-                                text: qsTr("infinite")
+                                text: qsTrId("infinite")
                             }
                         }
 
@@ -1070,7 +1070,7 @@ Popup {
                             CheckBox {
                                 id: topicQosDeadlineCheckbox
                                 checked: true
-                                text: qsTr("infinite")
+                                text: qsTrId("infinite")
                             }
                         }
 
@@ -1091,7 +1091,7 @@ Popup {
                             CheckBox {
                                 id: topicQosLatencyBudgetCheckbox
                                 checked: false
-                                text: qsTr("infinite")
+                                text: qsTrId("infinite")
                             }
                         }
 
@@ -1163,7 +1163,7 @@ Popup {
                                 CheckBox {
                                     id: topicQosCleanup_delayCheckbox
                                     checked: false
-                                    text: qsTr("infinite")
+                                    text: qsTrId("infinite")
                                 }
                             }
                             Column {
@@ -1400,7 +1400,7 @@ Popup {
             }
         }
         Button {
-            text: qsTr("Cancel")
+            text: qsTrId("general.cancel")
             onClicked: {
                 readerTesterDiaId.close()
             }

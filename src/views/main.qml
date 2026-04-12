@@ -56,7 +56,7 @@ ApplicationWindow {
                 onTriggered: shapeDemoViewId.visible = true
             }
             MenuItem {
-                text: "Show Log Window"
+                text: qsTrId("log.show")
                 onTriggered: logViewId.visible = true
             }
         }
@@ -145,8 +145,8 @@ ApplicationWindow {
 
     MessageDialog {
         id: noDomainSelectedDialog
-        title: qsTr("Alert");
-        text: qsTr("No Domain selected!");
+        title: qsTrId("general.alert");
+        text: qsTrId("general.no.domain.selected");
         buttons: MessageDialog.Ok;
     }
 

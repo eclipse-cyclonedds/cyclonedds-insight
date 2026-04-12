@@ -32,14 +32,14 @@ Rectangle {
         anchors.margins: 10
 
         Label {
-            text: qsTr("Domain")
+            text: qsTrId("Domain")
             font.pixelSize: 18
             font.bold: true
             horizontalAlignment: Text.AlignLeft
             Layout.alignment: Qt.AlignLeft
         }
         Label {
-            text: qsTr("Domain ID: ") + domainViewId.domainId
+            text: qsTrId("Domain ID: ") + domainViewId.domainId
         }
 
         NodeView {

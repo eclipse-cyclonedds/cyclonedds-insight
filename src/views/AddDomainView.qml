@@ -30,7 +30,7 @@ Popup {
         padding: 10
 
         Label {
-            text: qsTr("Add Domain")
+            text: qsTrId("domain.add")
             font.bold: true
             Layout.alignment: Qt.AlignHCenter
         }
@@ -54,7 +54,7 @@ Popup {
         Row {
             Button {
                 id: addButton
-                text: qsTr("Add")
+                text: qsTrId("general.add")
                 highlighted: true
                 onClicked: {
                     treeModel.addDomainRequest(parseInt(domainIdTextField.text))
@@ -63,7 +63,7 @@ Popup {
                 }
             }
             Button {
-                text: qsTr("Cancel")
+                text: qsTrId("general.cancel")
                 onClicked: close()
             }
         }

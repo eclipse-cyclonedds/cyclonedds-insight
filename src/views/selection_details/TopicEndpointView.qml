@@ -81,7 +81,7 @@ Rectangle {
                 Layout.rightMargin: 10
 
                 Label {
-                    text: qsTr("Topic")
+                    text: qsTrId("Topic")
                     font.pixelSize: 18
                     font.bold: true
                 }

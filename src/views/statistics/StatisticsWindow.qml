@@ -32,13 +32,13 @@ Rectangle {
         anchors.margins: 10
 
         Label {
-            text: qsTr("Statistics")
+            text: qsTrId("statistics")
             font.pixelSize: 18
             font.bold: true
         }
 
         Label {
-            text: "This feature is only available for Cyclone DDS endpoints which have enabled Internal/MonitorPort."
+            text: qsTrId("statistic.monitor.usage.hint")
             font.italic: true
         }
 
@@ -49,7 +49,7 @@ Rectangle {
 
             GroupBox {
                 id: settingsGroubBox
-                title: qsTr("Settings")
+                title: qsTrId("general.settings")
                 spacing: 0
 
                 ColumnLayout {
@@ -127,7 +127,7 @@ Rectangle {
                         Layout.fillWidth: true
                         spacing: 0
                         Button {
-                            text: statsRunning ? qsTr("Stop Statistics") : qsTr("Start Statistics")
+                            text: statsRunning ? qsTrId("statistics.stop") : qsTrId("statistics.start")
                             onClicked: {
                                 if (statsRunning) {
                                     statisticsView.stopStatistics()
@@ -138,10 +138,10 @@ Rectangle {
                             }
                         }
                         Label {
-                            text: qsTr("Status: ")
+                            text: qsTrId("statistic.status") + ": "
                         }
                         Label {
-                            text: statsRunning ? qsTr("Running") : qsTr("Stopped")
+                            text: statsRunning ? qsTrId("statistic.status.running") : qsTrId("statistic.status.stopped")
                         }
                         Rectangle {
                             width: 10
@@ -157,7 +157,7 @@ Rectangle {
 
             GroupBox {
                 id: chatGroubBox
-                title: qsTr("Chart Controls")
+                title: qsTrId("statistic.chart.controls")
                 spacing: 0
                 Layout.preferredHeight: settingsGroubBox.height
 
@@ -253,7 +253,7 @@ Rectangle {
                     }
                 }
                 Button {
-                    text: "Clear"
+                    text: qsTrId("general.clear")
                     anchors.top: statErrorWindow.top
                     anchors.right: statErrorWindow.right
                     anchors.margins: 10
@@ -294,8 +294,8 @@ Rectangle {
 
     MessageDialog {
         id: clearMarkerDialog
-        title: qsTr("Alert");
-        text: qsTr("Sure to clear all markers?");
+        title: qsTrId("general.alert");
+        text: qsTrId("statistic.clear.markers.confirm");
         buttons: MessageDialog.Ok | MessageDialog.Cancel;
         onButtonClicked: function (button, role) {
             if (role === MessageDialog.AcceptRole || role === MessageDialog.YesRole) {

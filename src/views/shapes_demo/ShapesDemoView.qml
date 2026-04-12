@@ -155,10 +155,10 @@ Window {
                     Layout.fillWidth: true
 
                     TabButton {
-                        text: qsTr("Shape Lab")
+                        text: qsTrId("Shape Lab")
                     }
                     TabButton {
-                        text: qsTr("Manage")
+                        text: qsTrId("Manage")
                     }
                 }
 
@@ -178,7 +178,7 @@ Window {
                             anchors.fill: parent
 
                             GroupBox {
-                                title: qsTr("Publish Shape")
+                                title: qsTrId("Publish Shape")
                                 Layout.fillWidth: true
 
                                 ColumnLayout {
@@ -190,7 +190,7 @@ Window {
 
                                         Label {
                                             id: shapeLabel
-                                            text: qsTr("Shape:")
+                                            text: qsTrId("Shape:")
                                         }
                                         ComboBox {
                                             id: shapeSelector
@@ -209,7 +209,7 @@ Window {
 
                                         Label {
                                             id: pubColorLabel
-                                            text: qsTr("Color:")
+                                            text: qsTrId("Color:")
                                         }
                                         ComboBox {
                                             id: colorSelector
@@ -224,7 +224,7 @@ Window {
                                         Layout.fillHeight: true
 
                                         Label {
-                                            text: qsTr("Size:")
+                                            text: qsTrId("Size:")
                                         }
                                         Slider {
                                             id: sizeSlider
@@ -245,7 +245,7 @@ Window {
                                         Layout.fillHeight: true
 
                                         Label {
-                                            text: qsTr("Speed:")
+                                            text: qsTrId("Speed:")
                                         }
                                         Slider {
                                             id: speedSlider
@@ -267,7 +267,7 @@ Window {
                                         enabled: rotationSpeedSlider.value === 0
 
                                         Label {
-                                            text: qsTr("Angle:")
+                                            text: qsTrId("Angle:")
                                         }
                                         Slider {
                                             id: rotationSlider
@@ -289,7 +289,7 @@ Window {
 
                                         Label {
                                             id: pubRotLabel
-                                            text: qsTr("Rotation-Speed:")
+                                            text: qsTrId("Rotation-Speed:")
                                         }
                                         Slider {
                                             id: rotationSpeedSlider
@@ -312,7 +312,7 @@ Window {
 
                                         Label {
                                             id: pubFillLabel
-                                            text: qsTr("Fill:")
+                                            text: qsTrId("Fill:")
                                         }
                                         ComboBox {
                                             id: fillKindSelector
@@ -347,7 +347,7 @@ Window {
                             }
 
                             GroupBox {
-                                title: qsTr("Subscribe Shape")
+                                title: qsTrId("Subscribe Shape")
                                 Layout.fillWidth: true
 
                                 ColumnLayout {
@@ -359,7 +359,7 @@ Window {
 
                                         Label {
                                             id: shapeLabelSubscribe
-                                            text: qsTr("Shape:")
+                                            text: qsTrId("Shape:")
                                         }
 
                                         ComboBox {
