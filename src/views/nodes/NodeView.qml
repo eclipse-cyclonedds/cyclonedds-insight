@@ -39,7 +39,7 @@ Rectangle {
         anchors.margins: 0
 
         GroupBox {
-            title: qsTr("Node View")
+            title: qsTrId("node.view")
             spacing: 0
 
             ColumnLayout {
@@ -47,7 +47,7 @@ Rectangle {
 
                 CheckBox {
                     id: useAllDomainsCheckBox
-                    text: qsTr("Show all domains")
+                    text: qsTrId("domain.show.all")
                     checked: false
                     onCheckedChanged: {
                         if (architectureView !== null) {
@@ -59,7 +59,7 @@ Rectangle {
 
                 CheckBox {
                     id: hideSelfCheckbox
-                    text: qsTr("Hide self")
+                    text: qsTrId("node.hide.self")
                     checked: false
                     onCheckedChanged: {
                         if (architectureView !== null) {
@@ -75,7 +75,7 @@ Rectangle {
 
                     CheckBox {
                         id: showSpeedsCheckBox
-                        text: qsTr("Show Speeds")
+                        text: qsTrId("node.show.speeds")
                         checked: false
                         onCheckedChanged: {
                             if (architectureView !== null) {
@@ -100,14 +100,14 @@ Rectangle {
                     InfoIcon {
                         width: 15
                         height: 15
-                        tooltipText: qsTr("This feature is only available for Cyclone DDS endpoints which have enabled Internal/MonitorPort.")
+                        tooltipText: qsTrId("statistic.monitor.usage.hint")
                     }
                 }
 
                 RowLayout {
                     spacing: 10
                     Label {
-                        text: qsTr("Node Spacing:")
+                        text: qsTrId("node.spacing") + ":"
                     }
                     Slider {
                         id: idealLengthSlider

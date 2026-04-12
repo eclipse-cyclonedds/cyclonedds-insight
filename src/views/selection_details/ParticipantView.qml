@@ -47,23 +47,23 @@ Rectangle {
         anchors.margins: 10
 
         Label {
-            text: qsTr("Participant")
+            text: qsTrId("Participant")
             font.pixelSize: 18
             font.bold: true
             horizontalAlignment: Text.AlignLeft
             Layout.alignment: Qt.AlignLeft
         }
         Label {
-            text: qsTr("Domain ID: ") + participantViewId.domainId
+            text: qsTrId("Domain ID: ") + participantViewId.domainId
         }
 
         Label {
             id: pkeyLabelId
-            text: qsTr("Participant-Key: ") + participantViewId.participantKey
+            text: qsTrId("Participant-Key: ") + participantViewId.participantKey
         }
 
         Label {
-            text: qsTr("Vendor: ") + participantViewId.vendorName
+            text: qsTrId("Vendor: ") + participantViewId.vendorName
         }
 
         TextEdit {

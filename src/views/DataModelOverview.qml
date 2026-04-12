@@ -60,7 +60,7 @@ Rectangle {
                     }
                 }
                 Button {
-                    text: "Clear"
+                    text: qsTrId("general.clear")
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     onClicked: clearDialog.open()
                 }
@@ -86,7 +86,7 @@ Rectangle {
 
         TextField {
             id: searchField
-            placeholderText: "Enter search term and press <Enter> ..."
+            placeholderText: qsTrId("general.search.placeholder")
             visible: false
             Layout.fillWidth: true
             onAccepted: {
@@ -165,8 +165,8 @@ Rectangle {
 
     MessageDialog {
         id: clearDialog
-        title: qsTr("Alert");
-        text: qsTr("Sure to delete the datamodel?");
+        title: qsTrId("general.alert");
+        text: qsTrId("datamodel.delete.confirm");
         buttons: MessageDialog.Ok | MessageDialog.Cancel;
         onButtonClicked: function (button, role) {
             if (role === MessageDialog.AcceptRole || role === MessageDialog.YesRole) {

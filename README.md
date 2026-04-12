@@ -7,7 +7,8 @@
 # CycloneDDS Insight
 
 ***Looking for binaries?***
-- The latest master build can be downloaded [here](https://dev.azure.com/eclipse-cyclonedds/cyclonedds-insight/_build?definitionId=19&repositoryFilter=8&branchFilter=1200%2C1200%2C1200%2C1200&statusFilter=succeeded) click on latest build / "3 published".
+- The latest master build can be downloaded [here](https://dev.azure.com/eclipse-cyclonedds/cyclonedds-insight/_build?definitionId=19&repositoryFilter=8&branchFilter=1200%2C1200%2C1200%2C1200&statusFilter=succeeded) click on latest build / "4 published".
+- Released versions are available on the [GitHub Releases](https://github.com/eclipse-cyclonedds/cyclonedds-insight/releases) page (see attached assets).
 
 ## Overview
 
@@ -35,6 +36,8 @@ Features:
 python3 -m pip install -r requirements.txt
 
 # Execute
+pyside6-lrelease ./src/translations/cyclonedds-insight_en.ts && \
+pyside6-lrelease ./src/translations/cyclonedds-insight_de.ts  && \
 pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && python3 ./src/main.py
 ```
 
@@ -44,6 +47,8 @@ pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && python3 ./src/main.py
 # Execute
 export CYCLONEDDS_HOME=<path-to-cyclonedds-install-folder> &&\
 export CYCLONEDDS_PYTHON_HOME=<path-to-cyclonedds-python-repo> &&\
+pyside6-lrelease ./src/translations/cyclonedds-insight_en.ts && \
+pyside6-lrelease ./src/translations/cyclonedds-insight_de.ts  && \
 pyside6-rcc ./resources.qrc -o ./src/qrc_file.py &&\
 DYLD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
 pyinstaller main.spec --noconfirm --clean

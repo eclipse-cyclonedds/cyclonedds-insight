@@ -68,6 +68,14 @@ ToolBar {
         Item {
             Layout.fillWidth: true
         }
+        ComboBox {
+            model: langModel
+            textRole: "name"
+            focusPolicy: Qt.NoFocus
+            onActivated: function(index) {
+                langModel.loadLanguageByIndex(index)
+            }
+        }
         ToolButton {
             id: menuButton
             text: "\u2630"
@@ -96,7 +104,7 @@ ToolBar {
                     onTriggered: layout.currentIndex = 2
                 }
                 MenuItem {
-                    text: "Show Log Window"
+                    text: qsTrId("log.show")
                     onTriggered: logViewId.visible = true
                 }
                 MenuItem {

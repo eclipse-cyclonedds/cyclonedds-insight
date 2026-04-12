@@ -58,7 +58,7 @@ Rectangle {
                 implicitWidth: 1
             }
             Button {
-                text: "Clear"
+                text: qsTrId("general.clear")
                 onClicked: receiverModel.clear()
             }
             Button {
@@ -279,7 +279,7 @@ Rectangle {
             TextField {
                 id: searchField
                 Layout.fillWidth: true
-                placeholderText: "Enter search term and press <enter> ..."
+                placeholderText: qsTrId("general.search.placeholder")
                 onAccepted: listenerProxyModel.searchText = text
             }
 

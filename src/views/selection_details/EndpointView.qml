@@ -31,18 +31,18 @@ Rectangle {
         anchors.margins: 10
 
         Label {
-            text: qsTr("Endpoint")
+            text: qsTrId("Endpoint")
             font.pixelSize: 18
             font.bold: true
             horizontalAlignment: Text.AlignLeft
             Layout.alignment: Qt.AlignLeft
         }
         Label {
-            text: qsTr("Domain ID: ") + endpointViewId.domainId
+            text: qsTrId("Domain ID: ") + endpointViewId.domainId
         }
 
         Label {
-            text: qsTr("Endpoint-Key: ") + endpointViewId.endpointKey
+            text: qsTrId("Endpoint-Key: ") + endpointViewId.endpointKey
         }
 
         Item {
