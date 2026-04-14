@@ -22,7 +22,7 @@ from PySide6.QtCore import QObject
 import inspect
 from utils.system import delete_folder
 from dds_access.idlc import IdlcWorkerThread
-from dataclasses import dataclass
+from dataclasses import dataclass, fields, is_dataclass
 import typing
 from models.data_tree_model import DataTreeModel, DataTreeNode
 import cyclonedds
@@ -142,7 +142,19 @@ class DataModelHandler(QObject):
         self.endInsertModuleSignal.emit()
 
     def getAllTypesFromTypeFromNetwork(self, dataType):
-        for name, type_ in dataType.__annotations__.items():
+        if is_dataclass(dataType):
+            fields_ = fields(dataType)
+        else:
+            fields_ = cyclonedds.idl._type_helper.get_annotations(dataType)
+
+        for field_ in fields_:
+            if hasattr(field_, "name") and hasattr(field_, "type"):
+                name = field_.name
+                type_ = field_.type
+            else:
+                name = field_[0]
+                type_ = field_[1]
+
             self.extractSingleFromNetwork(name, type_)
 
     def extractSingleFromNetwork(self, name, type_):
@@ -235,7 +247,19 @@ class DataModelHandler(QObject):
 
     def get_struct_members(self, cls):
         members = {}
-        for name, type_ in cls.__annotations__.items():
+        if is_dataclass(cls):
+            fields_ = fields(cls)
+        else:
+            fields_ = cyclonedds.idl._type_helper.get_annotations(cls)
+
+        for field_ in fields_:
+            if hasattr(field_, "name") and hasattr(field_, "type"):
+                name = field_.name
+                type_ = field_.type
+            else:
+                name = field_[0]
+                type_ = field_[1]
+
             if inspect.isclass(type_) and type_ in self.loaded_structs:
                 members[name] = type_
                 self.structMembers[f"{type_.__module__}::{type_.__name__}".replace(".", "::")] = self.get_struct_members(type_)
