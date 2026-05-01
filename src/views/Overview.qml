@@ -70,21 +70,28 @@ SplitView {
                 padding: 0 
 
                 background: Rectangle {
-                    color: rootWindow.isDarkMode ? "#323233" : "#e5e5e5"
+                    color: rootWindow.isDarkMode ? Constants.darkHeaderBackground : Constants.lightHeaderBackground
                 }
 
                 InsightTabButton {
                     tabText: qsTrId("tab.details")
                     height: parent.height
+                    width: 150
                 }
                 InsightTabButton {
                     tabText: qsTrId("tab.statistics")
+                    height: parent.height
+                    width: 150
                 }
                 InsightTabButton {
                     tabText: qsTrId("tab.tester")
+                    height: parent.height
+                    width: 150
                 }
                 InsightTabButton {
                     tabText: qsTrId("tab.listener")
+                    height: parent.height
+                    width: 150
                 }
             }
             StackLayout {

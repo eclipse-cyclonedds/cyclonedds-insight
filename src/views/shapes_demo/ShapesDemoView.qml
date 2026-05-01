@@ -18,6 +18,7 @@ import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
+import "qrc:/src/views/elements"
 
 
 Window {
@@ -154,11 +155,13 @@ Window {
                     id: bar
                     Layout.fillWidth: true
 
-                    TabButton {
-                        text: qsTrId("Shape Lab")
+                    InsightTabButton {
+                        tabText: qsTrId("Shape Lab")
+                        Layout.preferredWidth: parent.width / 2
                     }
-                    TabButton {
-                        text: qsTrId("Manage")
+                    InsightTabButton {
+                        tabText: qsTrId("Manage")
+                        Layout.preferredWidth: parent.width / 2
                     }
                 }
 
