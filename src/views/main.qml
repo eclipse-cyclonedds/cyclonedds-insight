@@ -41,18 +41,18 @@ ApplicationWindow {
         Menu {
             title: "File"
             MenuItem {
-                text: "Export DDS Entities (JSON)"
+                text: qsTrId("general.export.ddsentities")
                 onTriggered: exportDdsSystemFileDialog.open()
             }
         }
         Menu {
             title: "View"
             MenuItem {
-                text: "Show Configuration Editor"
+                text: qsTrId("general.configeditor")
                 onTriggered: layout.currentIndex = 2
             }
             MenuItem {
-                text: "Show Shapes Demo"
+                text: qsTrId("general.shapedemo")
                 onTriggered: shapeDemoViewId.visible = true
             }
             MenuItem {
@@ -64,15 +64,15 @@ ApplicationWindow {
             title: "Help"
 
             MenuItem {
-                text: "About"
+                text: qsTrId("general.about")
                 onTriggered: aboutWindow.visible = true
             }
             MenuItem {
-                text: "Settings"
+                text: qsTrId("general.settings")
                 onTriggered: layout.currentIndex = 0
             }
             MenuItem {
-                text: "Check for Updates"
+                text: qsTrId("general.checkupdates")
                 onTriggered: checkForUpdatesWindow.showAndCheckForUpdates()
             }
         }

@@ -73,6 +73,27 @@
     <message id="general.settings">
         <translation>Einstellungen</translation>
     </message>
+    <message id="general.about">
+        <translation>Über</translation>
+    </message>
+    <message id="general.export.ddsentities">
+        <translation>Export DDS Entitäten (JSON)</translation>
+    </message>
+    <message id="general.checkupdates">
+        <translation>Check für Updates</translation>
+    </message>
+    <message id="general.about">
+        <translation>Über</translation>
+    </message>
+    <message id="general.configeditor">
+        <translation>Konfigurations Editor</translation>
+    </message>
+    <message id="general.home">
+        <translation>Startseite</translation>
+    </message>
+    <message id="general.shapedemo">
+        <translation>Formen Demo</translation>
+    </message>
 
     <message id="statistics">
         <translation>Statistiken</translation>
@@ -155,6 +176,46 @@
     </message>
     <message id="statistics.start">
         <translation>Statistiken starten</translation>
+    </message>
+
+    <message id="demo.shapes.shapelab">
+        <translation>Form Labor</translation>
+    </message>
+    <message id="demo.shapes.manage">
+        <translation>Verwalten</translation>
+    </message>
+    <message id="demo.shapes.publish.shape">
+        <translation>Form veröffentlichen</translation>
+    </message>
+    <message id="demo.shapes.publish">
+        <translation>Veröffentlichen</translation>
+    </message>
+    <message id="demo.shapes.shape">
+        <translation>Form</translation>
+    </message>
+    <message id="demo.shapes.color">
+        <translation>Farbe</translation>
+    </message>
+    <message id="demo.shapes.size">
+        <translation>Größe</translation>
+    </message>
+    <message id="demo.shapes.speed">
+        <translation>Geschwindigkeit</translation>
+    </message>
+    <message id="demo.shapes.angle">
+        <translation>Winkel</translation>
+    </message>
+    <message id="demo.shapes.rotation.speed">
+        <translation>Rotationsgeschwindigkeit</translation>
+    </message>
+    <message id="demo.shapes.fill">
+        <translation>Füllen</translation>
+    </message>
+    <message id="demo.shapes.subscribe.shape">
+        <translation>Form abonnieren</translation>
+    </message>
+    <message id="demo.shapes.subscribe">
+        <translation>Abonnieren</translation>
     </message>
 
 </context>
