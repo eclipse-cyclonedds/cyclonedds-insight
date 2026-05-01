@@ -89,19 +89,19 @@ ToolBar {
                 y: menuButton.height
 
                 MenuItem {
-                    text: "Home"
+                    text: qsTrId("general.home")
                     onClicked: layout.currentIndex = 1
                 }
                 MenuItem {
-                    text: "Shapes Demo"
+                    text: qsTrId("general.shapedemo")
                     onClicked: shapeDemoViewId.visible = true
                 }
                 MenuItem {
-                    text: "Settings"
+                    text: qsTrId("general.settings")
                     onClicked: layout.currentIndex = 0
                 }
                 MenuItem {
-                    text: "Configuration Editor"
+                    text: qsTrId("general.configeditor")
                     onTriggered: layout.currentIndex = 2
                 }
                 MenuItem {
@@ -109,15 +109,15 @@ ToolBar {
                     onTriggered: logViewId.visible = true
                 }
                 MenuItem {
-                    text: "Export DDS Entities (JSON)"
+                    text: qsTrId("general.export.ddsentities")
                     onTriggered: exportDdsSystemFileDialog.open()
                 }
                 MenuItem {
-                    text: "Check for Updates"
+                    text: qsTrId("general.checkupdates")
                     onTriggered: checkForUpdatesWindow.showAndCheckForUpdates()
                 }
                 MenuItem {
-                    text: "About"
+                    text: qsTrId("general.about")
                     onClicked: aboutWindow.visible = true
                 }
             }

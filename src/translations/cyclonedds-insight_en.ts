@@ -68,6 +68,27 @@
     <message id="general.settings">
         <translation>Settings</translation>
     </message>
+    <message id="general.about">
+        <translation>About</translation>
+    </message>
+    <message id="general.export.ddsentities">
+        <translation>Export DDS Entities (JSON)</translation>
+    </message>
+    <message id="general.checkupdates">
+        <translation>Check for Updates</translation>
+    </message>
+    <message id="general.about">
+        <translation>About</translation>
+    </message>
+    <message id="general.configeditor">
+        <translation>Configuration Editor</translation>
+    </message>
+    <message id="general.home">
+        <translation>Home</translation>
+    </message>
+    <message id="general.shapedemo">
+        <translation>Shapes Demo</translation>
+    </message>
 
     <message id="statistics">
         <translation>Statistics</translation>
@@ -149,6 +170,46 @@
     </message>
     <message id="statistics.start">
         <translation>Start Statistics</translation>
+    </message>
+
+    <message id="demo.shapes.shapelab">
+        <translation>Shape Lab</translation>
+    </message>
+    <message id="demo.shapes.manage">
+        <translation>Manage</translation>
+    </message>
+    <message id="demo.shapes.publish.shape">
+        <translation>Publish Shape</translation>
+    </message>
+    <message id="demo.shapes.publish">
+        <translation>Publish</translation>
+    </message>
+    <message id="demo.shapes.shape">
+        <translation>Shape</translation>
+    </message>
+    <message id="demo.shapes.color">
+        <translation>Color</translation>
+    </message>
+    <message id="demo.shapes.size">
+        <translation>Size</translation>
+    </message>
+    <message id="demo.shapes.speed">
+        <translation>Speed</translation>
+    </message>
+    <message id="demo.shapes.angle">
+        <translation>Angle</translation>
+    </message>
+    <message id="demo.shapes.rotation.speed">
+        <translation>Rotation Speed</translation>
+    </message>
+    <message id="demo.shapes.fill">
+        <translation>Fill</translation>
+    </message>
+    <message id="demo.shapes.subscribe.shape">
+        <translation>Subscribe Shape</translation>
+    </message>
+    <message id="demo.shapes.subscribe">
+        <translation>Subscribe</translation>
     </message>
 
 </context>

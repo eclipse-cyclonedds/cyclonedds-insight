@@ -156,11 +156,11 @@ Window {
                     Layout.fillWidth: true
 
                     InsightTabButton {
-                        tabText: qsTrId("Shape Lab")
+                        tabText: qsTrId("demo.shapes.shapelab")
                         Layout.preferredWidth: parent.width / 2
                     }
                     InsightTabButton {
-                        tabText: qsTrId("Manage")
+                        tabText: qsTrId("demo.shapes.manage")
                         Layout.preferredWidth: parent.width / 2
                     }
                 }
@@ -181,7 +181,7 @@ Window {
                             anchors.fill: parent
 
                             GroupBox {
-                                title: qsTrId("Publish Shape")
+                                title: qsTrId("demo.shapes.publish.shape")
                                 Layout.fillWidth: true
 
                                 ColumnLayout {
@@ -193,7 +193,7 @@ Window {
 
                                         Label {
                                             id: shapeLabel
-                                            text: qsTrId("Shape:")
+                                            text: qsTrId("demo.shapes.shape") + ":"
                                         }
                                         ComboBox {
                                             id: shapeSelector
@@ -212,7 +212,7 @@ Window {
 
                                         Label {
                                             id: pubColorLabel
-                                            text: qsTrId("Color:")
+                                            text: qsTrId("demo.shapes.color") + ":"
                                         }
                                         ComboBox {
                                             id: colorSelector
@@ -227,7 +227,7 @@ Window {
                                         Layout.fillHeight: true
 
                                         Label {
-                                            text: qsTrId("Size:")
+                                            text: qsTrId("demo.shapes.size") + ":" 
                                         }
                                         Slider {
                                             id: sizeSlider
@@ -248,7 +248,7 @@ Window {
                                         Layout.fillHeight: true
 
                                         Label {
-                                            text: qsTrId("Speed:")
+                                            text: qsTrId("demo.shapes.speed") + ":"
                                         }
                                         Slider {
                                             id: speedSlider
@@ -270,7 +270,7 @@ Window {
                                         enabled: rotationSpeedSlider.value === 0
 
                                         Label {
-                                            text: qsTrId("Angle:")
+                                            text: qsTrId("demo.shapes.angle") + ":"
                                         }
                                         Slider {
                                             id: rotationSlider
@@ -292,7 +292,7 @@ Window {
 
                                         Label {
                                             id: pubRotLabel
-                                            text: qsTrId("Rotation-Speed:")
+                                            text: qsTrId("demo.shapes.rotation.speed") + ":"
                                         }
                                         Slider {
                                             id: rotationSpeedSlider
@@ -315,7 +315,7 @@ Window {
 
                                         Label {
                                             id: pubFillLabel
-                                            text: qsTrId("Fill:")
+                                            text: qsTrId("demo.shapes.fill") + ":"
                                         }
                                         ComboBox {
                                             id: fillKindSelector
@@ -329,7 +329,7 @@ Window {
                                     }
 
                                     Button {
-                                        text: "Publish"
+                                        text: qsTrId("demo.shapes.publish")
                                         onClicked: {
                                             console.log("Publish shape:", shapeSelector.currentText, "Color:", colorSelector.currentText, "Size:", sizeSlider.value, "Speed:", speedSlider.value);
                                             shapesDemoModel.setPublishInfos(
@@ -342,7 +342,7 @@ Window {
                                                 fillKindSelector.currentIndex);
 
                                             shapesDemoQosSelector.setType(shapeSelector.currentText, 4)
-                                            shapesDemoQosSelector.setButtonName("Publish Shape")
+                                            shapesDemoQosSelector.setButtonName(qsTrId("demo.shapes.publish.shape"))
                                             shapesDemoQosSelector.open()
                                         }
                                     }
@@ -350,7 +350,7 @@ Window {
                             }
 
                             GroupBox {
-                                title: qsTrId("Subscribe Shape")
+                                title: qsTrId("demo.shapes.subscribe.shape")
                                 Layout.fillWidth: true
 
                                 ColumnLayout {
@@ -362,7 +362,7 @@ Window {
 
                                         Label {
                                             id: shapeLabelSubscribe
-                                            text: qsTrId("Shape:")
+                                            text: qsTrId("demo.shapes.shape") + ":"
                                         }
 
                                         ComboBox {
@@ -377,11 +377,11 @@ Window {
                                     }
 
                                     Button {
-                                        text: "Subscribe"
+                                        text: qsTrId("demo.shapes.subscribe")
                                         onClicked: {
                                             shapesDemoModel.setSubscribeInfos(shapeSelectorSubscribe.currentText);
                                             shapesDemoQosSelector.setType(shapeSelectorSubscribe.currentText, 3)
-                                            shapesDemoQosSelector.setButtonName("Subscribe Shape")
+                                            shapesDemoQosSelector.setButtonName(qsTrId("demo.shapes.subscribe.shape"))
                                             shapesDemoQosSelector.open()
                                         }
                                     }
@@ -438,7 +438,7 @@ Window {
 
                                 Button {
                                     id: infoButton
-                                    text: "Info"
+                                    text: qsTrId("Info")
                                     hoverEnabled: true
                                     width: 50
                                     height: 30
