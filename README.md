@@ -38,7 +38,8 @@ python3 -m pip install -r requirements.txt
 # Execute
 pyside6-lrelease ./src/translations/cyclonedds-insight_en.ts && \
 pyside6-lrelease ./src/translations/cyclonedds-insight_de.ts  && \
-pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && python3 ./src/main.py
+pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && \
+python3 ./src/main.py
 ```
 
 ## How to build a standalone MacOS App / Installer

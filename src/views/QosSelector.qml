@@ -16,6 +16,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views/elements"
 
 
 Popup {
@@ -151,17 +152,25 @@ Popup {
                 id: bar
                 width: readerTesterDiaId.width - 40
 
-                TabButton {
-                    text: readerTesterDiaId.entityType === 3 ? qsTrId("Reader") : qsTrId("Writer")
+                InsightTabButton {
+                    tabText: readerTesterDiaId.entityType === 3 ? qsTrId("Reader") : qsTrId("Writer")
+                    height: parent.height
+                    width: 150
                 }
-                TabButton {
-                    text: readerTesterDiaId.entityType === 3 ? qsTrId("Subscriber") : qsTrId("Publisher")
+                InsightTabButton {
+                    tabText: readerTesterDiaId.entityType === 3 ? qsTrId("Subscriber") : qsTrId("Publisher")
+                    height: parent.height
+                    width: 150
                 }
-                TabButton {
-                    text: qsTrId("Topic")
+                InsightTabButton {
+                    tabText: qsTrId("Topic")
+                    height: parent.height
+                    width: 150
                 }
-                /*TabButton {
-                    text: qsTrId("Participant")
+                /*InsightTabButton {
+                    tabText: qsTrId("Participant")
+                    height: parent.height
+                    width: 150
                 }*/
             }
 

@@ -21,8 +21,6 @@ TabButton {
     id: control
     property alias tabText: label.text
 
-    height: parent.height
-    width: 150
 
     anchors.top: parent.top
     anchors.bottom: parent.bottom

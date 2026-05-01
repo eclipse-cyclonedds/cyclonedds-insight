@@ -71,6 +71,7 @@ ToolBar {
         ComboBox {
             model: langModel
             textRole: "name"
+            implicitContentWidthPolicy: ComboBox.WidestText
             focusPolicy: Qt.NoFocus
             onActivated: function(index) {
                 langModel.loadLanguageByIndex(index)

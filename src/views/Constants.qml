@@ -20,7 +20,7 @@ Item {
     property color lightPressedColor: "lightgrey"
     property color lightBorderColor: "lightgray"
     property color lightCardBackgroundColor: "#f6f6f6"
-    property color lightHeaderBackground: "#e5e5e5"
+    property color lightHeaderBackground: "#ebebeb"
     property color lightOverviewBackground: "#f3f3f3"
     property color lightMainContentBackground: "lightgray"
     property color lightSelectionBackground: "black"

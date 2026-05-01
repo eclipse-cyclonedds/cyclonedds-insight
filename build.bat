@@ -15,6 +15,8 @@ cd cyclonedds-python && ^
 .\..\venv\Scripts\pip.exe install -r ..\..\requirements.txt && ^
 cd ..\.. && ^
 set PATH=%PATH%;%CYCLONEDDS_HOME%\bin && ^
+.\deps\venv\Scripts\pyside6-lrelease ./src/translations/cyclonedds-insight_en.ts && ^
+.\deps\venv\Scripts\pyside6-lrelease ./src/translations/cyclonedds-insight_de.ts  && ^
 .\deps\venv\Scripts\pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && ^
 .\deps\venv\Scripts\pyinstaller main.spec --noconfirm --clean && ^
 .\deps\venv\Scripts\pyinstaller src\updater.py --onefile --name Updater -i "NONE" --distpath "./dist/CycloneDDS Insight" --noconsole --noconfirm --clean && ^
