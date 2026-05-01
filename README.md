@@ -29,7 +29,9 @@ Features:
 - Import idl files
 - Create Reader to Listen to a topic
 
-## How to run via python
+## How to run
+
+The most easiest way is to execute `build.sh` and after that `run.sh` (or the .bat alternatives for windows).
 
 ```bash
 # Install dependencies
