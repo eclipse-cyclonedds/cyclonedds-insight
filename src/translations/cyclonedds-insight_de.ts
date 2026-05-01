@@ -82,9 +82,6 @@
     <message id="general.checkupdates">
         <translation>Check für Updates</translation>
     </message>
-    <message id="general.about">
-        <translation>Über</translation>
-    </message>
     <message id="general.configeditor">
         <translation>Konfigurations Editor</translation>
     </message>

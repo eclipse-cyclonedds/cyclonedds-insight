@@ -77,9 +77,6 @@
     <message id="general.checkupdates">
         <translation>Check for Updates</translation>
     </message>
-    <message id="general.about">
-        <translation>About</translation>
-    </message>
     <message id="general.configeditor">
         <translation>Configuration Editor</translation>
     </message>
