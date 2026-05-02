@@ -23,6 +23,9 @@
         <file>src/translations/cyclonedds-insight_en.qm</file>
         <file>src/translations/cyclonedds-insight_de.qm</file>
 
+        <!-- xsd schema -->
+        <file>cyclonedds.xsd</file>
+
         <!-- source files -->
         <file>src/views/selection_details/ProcessView.qml</file>
         <file>src/views/selection_details/ParticipantView.qml</file>

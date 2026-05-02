@@ -151,3 +151,5 @@ cython_debug/
 
 # qt
 *.qm
+
+cyclonedds.xsd
