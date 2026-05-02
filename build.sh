@@ -14,6 +14,7 @@ cd cyclonedds-python &&
 pip3 install -e . && 
 pip3 install -r ../../requirements.txt && 
 cd ../.. && 
+cp -f ./deps/cyclonedds/etc/cyclonedds.xsd . && 
 pyside6-lrelease ./src/translations/cyclonedds-insight_en.ts && \
 pyside6-lrelease ./src/translations/cyclonedds-insight_de.ts  && \
 pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && \

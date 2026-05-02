@@ -29,37 +29,22 @@ Features:
 - Import idl files
 - Create Reader to Listen to a topic
 
-## How to run
+## Development Setup
 
-The most easiest way is to execute `build.sh` and after that `run.sh` (or the .bat alternatives for windows).
+1. Execute `build.sh` once to set up the project and dependencies.
+2. After the initial build or each code change you only need to run: `run.sh`.
 
-```bash
-# Install dependencies
-python3 -m pip install -r requirements.txt
+For windows use the `.bat` alternatives.
 
-# Execute
-pyside6-lrelease ./src/translations/cyclonedds-insight_en.ts && \
-pyside6-lrelease ./src/translations/cyclonedds-insight_de.ts  && \
-pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && \
-python3 ./src/main.py
-```
+## How to build
 
-## How to build a standalone MacOS App / Installer
+### MacOS / Linux
 
 ```bash
-# Execute
-export CYCLONEDDS_HOME=<path-to-cyclonedds-install-folder> &&\
-export CYCLONEDDS_PYTHON_HOME=<path-to-cyclonedds-python-repo> &&\
-pyside6-lrelease ./src/translations/cyclonedds-insight_en.ts && \
-pyside6-lrelease ./src/translations/cyclonedds-insight_de.ts  && \
-pyside6-rcc ./resources.qrc -o ./src/qrc_file.py &&\
-DYLD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
-pyinstaller main.spec --noconfirm --clean
-brew install create-dmg # only once
-sh ./setup_dmg.sh 0.0.0 arm64
+./build.sh
 ```
 
-## How to build a Windows Executable / Installer
+### Windows
 
 ```bash
 .\build.bat

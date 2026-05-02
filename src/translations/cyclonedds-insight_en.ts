@@ -209,5 +209,12 @@
         <translation>Subscribe</translation>
     </message>
 
+    <message id="config.tab.file">
+        <translation>Current Configuration</translation>
+    </message>
+    <message id="config.tab.configdocumentation">
+        <translation>Browse Options</translation>
+    </message>
+
 </context>
 </TS>

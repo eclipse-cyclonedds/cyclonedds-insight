@@ -215,5 +215,12 @@
         <translation>Abonnieren</translation>
     </message>
 
+    <message id="config.tab.file">
+        <translation>Aktuelle Konfiguration</translation>
+    </message>
+    <message id="config.tab.configdocumentation">
+        <translation>Dokumentation</translation>
+    </message>
+
 </context>
 </TS>
