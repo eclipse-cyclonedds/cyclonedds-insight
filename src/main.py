@@ -39,7 +39,7 @@ else:
 import argparse
 from PySide6.QtWidgets import QApplication
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
-from PySide6.QtCore import qInstallMessageHandler, QUrl, QThread, qVersion, Qt
+from PySide6.QtCore import qInstallMessageHandler, QUrl, QThread, qVersion, Qt, QSettings
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtQuickControls2 import QQuickStyle
 from loguru import logger as logging
@@ -190,14 +190,28 @@ if __name__ == "__main__":
         logging.critical("Failed to load qml")
         sys.exit(-1)
 
-    # Add all configured domains
-    domainIds = getConfiguredDomainIds()    
-    for domainId in domainIds:
-        data.add_domain(domainId)
+    domainIds: list[int] = []
+
+    # Domains configured in cyclone-insight settings
+    rawDomainsStr = QSettings().value("general/domains", "", type=str)
+    for domainIdStr in rawDomainsStr.split(","):
+        try:
+            domainIds.append(int(domainIdStr.strip()))
+        except Exception:
+            pass
+
+    # Add all configured domains from cyclone xml config
+    domainIds.extend(getConfiguredDomainIds())
 
     # fallback
     if len(domainIds) == 0:
-        data.add_domain(0)
+        domainIds.append(0)
+
+    domainIds.sort()
+
+    # Add domains
+    for domainId in domainIds:
+        data.add_domain(domainId)
 
     logging.info("qt ...")
     ret_code = app.exec()

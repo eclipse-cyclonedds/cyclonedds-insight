@@ -131,6 +131,13 @@
         <translation>Use HTTP Proxy</translation>
     </message>
 
+    <message id="settings.default_domains.label">
+        <translation>Default-Domains</translation>
+    </message>
+    <message id="settings.default_domains.description">
+        <translation>Comma-separated list of domains to join at startup.</translation>
+    </message>
+
     <message id="infinite">
         <translation>Infinite</translation>
     </message>

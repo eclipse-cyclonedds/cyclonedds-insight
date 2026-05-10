@@ -136,6 +136,13 @@
         <translation>HTTP-Proxy verwenden</translation>
     </message>
 
+    <message id="settings.default_domains.label">
+        <translation>Standard-Domains</translation>
+    </message>
+    <message id="settings.default_domains.description">
+        <translation>Komma-separierte Liste von Domains welche beim Start beigetreten werden.</translation>
+    </message>
+
     <message id="infinite">
         <translation>Unbegrenzt</translation>
     </message>
