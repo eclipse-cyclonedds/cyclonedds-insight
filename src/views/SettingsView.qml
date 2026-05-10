@@ -32,6 +32,11 @@ Rectangle {
         property alias port: settingsViewId.port
     }
 
+    Settings {
+        category: "general"
+        property alias domains: defaultDomainsTextField.text
+    }
+
     ScrollView {
         anchors.fill: parent
 
@@ -186,6 +191,35 @@ Rectangle {
             Item {
                 Layout.columnSpan: 2
                 Layout.fillHeight: true
+            }
+
+            Label {
+                text: qsTrId("settings.default_domains.label") + ":"
+            }
+            TextField {
+                id: defaultDomainsTextField
+                text: ""
+                Layout.preferredWidth: 380
+                Layout.minimumWidth: 50
+                readOnly: false
+                validator: RegularExpressionValidator {
+                    regularExpression: /^((0|[1-9]\d?|1\d\d|2[0-1]\d|22\d|23[0-2])(,(0|[1-9]\d?|1\d\d|2[0-1]\d|22\d|23[0-2]))*)?$/
+                }
+                onTextChanged: {
+                    const parts = text.split(",")
+                    const seen = new Set()
+                    for (let i = 0; i < parts.length; ++i) {
+                        if (parts[i] !== "" && seen.has(parts[i])) {
+                            text = parts.slice(0, i).concat(parts.slice(i + 1)).join(",")
+                            return
+                        }
+                        seen.add(parts[i])
+                    }
+                }
+            }
+            Item {}
+            Label {
+                text: qsTrId("settings.default_domains.description")
             }
         }
     }
