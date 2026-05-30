@@ -116,10 +116,6 @@ Rectangle {
                     }
                 }
             }
-            Button {
-                text: "Delete All Readers"
-                onClicked: listenerModel.deleteAllReaders()
-            }
             Item {
                 implicitHeight: 1
                 implicitWidth: 1
@@ -271,16 +267,31 @@ Rectangle {
             color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
         }
 
+        onClosed: {
+            searchField.clear()
+            listenerProxyModel.searchText = ""
+        }
+
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 8
             spacing: 8
 
-            TextField {
-                id: searchField
+            RowLayout {
                 Layout.fillWidth: true
-                placeholderText: qsTrId("general.search.placeholder")
-                onAccepted: listenerProxyModel.searchText = text
+                spacing: 8
+
+                TextField {
+                    id: searchField
+                    Layout.fillWidth: true
+                    placeholderText: qsTrId("general.search.placeholder")
+                    onAccepted: listenerProxyModel.searchText = text
+                }
+
+                Button {
+                    text: "Delete All"
+                    onClicked: listenerModel.deleteAllReaders()
+                }
             }
 
             ListView {
