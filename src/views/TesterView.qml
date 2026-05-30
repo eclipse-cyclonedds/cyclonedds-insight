@@ -58,6 +58,7 @@ Rectangle {
 
             Button {
                 text:  qsTrId("tester.duplicate")
+                enabled: librariesCombobox.count > 0
                 onClicked: {
                     testerModel.duplicatePreset(librariesCombobox.currentIndex)
                     librariesCombobox.currentIndex = librariesCombobox.count - 1
@@ -114,8 +115,13 @@ Rectangle {
                     MenuItem {
                         text: "Delete Current"
                         onClicked: {
-                            testerModel.deleteWriter(librariesCombobox.currentIndex)
-                            librariesCombobox.currentIndex = librariesCombobox.currentIndex - 1
+                            const idx = librariesCombobox.currentIndex
+                            testerModel.deleteWriter(idx)
+                            if (librariesCombobox.count > 0) {
+                                librariesCombobox.currentIndex = Math.max(0, idx - 1)
+                            } else {
+                                librariesCombobox.currentIndex = -1
+                            }
                         }
                     }
                     MenuItem {
@@ -144,15 +150,20 @@ Rectangle {
 
             ComboBox {
                 id: librariesCombobox
+                readonly property bool isMac: Qt.platform.os === "osx"
+                readonly property int popupOverlap: isMac ? 8 : 0
+                readonly property int popupInset: isMac ? 8 : 0
                 model: testerModel
                 Layout.fillWidth: true
                 textRole: "name"
+                enabled: librariesCombobox.count > 0
 
                 property string searchText: ""
 
                 popup: Popup {
-                    y: librariesCombobox.height
-                    width: librariesCombobox.width
+                    y: librariesCombobox.height  - librariesCombobox.popupOverlap
+                    x: librariesCombobox.popupInset
+                    width: librariesCombobox.width - (2 * librariesCombobox.popupInset)
                     height: listenerTabId.height * 0.6
                     padding: 4
                     clip: true
@@ -161,10 +172,10 @@ Rectangle {
                         TextField {
                             id: searchField
                             Layout.fillWidth: true
-                            placeholderText: qsTr("Search...")
+                            placeholderText: qsTrId("general.search.placeholder")
                             text: librariesCombobox.searchText
 
-                            onTextChanged: librariesCombobox.searchText = text
+                            onAccepted: librariesCombobox.searchText = text
 
                             Keys.onEscapePressed: librariesCombobox.popup.close()
                         }
@@ -201,7 +212,9 @@ Rectangle {
                         searchField.selectAll()
                     }
 
-                    onClosed: librariesCombobox.searchText = ""
+                    onClosed: {
+                        librariesCombobox.searchText = ""
+                    }
                 }
 
                 onCurrentIndexChanged: {
@@ -421,7 +434,7 @@ Rectangle {
                 id: treeView
                 model: dataTreeModel
                 anchors.fill: parent
-                visible: dataTreeModel !== null && sequenceModel === null
+                visible: dataTreeModel !== null && sequenceModel === null && librariesCombobox.count > 0
                 clip: true
                 ScrollBar.vertical: ScrollBar {}
                 selectionModel: ItemSelectionModel {
