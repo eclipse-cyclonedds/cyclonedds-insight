@@ -57,7 +57,15 @@ Rectangle {
             }
 
             Button {
-                text: "Create Sequence"
+                text:  qsTrId("tester.duplicate")
+                onClicked: {
+                    testerModel.duplicatePreset(librariesCombobox.currentIndex)
+                    librariesCombobox.currentIndex = librariesCombobox.count - 1
+                }
+            }
+
+            Button {
+                text: qsTrId("tester.create-sequence")
                 onClicked: {
                     testerModel.addSequence()
                     librariesCombobox.currentIndex = librariesCombobox.count - 1

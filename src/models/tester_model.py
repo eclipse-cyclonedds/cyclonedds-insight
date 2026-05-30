@@ -573,3 +573,31 @@ class TesterModel(QAbstractListModel):
         TesterModel.untitiledSequenceCount += 1
         self.endResetModel()
         self.countChanged.emit()
+
+    @Slot(int)
+    def duplicatePreset(self, currentIndex: int):
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return
+        logging.info(f"Duplicate preset at index {currentIndex}")
+        mId = list(self.items.keys())[int(currentIndex)]
+        item = self.items[mId]
+        if isinstance(item, WriterItem):
+            newId = str(uuid.uuid4())
+            newPresetName = f"{item.getPresetName()}-copy"
+            rootNode = self.dataModelHandler.getRootNode(item.getTopicType())
+            dataTreeModel = DataTreeModel(rootNode, parent=self)
+            dataTreeModel.fromJson(item.getDataTreeModel().toJson()["root"], self.dataModelHandler)
+            self.beginResetModel()
+            self.items[newId] = WriterItem(item.getDomainId(), item.getTopicName(), item.getTopicType(), item.getQmlCode(), None, dataTreeModel, newPresetName, copy.deepcopy(item.qos))
+            self.endResetModel()
+            self.countChanged.emit()
+        elif isinstance(item, SequenceItem):
+            newId = str(uuid.uuid4())
+            newPresetName = f"{item.getPresetName()}-copy"
+            self.beginResetModel()
+            newSequenceItem = SequenceItem(newPresetName)
+            for itemSeqId in item.sequenceItems:
+                newSequenceItem.addSequenceItem(itemSeqId)
+            self.items[newId] = newSequenceItem
+            self.endResetModel()
+            self.countChanged.emit()
