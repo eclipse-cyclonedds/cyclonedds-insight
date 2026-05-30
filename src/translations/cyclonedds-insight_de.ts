@@ -229,5 +229,12 @@
         <translation>Dokumentation</translation>
     </message>
 
+    <message id="tester.duplicate">
+        <translation>Duplizieren</translation>
+    </message>
+    <message id="tester.create-sequence">
+        <translation>Sequence erstellen</translation>
+    </message>
+
 </context>
 </TS>

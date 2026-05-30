@@ -223,5 +223,12 @@
         <translation>Browse Options</translation>
     </message>
 
+    <message id="tester.duplicate">
+        <translation>Duplicate</translation>
+    </message>
+    <message id="tester.create-sequence">
+        <translation>Create Sequence</translation>
+    </message>
+
 </context>
 </TS>
