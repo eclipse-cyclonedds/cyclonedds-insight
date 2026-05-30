@@ -147,16 +147,73 @@ Rectangle {
                 model: testerModel
                 Layout.fillWidth: true
                 textRole: "name"
+
+                property string searchText: ""
+
+                popup: Popup {
+                    y: librariesCombobox.height
+                    width: librariesCombobox.width
+                    height: listenerTabId.height * 0.6
+                    padding: 4
+                    clip: true
+
+                    contentItem: ColumnLayout {
+                        TextField {
+                            id: searchField
+                            Layout.fillWidth: true
+                            placeholderText: qsTr("Search...")
+                            text: librariesCombobox.searchText
+
+                            onTextChanged: librariesCombobox.searchText = text
+
+                            Keys.onEscapePressed: librariesCombobox.popup.close()
+                        }
+                        ListView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            clip: true
+                            model: testerModel
+                            ScrollBar.vertical: ScrollBar {
+                                policy: ScrollBar.AsNeeded
+                            }
+
+                            delegate: ItemDelegate {
+                                width: ListView.view.width
+                                text: model.name
+                                visible: text.toLowerCase().includes(
+                                    librariesCombobox.searchText.toLowerCase()
+                                )
+                                height: visible ? implicitHeight : 0
+
+                                onClicked: {
+                                    librariesCombobox.currentIndex = index
+                                    librariesCombobox.popup.close()
+
+                                    dataTreeModel = testerModel.getTreeModel(index)
+                                    sequenceModel = testerModel.getSequenceModel(index)
+                                }
+                            }
+                        }
+                    }
+
+                    onOpened: {
+                        searchField.forceActiveFocus()
+                        searchField.selectAll()
+                    }
+
+                    onClosed: librariesCombobox.searchText = ""
+                }
+
                 onCurrentIndexChanged: {
-                    if (testerModel) {
+                    if (testerModel && currentIndex >= 0) {
                         dataTreeModel = testerModel.getTreeModel(currentIndex)
                         sequenceModel = testerModel.getSequenceModel(currentIndex)
                     }
                 }
+
                 onCountChanged: {
-                    if (librariesCombobox.count > 0 && librariesCombobox.currentIndex === -1) {
-                        librariesCombobox.currentIndex = 0;
-                    }
+                    if (count > 0 && currentIndex === -1)
+                        currentIndex = 0
                 }
             }
 
