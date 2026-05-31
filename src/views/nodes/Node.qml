@@ -22,14 +22,17 @@ import "qrc:/src/views"
 Rectangle {
     x: 400
     y: 200
-    width: 30
-    height: 30
-    radius: 15
+    property real nodeScale: 1.0
+
+    width: 30 * nodeScale
+    height: 30 * nodeScale
+    radius: width / 2
     property alias text: nodeText.text
     property string nodeName: ""
     property string hostName: ""
     property string nodeKey: ""
-    property bool isVendorCycloneDDS: false
+    property string vendorShortName: ""
+    property string iconSource: ""
     property bool isDomain: false
 
     border.color: "gray"
@@ -41,16 +44,44 @@ Rectangle {
         id: nodeText
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.top
-        anchors.bottomMargin: 4  // Optional spacing between node and text
+        anchors.bottomMargin: 4 * nodeScale
+        font.pixelSize: 12 * nodeScale
         text: ""
     }
 
     Image {
-        visible: isVendorCycloneDDS
-        source: "qrc:/res/images/cyclonedds.png"
-        sourceSize.width: 20
-        sourceSize.height: 20
+        visible: iconSource !== ""
+        source: iconSource
+        sourceSize.width: 20 * nodeScale
+        sourceSize.height: 20 * nodeScale
         anchors.centerIn: parent
+        fillMode: Image.PreserveAspectFit
+    }
+
+    Rectangle {
+        visible: iconSource === "" && vendorShortName !== "" && !isDomain
+        anchors.centerIn: parent
+        width: Math.max(20 * nodeScale, vendorFallbackText.implicitWidth + 6 * nodeScale)
+        height: 16 * nodeScale
+        radius: 4 * nodeScale
+        color: rootWindow.isDarkMode ? "#444444" : "#e8e8e8"
+        border.color: "gray"
+        border.width: 1
+        clip: true
+
+        Label {
+            id: vendorFallbackText
+            anchors.fill: parent
+            anchors.margins: 2 * nodeScale
+            text: vendorShortName
+            clip: true
+            elide: Text.ElideRight
+            maximumLineCount: 1
+            textFormat: Text.PlainText
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            font.pixelSize: 8 * nodeScale
+        }
     }
 
     MouseArea {

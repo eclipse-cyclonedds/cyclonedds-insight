@@ -25,6 +25,7 @@ Rectangle {
     id: nodeDetailViewId
     anchors.fill: parent
     color: "transparent"
+    clip: true
 
     property int domainId
     property bool hideSelf
@@ -37,6 +38,7 @@ Rectangle {
     property var velocities: ({})
     property var hostsMap: ({})       // hostName -> [nodes]
     property int idealLength: 110
+    property real nodeScale: 1.0
     property var hostColors: ({})
 
     Component.onCompleted: {
@@ -52,10 +54,12 @@ Rectangle {
         id: graphModel
     }
 
+
+
     Connections {
         target: graphModel
 
-        function onNewNodeSignal(key, name, edgeName, hostName, isVendorCycloneDDS) {
+        function onNewNodeSignal(key, name, edgeName, hostName, vendorShortName, vendorPicture) {
             if (!nodesMap) nodesMap = {};
             if (!hostsMap) hostsMap = {};
             if (!velocities) velocities = {};
@@ -89,6 +93,8 @@ Rectangle {
                         nodeInstance.hostName = hostName;
                     }
                 }
+                nodeInstance.vendorShortName = vendorShortName || "";
+                nodeInstance.iconSource = vendorPicture || "";
             } else {
                 // create new node
                 var nodeComponent = Qt.createComponent("qrc:/src/views/nodes/Node.qml");
@@ -108,7 +114,9 @@ Rectangle {
                     nodeName: name,
                     hostName: hostName || "",
                     nodeKey: key,
-                    isVendorCycloneDDS: isVendorCycloneDDS
+                    vendorShortName: vendorShortName || "",
+                    iconSource: vendorPicture || "",
+                    nodeScale: nodeDetailViewId.nodeScale
                 });
 
                 if (!nodeInstance) {
@@ -272,6 +280,16 @@ Rectangle {
         }
     }
 
+    function setNodeScale(scale) {
+        nodeDetailViewId.nodeScale = scale;
+        if (!nodesMap) return;
+        for (var key in nodesMap) {
+            if (nodesMap.hasOwnProperty(key)) {
+                nodesMap[key].nodeScale = scale;
+            }
+        }
+    }
+
     function calculatePhysics() {
         var nodeList = Object.values(nodesMap);
 
@@ -307,7 +325,7 @@ Rectangle {
                     var dx2 = other.x - b1.x;
                     var dy2 = other.y - b1.y;
                     var dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) || 0.01;
-                    var displacement = dist2 - nodeDetailViewId.idealLength;
+                    var displacement = dist2 - (nodeDetailViewId.idealLength * nodeDetailViewId.nodeScale);
                     fx += (dx2 / dist2) * displacement * 0.02;
                     fy += (dy2 / dist2) * displacement * 0.02;
                 }
@@ -323,7 +341,7 @@ Rectangle {
                         var dxh = b2g.x - b1.x;
                         var dyh = b2g.y - b1.y;
                         var distH = Math.sqrt(dxh * dxh + dyh * dyh) || 0.01;
-                        var hostIdeal = 100;
+                        var hostIdeal = 100 * nodeDetailViewId.nodeScale;
                         var displacementH = distH - hostIdeal;
                         fx += (dxh / distH) * displacementH * 0.01;
                         fy += (dyh / distH) * displacementH * 0.01;
@@ -405,7 +423,7 @@ Rectangle {
                     return [ Math.round(r * 255), Math.round(g * 255), Math.round(b * 255) ];
                 }
 
-                var pad = 20;
+                var pad = 20 * nodeDetailViewId.nodeScale;
 
                 // Generate pseudo-random H, S, V based on hIndex for consistency
                 function getColor(hIndex) {
@@ -443,8 +461,8 @@ Rectangle {
                 // Draw hostname text
                 ctx.globalAlpha = 1.0;
                 ctx.fillStyle = rootWindow.isDarkMode ? "#FFFFFF" : "#000000";
-                ctx.font = "bold 14px sans-serif";
-                ctx.fillText(h, minX - pad + 5, minY - pad - 5);
+                ctx.font = "bold " + (14 * nodeDetailViewId.nodeScale) + "px sans-serif";
+                ctx.fillText(h, minX - pad + (5 * nodeDetailViewId.nodeScale), minY - pad - (5 * nodeDetailViewId.nodeScale));
             }
         }
     }
@@ -470,6 +488,7 @@ Rectangle {
         id: root
         anchors.fill: parent
         z: 1
+        clip: true
     }
 
     function stop() {

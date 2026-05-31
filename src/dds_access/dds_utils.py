@@ -35,32 +35,34 @@ CYCLONEDDS_URI_NAME = "CYCLONEDDS_URI"
 MAX_SAMPLE_SIZE = 67108863
 
 VENDOR_ID_MAP = {
-    (0x01, 0x01): "RTI Connext DDS",
-    (0x01, 0x02): "OpenSplice DDS",
-    (0x01, 0x03): "OpenDDS",
-    (0x01, 0x04): "Mil-DDS",
-    (0x01, 0x05): "InterCOM DDS",
-    (0x01, 0x06): "CoreDX DDS",
-    (0x01, 0x07): "Lakota Technical Solutions (Not Active)",
-    (0x01, 0x08): "ICOUP Consulting (Not Active)",
-    (0x01, 0x09): "Diamond DDS",
-    (0x01, 0x0A): "RTI Connext DDS Micro",
-    (0x01, 0x0B): "Vortex Cafe",
-    (0x01, 0x0C): "PrismTech (Not Active)",
-    (0x01, 0x0D): "Vortex Lite",
-    (0x01, 0x0E): "Qeo (Not Active)",
-    (0x01, 0x0F): "FastRTPS / FastDDS",
-    (0x01, 0x10): "Eclipse Cyclone DDS",
-    (0x01, 0x11): "GurumDDS",
-    (0x01, 0x12): "RustDDS",
-    (0x01, 0x13): "ZRDDS",
-    (0x01, 0x14): "Dust DDS",
-    (0x01, 0x15): "Safe DDS (eProsima)",
-    (0x01, 0x16): "Federated Designs DDS Tools",
-    (0x01, 0x17): "Rocket Edge Connect for DDS",
-    (0x01, 0x18): "Bell Digital Backbone RTPS",
-    (0x01, 0x19): "int2DDS",
+    (0x01, 0x01): {"name": "RTI Connext DDS", "short_name": "RTI", "picture": ""},
+    (0x01, 0x02): {"name": "OpenSplice DDS", "short_name": "OSPL", "picture": "qrc:/res/images/vortex-ospl.png"},
+    (0x01, 0x03): {"name": "OpenDDS", "short_name": "OpenDDS", "picture": ""},
+    (0x01, 0x04): {"name": "Mil-DDS", "short_name": "MilDDS", "picture": ""},
+    (0x01, 0x05): {"name": "InterCOM DDS", "short_name": "InterCOM", "picture": ""},
+    (0x01, 0x06): {"name": "CoreDX DDS", "short_name": "CoreDX", "picture": ""},
+    (0x01, 0x07): {"name": "Lakota Technical Solutions (Not Active)", "short_name": "Lakota", "picture": ""},
+    (0x01, 0x08): {"name": "ICOUP Consulting (Not Active)", "short_name": "ICOUP", "picture": ""},
+    (0x01, 0x09): {"name": "Diamond DDS", "short_name": "Diamond", "picture": ""},
+    (0x01, 0x0A): {"name": "RTI Connext DDS Micro", "short_name": "RTI Micro", "picture": ""},
+    (0x01, 0x0B): {"name": "Vortex Cafe", "short_name": "Vortex Cafe", "picture": ""},
+    (0x01, 0x0C): {"name": "PrismTech (Not Active)", "short_name": "PrismTech", "picture": ""},
+    (0x01, 0x0D): {"name": "Vortex Lite", "short_name": "Vortex Lite", "picture": ""},
+    (0x01, 0x0E): {"name": "Qeo (Not Active)", "short_name": "Qeo", "picture": ""},
+    (0x01, 0x0F): {"name": "FastRTPS / FastDDS", "short_name": "FastDDS", "picture": ""},
+    (0x01, 0x10): {"name": "Eclipse Cyclone DDS", "short_name": "Cyclone", "picture": "qrc:/res/images/cyclonedds.png"},
+    (0x01, 0x11): {"name": "GurumDDS", "short_name": "Gurum", "picture": ""},
+    (0x01, 0x12): {"name": "RustDDS", "short_name": "RustDDS", "picture": ""},
+    (0x01, 0x13): {"name": "ZRDDS", "short_name": "ZRDDS", "picture": ""},
+    (0x01, 0x14): {"name": "Dust DDS", "short_name": "Dust", "picture": ""},
+    (0x01, 0x15): {"name": "Safe DDS (eProsima)", "short_name": "SafeDDS", "picture": ""},
+    (0x01, 0x16): {"name": "Federated Designs DDS Tools", "short_name": "FDDS", "picture": ""},
+    (0x01, 0x17): {"name": "Rocket Edge Connect for DDS", "short_name": "Rocket", "picture": ""},
+    (0x01, 0x18): {"name": "Bell Digital Backbone RTPS", "short_name": "Bell RTPS", "picture": ""},
+    (0x01, 0x19): {"name": "int2DDS", "short_name": "int2DDS", "picture": ""},
 }
+
+UNKNOWN_VENDOR_INFO = {"name": "Unknown", "short_name": "DDS", "picture": ""}
 
 def getProperty(p: Optional[DcpsParticipant], names: List[str]):
     propName: str = "Unknown"
@@ -95,16 +97,24 @@ def isLikelyOpensplice(participant: DcpsParticipant) -> bool:
         return True
     return False
 
-def getVendorName(p: Optional[DcpsParticipant]) -> str:
+def getVendorInfo(p: Optional[DcpsParticipant]) -> dict:
     if p is None:
-        return "Unknown"
+        return UNKNOWN_VENDOR_INFO
     guid_bytes = p.key.bytes
     vendor_tuple = (guid_bytes[0], guid_bytes[1])
-    vendorName = VENDOR_ID_MAP.get(vendor_tuple, "Unknown")
-    if vendorName == "Unknown":
-        if isLikelyOpensplice(p):
-            return VENDOR_ID_MAP[(0x01, 0x02)]
-    return vendorName
+    vendorInfo = VENDOR_ID_MAP.get(vendor_tuple)
+    if vendorInfo is None and isLikelyOpensplice(p):
+        vendorInfo = VENDOR_ID_MAP[(0x01, 0x02)]
+    return vendorInfo or UNKNOWN_VENDOR_INFO
+
+def getVendorName(p: Optional[DcpsParticipant]) -> str:
+    return getVendorInfo(p).get("name", "Unknown")
+
+def getVendorShortName(p: Optional[DcpsParticipant]) -> str:
+    return getVendorInfo(p).get("short_name", "DDS")
+
+def getVendorPicture(p: Optional[DcpsParticipant]) -> str:
+    return getVendorInfo(p).get("picture", "")
 
 def getHostname(p: Optional[DcpsParticipant]):
     hostnameRaw = getProperty(p, HOSTNAMES)
