@@ -23,7 +23,7 @@ import requests
 import socket
 
 from dds_access import dds_data
-from dds_access.dds_utils import getAppName, getHostname, isVendorCycloneDDS, getProperty, DEBUG_MONITORS
+from dds_access.dds_utils import getAppName, getHostname, getVendorShortName, getVendorPicture, getProperty, DEBUG_MONITORS
 
 
 class GraphStatisticThread(QThread):
@@ -162,7 +162,7 @@ class GraphModel(QAbstractItemModel):
     requestParticipants = Signal(str)
     requestDomainIds = Signal(str)
 
-    newNodeSignal = Signal(str, str, str, str, bool)
+    newNodeSignal = Signal(str, str, str, str, str, str)
     removeNodeSignal = Signal(str, str)
     removeEdgeBetweenNodes = Signal(str, str)
     updateEdgeSignal = Signal(str, str, str, float)
@@ -228,7 +228,7 @@ class GraphModel(QAbstractItemModel):
         domainIdStr = f"Domain {domain_id}"
         if domain_id not in self.domainIds.keys():
             self.domainIds[domain_id] = []
-            self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "", False)
+            self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "", "", "")
 
     @Slot(str, int, object)
     def response_participants_slot(self, request_id: str, domain_id: int, participants):
@@ -258,7 +258,7 @@ class GraphModel(QAbstractItemModel):
 
         if domain_id not in self.domainIds.keys():
             self.domainIds[domain_id] = [str(participant.key)]
-            self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "", False)
+            self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "", "", "")
         else:
             if str(participant.key) not in self.domainIds[domain_id]:
                 self.domainIds[domain_id].append(str(participant.key))
@@ -273,7 +273,7 @@ class GraphModel(QAbstractItemModel):
             else:
                 self.appNames[nodeKey][domain_id].append(str(participant.key))
 
-        self.newNodeSignal.emit(nodeKey, appName, domainIdStr, host, isVendorCycloneDDS(participant))
+        self.newNodeSignal.emit(nodeKey, appName, domainIdStr, host, getVendorShortName(participant), getVendorPicture(participant))
 
         # Extracting debug monitor address
         dbg_mon_str: str = getProperty(participant, DEBUG_MONITORS)
@@ -333,7 +333,7 @@ class GraphModel(QAbstractItemModel):
                 if domainId not in self.domainIds.keys():
                     self.domainIds[domainId] = []
                     domainIdStr = f"Domain {domainId}"
-                    self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "", False)
+                    self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "", "", "")
 
     @Slot(int, str, str, float)
     def onGraphStatisticsData(self, domain_id: int, nodeKey: str, t: str, bps: float):

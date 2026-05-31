@@ -18,6 +18,7 @@
         <file>res/images/cyclonedds@2x.png</file>
         <file>res/images/cyclonedds@3x.png</file>
         <file>res/images/spinning.gif</file>
+        <file>res/images/vortex-ospl.png</file>
 
         <!-- translations -->
         <file>src/translations/cyclonedds-insight_en.qm</file>

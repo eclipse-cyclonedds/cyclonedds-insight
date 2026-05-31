@@ -28,19 +28,45 @@ Rectangle {
 
     property int domainId
 
-    property var architectureView: null 
+    property var architectureView: null
+    property bool controlsVisible: true
+    property real nodeScale: 1.0
 
     Component.onCompleted: {
 
     }
 
-    ColumnLayout  {
+    Rectangle {
+        id: root
         anchors.fill: parent
+        color: "transparent"
+    }
+
+    Rectangle {
+        id: controlsPanel
+        anchors.top: parent.top
+        anchors.left: parent.left
         anchors.margins: 0
+        z: 10
+        color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
+        width: controlsLayout.implicitWidth
+        height: controlsLayout.implicitHeight
+
+        ColumnLayout  {
+            id: controlsLayout
+            anchors.top: parent.top
+            anchors.left: parent.left
+            spacing: 0
+
+        Button {
+            text: controlsVisible ? qsTr("Hide settings panel") : qsTr("Show settings panel")
+            onClicked: controlsVisible = !controlsVisible
+        }
 
         GroupBox {
             title: qsTrId("node.view")
             spacing: 0
+            visible: controlsVisible
 
             ColumnLayout {
                 anchors.fill: parent
@@ -129,12 +155,48 @@ Rectangle {
                     }
                 }
 
+                RowLayout {
+                    spacing: 10
+
+                    Label {
+                        text: qsTr("Node size") + ":"
+                    }
+
+                    Button {
+                        text: "-"
+                        enabled: nodeScale > 0.1
+                        onClicked: {
+                            nodeScale = Math.max(0.1, nodeScale - 0.1)
+                            if (architectureView !== null) {
+                                architectureView.setNodeScale(nodeScale)
+                            }
+                        }
+                    }
+
+                    Label {
+                        text: Math.round(nodeScale * 100) + "%"
+                        width: 45
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    Button {
+                        text: "+"
+                        onClicked: {
+                            nodeScale = nodeScale + 0.1
+                            if (architectureView !== null) {
+                                architectureView.setNodeScale(nodeScale)
+                            }
+                        }
+                    }
+                }
+
                 Button {
-                    text: architectureView === null ? "Show" : "Hide"
+                    text: architectureView === null ? qsTr("Start") : qsTr("Stop")
                     onClicked: {
                         if (architectureView !== null) {
                             architectureView.stop()
                             architectureView.destroy()
+                            architectureView = null
                         } else {
                             architectureView = createArchitectureView(useAllDomainsCheckBox.checked ? -1 : domainViewId.domainId, hideSelfCheckbox.checked, showSpeedsCheckBox.checked, speedSelectComboBox.currentText)
                             architectureView.setSpeedUnit(speedSelectComboBox.currentText);
@@ -143,12 +205,6 @@ Rectangle {
                 }
             }
         }
-
-        Rectangle {
-            id: root
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            color: "transparent"
         }
     }
 
@@ -167,6 +223,7 @@ Rectangle {
                 return null
             }
             newView.idealLength = idealLengthSlider.value
+            newView.setNodeScale(nodeScale)
             return newView
         } else {
             console.log("Component loading failed:", component.errorString())
