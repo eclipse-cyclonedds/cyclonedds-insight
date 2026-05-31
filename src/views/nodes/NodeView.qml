@@ -59,7 +59,7 @@ Rectangle {
             spacing: 0
 
         Button {
-            text: controlsVisible ? qsTr("Hide settings panel") : qsTr("Show settings panel")
+            text: controlsVisible ? qsTrId("node.view.panel.hide") : qsTrId("node.view.panel.show")
             onClicked: controlsVisible = !controlsVisible
         }
 
@@ -159,7 +159,7 @@ Rectangle {
                     spacing: 10
 
                     Label {
-                        text: qsTr("Node size") + ":"
+                        text: qsTrId("node.view.size") + ":"
                     }
 
                     Button {
@@ -191,7 +191,7 @@ Rectangle {
                 }
 
                 Button {
-                    text: architectureView === null ? qsTr("Start") : qsTr("Stop")
+                    text: architectureView === null ? qsTrId("node.view.start") : qsTrId("node.view.stop")
                     onClicked: {
                         if (architectureView !== null) {
                             architectureView.stop()

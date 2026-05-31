@@ -159,6 +159,21 @@
         <translation>Ausgewählte Domain entfernen</translation>
     </message>
 
+    <message id="node.view.start">
+        <translation>Start</translation>
+    </message>
+    <message id="node.view.stop">
+        <translation>Stop</translation>
+    </message>
+    <message id="node.view.panel.show">
+        <translation>Zeige Steuerung</translation>
+    </message>
+    <message id="node.view.panel.hide">
+        <translation>Verstecke Steuerung</translation>
+    </message>
+    <message id="node.view.size">
+        <translation>Knotengröße</translation>
+    </message>
     <message id="node.view">
         <translation>Node-Ansicht</translation>
     </message>

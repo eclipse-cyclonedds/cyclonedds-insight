@@ -153,6 +153,21 @@
         <translation>Remove the selected domain</translation>
     </message>
 
+    <message id="node.view.start">
+        <translation>Start</translation>
+    </message>
+    <message id="node.view.stop">
+        <translation>Stop</translation>
+    </message>
+    <message id="node.view.panel.show">
+        <translation>Show Controls</translation>
+    </message>
+    <message id="node.view.panel.hide">
+        <translation>Hide Controls</translation>
+    </message>
+    <message id="node.view.size">
+        <translation>Node Size</translation>
+    </message>
     <message id="node.view">
         <translation>Node View</translation>
     </message>
