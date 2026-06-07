@@ -36,6 +36,7 @@ import json
 class SequenceItem(QAbstractListModel):
 
     NameRole = Qt.UserRole + 1
+    DataItemIdRole = Qt.UserRole + 2
 
     def __init__(self, presetName, description="", parent=QObject()):
         super().__init__(parent)
@@ -49,14 +50,18 @@ class SequenceItem(QAbstractListModel):
             return None
         row = index.row()
 
+        dataItemId = self.sequenceItems[row]
         if role == self.NameRole or role == Qt.DisplayRole:
-            return f"{self.sequenceItems[row]}"
+            return dataItemId
+        if role == self.DataItemIdRole:
+            return dataItemId
         
         return None
 
     def roleNames(self) -> dict[int, QByteArray]:
         return {
-            self.NameRole: b'name'
+            self.NameRole: b'name',
+            self.DataItemIdRole: b'dataItemId'
         }
 
     def rowCount(self, index: QModelIndex = QModelIndex()) -> int:
@@ -78,9 +83,9 @@ class SequenceItem(QAbstractListModel):
         return self.dataTreeModel.rootNode.role == DataTreeModel.IsSequenceRole
 
     @Slot(str)
-    def addSequenceItem(self, itemId):
+    def addSequenceItem(self, dataItemId):
         self.beginResetModel()
-        self.sequenceItems.append(itemId)
+        self.sequenceItems.append(dataItemId)
         self.endResetModel()
 
     @Slot(int)
@@ -92,13 +97,32 @@ class SequenceItem(QAbstractListModel):
         self.endResetModel()
 
 class WriterItem:
-    def __init__(self, domainId, topic_name, topic_type, qmlCode, pyCode, dataTreeModel, presetName, qos={}, description=""):
+    def __init__(self, writerId, domainId, topic_name, topic_type, qmlCode, pyCode, dataTreeModels, presetName, qos={}, description="", dataItemNames=None, dataItemIds=None):
+        self.writerId = writerId
         self.domainId = domainId
         self.topic_name = topic_name
         self.topic_type = topic_type
         self.qmlCode = qmlCode
         self.pyCode = pyCode
-        self.dataTreeModel = dataTreeModel
+        self.dataTreeModels = dataTreeModels
+        self.dataItemNames = [
+            str(name).strip() or f"Data {index + 1}"
+            for index, name in enumerate(dataItemNames)
+        ] if isinstance(dataItemNames, list) else []
+        while len(self.dataItemNames) < len(self.dataTreeModels):
+            self.dataItemNames.append(f"Data {len(self.dataItemNames) + 1}")
+        self.dataItemNames = self.dataItemNames[:len(self.dataTreeModels)]
+        importedDataItemIds = list(dataItemIds) if isinstance(dataItemIds, list) else []
+        self.dataItemIds = []
+        for dataIndex in range(len(self.dataTreeModels)):
+            dataItemId = writerId if dataIndex == 0 else (
+                importedDataItemIds[dataIndex]
+                if dataIndex < len(importedDataItemIds)
+                else ""
+            )
+            if not dataItemId or dataItemId in self.dataItemIds:
+                dataItemId = str(uuid.uuid4())
+            self.dataItemIds.append(dataItemId)
         self.presetName = presetName
         self.description = description
         self.qos = qos
@@ -125,8 +149,61 @@ class WriterItem:
     def getDomainId(self):
         return self.domainId
 
-    def getDataTreeModel(self):
-        return self.dataTreeModel
+    def getDataTreeModel(self, dataIndex=0):
+        if dataIndex < 0 or dataIndex >= len(self.dataTreeModels):
+            return None
+        return self.dataTreeModels[dataIndex]
+
+    def getDataTreeModels(self):
+        return self.dataTreeModels
+
+    def addDataTreeModel(self, dataTreeModel, name=None, dataItemId=None):
+        self.dataTreeModels.append(dataTreeModel)
+        self.dataItemNames.append(name or f"Data {len(self.dataTreeModels)}")
+        self.dataItemIds.append(dataItemId or str(uuid.uuid4()))
+
+    def removeDataTreeModel(self, dataIndex):
+        if len(self.dataTreeModels) <= 1 or dataIndex < 0 or dataIndex >= len(self.dataTreeModels):
+            return "", ""
+        dataTreeModel = self.dataTreeModels.pop(dataIndex)
+        del self.dataItemNames[dataIndex]
+        removedDataItemId = self.dataItemIds.pop(dataIndex)
+        promotedDataItemId = ""
+        if dataIndex == 0:
+            promotedDataItemId = self.dataItemIds[0]
+            self.dataItemIds[0] = self.writerId
+        dataTreeModel.deleteLater()
+        return removedDataItemId, promotedDataItemId
+
+    def getDataTreeModelCount(self):
+        return len(self.dataTreeModels)
+
+    def getDataItemName(self, dataIndex):
+        if dataIndex < 0 or dataIndex >= len(self.dataItemNames):
+            return ""
+        return self.dataItemNames[dataIndex]
+
+    def setDataItemName(self, dataIndex, name):
+        if dataIndex < 0 or dataIndex >= len(self.dataItemNames):
+            return
+        self.dataItemNames[dataIndex] = name
+
+    def getDataItemNames(self):
+        return self.dataItemNames
+
+    def getDataItemId(self, dataIndex):
+        if dataIndex < 0 or dataIndex >= len(self.dataItemIds):
+            return ""
+        return self.dataItemIds[dataIndex]
+
+    def getDataItemIds(self):
+        return self.dataItemIds
+
+    def getDataIndexById(self, dataItemId):
+        try:
+            return self.dataItemIds.index(dataItemId)
+        except ValueError:
+            return -1
     
     def getQmlCode(self):
         return self.qmlCode
@@ -180,6 +257,34 @@ class TesterModel(QAbstractListModel):
     def resetExportData(self):
         self.exportData = { "presets": [], "sequence_presets": [] }
 
+    def _createDataTreeModel(self, topicType, messageRoot=None):
+        rootNode = self.dataModelHandler.getRootNode(topicType)
+        dataTreeModel = DataTreeModel(rootNode, parent=self)
+        if messageRoot:
+            dataTreeModel.fromJson(messageRoot, self.dataModelHandler)
+        return dataTreeModel
+
+    def _getDataReference(self, dataItemId):
+        for writerId, item in self.items.items():
+            if isinstance(item, WriterItem):
+                dataIndex = item.getDataIndexById(dataItemId)
+                if dataIndex >= 0:
+                    return writerId, dataIndex
+        return "", -1
+
+    def _getImportedSequenceDataItemId(self, sequenceItem):
+        if isinstance(sequenceItem, str):
+            return sequenceItem
+        return ""
+
+    def _getAvailableDataReferences(self):
+        references = []
+        for writerId, item in self.items.items():
+            if isinstance(item, WriterItem):
+                for dataIndex in range(item.getDataTreeModelCount()):
+                    references.append(item.getDataItemId(dataIndex))
+        return references
+
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
         if not index.isValid():
             return None
@@ -222,20 +327,121 @@ class TesterModel(QAbstractListModel):
     def rowCount(self, index: QModelIndex = QModelIndex()) -> int:
         return len(self.items.keys())
 
-    @Slot(int, result=DataTreeModel)
-    def getTreeModel(self, currentIndex: int) -> DataTreeModel:
-        if currentIndex < 0:
-            return
+    @Slot(int, int, result=DataTreeModel)
+    def getTreeModel(self, currentIndex: int, dataIndex: int = 0) -> DataTreeModel:
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return None
         mId = list(self.items.keys())[int(currentIndex)]
         item = self.items[mId]
         if isinstance(item, WriterItem):
-            return item.getDataTreeModel()
+            return item.getDataTreeModel(dataIndex)
         return None
+
+    @Slot(int, result=int)
+    def getDataItemCount(self, currentIndex: int) -> int:
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return 0
+        mId = list(self.items.keys())[int(currentIndex)]
+        item = self.items[mId]
+        if isinstance(item, WriterItem):
+            return item.getDataTreeModelCount()
+        return 0
+
+    @Slot(result=int)
+    def getAvailableDataItemCount(self) -> int:
+        return len(self._getAvailableDataReferences())
+
+    @Slot(int, result=str)
+    def getAvailableDataItemName(self, availableIndex: int) -> str:
+        references = self._getAvailableDataReferences()
+        if availableIndex < 0 or availableIndex >= len(references):
+            return ""
+        return self.getDataItemDisplayName(references[availableIndex])
+
+    @Slot(int, result=str)
+    def getAvailableDataItemId(self, availableIndex: int) -> str:
+        references = self._getAvailableDataReferences()
+        if availableIndex < 0 or availableIndex >= len(references):
+            return ""
+        return references[availableIndex]
+
+    @Slot(str, result=str)
+    def getDataItemDisplayName(self, dataItemId: str) -> str:
+        writerId, dataIndex = self._getDataReference(dataItemId)
+        item = self.items.get(writerId)
+        if not isinstance(item, WriterItem):
+            return "Unknown"
+        return f"{item.getPresetName()} - {item.getDataItemName(dataIndex)}"
+
+    @Slot(int, int, result=str)
+    def getDataItemName(self, currentIndex: int, dataIndex: int) -> str:
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return ""
+        mId = list(self.items.keys())[int(currentIndex)]
+        item = self.items[mId]
+        if isinstance(item, WriterItem):
+            return item.getDataItemName(dataIndex)
+        return ""
+
+    @Slot(int, int, str)
+    def setDataItemName(self, currentIndex: int, dataIndex: int, name: str):
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return
+        mId = list(self.items.keys())[int(currentIndex)]
+        item = self.items[mId]
+        if not isinstance(item, WriterItem):
+            return
+        item.setDataItemName(dataIndex, name.strip() or f"Data {dataIndex + 1}")
+        idx = self.index(currentIndex, 0)
+        self.dataChanged.emit(idx, idx, [self.DataModelRole])
+
+    @Slot(int, result=int)
+    def addDataItem(self, currentIndex: int) -> int:
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return -1
+        mId = list(self.items.keys())[int(currentIndex)]
+        item = self.items[mId]
+        if not isinstance(item, WriterItem):
+            return -1
+
+        item.addDataTreeModel(self._createDataTreeModel(item.getTopicType()))
+        idx = self.index(currentIndex, 0)
+        self.dataChanged.emit(idx, idx, [self.DataModelRole])
+        return item.getDataTreeModelCount() - 1
+
+    @Slot(int, int, result=int)
+    def removeDataItem(self, currentIndex: int, dataIndex: int) -> int:
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return -1
+        mId = list(self.items.keys())[int(currentIndex)]
+        item = self.items[mId]
+        if not isinstance(item, WriterItem):
+            return dataIndex
+        removedDataItemId, promotedDataItemId = item.removeDataTreeModel(dataIndex)
+        if not removedDataItemId:
+            return dataIndex
+
+        for sequenceItem in self.items.values():
+            if not isinstance(sequenceItem, SequenceItem):
+                continue
+            updatedReferences = [
+                item.writerId if reference == promotedDataItemId else reference
+                for reference in sequenceItem.sequenceItems
+                if reference != removedDataItemId
+            ]
+            if updatedReferences != sequenceItem.sequenceItems:
+                sequenceItem.beginResetModel()
+                sequenceItem.sequenceItems = updatedReferences
+                sequenceItem.endResetModel()
+
+        idx = self.index(currentIndex, 0)
+        self.dataChanged.emit(idx, idx, [self.DataModelRole])
+        return min(dataIndex, item.getDataTreeModelCount() - 1)
 
     @Slot(int, result=SequenceItem)
     def getSequenceModel(self, currentIndex: int) -> SequenceItem:
-        if currentIndex < 0:
-            return
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return None
         mId = list(self.items.keys())[int(currentIndex)]
         item = self.items[mId]
         if isinstance(item, SequenceItem):
@@ -264,9 +470,10 @@ class TesterModel(QAbstractListModel):
         if isinstance(item, SequenceItem):
             if len(item.sequenceItems) == 0:
                 return False
-            for itemCurrentId in item.sequenceItems:
-                if itemCurrentId not in self.items.keys():
-                    logging.warning(f"Item id {itemCurrentId} not found in items")
+            for dataItemId in item.sequenceItems:
+                itemCurrentId, _ = self._getDataReference(dataItemId)
+                if itemCurrentId not in self.items:
+                    logging.warning(f"Data item id {dataItemId} not found in items")
                     continue
                 itemCurr = self.items[itemCurrentId]
                 if isinstance(itemCurr, WriterItem):
@@ -288,9 +495,14 @@ class TesterModel(QAbstractListModel):
                 self.threads[key].deleteWriter(mId)
             item.setIsStarted(False)
         if isinstance(item, SequenceItem):
-            for itemCurrentId in item.sequenceItems:
-                if itemCurrentId not in self.items.keys():
-                    logging.warning(f"Item id {itemCurrentId} not found in items")
+            stoppedWriterIds = set()
+            for dataItemId in item.sequenceItems:
+                itemCurrentId, _ = self._getDataReference(dataItemId)
+                if itemCurrentId in stoppedWriterIds:
+                    continue
+                stoppedWriterIds.add(itemCurrentId)
+                if itemCurrentId not in self.items:
+                    logging.warning(f"Data item id {dataItemId} not found in items")
                     continue
                 itemCurr = self.items[itemCurrentId]
                 if isinstance(itemCurr, WriterItem):
@@ -309,25 +521,18 @@ class TesterModel(QAbstractListModel):
         if isinstance(item, WriterItem):
             self.createEndpointFromTesterSignal.emit(mId, item.getDomainId(), item.getTopicName(), item.getTopicType(), 4, item.getPresetName(), {}, copy.deepcopy(item.qos))
         if isinstance(item, SequenceItem):
-            for itemCurrentId in item.sequenceItems:
-                if itemCurrentId not in self.items.keys():
-                    logging.warning(f"Item id {itemCurrentId} not found in items")
+            startedWriterIds = set()
+            for dataItemId in item.sequenceItems:
+                itemCurrentId, _ = self._getDataReference(dataItemId)
+                if itemCurrentId in startedWriterIds:
+                    continue
+                startedWriterIds.add(itemCurrentId)
+                if itemCurrentId not in self.items:
+                    logging.warning(f"Data item id {dataItemId} not found in items")
                     continue
                 itemCurr = self.items[itemCurrentId]
                 if isinstance(itemCurr, WriterItem):
                     self.createEndpointFromTesterSignal.emit(itemCurrentId, itemCurr.getDomainId(), itemCurr.getTopicName(), itemCurr.getTopicType(), 4, itemCurr.getPresetName(), {}, copy.deepcopy(itemCurr.qos))
-
-    @Slot(int, result=str)
-    def getItemId(self, currentIndex: int) -> str:
-        if currentIndex < 0:
-            return
-        return list(self.items.keys())[int(currentIndex)]
-
-    @Slot(str, result=str)
-    def getNameById(self, itemId: str) -> str:
-        if itemId in self.items.keys():
-            return self.items[itemId].getPresetName()
-        return None
 
     @Slot(int, result=str)
     def getPresetName(self, currentIndex: int) -> str:
@@ -380,20 +585,21 @@ class TesterModel(QAbstractListModel):
             self.dataChanged.emit(idx, idx, [self.IsStarted, self.NameRole, self.PresetNameRole])
         else:
             self.beginResetModel()
-            rootNode = self.dataModelHandler.getRootNode(topic_type)
-            dataTreeModel = DataTreeModel(rootNode, parent=self)
-            self.items[id] = WriterItem(domainId, topic_name, topic_type, "", None, dataTreeModel, f"Untitled-{TesterModel.untitiledCount}", qos)
+            dataTreeModel = self._createDataTreeModel(topic_type)
+            self.items[id] = WriterItem(id, domainId, topic_name, topic_type, "", None, [dataTreeModel], f"Untitled-{TesterModel.untitiledCount}", qos)
             TesterModel.untitiledCount += 1
             self.items[id].setIsStarted(True)
             self.endResetModel()
             self.countChanged.emit()
 
-    @Slot(int, QModelIndex)
-    def addArrayItem(self, currentIndex: int, currentTreeIndex: QModelIndex):
+    @Slot(int, int, QModelIndex)
+    def addArrayItem(self, currentIndex: int, dataIndex: int, currentTreeIndex: QModelIndex):
         logging.debug("Add Array Item")
         mId = list(self.items.keys())[int(currentIndex)]
         item = self.items[mId]
-        dataTreeModel = item.getDataTreeModel()
+        dataTreeModel = item.getDataTreeModel(dataIndex)
+        if dataTreeModel is None:
+            return
         if currentTreeIndex.isValid():
             item: DataTreeNode = currentTreeIndex.internalPointer()
             if item.itemArrayTypeName:
@@ -411,13 +617,15 @@ class TesterModel(QAbstractListModel):
         else:
             logging.warning("currentTreeIndex not valid")
 
-    @Slot(int, QModelIndex)
-    def removeArrayItem(self, currentIndex: int, currentTreeIndex: QModelIndex):
+    @Slot(int, int, QModelIndex)
+    def removeArrayItem(self, currentIndex: int, dataIndex: int, currentTreeIndex: QModelIndex):
         logging.debug("Remove Array Item")
         mId = list(self.items.keys())[int(currentIndex)]
         item = self.items[mId]
         if isinstance(item, WriterItem):
-            dataTreeModel = item.getDataTreeModel()
+            dataTreeModel = item.getDataTreeModel(dataIndex)
+            if dataTreeModel is None:
+                return
             if currentTreeIndex.isValid():
                 dataTreeModel.removeArrayItem(currentTreeIndex)
 
@@ -431,59 +639,68 @@ class TesterModel(QAbstractListModel):
         if isinstance(item, WriterItem):
             self.showQml.emit(mId, item.getQmlCode())
 
-    @Slot(int)
-    def writeData(self, currentIndex: int):
+    @Slot(int, int)
+    def writeData(self, currentIndex: int, dataIndex: int):
         logging.trace(f"Write Data pressed on index: {str(currentIndex)}")
         mId = list(self.items.keys())[int(currentIndex)]
         item = self.items[mId]
         if isinstance(item, WriterItem):
-            dataTreeModel = item.getDataTreeModel()
-            self.writeDataSignal.emit(mId, dataTreeModel.getDataObj())
+            dataTreeModel = item.getDataTreeModel(dataIndex)
+            if dataTreeModel is not None:
+                self.writeDataSignal.emit(mId, dataTreeModel.getDataObj())
         elif isinstance(item, SequenceItem):
-            for itemCurrentId in item.sequenceItems:
-                if itemCurrentId not in self.items.keys():
-                    logging.warning(f"Item id {itemCurrentId} not found in items")
+            for dataItemId in item.sequenceItems:
+                itemCurrentId, sequenceDataIndex = self._getDataReference(dataItemId)
+                if itemCurrentId not in self.items:
+                    logging.warning(f"Data item id {dataItemId} not found in items")
                     continue
                 item = self.items[itemCurrentId]
                 if isinstance(item, WriterItem):
-                    dataTreeModel = item.getDataTreeModel()
-                    self.writeDataSignal.emit(itemCurrentId, dataTreeModel.getDataObj())
+                    dataTreeModel = item.getDataTreeModel(sequenceDataIndex)
+                    if dataTreeModel is not None:
+                        self.writeDataSignal.emit(itemCurrentId, dataTreeModel.getDataObj())
 
-    @Slot(int)
-    def disposeData(self, currentIndex: int):
+    @Slot(int, int)
+    def disposeData(self, currentIndex: int, dataIndex: int):
         logging.trace(f"Dispose Data pressed on index: {str(currentIndex)}")
         mId = list(self.items.keys())[int(currentIndex)]
         item = self.items[mId]
         if isinstance(item, WriterItem):
-            dataTreeModel = item.getDataTreeModel()
-            self.disposeDataSignal.emit(mId, dataTreeModel.getDataObj())
+            dataTreeModel = item.getDataTreeModel(dataIndex)
+            if dataTreeModel is not None:
+                self.disposeDataSignal.emit(mId, dataTreeModel.getDataObj())
         elif isinstance(item, SequenceItem):
-            for itemCurrentId in item.sequenceItems:
-                if itemCurrentId not in self.items.keys():
-                    logging.warning(f"Item id {itemCurrentId} not found in items")
+            for dataItemId in item.sequenceItems:
+                itemCurrentId, sequenceDataIndex = self._getDataReference(dataItemId)
+                if itemCurrentId not in self.items:
+                    logging.warning(f"Data item id {dataItemId} not found in items")
                     continue
                 item = self.items[itemCurrentId]
                 if isinstance(item, WriterItem):
-                    dataTreeModel = item.getDataTreeModel()
-                    self.disposeDataSignal.emit(itemCurrentId, dataTreeModel.getDataObj())
+                    dataTreeModel = item.getDataTreeModel(sequenceDataIndex)
+                    if dataTreeModel is not None:
+                        self.disposeDataSignal.emit(itemCurrentId, dataTreeModel.getDataObj())
 
-    @Slot(int)
-    def unregisterData(self, currentIndex: int):
+    @Slot(int, int)
+    def unregisterData(self, currentIndex: int, dataIndex: int):
         logging.trace(f"Unregister Data pressed on index: {str(currentIndex)}")
         mId = list(self.items.keys())[int(currentIndex)]
         item = self.items[mId]
         if isinstance(item, WriterItem):
-            dataTreeModel = item.getDataTreeModel()
-            self.unregisterDataSignal.emit(mId, dataTreeModel.getDataObj())
+            dataTreeModel = item.getDataTreeModel(dataIndex)
+            if dataTreeModel is not None:
+                self.unregisterDataSignal.emit(mId, dataTreeModel.getDataObj())
         elif isinstance(item, SequenceItem):
-            for itemCurrentId in item.sequenceItems:
-                if itemCurrentId not in self.items.keys():
-                    logging.warning(f"Item id {itemCurrentId} not found in items")
+            for dataItemId in item.sequenceItems:
+                itemCurrentId, sequenceDataIndex = self._getDataReference(dataItemId)
+                if itemCurrentId not in self.items:
+                    logging.warning(f"Data item id {dataItemId} not found in items")
                     continue
                 item = self.items[itemCurrentId]
                 if isinstance(item, WriterItem):
-                    dataTreeModel = item.getDataTreeModel()
-                    self.unregisterDataSignal.emit(itemCurrentId, dataTreeModel.getDataObj())
+                    dataTreeModel = item.getDataTreeModel(sequenceDataIndex)
+                    if dataTreeModel is not None:
+                        self.unregisterDataSignal.emit(itemCurrentId, dataTreeModel.getDataObj())
 
     @Slot()
     def deleteAllWriters(self):
@@ -500,8 +717,21 @@ class TesterModel(QAbstractListModel):
             return
         logging.trace(f"Delete Writer pressed on index: {str(currentIndex)}")
         mId = list(self.items.keys())[int(currentIndex)]
+        deletedDataItemIds = set()
+        item = self.items.get(mId)
+        if isinstance(item, WriterItem):
+            deletedDataItemIds.update(item.getDataItemIds())
         self.beginResetModel()
         del self.items[mId]
+        for sequenceItem in self.items.values():
+            if not isinstance(sequenceItem, SequenceItem):
+                continue
+            sequenceItem.beginResetModel()
+            sequenceItem.sequenceItems = [
+                reference for reference in sequenceItem.sequenceItems
+                if reference not in deletedDataItemIds
+            ]
+            sequenceItem.endResetModel()
         for key in self.threads.keys():
             self.threads[key].deleteWriter(mId)
         self.endResetModel()
@@ -524,15 +754,28 @@ class TesterModel(QAbstractListModel):
                 topicType = preset.get("topic_type", "")
                 domainId = preset.get("domain_id", 0)
                 topicName = preset.get("topic_name", "")
-                msgDict = preset.get("message", {"root": {}})["root"]
                 qos = preset.get("qos", {})
-                rootNode = self.dataModelHandler.getRootNode(topicType)
-                dataTreeModel = DataTreeModel(rootNode, parent=self)
-                if len(msgDict.keys()) > 0:
-                    dataTreeModel.fromJson(msgDict, self.dataModelHandler)
+                firstMessage = preset.get("message", {"root": {}})
+                additionalMessages = preset.get("messages", [])
+
+                messages = [firstMessage] + additionalMessages
+
+                dataTreeModels = []
+                messageNames = []
+                dataItemIds = []
+                for index, message in enumerate(messages):
+                    messageRoot = message.get("root", {}) if isinstance(message, dict) else {}
+                    dataTreeModels.append(self._createDataTreeModel(topicType, messageRoot))
+                    messageName = message.get("name", "") if isinstance(message, dict) else ""
+                    messageNames.append(messageName or f"Data {index + 1}")
+                    if index == 0:
+                        dataItemIds.append(_id)
+                    else:
+                        messageId = message.get("id", "") if isinstance(message, dict) else ""
+                        dataItemIds.append(messageId or str(uuid.uuid4()))
 
                 self.beginResetModel()
-                self.items[_id] = WriterItem(domainId, topicName, topicType, None, None, dataTreeModel, presetName, copy.deepcopy(qos), description)
+                self.items[_id] = WriterItem(_id, domainId, topicName, topicType, None, None, dataTreeModels, presetName, copy.deepcopy(qos), description, messageNames, dataItemIds)
                 self.endResetModel()
                 self.countChanged.emit()
 
@@ -542,8 +785,10 @@ class TesterModel(QAbstractListModel):
                 presetName = sequencePreset.get("preset_name", "Unknown")
                 description = sequencePreset.get("description", "")
                 sequenceItem = SequenceItem(presetName, description)
-                for itemSeqId in sequencePreset.get("sequence_items", []):
-                    sequenceItem.addSequenceItem(itemSeqId)
+                for sequenceReference in sequencePreset.get("sequence_items", []):
+                    dataItemId = self._getImportedSequenceDataItemId(sequenceReference)
+                    if dataItemId:
+                        sequenceItem.addSequenceItem(dataItemId)
 
                 self.beginResetModel()
                 self.items[mId] = sequenceItem
@@ -586,6 +831,12 @@ class TesterModel(QAbstractListModel):
                     "sequence_items": item.sequenceItems
                 })
         if isinstance(item, WriterItem):
+            messages = []
+            for index, dataTreeModel in enumerate(item.getDataTreeModels()):
+                message = dataTreeModel.toJson()
+                message["id"] = item.getDataItemId(index)
+                message["name"] = item.getDataItemName(index)
+                messages.append(message)
             self.exportData["presets"].append({
                     "id": mId,
                     "preset_name": item.getPresetName(),
@@ -593,7 +844,8 @@ class TesterModel(QAbstractListModel):
                     "domain_id": item.getDomainId(),
                     "topic_name": item.getTopicName(),
                     "topic_type": item.getTopicType(),
-                    "message": item.getDataTreeModel().toJson(),
+                    "message": messages[0],
+                    "messages": messages[1:],
                     "qos": item.qos
                 })
 
@@ -616,11 +868,15 @@ class TesterModel(QAbstractListModel):
         if isinstance(item, WriterItem):
             newId = str(uuid.uuid4())
             newPresetName = f"{item.getPresetName()}-copy"
-            rootNode = self.dataModelHandler.getRootNode(item.getTopicType())
-            dataTreeModel = DataTreeModel(rootNode, parent=self)
-            dataTreeModel.fromJson(item.getDataTreeModel().toJson()["root"], self.dataModelHandler)
+            dataTreeModels = [
+                self._createDataTreeModel(item.getTopicType(), dataTreeModel.toJson()["root"])
+                for dataTreeModel in item.getDataTreeModels()
+            ]
             self.beginResetModel()
-            self.items[newId] = WriterItem(item.getDomainId(), item.getTopicName(), item.getTopicType(), item.getQmlCode(), None, dataTreeModel, newPresetName, copy.deepcopy(item.qos), item.getDescription())
+            duplicateDataItemIds = [newId] + [
+                str(uuid.uuid4()) for _ in item.getDataTreeModels()[1:]
+            ]
+            self.items[newId] = WriterItem(newId, item.getDomainId(), item.getTopicName(), item.getTopicType(), item.getQmlCode(), None, dataTreeModels, newPresetName, copy.deepcopy(item.qos), item.getDescription(), item.getDataItemNames(), duplicateDataItemIds)
             self.endResetModel()
             self.countChanged.emit()
         elif isinstance(item, SequenceItem):
@@ -628,8 +884,8 @@ class TesterModel(QAbstractListModel):
             newPresetName = f"{item.getPresetName()}-copy"
             self.beginResetModel()
             newSequenceItem = SequenceItem(newPresetName, item.getDescription())
-            for itemSeqId in item.sequenceItems:
-                newSequenceItem.addSequenceItem(itemSeqId)
+            for dataItemId in item.sequenceItems:
+                newSequenceItem.addSequenceItem(dataItemId)
             self.items[newId] = newSequenceItem
             self.endResetModel()
             self.countChanged.emit()
