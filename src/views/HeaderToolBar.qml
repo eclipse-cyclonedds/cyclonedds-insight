@@ -19,11 +19,15 @@ import org.eclipse.cyclonedds.insight
 import "qrc:/src/views/icons"
 
 ToolBar {
+    id: headerToolBar
     topPadding: 10
     bottomPadding: 10
     leftPadding: 10
     rightPadding: 10
-    property bool isHeaderSpinning: false
+    property bool isStartupSpinning: true
+    property int startupSpinLoops: 0
+    property bool isActivitySpinning: false
+    readonly property bool isHeaderSpinning: isStartupSpinning || isActivitySpinning
 
     background: Rectangle {
         anchors.fill: parent
@@ -33,7 +37,7 @@ ToolBar {
     Connections {
         target: treeModel
         function onDiscover_domains_running_signal(active) {
-            isHeaderSpinning = active;
+            headerToolBar.isActivitySpinning = active
         }
     }
 
@@ -60,6 +64,17 @@ ToolBar {
                 sourceSize.width: 30
                 height: 30
                 width: 30
+
+                onCurrentFrameChanged: {
+                    if (headerToolBar.isStartupSpinning
+                            && frameCount > 1
+                            && currentFrame === frameCount - 1) {
+                        headerToolBar.startupSpinLoops++
+                        if (headerToolBar.startupSpinLoops >= 2) {
+                            headerToolBar.isStartupSpinning = false
+                        }
+                    }
+                }
             }
         }
 
