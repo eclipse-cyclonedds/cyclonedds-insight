@@ -37,10 +37,11 @@ class SequenceItem(QAbstractListModel):
 
     NameRole = Qt.UserRole + 1
 
-    def __init__(self, presetName, parent=QObject()):
+    def __init__(self, presetName, description="", parent=QObject()):
         super().__init__(parent)
         self.currentlyModifing = False
         self.presetName = presetName
+        self.description = description
         self.sequenceItems = []
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
@@ -67,6 +68,12 @@ class SequenceItem(QAbstractListModel):
     def setPresetName(self, presetName):
         self.presetName = presetName
 
+    def getDescription(self):
+        return self.description
+
+    def setDescription(self, description):
+        self.description = description
+
     def isPresetSequence(self):
         return self.dataTreeModel.rootNode.role == DataTreeModel.IsSequenceRole
 
@@ -85,7 +92,7 @@ class SequenceItem(QAbstractListModel):
         self.endResetModel()
 
 class WriterItem:
-    def __init__(self, domainId, topic_name, topic_type, qmlCode, pyCode, dataTreeModel, presetName, qos={}):
+    def __init__(self, domainId, topic_name, topic_type, qmlCode, pyCode, dataTreeModel, presetName, qos={}, description=""):
         self.domainId = domainId
         self.topic_name = topic_name
         self.topic_type = topic_type
@@ -93,6 +100,7 @@ class WriterItem:
         self.pyCode = pyCode
         self.dataTreeModel = dataTreeModel
         self.presetName = presetName
+        self.description = description
         self.qos = qos
         self.isStarted = False
 
@@ -101,6 +109,12 @@ class WriterItem:
 
     def setPresetName(self, presetName):
         self.presetName = presetName
+
+    def getDescription(self):
+        return self.description
+
+    def setDescription(self, description):
+        self.description = description
 
     def getTopicName(self):
         return self.topic_name
@@ -182,10 +196,7 @@ class TesterModel(QAbstractListModel):
         if role == self.PresetNameRole:
             return item.getPresetName()
         if role == self.DescriptionRole:
-            if isinstance(item, SequenceItem):
-                return "Sequence"
-            else:
-                return f"Topic: {item.getTopicName()}, Domain: {str(item.getDomainId())}"
+            return item.getDescription()
         if role == self.IsWriterRole:
             return isinstance(item, WriterItem)
         
@@ -233,14 +244,14 @@ class TesterModel(QAbstractListModel):
 
     @Slot(int, result=str)
     def getDescriptionName(self, currentIndex: int) -> str:
-        if currentIndex < 0:
-            return
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return ""
         mId = list(self.items.keys())[int(currentIndex)]
         item = self.items[mId]
         if isinstance(item, SequenceItem):
             return "Sequence"
         else:
-            return f"Topic: {item.getTopicName()}, Domain: {str(item.getDomainId())}"
+            return f"Topic: {item.getTopicName()}  |  Type: {item.getTopicType()}  |  Domain: {item.getDomainId()}"
 
     @Slot(int, result=bool)
     def getIsStarted(self, currentIndex: int) -> bool:
@@ -334,6 +345,23 @@ class TesterModel(QAbstractListModel):
         item.setPresetName(presetName)
         idx = self.index(currentIndex)
         self.dataChanged.emit(idx, idx, [self.PresetNameRole, self.NameRole])
+
+    @Slot(int, result=str)
+    def getDescription(self, currentIndex: int) -> str:
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return ""
+        mId = list(self.items.keys())[int(currentIndex)]
+        return self.items[mId].getDescription()
+
+    @Slot(int, str)
+    def setDescription(self, currentIndex: int, description: str):
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return
+        mId = list(self.items.keys())[int(currentIndex)]
+        item = self.items[mId]
+        item.setDescription(description)
+        idx = self.index(currentIndex)
+        self.dataChanged.emit(idx, idx, [self.DescriptionRole])
 
     @Slot(int, str, str, str, object)
     def addWriter(self, id: str, domainId, topic_name, topic_type: str, qos):
@@ -492,6 +520,7 @@ class TesterModel(QAbstractListModel):
             for preset in presets:
                 _id = preset.get("id", str(uuid.uuid4()))
                 presetName = preset.get("preset_name", "Unknown")
+                description = preset.get("description", "")
                 topicType = preset.get("topic_type", "")
                 domainId = preset.get("domain_id", 0)
                 topicName = preset.get("topic_name", "")
@@ -503,7 +532,7 @@ class TesterModel(QAbstractListModel):
                     dataTreeModel.fromJson(msgDict, self.dataModelHandler)
 
                 self.beginResetModel()
-                self.items[_id] = WriterItem(domainId, topicName, topicType, None, None, dataTreeModel, presetName, copy.deepcopy(qos))
+                self.items[_id] = WriterItem(domainId, topicName, topicType, None, None, dataTreeModel, presetName, copy.deepcopy(qos), description)
                 self.endResetModel()
                 self.countChanged.emit()
 
@@ -511,7 +540,8 @@ class TesterModel(QAbstractListModel):
             for sequencePreset in sequence_presets:
                 mId = sequencePreset.get("id", str(uuid.uuid4()))
                 presetName = sequencePreset.get("preset_name", "Unknown")
-                sequenceItem = SequenceItem(presetName)
+                description = sequencePreset.get("description", "")
+                sequenceItem = SequenceItem(presetName, description)
                 for itemSeqId in sequencePreset.get("sequence_items", []):
                     sequenceItem.addSequenceItem(itemSeqId)
 
@@ -552,12 +582,14 @@ class TesterModel(QAbstractListModel):
             self.exportData["sequence_presets"].append({
                     "id": mId,
                     "preset_name": item.getPresetName(),
+                    "description": item.getDescription(),
                     "sequence_items": item.sequenceItems
                 })
         if isinstance(item, WriterItem):
             self.exportData["presets"].append({
                     "id": mId,
                     "preset_name": item.getPresetName(),
+                    "description": item.getDescription(),
                     "domain_id": item.getDomainId(),
                     "topic_name": item.getTopicName(),
                     "topic_type": item.getTopicType(),
@@ -588,14 +620,14 @@ class TesterModel(QAbstractListModel):
             dataTreeModel = DataTreeModel(rootNode, parent=self)
             dataTreeModel.fromJson(item.getDataTreeModel().toJson()["root"], self.dataModelHandler)
             self.beginResetModel()
-            self.items[newId] = WriterItem(item.getDomainId(), item.getTopicName(), item.getTopicType(), item.getQmlCode(), None, dataTreeModel, newPresetName, copy.deepcopy(item.qos))
+            self.items[newId] = WriterItem(item.getDomainId(), item.getTopicName(), item.getTopicType(), item.getQmlCode(), None, dataTreeModel, newPresetName, copy.deepcopy(item.qos), item.getDescription())
             self.endResetModel()
             self.countChanged.emit()
         elif isinstance(item, SequenceItem):
             newId = str(uuid.uuid4())
             newPresetName = f"{item.getPresetName()}-copy"
             self.beginResetModel()
-            newSequenceItem = SequenceItem(newPresetName)
+            newSequenceItem = SequenceItem(newPresetName, item.getDescription())
             for itemSeqId in item.sequenceItems:
                 newSequenceItem.addSequenceItem(itemSeqId)
             self.items[newId] = newSequenceItem

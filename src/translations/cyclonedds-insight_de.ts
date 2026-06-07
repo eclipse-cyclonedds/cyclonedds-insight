@@ -250,6 +250,15 @@
     <message id="tester.create-sequence">
         <translation>Sequence erstellen</translation>
     </message>
+    <message id="tester.description">
+        <translation>Beschreibung:</translation>
+    </message>
+    <message id="tester.description.collapse">
+        <translation>Beschreibung einklappen</translation>
+    </message>
+    <message id="tester.description.placeholder">
+        <translation>Dieses Preset beschreiben...</translation>
+    </message>
 
 </context>
 </TS>
