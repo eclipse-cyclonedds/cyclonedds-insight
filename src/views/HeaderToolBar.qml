@@ -16,6 +16,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views/icons"
 
 ToolBar {
     topPadding: 10
@@ -79,10 +80,16 @@ ToolBar {
         }
         ToolButton {
             id: menuButton
-            text: "\u2630"
             onClicked: menu.open()
             flat: true
-            font.pixelSize: 15
+
+            MenuIcon {
+                anchors.centerIn: parent
+                width: 18
+                height: 18
+                z: 1
+                iconColor: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+            }
 
             Menu {
                 id: menu

@@ -18,6 +18,7 @@ import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
+import "qrc:/src/views/icons"
 
 
 Rectangle {
@@ -172,7 +173,12 @@ Rectangle {
                         spacing: 0
 
                         Button {
-                            text: "←"
+                            ArrowIcon {
+                                anchors.centerIn: parent
+                                z: 1
+                                direction: "left"
+                                iconColor: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+                            }
                             onClicked: {
                                 if (statisticsView.itemChartWidth >= 400) {
                                     statisticsView.itemChartWidth -= 50
@@ -180,13 +186,23 @@ Rectangle {
                             }
                         }
                         Button {
-                            text: "→"
+                            ArrowIcon {
+                                anchors.centerIn: parent
+                                z: 1
+                                direction: "right"
+                                iconColor: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+                            }
                             onClicked: {
                                 statisticsView.itemChartWidth += 50
                             }
                         }
                         Button {
-                            text: "↑"
+                            ArrowIcon {
+                                anchors.centerIn: parent
+                                z: 1
+                                direction: "up"
+                                iconColor: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+                            }
                             onClicked: {
                                 if (statisticsView.itemCellHeight >= 300) {
                                     statisticsView.itemCellHeight -= 50
@@ -194,7 +210,12 @@ Rectangle {
                             }
                         }
                         Button {
-                            text: "↓"
+                            ArrowIcon {
+                                anchors.centerIn: parent
+                                z: 1
+                                direction: "down"
+                                iconColor: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+                            }
                             onClicked: {
                                 statisticsView.itemCellHeight += 50
                             }

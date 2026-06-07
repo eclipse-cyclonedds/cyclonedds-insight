@@ -18,6 +18,7 @@ import QtQuick.Shapes
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
+import "qrc:/src/views/icons"
 
 Shape {
     id: edgeShape
@@ -79,12 +80,24 @@ Shape {
         }
     }
 
-    Label {
+    Row {
         id: uploadLabel
-        text: "↑" + (edgeShape.uploadSpeedBytes / edgeShape.currentCalc).toFixed(2) + " " + edgeShape.currentUnit
-        font.bold: true
-        color: "#419287"
+        spacing: 3
         visible: node1 && node2 && edgeShape.uploadSpeedBytes > 0.00 && edgeShape.speedEnabled
+
+        ArrowIcon {
+            width: 14
+            height: 14
+            y: (parent.height - height) / 2
+            direction: "up"
+            iconColor: "#419287"
+        }
+
+        Label {
+            text: (edgeShape.uploadSpeedBytes / edgeShape.currentCalc).toFixed(2) + " " + edgeShape.currentUnit
+            font.bold: true
+            color: "#419287"
+        }
 
         // midpoint + perpendicular offset up
         x: {
@@ -104,12 +117,24 @@ Shape {
         rotation: 0
     }
 
-    Label {
+    Row {
         id: downloadLabel
-        text:  "↓"  + (edgeShape.downloadSpeedBytes / edgeShape.currentCalc).toFixed(2) + " " + edgeShape.currentUnit
-        font.bold: true
-        color: "#2f62b9"
+        spacing: 3
         visible: node1 && node2 && edgeShape.downloadSpeedBytes > 0.00 && edgeShape.speedEnabled
+
+        ArrowIcon {
+            width: 14
+            height: 14
+            y: (parent.height - height) / 2
+            direction: "down"
+            iconColor: "#2f62b9"
+        }
+
+        Label {
+            text: (edgeShape.downloadSpeedBytes / edgeShape.currentCalc).toFixed(2) + " " + edgeShape.currentUnit
+            font.bold: true
+            color: "#2f62b9"
+        }
 
         x: {
             if (edgeShape.isVertical) {
@@ -161,5 +186,3 @@ Shape {
         edgeShape.speedEnabled = enabled;
     }
 }
-
-

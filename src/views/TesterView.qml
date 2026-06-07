@@ -487,8 +487,28 @@ Rectangle {
                         spacing: 8
 
                         Button {
-                            text: "Add →"
+                            id: addSequenceItemButton
                             enabled: availableList.currentIndex >= 0
+                            implicitWidth: addSequenceItemContent.implicitWidth + leftPadding + rightPadding
+
+                            Row {
+                                id: addSequenceItemContent
+                                anchors.centerIn: parent
+                                z: 1
+                                spacing: 5
+
+                                Label {
+                                    text: "Add"
+                                    color: addSequenceItemButton.enabled ? addSequenceItemButton.palette.buttonText : addSequenceItemButton.palette.mid
+                                }
+
+                                ArrowIcon {
+                                    width: 18
+                                    height: 18
+                                    y: (parent.height - height) / 2
+                                    iconColor: addSequenceItemButton.enabled ? addSequenceItemButton.palette.buttonText : addSequenceItemButton.palette.mid
+                                }
+                            }
                             onClicked: {
                                 if (testerModel && sequenceModel) {
                                     sequenceModel.addSequenceItem(testerModel.getItemId(availableList.currentIndex))
@@ -498,8 +518,29 @@ Rectangle {
                         }
 
                         Button {
-                            text: "← Remove"
+                            id: removeSequenceItemButton
                             enabled: sequenceList.currentIndex >= 0
+                            implicitWidth: removeSequenceItemContent.implicitWidth + leftPadding + rightPadding
+
+                            Row {
+                                id: removeSequenceItemContent
+                                anchors.centerIn: parent
+                                z: 1
+                                spacing: 5
+
+                                ArrowIcon {
+                                    width: 18
+                                    height: 18
+                                    y: (parent.height - height) / 2
+                                    direction: "left"
+                                    iconColor: removeSequenceItemButton.enabled ? removeSequenceItemButton.palette.buttonText : removeSequenceItemButton.palette.mid
+                                }
+
+                                Label {
+                                    text: "Remove"
+                                    color: removeSequenceItemButton.enabled ? removeSequenceItemButton.palette.buttonText : removeSequenceItemButton.palette.mid
+                                }
+                            }
                             onClicked: {
                                 if (sequenceModel) {
                                     sequenceModel.removeSequenceItem(sequenceList.currentIndex)
@@ -566,20 +607,6 @@ Rectangle {
                     required property int column
                     required property bool current
 
-                    property Animation indicatorAnimation: NumberAnimation {
-                        target: indicator
-                        property: "rotation"
-                        from: expanded ? 0 : 90
-                        to: expanded ? 90 : 0
-                        duration: 100
-                        easing.type: Easing.OutQuart
-                    }
-                    TableView.onPooled: indicatorAnimation.complete()
-                    TableView.onReused: if (current) indicatorAnimation.start()
-                    onExpandedChanged: {
-                        indicator.rotation = expanded ? 90 : 0
-                    }
-
                     Rectangle {
                         id: background
                         anchors.fill: parent
@@ -589,12 +616,15 @@ Rectangle {
                         radius: 5
                     }
 
-                    Label {
+                    ChevronIcon {
                         id: indicator
+                        width: 14
+                        height: 14
                         x: padding + (depth * indentation)
                         anchors.verticalCenter: parent.verticalCenter
                         visible: isTreeNode && hasChildren
-                        text: "▶"
+                        iconColor: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+                        direction: expanded ? "down" : "right"
 
                         TapHandler {
                             onSingleTapped: {

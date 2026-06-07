@@ -60,22 +60,6 @@ TreeView {
         required property int column
         required property bool current
 
-        // Rotate indicator when expanded by the user
-        // (requires TreeView to have a selectionModel)
-        property Animation indicatorAnimation: NumberAnimation {
-            target: indicator
-            property: "rotation"
-            from: expanded ? 0 : 90
-            to: expanded ? 90 : 0
-            duration: 100
-            easing.type: Easing.OutQuart
-        }
-        TableView.onPooled: indicatorAnimation.complete()
-        TableView.onReused: if (current) indicatorAnimation.start()
-        onExpandedChanged: {
-            indicator.rotation = expanded ? 90 : 0
-        }
-
         Rectangle {
             id: background
             height: parent.height
@@ -86,12 +70,15 @@ TreeView {
             radius: 5
         }
 
-        Label {
+        ChevronIcon {
             id: indicator
+            width: 14
+            height: 14
             x: padding + (depth * indentation)
             anchors.verticalCenter: parent.verticalCenter
             visible: isTreeNode && hasChildren
-            text: "▶"
+            iconColor: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+            direction: expanded ? "down" : "right"
 
             TapHandler {
                 onSingleTapped: {
@@ -127,4 +114,3 @@ TreeView {
         return treeSelection.currentIndex
     }
 }
-
