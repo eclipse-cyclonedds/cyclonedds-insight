@@ -17,6 +17,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views/icons"
 
 
 Rectangle {
@@ -65,10 +66,15 @@ Rectangle {
                     onClicked: clearDialog.open()
                 }
                 Button {
-                    text: "\u{1F50D}"
                     flat: true
                     highlighted: searchField.visible
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    SearchIcon {
+                        anchors.centerIn: parent
+                        z: 1
+                        expanded: searchField.visible
+                        iconColor: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+                    }
                     onClicked: {
                         if (searchField.visible) {
                             searchField.clear()

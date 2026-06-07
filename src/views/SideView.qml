@@ -16,6 +16,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views/icons"
 
 
 ColumnLayout {
@@ -107,11 +108,16 @@ ColumnLayout {
             }
         }
         Button {
-            text: "\u{1F50D}"
             flat: true
             highlighted: searchField.visible
             visible: viewSelector.currentIndex === 0
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            SearchIcon {
+                anchors.centerIn: parent
+                z: 1
+                expanded: searchField.visible
+                iconColor: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+            }
             onClicked: {
                 if (viewSelector.currentIndex === 0) {
                     if (searchField.visible) {

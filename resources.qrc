@@ -43,6 +43,9 @@
         <file>src/views/selection_details/TopicEndpointView.qml</file>
         <file>src/views/icons/WarningTriangle.qml</file>
         <file>src/views/icons/ChevronIcon.qml</file>
+        <file>src/views/icons/SearchIcon.qml</file>
+        <file>src/views/icons/MenuIcon.qml</file>
+        <file>src/views/icons/ArrowIcon.qml</file>
         <file>src/views/IdlDropArea.qml</file>
         <file>src/views/Overview.qml</file>
         <file>src/views/DataModelOverview.qml</file>

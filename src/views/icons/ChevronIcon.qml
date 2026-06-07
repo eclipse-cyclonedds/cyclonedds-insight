@@ -11,12 +11,14 @@ Item {
 
     property color iconColor: "grey"
     property real lineWidth: 1.5
+    property string direction: "down"
 
     implicitWidth: 16
     implicitHeight: 16
 
     onIconColorChanged: chevronCanvas.requestPaint()
     onLineWidthChanged: chevronCanvas.requestPaint()
+    onDirectionChanged: chevronCanvas.requestPaint()
 
     Canvas {
         id: chevronCanvas
@@ -26,9 +28,15 @@ Item {
             const context = getContext("2d")
             context.clearRect(0, 0, width, height)
             context.beginPath()
-            context.moveTo(width * 0.22, height * 0.38)
-            context.lineTo(width * 0.5, height * 0.66)
-            context.lineTo(width * 0.78, height * 0.38)
+            if (root.direction === "right") {
+                context.moveTo(width * 0.38, height * 0.22)
+                context.lineTo(width * 0.66, height * 0.5)
+                context.lineTo(width * 0.38, height * 0.78)
+            } else {
+                context.moveTo(width * 0.22, height * 0.38)
+                context.lineTo(width * 0.5, height * 0.66)
+                context.lineTo(width * 0.78, height * 0.38)
+            }
             context.lineWidth = root.lineWidth
             context.lineCap = "round"
             context.lineJoin = "round"
