@@ -18,6 +18,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
+import "qrc:/src/views/icons"
 
 
 Rectangle {
@@ -28,6 +29,7 @@ Rectangle {
     property var dataTreeModel: null
     property var sequenceModel: null
     property bool isSequenceEditorVisible: false
+    property bool isDescriptionExpanded: false
     property int testerRev: 0
 
     Connections {
@@ -221,6 +223,7 @@ Rectangle {
                     if (testerModel && currentIndex >= 0) {
                         dataTreeModel = testerModel.getTreeModel(currentIndex)
                         sequenceModel = testerModel.getSequenceModel(currentIndex)
+                        descriptionField.text = testerModel.getDescription(currentIndex)
                     }
                 }
 
@@ -272,29 +275,132 @@ Rectangle {
             }
         }
 
-        RowLayout {
+        ColumnLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 10
             visible: testerModel.count > 0
+            spacing: 4
 
-            Label {
-                text: testerModel.getDescriptionName(librariesCombobox.currentIndex)
-                leftPadding: 10
-                topPadding: 5
-            }
-
-            Item {
+            RowLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 1
+                spacing: 10
+
+                Label {
+                    Layout.leftMargin: 10
+                    Layout.fillWidth: true
+                    text: testerModel.getDescriptionName(librariesCombobox.currentIndex)
+                    wrapMode: Text.Wrap
+                }
+
+                Button {
+                    Layout.rightMargin: 1
+                    text: (testerRev, testerModel.getIsStarted(librariesCombobox.currentIndex)) ? "Stop" : "Start"
+                    onClicked: {
+                        if (testerModel.getIsStarted(librariesCombobox.currentIndex)) {
+                            testerModel.stopItem(librariesCombobox.currentIndex)
+                        } else {
+                            testerModel.startItem(librariesCombobox.currentIndex)
+                        }
+                    }
+                }
             }
 
-            Button {
-                text: (testerRev, testerModel.getIsStarted(librariesCombobox.currentIndex)) ? "Stop" : "Start"
-                onClicked: {
-                    if (testerModel.getIsStarted(librariesCombobox.currentIndex)) {
-                        testerModel.stopItem(librariesCombobox.currentIndex)
-                    } else {
-                        testerModel.startItem(librariesCombobox.currentIndex)
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.leftMargin: 10
+                Layout.rightMargin: 10
+                spacing: 8
+
+                Label {
+                    text: qsTrId("tester.description")
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                    implicitHeight: 26
+
+                    Label {
+                        id: descriptionPreview
+                        anchors.left: parent.left
+                        anchors.right: descriptionExpandIndicator.left
+                        anchors.rightMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: {
+                            const description = (testerRev, testerModel.getDescription(librariesCombobox.currentIndex))
+                            return description.length > 0 ? description : qsTrId("tester.description.placeholder")
+                        }
+                        opacity: (testerRev, testerModel.getDescription(librariesCombobox.currentIndex).length > 0) ? 1 : 0.55
+                        font.italic: (testerRev, testerModel.getDescription(librariesCombobox.currentIndex).length === 0)
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                    }
+
+                    ChevronIcon {
+                        id: descriptionExpandIndicator
+                        width: 16
+                        height: 16
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        iconColor: rootWindow.isDarkMode ? "#b0b0b0" : "#606060"
+                        rotation: isDescriptionExpanded ? 180 : 0
+                        opacity: 0.7
+
+                        Behavior on rotation {
+                            NumberAnimation {
+                                duration: 120
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        height: 1
+                        color: rootWindow.isDarkMode ? Constants.darkSeparator : Constants.lightSeparator
+                        opacity: descriptionMouseArea.containsMouse ? 1 : 0.6
+                    }
+
+                    MouseArea {
+                        id: descriptionMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            isDescriptionExpanded = !isDescriptionExpanded
+                            if (isDescriptionExpanded) {
+                                descriptionField.forceActiveFocus()
+                            }
+                        }
+                    }
+                }
+            }
+
+            ScrollView {
+                id: descriptionScrollView
+                visible: isDescriptionExpanded
+                Layout.fillWidth: true
+                Layout.leftMargin: 10
+                Layout.rightMargin: 10
+                Layout.preferredHeight: 80
+                Layout.minimumHeight: 80
+                Layout.maximumHeight: 120
+                clip: true
+
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                TextArea {
+                    id: descriptionField
+                    placeholderText: qsTrId("tester.description.placeholder")
+                    wrapMode: TextEdit.Wrap
+                    selectByMouse: true
+                    persistentSelection: true
+
+                    onTextChanged: {
+                        if (visible && testerModel && librariesCombobox.currentIndex >= 0) {
+                            testerModel.setDescription(librariesCombobox.currentIndex, text)
+                        }
                     }
                 }
             }

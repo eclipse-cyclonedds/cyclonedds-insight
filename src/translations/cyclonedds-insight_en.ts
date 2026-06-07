@@ -244,6 +244,15 @@
     <message id="tester.create-sequence">
         <translation>Create Sequence</translation>
     </message>
+    <message id="tester.description">
+        <translation>Description:</translation>
+    </message>
+    <message id="tester.description.collapse">
+        <translation>Collapse description</translation>
+    </message>
+    <message id="tester.description.placeholder">
+        <translation>Describe this preset...</translation>
+    </message>
 
 </context>
 </TS>
