@@ -29,6 +29,12 @@ ToolBar {
     property bool isActivitySpinning: false
     readonly property bool isHeaderSpinning: isStartupSpinning || isActivitySpinning
 
+    function startLogoSpin() {
+        startupSpinLoops = 0
+        isStartupSpinning = true
+        headerLoadingId.currentFrame = 0
+    }
+
     background: Rectangle {
         anchors.fill: parent
         color: rootWindow.isDarkMode ? Constants.darkHeaderBackground : Constants.lightHeaderBackground
@@ -75,6 +81,11 @@ ToolBar {
                         }
                     }
                 }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: headerToolBar.startLogoSpin()
             }
         }
 
