@@ -30,7 +30,24 @@ Rectangle {
     property var sequenceModel: null
     property bool isSequenceEditorVisible: false
     property bool isDescriptionExpanded: false
+    property int currentDataIndex: 0
     property int testerRev: 0
+
+    function refreshCurrentModels() {
+        if (!testerModel || librariesCombobox.currentIndex < 0) {
+            dataTreeModel = null
+            sequenceModel = null
+            currentDataIndex = 0
+            return
+        }
+
+        const dataItemCount = testerModel.getDataItemCount(librariesCombobox.currentIndex)
+        currentDataIndex = dataItemCount > 0
+                ? Math.min(currentDataIndex, dataItemCount - 1)
+                : 0
+        dataTreeModel = testerModel.getTreeModel(librariesCombobox.currentIndex, currentDataIndex)
+        sequenceModel = testerModel.getSequenceModel(librariesCombobox.currentIndex)
+    }
 
     Connections {
         target: testerModel
@@ -201,9 +218,6 @@ Rectangle {
                                 onClicked: {
                                     librariesCombobox.currentIndex = index
                                     librariesCombobox.popup.close()
-
-                                    dataTreeModel = testerModel.getTreeModel(index)
-                                    sequenceModel = testerModel.getSequenceModel(index)
                                 }
                             }
                         }
@@ -221,8 +235,8 @@ Rectangle {
 
                 onCurrentIndexChanged: {
                     if (testerModel && currentIndex >= 0) {
-                        dataTreeModel = testerModel.getTreeModel(currentIndex)
-                        sequenceModel = testerModel.getSequenceModel(currentIndex)
+                        currentDataIndex = 0
+                        refreshCurrentModels()
                         descriptionField.text = testerModel.getDescription(currentIndex)
                     }
                 }
@@ -425,6 +439,201 @@ Rectangle {
             }
         }
 
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.leftMargin: 3
+            Layout.rightMargin: 3
+            visible: dataTreeModel !== null && sequenceModel === null
+            spacing: 3
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 29
+                color: "transparent"
+
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: 1
+                    color: rootWindow.isDarkMode ? Constants.darkSeparator : Constants.lightSeparator
+                }
+
+                ListView {
+                    id: dataItemTabList
+                    anchors.fill: parent
+                    orientation: ListView.Horizontal
+                    spacing: 2
+                    clip: true
+                    model: (testerRev, testerModel.getDataItemCount(librariesCombobox.currentIndex))
+                    currentIndex: currentDataIndex
+
+                    delegate: Rectangle {
+                        id: dataItemTab
+                        required property int index
+                        property bool selected: index === currentDataIndex
+                        width: Math.max(76, Math.min(180, tabNameLabel.implicitWidth + 24))
+                        height: selected ? 29 : 26
+                        y: selected ? 0 : 3
+                        radius: 5
+                        color: selected
+                               ? (rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent)
+                               : (rootWindow.isDarkMode ? Constants.darkCardBackgroundColor : Constants.lightCardBackgroundColor)
+                        border.width: 1
+                        border.color: rootWindow.isDarkMode ? Constants.darkSeparator : Constants.lightSeparator
+                        opacity: selected || dataItemTabMouseArea.containsMouse ? 1 : 0.75
+
+                        Rectangle {
+                            visible: selected
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.bottom: parent.bottom
+                            anchors.leftMargin: 1
+                            anchors.rightMargin: 1
+                            height: 2
+                            color: parent.color
+                        }
+
+                        Label {
+                            id: tabNameLabel
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.leftMargin: 12
+                            anchors.rightMargin: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: !tabNameEditor.visible
+                            text: (testerRev, testerModel.getDataItemName(librariesCombobox.currentIndex, index))
+                            font.bold: selected
+                            elide: Text.ElideRight
+                        }
+
+                        TextField {
+                            id: tabNameEditor
+                            anchors.fill: parent
+                            visible: false
+                            text: tabNameLabel.text
+                            selectByMouse: true
+                            leftPadding: 6
+                            rightPadding: 6
+
+                            function finishEditing() {
+                                testerModel.setDataItemName(librariesCombobox.currentIndex, index, text)
+                                visible = false
+                                testerRev++
+                            }
+
+                            onAccepted: finishEditing()
+                            onActiveFocusChanged: {
+                                if (!activeFocus && visible) {
+                                    finishEditing()
+                                }
+                            }
+                            Keys.onEscapePressed: {
+                                text = tabNameLabel.text
+                                visible = false
+                            }
+                        }
+
+                        MouseArea {
+                            id: dataItemTabMouseArea
+                            anchors.fill: parent
+                            enabled: !tabNameEditor.visible
+                            acceptedButtons: Qt.LeftButton
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                currentDataIndex = index
+                                refreshCurrentModels()
+                            }
+                            onDoubleClicked: {
+                                currentDataIndex = index
+                                tabNameEditor.text = tabNameLabel.text
+                                tabNameEditor.visible = true
+                                tabNameEditor.forceActiveFocus()
+                                tabNameEditor.selectAll()
+                            }
+                        }
+
+                        ToolTip {
+                            id: dataItemTabTooltip
+                            parent: dataItemTab
+                            visible: dataItemTabMouseArea.containsMouse && !tabNameEditor.visible
+                            delay: 500
+                            text: "Double-click to rename"
+                            contentItem: Label {
+                                text: dataItemTabTooltip.text
+                            }
+                            background: Rectangle {
+                                border.color: rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
+                                border.width: 1
+                                color: rootWindow.isDarkMode ? Constants.darkCardBackgroundColor : Constants.lightCardBackgroundColor
+                            }
+                        }
+                    }
+                }
+            }
+
+            ToolButton {
+                id: addDataItemButton
+                implicitWidth: 26
+                implicitHeight: 26
+                onClicked: {
+                    const newIndex = testerModel.addDataItem(librariesCombobox.currentIndex)
+                    if (newIndex >= 0) {
+                        currentDataIndex = newIndex
+                        testerRev++
+                        refreshCurrentModels()
+                    }
+                }
+
+                Item {
+                    anchors.centerIn: parent
+                    width: 14
+                    height: 14
+                    z: 1
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: parent.width
+                        height: 2
+                        radius: 1
+                        color: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+                    }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 2
+                        height: parent.height
+                        radius: 1
+                        color: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+                    }
+                }
+            }
+
+            ToolButton {
+                implicitWidth: 26
+                implicitHeight: 26
+                enabled: (testerRev, testerModel.getDataItemCount(librariesCombobox.currentIndex) > 1)
+                onClicked: {
+                    currentDataIndex = testerModel.removeDataItem(
+                                librariesCombobox.currentIndex, currentDataIndex)
+                    testerRev++
+                    refreshCurrentModels()
+                }
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 14
+                    height: 2
+                    radius: 1
+                    z: 1
+                    color: parent.enabled
+                           ? (rootWindow.isDarkMode ? "#d0d0d0" : "#505050")
+                           : (rootWindow.isDarkMode ? "#606060" : "#a0a0a0")
+                }
+            }
+        }
+
        Rectangle {
             id: contentRec
             color: rootWindow.isDarkMode ? Constants.darkMainContent : Constants.lightMainContent
@@ -465,14 +674,14 @@ Rectangle {
                             id: availableList
                             anchors.fill: parent
                             clip: true
-                            model: testerModel
+                            model: (testerRev, testerModel.getAvailableDataItemCount())
                             currentIndex: sequenceEditor.availableIndex
                             onCurrentIndexChanged: sequenceEditor.availableIndex = currentIndex
 
                             delegate: ItemDelegate {
-                                enabled: model.isWriter
+                                required property int index
                                 width: ListView.view.width
-                                text: model.name
+                                text: (testerRev, testerModel.getAvailableDataItemName(index))
                                 highlighted: index === availableList.currentIndex
                                 onClicked: availableList.currentIndex = index
                             }
@@ -511,7 +720,8 @@ Rectangle {
                             }
                             onClicked: {
                                 if (testerModel && sequenceModel) {
-                                    sequenceModel.addSequenceItem(testerModel.getItemId(availableList.currentIndex))
+                                    sequenceModel.addSequenceItem(
+                                                testerModel.getAvailableDataItemId(availableList.currentIndex))
                                     testerRev++
                                 }
                             }
@@ -564,8 +774,10 @@ Rectangle {
                             currentIndex: sequenceEditor.sequenceIndex
 
                             delegate: ItemDelegate {
+                                required property int index
+                                required property string dataItemId
                                 width: ListView.view.width
-                                text: testerModel.getNameById(name)
+                                text: (testerRev, testerModel.getDataItemDisplayName(dataItemId))
                                 highlighted: index === sequenceList.currentIndex
                                 onClicked: sequenceList.currentIndex = index
                             }
@@ -744,7 +956,9 @@ Rectangle {
                         anchors.leftMargin: 5
                         text: "+"
                         onClicked: {
-                            testerModel.addArrayItem(librariesCombobox.currentIndex, treeView.index(row, column))
+                            testerModel.addArrayItem(librariesCombobox.currentIndex,
+                                                     currentDataIndex,
+                                                     treeView.index(row, column))
                         }
                     }
                     Button {
@@ -754,7 +968,9 @@ Rectangle {
                         anchors.leftMargin: 5
                         text: "-"
                         onClicked: {
-                            testerModel.removeArrayItem(librariesCombobox.currentIndex, treeView.index(row, column))
+                            testerModel.removeArrayItem(librariesCombobox.currentIndex,
+                                                        currentDataIndex,
+                                                        treeView.index(row, column))
                         }
                     }
                 }
@@ -778,7 +994,7 @@ Rectangle {
                 visible: testerModel.count > 0
                 onClicked: {
                     console.log("Write Button clicked")
-                    testerModel.writeData(librariesCombobox.currentIndex)
+                    testerModel.writeData(librariesCombobox.currentIndex, currentDataIndex)
                 }
             }
             Item {
@@ -789,7 +1005,7 @@ Rectangle {
                 visible: testerModel.count > 0
                 onClicked: {
                     console.log("Dispose Button clicked")
-                    testerModel.disposeData(librariesCombobox.currentIndex)
+                    testerModel.disposeData(librariesCombobox.currentIndex, currentDataIndex)
                 }
             }
             Button {
@@ -797,7 +1013,7 @@ Rectangle {
                 visible: testerModel.count > 0
                 onClicked: {
                     console.log("Unregister Button clicked")
-                    testerModel.unregisterData(librariesCombobox.currentIndex)
+                    testerModel.unregisterData(librariesCombobox.currentIndex, currentDataIndex)
                 }
             }
         }
