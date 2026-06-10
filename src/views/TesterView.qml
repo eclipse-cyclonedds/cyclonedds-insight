@@ -472,7 +472,7 @@ Rectangle {
                         id: dataItemTab
                         required property int index
                         property bool selected: index === currentDataIndex
-                        width: Math.max(76, Math.min(180, tabNameLabel.implicitWidth + 24))
+                        width: Math.max(76, tabNameLabel.implicitWidth + 24)
                         height: selected ? 29 : 26
                         y: selected ? 0 : 3
                         radius: 5
@@ -504,7 +504,6 @@ Rectangle {
                             visible: !tabNameEditor.visible
                             text: (testerRev, testerModel.getDataItemName(librariesCombobox.currentIndex, index))
                             font.bold: selected
-                            elide: Text.ElideRight
                         }
 
                         TextField {
