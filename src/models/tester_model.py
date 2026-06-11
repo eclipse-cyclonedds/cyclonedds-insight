@@ -162,6 +162,11 @@ class WriterItem:
         self.dataItemNames.append(name or f"Data {len(self.dataTreeModels)}")
         self.dataItemIds.append(dataItemId or str(uuid.uuid4()))
 
+    def insertDataTreeModel(self, dataIndex, dataTreeModel, name=None, dataItemId=None):
+        self.dataTreeModels.insert(dataIndex, dataTreeModel)
+        self.dataItemNames.insert(dataIndex, name or f"Data {dataIndex + 1}")
+        self.dataItemIds.insert(dataIndex, dataItemId or str(uuid.uuid4()))
+
     def removeDataTreeModel(self, dataIndex):
         if len(self.dataTreeModels) <= 1 or dataIndex < 0 or dataIndex >= len(self.dataTreeModels):
             return "", ""
@@ -408,6 +413,32 @@ class TesterModel(QAbstractListModel):
         idx = self.index(currentIndex, 0)
         self.dataChanged.emit(idx, idx, [self.DataModelRole])
         return item.getDataTreeModelCount() - 1
+
+    @Slot(int, int, result=int)
+    def duplicateDataItem(self, currentIndex: int, dataIndex: int) -> int:
+        if currentIndex < 0 or currentIndex >= len(self.items.keys()):
+            return -1
+        mId = list(self.items.keys())[int(currentIndex)]
+        item = self.items[mId]
+        if not isinstance(item, WriterItem):
+            return -1
+
+        sourceModel = item.getDataTreeModel(dataIndex)
+        if sourceModel is None:
+            return -1
+
+        duplicateIndex = dataIndex + 1
+        duplicateModel = self._createDataTreeModel(
+            item.getTopicType(), sourceModel.toJson()["root"]
+        )
+        item.insertDataTreeModel(
+            duplicateIndex,
+            duplicateModel,
+            f"{item.getDataItemName(dataIndex)}-copy"
+        )
+        idx = self.index(currentIndex, 0)
+        self.dataChanged.emit(idx, idx, [self.DataModelRole])
+        return duplicateIndex
 
     @Slot(int, int, result=int)
     def removeDataItem(self, currentIndex: int, dataIndex: int) -> int:

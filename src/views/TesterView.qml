@@ -610,6 +610,67 @@ Rectangle {
             }
 
             ToolButton {
+                id: duplicateDataItemButton
+                implicitWidth: 26
+                implicitHeight: 26
+                hoverEnabled: true
+                onClicked: {
+                    const duplicateIndex = testerModel.duplicateDataItem(
+                                librariesCombobox.currentIndex, currentDataIndex)
+                    if (duplicateIndex >= 0) {
+                        currentDataIndex = duplicateIndex
+                        testerRev++
+                        refreshCurrentModels()
+                    }
+                }
+
+                Item {
+                    anchors.centerIn: parent
+                    width: 15
+                    height: 15
+                    z: 1
+
+                    Rectangle {
+                        x: 1
+                        y: 1
+                        width: 10
+                        height: 10
+                        radius: 1
+                        color: "transparent"
+                        border.width: 1.5
+                        border.color: rootWindow.isDarkMode ? "#a0a0a0" : "#707070"
+                    }
+
+                    Rectangle {
+                        x: 4
+                        y: 4
+                        width: 10
+                        height: 10
+                        radius: 1
+                        color: duplicateDataItemButton.palette.button
+                        border.width: 1.5
+                        border.color: rootWindow.isDarkMode ? "#d0d0d0" : "#505050"
+                    }
+                }
+
+                ToolTip {
+                    id: duplicateDataItemTooltip
+                    parent: duplicateDataItemButton
+                    visible: duplicateDataItemButton.hovered
+                    delay: 300
+                    text: "Duplicate selected data item"
+                    contentItem: Label {
+                        text: duplicateDataItemTooltip.text
+                    }
+                    background: Rectangle {
+                        border.color: rootWindow.isDarkMode ? Constants.darkBorderColor : Constants.lightBorderColor
+                        border.width: 1
+                        color: rootWindow.isDarkMode ? Constants.darkCardBackgroundColor : Constants.lightCardBackgroundColor
+                    }
+                }
+            }
+
+            ToolButton {
                 implicitWidth: 26
                 implicitHeight: 26
                 enabled: (testerRev, testerModel.getDataItemCount(librariesCombobox.currentIndex) > 1)
