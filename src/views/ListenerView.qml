@@ -113,10 +113,14 @@ Rectangle {
             }
 
             Button {
+                id: importButton
                 text: "Import"
                 onClicked: importMenu.open()
                 Menu {
                     id: importMenu
+                    x: importButton.width - width
+                    y: importButton.height + 4
+
                     MenuItem {
                         text: "Import Listener Preset"
                         onClicked: importListenerPresetDialog.open()
@@ -124,11 +128,15 @@ Rectangle {
                 }
             }
             Button {
+                id: exportButton
                 text: "Export"
                 onClicked: exportMenu.open()
 
                 Menu {
                     id: exportMenu
+                    x: exportButton.width - width
+                    y: exportButton.height + 4
+
                     MenuItem {
                         text: "Export Listener Preset"
                         onClicked: exportListenerPresetDialog.open()
