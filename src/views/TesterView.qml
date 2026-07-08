@@ -962,10 +962,23 @@ Rectangle {
                         direction: expanded ? "down" : "right"
 
                         TapHandler {
-                            onSingleTapped: {
+                            function selectCurrentRow() {
                                 let index = treeView.index(row, column)
                                 treeView.selectionModel.setCurrentIndex(index, ItemSelectionModel.NoUpdate)
+                            }
+
+                            onSingleTapped: {
+                                selectCurrentRow()
                                 treeView.toggleExpanded(row)
+                            }
+
+                            onLongPressed: {
+                                selectCurrentRow()
+                                if (typeof treeView.expandRecursively === "function") {
+                                    treeView.expandRecursively(row, -1)
+                                } else {
+                                    treeView.expand(row)
+                                }
                             }
                         }
                     }
