@@ -32,6 +32,25 @@ class ReceiverProxyModel(QSortFilterProxyModel):
         
         self.invalidateFilter()
 
+    @Slot(list, bool)
+    def showReaderIds(self, reader_ids, show: bool):
+        changed = False
+        for reader_id in reader_ids:
+            if not reader_id:
+                continue
+
+            if show:
+                if reader_id in self._hidden_reader_ids:
+                    self._hidden_reader_ids.remove(reader_id)
+                    changed = True
+            else:
+                if reader_id not in self._hidden_reader_ids:
+                    self._hidden_reader_ids.add(reader_id)
+                    changed = True
+
+        if changed:
+            self.invalidateFilter()
+
     @Slot()
     def clearHiddenReaderIds(self):
         if self._hidden_reader_ids:

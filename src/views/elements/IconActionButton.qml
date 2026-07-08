@@ -70,8 +70,28 @@ Rectangle {
                 context.lineTo(4, 11.5)
                 context.closePath()
                 context.fill()
+            } else if (iconActionButton.icon === "play-all") {
+                context.beginPath()
+                context.moveTo(2.5, 3.5)
+                context.lineTo(8.5, 7)
+                context.lineTo(2.5, 10.5)
+                context.closePath()
+                context.stroke()
+
+                context.beginPath()
+                context.moveTo(5.5, 2.5)
+                context.lineTo(11.5, 7)
+                context.lineTo(5.5, 11.5)
+                context.closePath()
+                context.fill()
             } else if (iconActionButton.icon === "stop") {
                 context.fillRect(3, 3, 8, 8)
+            } else if (iconActionButton.icon === "stop-all") {
+                context.fillRect(5, 5, 6.5, 6.5)
+
+                context.beginPath()
+                context.rect(3.2, 3.2, 6.5, 6.5)
+                context.stroke()
             } else if (iconActionButton.icon === "delete") {
                 context.beginPath()
                 context.moveTo(3.5, 4.5)
@@ -92,6 +112,49 @@ Rectangle {
                 context.lineTo(6, 10)
                 context.moveTo(8, 6)
                 context.lineTo(8, 10)
+                context.stroke()
+            } else if (iconActionButton.icon === "delete-all") {
+                context.beginPath()
+                context.moveTo(1.8, 5)
+                context.lineTo(2.3, 10.5)
+                context.lineTo(6.3, 10.5)
+                context.moveTo(1.2, 4.2)
+                context.lineTo(7, 4.2)
+                context.moveTo(3.1, 3)
+                context.lineTo(5.4, 3)
+                context.stroke()
+
+                context.beginPath()
+                context.moveTo(5.5, 5)
+                context.lineTo(6.2, 12)
+                context.lineTo(11.2, 12)
+                context.lineTo(11.9, 5)
+                context.stroke()
+
+                context.beginPath()
+                context.moveTo(4.7, 4)
+                context.lineTo(12.7, 4)
+                context.moveTo(7, 2.5)
+                context.lineTo(10.5, 2.5)
+                context.moveTo(7.7, 6.8)
+                context.lineTo(7.7, 10.2)
+                context.moveTo(9.7, 6.8)
+                context.lineTo(9.7, 10.2)
+                context.stroke()
+            } else if (iconActionButton.icon === "select-all") {
+                context.strokeRect(2.5, 2.5, 9, 9)
+
+                context.beginPath()
+                context.moveTo(4.5, 7)
+                context.lineTo(6.3, 8.8)
+                context.lineTo(9.8, 5)
+                context.stroke()
+            } else if (iconActionButton.icon === "deselect-all") {
+                context.strokeRect(2.5, 2.5, 9, 9)
+
+                context.beginPath()
+                context.moveTo(4.5, 7)
+                context.lineTo(9.5, 7)
                 context.stroke()
             } else if (iconActionButton.icon === "edit") {
                 context.beginPath()

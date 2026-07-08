@@ -53,6 +53,7 @@ class ListenerModel(QAbstractListModel):
     IsCheckedRole = Qt.UserRole + 5
 
     createEndpointSignal = Signal(str, int, str, str, int, str, object, object)
+    allCheckedChanged = Signal()
 
     def __init__(self, threads, parent=None):
         super().__init__(parent)
@@ -105,6 +106,10 @@ class ListenerModel(QAbstractListModel):
         except ValueError:
             return -1
 
+    @Property(bool, notify=allCheckedChanged)
+    def allChecked(self):
+        return bool(self.readers) and all(reader.isChecked for reader in self.readers.values())
+
     @Slot(str)
     def deleteReader(self, _id: str):
         if _id in self.readers:
@@ -115,6 +120,7 @@ class ListenerModel(QAbstractListModel):
             self.beginRemoveRows(QModelIndex(), row, row)
             del self.readers[_id]
             self.endRemoveRows()
+            self.allCheckedChanged.emit()
 
     @Slot(str)
     def startReader(self, _id: str):
@@ -160,6 +166,7 @@ class ListenerModel(QAbstractListModel):
         self.beginResetModel()
         self.readers.clear()
         self.endResetModel()
+        self.allCheckedChanged.emit()
 
     @Slot(str, bool)
     def setChecked(self, _id: str, checked: bool):
@@ -169,6 +176,26 @@ class ListenerModel(QAbstractListModel):
             row = self._row_for_id(_id)
             index = self.index(row, 0)
             self.dataChanged.emit(index, index, [self.IsCheckedRole])
+            self.allCheckedChanged.emit()
+
+    @Slot(bool)
+    def setAllChecked(self, checked: bool):
+        logging.info(f"Set checked state of all readers to {checked}")
+        changed = False
+        for reader in self.readers.values():
+            if reader.isChecked != checked:
+                reader.isChecked = checked
+                changed = True
+
+        if changed:
+            first = self.index(0, 0)
+            last = self.index(self.rowCount() - 1, 0)
+            self.dataChanged.emit(first, last, [self.IsCheckedRole])
+            self.allCheckedChanged.emit()
+
+    @Slot(result=list)
+    def readerIds(self):
+        return list(self.readers.keys())
 
     @Slot(str, int, str, str, object)
     def addReader(self, id: str, domainId, topic_name, topic_type: str, qos):
@@ -183,9 +210,11 @@ class ListenerModel(QAbstractListModel):
                 self.StoppedRole,
                 self.IsCheckedRole
             ])
+            self.allCheckedChanged.emit()
             return
 
         row = self.rowCount()
         self.beginInsertRows(QModelIndex(), row, row)
         self.readers[id] = ReaderData(id, domainId, topic_name, topic_type, qos, False, True)
         self.endInsertRows()
+        self.allCheckedChanged.emit()

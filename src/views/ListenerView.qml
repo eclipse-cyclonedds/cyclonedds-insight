@@ -92,18 +92,6 @@ Rectangle {
             spacing: 8
 
             Button {
-                text: started ? "Stop" : "Start"
-                onClicked: {
-                    started = !started
-                    if (started) {
-                        listenerModel.startAllReaders()
-                    } else {
-                        listenerModel.stopAllReaders()
-                    }
-                }
-            }
-
-            Button {
                 text: qsTrId("general.clear")
                 onClicked: receiverModel.clear()
             }
@@ -313,8 +301,41 @@ Rectangle {
                     onAccepted: listenerProxyModel.searchText = text
                 }
 
-                Button {
-                    text: "Delete All"
+                IconActionButton {
+                    icon: listenerModel.allChecked ? "deselect-all" : "select-all"
+                    tooltipText: listenerModel.allChecked
+                                 ? "Deselect all readers"
+                                 : "Select all readers"
+                    onClicked: {
+                        if (listenerModel.allChecked) {
+                            receiverProxyModel.showReaderIds(listenerModel.readerIds(), false)
+                            listenerModel.setAllChecked(false)
+                        } else {
+                            listenerModel.setAllChecked(true)
+                            receiverProxyModel.clearHiddenReaderIds()
+                        }
+                    }
+                }
+
+                IconActionButton {
+                    icon: listenerTabId.started ? "stop-all" : "play-all"
+                    tooltipText: listenerTabId.started
+                                 ? "Stop all readers"
+                                 : "Start all readers"
+                    onClicked: {
+                        listenerTabId.started = !listenerTabId.started
+                        if (listenerTabId.started) {
+                            listenerModel.startAllReaders()
+                        } else {
+                            listenerModel.stopAllReaders()
+                        }
+                    }
+                }
+
+                IconActionButton {
+                    icon: "delete-all"
+                    tooltipText: "Delete all readers"
+                    destructive: true
                     onClicked: listenerModel.deleteAllReaders()
                 }
             }
