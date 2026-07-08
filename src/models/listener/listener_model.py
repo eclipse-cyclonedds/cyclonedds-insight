@@ -99,15 +99,22 @@ class ListenerModel(QAbstractListModel):
             self.IsCheckedRole: b"isChecked"
         }
 
+    def _row_for_id(self, _id: str):
+        try:
+            return list(self.readers.keys()).index(_id)
+        except ValueError:
+            return -1
+
     @Slot(str)
     def deleteReader(self, _id: str):
         if _id in self.readers:
             logging.info(f"Delete reader {_id}")
-            self.beginResetModel()
-            del self.readers[_id]
             for key in self.threads:
                 self.threads[key].deleteReader(_id)
-            self.endResetModel()
+            row = self._row_for_id(_id)
+            self.beginRemoveRows(QModelIndex(), row, row)
+            del self.readers[_id]
+            self.endRemoveRows()
 
     @Slot(str)
     def startReader(self, _id: str):
@@ -115,9 +122,10 @@ class ListenerModel(QAbstractListModel):
             logging.info(f"Start reader {_id}")
             readItem = self.readers[_id]
             self.createEndpointSignal.emit(_id, readItem.domainId, readItem.topic_name, readItem.topic_type, 3, "", {}, copy.deepcopy(readItem.qos))
-            self.beginResetModel()
             self.readers[_id].stopped = False
-            self.endResetModel()
+            row = self._row_for_id(_id)
+            index = self.index(row, 0)
+            self.dataChanged.emit(index, index, [self.StoppedRole])
 
     @Slot(str)
     def stopReader(self, _id: str):
@@ -125,9 +133,10 @@ class ListenerModel(QAbstractListModel):
             logging.info(f"Stop reader {_id}")
             for key in self.threads:
                 self.threads[key].deleteReader(_id)
-            self.beginResetModel()
             self.readers[_id].stopped = True
-            self.endResetModel()
+            row = self._row_for_id(_id)
+            index = self.index(row, 0)
+            self.dataChanged.emit(index, index, [self.StoppedRole])
 
     @Slot()
     def stopAllReaders(self):
@@ -156,13 +165,27 @@ class ListenerModel(QAbstractListModel):
     def setChecked(self, _id: str, checked: bool):
         if _id in self.readers:
             logging.info(f"Set checked state of reader {_id} to {checked}")
-            self.beginResetModel()
             self.readers[_id].isChecked = checked
-            self.endResetModel()
+            row = self._row_for_id(_id)
+            index = self.index(row, 0)
+            self.dataChanged.emit(index, index, [self.IsCheckedRole])
 
-    @Slot(int, str, str, str, object)
+    @Slot(str, int, str, str, object)
     def addReader(self, id: str, domainId, topic_name, topic_type: str, qos):
         logging.info("AddReader to ListenerModel")
-        self.beginResetModel()
+        if id in self.readers:
+            self.readers[id] = ReaderData(id, domainId, topic_name, topic_type, qos, False, True)
+            row = self._row_for_id(id)
+            index = self.index(row, 0)
+            self.dataChanged.emit(index, index, [
+                self.TopicNameRole,
+                self.TopicTypeRole,
+                self.StoppedRole,
+                self.IsCheckedRole
+            ])
+            return
+
+        row = self.rowCount()
+        self.beginInsertRows(QModelIndex(), row, row)
         self.readers[id] = ReaderData(id, domainId, topic_name, topic_type, qos, False, True)
-        self.endResetModel()
+        self.endInsertRows()
