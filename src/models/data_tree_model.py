@@ -523,10 +523,10 @@ class DataTreeModel(QAbstractItemModel):
         if index.isValid():
             item: DataTreeNode = index.internalPointer()
             parentX = item.parent()
+            row = item.row()
+            parentIndex = self.parent(index)
 
-            self.beginResetModel()
-
-            attrs, parent = self.getDotPath(item)            
+            attrs, parent = self.getDotPath(item)
             obj = parent.dataType
             for attr in attrs[:-1]:
                 if attr.isdigit():
@@ -534,15 +534,28 @@ class DataTreeModel(QAbstractItemModel):
                 else:
                     obj = getattr(obj, attr)
 
+            self.beginRemoveRows(parentIndex, row, row)
+
             if attrs[-1].isdigit():
                 del obj[int(attrs[-1])]
 
             if item.parentItem.role == DataTreeModel.IsOptionalRole:
                 setattr(obj, attrs[-1], None)
 
-            parentX.childItems.remove(item)
+            del parentX.childItems[row]
 
-            self.endResetModel()
+            self.endRemoveRows()
+
+            if parentX.childCount() > row:
+                firstChanged = self.index(row, 0, parentIndex)
+                lastChanged = self.index(parentX.childCount() - 1, 0, parentIndex)
+                self.dataChanged.emit(firstChanged, lastChanged, [
+                    DataTreeModel.DisplayHintRole,
+                    DataTreeModel.IsExpandable
+                ])
+
+            if parentIndex.isValid():
+                self.dataChanged.emit(parentIndex, parentIndex, [DataTreeModel.IsExpandable])
 
     def getDataObj(self):
         return self.rootItem.dataType
