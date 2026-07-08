@@ -33,6 +33,9 @@ SplitView {
     property bool splitTester: false
     property bool splitListener: false
     property bool splitModeActive: false
+    property bool sidebarCollapsed: false
+    property int sidebarExpandedWidth: 350
+    readonly property int sidebarCollapsedWidth: 30
     readonly property int splitViewCount:
         (splitDetails ? 1 : 0)
         + (splitStatistics ? 1 : 0)
@@ -40,30 +43,106 @@ SplitView {
         + (splitListener ? 1 : 0)
     readonly property bool multiViewEnabled: splitModeActive
 
-    SplitView {
-        orientation: Qt.Vertical
+    Item {
+        id: sidebarPane
+        implicitWidth: overviewRoot.sidebarExpandedWidth
+        SplitView.minimumWidth: overviewRoot.sidebarCollapsed
+                                ? overviewRoot.sidebarCollapsedWidth
+                                : 180
+        SplitView.maximumWidth: overviewRoot.sidebarCollapsed
+                                ? overviewRoot.sidebarCollapsedWidth
+                                : 100000
+        SplitView.preferredWidth: overviewRoot.sidebarCollapsed
+                                  ? overviewRoot.sidebarCollapsedWidth
+                                  : overviewRoot.sidebarExpandedWidth
 
-        implicitWidth: 350
-        SplitView.minimumWidth: 50
-        
-        Rectangle {
-            id: domainSplit
-            color: Constants.overviewBackgroundColor(rootWindow.isDarkMode)
-
-            SplitView.minimumHeight: 50
-            SplitView.fillHeight: true
-
-            SideView {}
+        onWidthChanged: {
+            if (!overviewRoot.sidebarCollapsed && width > 180) {
+                overviewRoot.sidebarExpandedWidth = width
+            }
         }
 
         Rectangle {
-            id: datamodelSplit
+            anchors.fill: parent
             color: Constants.overviewBackgroundColor(rootWindow.isDarkMode)
+        }
 
-            SplitView.minimumHeight: 50
-            SplitView.preferredHeight: parent.height / 3
+        SplitView {
+            id: sidebarContent
+            anchors.fill: parent
+            orientation: Qt.Vertical
+            visible: !overviewRoot.sidebarCollapsed
 
-            DataModelOverview {}
+            Rectangle {
+                id: domainSplit
+                color: Constants.overviewBackgroundColor(rootWindow.isDarkMode)
+
+                SplitView.minimumHeight: 50
+                SplitView.fillHeight: true
+
+                SideView {}
+            }
+
+            Rectangle {
+                id: datamodelSplit
+                color: Constants.overviewBackgroundColor(rootWindow.isDarkMode)
+
+                SplitView.minimumHeight: 50
+                SplitView.preferredHeight: parent.height / 3
+
+                DataModelOverview {}
+            }
+        }
+
+        Rectangle {
+            id: sidebarCollapseButton
+            anchors.right: parent.right
+            anchors.rightMargin: 3
+            anchors.verticalCenter: parent.verticalCenter
+            width: 24
+            height: 42
+            radius: Constants.controlRadius
+            color: sidebarCollapseMouseArea.containsMouse
+                   ? rootWindow.isDarkMode ? "#383838" : "#e9e9e9"
+                   : Constants.cardBackgroundColor(rootWindow.isDarkMode)
+            border.width: 1
+            border.color: Constants.designBorderColor(rootWindow.isDarkMode)
+            z: 2
+
+            ArrowIcon {
+                anchors.centerIn: parent
+                width: 14
+                height: 14
+                direction: overviewRoot.sidebarCollapsed ? "right" : "left"
+                iconColor: Constants.mutedForegroundColor(rootWindow.isDarkMode)
+                lineWidth: 2
+            }
+
+            MouseArea {
+                id: sidebarCollapseMouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: overviewRoot.toggleSidebar()
+            }
+
+            ToolTip {
+                id: sidebarCollapseTooltip
+                parent: sidebarCollapseButton
+                visible: sidebarCollapseMouseArea.containsMouse
+                delay: 500
+                text: overviewRoot.sidebarCollapsed
+                      ? "Show sidebar"
+                      : "Hide sidebar"
+                contentItem: Label {
+                    text: sidebarCollapseTooltip.text
+                }
+                background: Rectangle {
+                    border.width: 1
+                    border.color: Constants.borderColor(rootWindow.isDarkMode)
+                    color: Constants.cardBackgroundColor(rootWindow.isDarkMode)
+                }
+            }
         }
     }
 
@@ -344,6 +423,19 @@ SplitView {
         if (childView) {
             childView.destroy()
         }    
+    }
+
+    function toggleSidebar() {
+        if (sidebarCollapsed) {
+            sidebarCollapsed = false
+            sidebarPane.SplitView.preferredWidth = sidebarExpandedWidth
+        } else {
+            if (sidebarPane.width > 180) {
+                sidebarExpandedWidth = sidebarPane.width
+            }
+            sidebarCollapsed = true
+            sidebarPane.SplitView.preferredWidth = sidebarCollapsedWidth
+        }
     }
 
     function showView(name, data) {
