@@ -258,6 +258,21 @@
     <message id="config.tab.configdocumentation">
         <translation>Browse Options</translation>
     </message>
+    <message id="config.view.editor">
+        <translation>Editor</translation>
+    </message>
+    <message id="config.view.side-by-side">
+        <translation>Side by Side</translation>
+    </message>
+    <message id="config.view.documentation">
+        <translation>Documentation</translation>
+    </message>
+    <message id="config.documentation.short">
+        <translation>Docs</translation>
+    </message>
+    <message id="config.documentation.open">
+        <translation>Open documentation</translation>
+    </message>
 
     <message id="tester.duplicate">
         <translation>Duplicate</translation>
