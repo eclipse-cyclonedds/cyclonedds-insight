@@ -270,6 +270,21 @@
     <message id="config.tab.configdocumentation">
         <translation>Dokumentation</translation>
     </message>
+    <message id="config.view.editor">
+        <translation>Editor</translation>
+    </message>
+    <message id="config.view.side-by-side">
+        <translation>Nebeneinander</translation>
+    </message>
+    <message id="config.view.documentation">
+        <translation>Dokumentation</translation>
+    </message>
+    <message id="config.documentation.short">
+        <translation>Doku</translation>
+    </message>
+    <message id="config.documentation.open">
+        <translation>Dokumentation öffnen</translation>
+    </message>
 
     <message id="tester.duplicate">
         <translation>Duplizieren</translation>
