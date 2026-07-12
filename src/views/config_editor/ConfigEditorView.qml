@@ -189,17 +189,19 @@ Rectangle {
                             clip: true
 
                             ScrollView {
+                                id: configEditorScrollView
                                 anchors.fill: parent
                                 visible: configEditorView.configFileAvailable
-                                contentWidth: availableWidth
-                                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                                ScrollBar.horizontal.policy: ScrollBar.AsNeeded
                                 ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
                                 TextArea {
                                     id: configTextArea
-                                    width: parent.width
+                                    width: Math.max(configEditorScrollView.availableWidth,
+                                                    contentWidth + leftPadding
+                                                    + rightPadding)
                                     text: configEditorView.fileContent
-                                    wrapMode: TextEdit.Wrap
+                                    wrapMode: TextEdit.NoWrap
                                     selectByMouse: true
                                     selectByKeyboard: true
                                     background: null
@@ -210,6 +212,11 @@ Rectangle {
                                             CYCLONEDDS_URI, text)
                                         configEditorView.lastSavedTime =
                                             new Date().toLocaleString()
+                                    }
+
+                                    XmlSyntaxHighlighter {
+                                        textDocument: configTextArea.textDocument
+                                        darkMode: rootWindow.isDarkMode
                                     }
                                 }
                             }
