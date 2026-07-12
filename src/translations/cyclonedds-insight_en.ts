@@ -132,6 +132,12 @@
     <message id="listener.create.reader">
         <translation>Create Reader (Listener)</translation>
     </message>
+    <message id="listener.manage.readers">
+        <translation>Manage Readers</translation>
+    </message>
+    <message id="listener.manage.close">
+        <translation>Close reader management</translation>
+    </message>
     <message id="tester.create.writer">
         <translation>Create Writer (Tester)</translation>
     </message>
