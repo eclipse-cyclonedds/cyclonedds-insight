@@ -173,6 +173,13 @@ Rectangle {
                 context.lineTo(2.5, 12)
                 context.lineTo(4, 11.5)
                 context.stroke()
+            } else if (iconActionButton.icon === "close") {
+                context.beginPath()
+                context.moveTo(3, 3)
+                context.lineTo(11, 11)
+                context.moveTo(11, 3)
+                context.lineTo(3, 11)
+                context.stroke()
             }
         }
     }
