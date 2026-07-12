@@ -188,9 +188,72 @@ Rectangle {
                             border.color: configEditorView.borderColor
                             clip: true
 
+                            FontMetrics {
+                                id: configEditorFontMetrics
+                                font: configTextArea.font
+                            }
+
+                            Rectangle {
+                                id: lineNumberGutter
+                                readonly property int digitCount:
+                                    Math.max(2, String(Math.max(
+                                        1, configTextArea.lineCount)).length)
+
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                width: digitCount
+                                       * configEditorFontMetrics.averageCharacterWidth
+                                       + 16
+                                visible: configEditorView.configFileAvailable
+                                color: rootWindow.isDarkMode
+                                       ? "#242424" : "#f0f0f0"
+
+                                Rectangle {
+                                    anchors.right: parent.right
+                                    width: 1
+                                    height: parent.height
+                                    color: configEditorView.borderColor
+                                }
+
+                                Flickable {
+                                    anchors.fill: parent
+                                    clip: true
+                                    interactive: false
+                                    contentWidth: width
+                                    contentHeight: lineNumbers.height
+                                    contentY: configEditorScrollView.ScrollBar.vertical.position
+                                              * contentHeight
+
+                                    Column {
+                                        id: lineNumbers
+                                        y: configTextArea.topPadding
+                                        width: lineNumberGutter.width - 8
+
+                                        Repeater {
+                                            model: configTextArea.lineCount
+
+                                            Label {
+                                                required property int index
+                                                width: lineNumbers.width
+                                                height: configEditorFontMetrics.lineSpacing
+                                                text: index + 1
+                                                font: configTextArea.font
+                                                color: configEditorView.secondaryTextColor
+                                                horizontalAlignment: Text.AlignRight
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
                             ScrollView {
                                 id: configEditorScrollView
-                                anchors.fill: parent
+                                anchors.left: lineNumberGutter.right
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
                                 visible: configEditorView.configFileAvailable
                                 ScrollBar.horizontal.policy: ScrollBar.AsNeeded
                                 ScrollBar.vertical.policy: ScrollBar.AsNeeded
