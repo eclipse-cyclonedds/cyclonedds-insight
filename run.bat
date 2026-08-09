@@ -5,5 +5,6 @@ copy /Y .\deps\cyclonedds\etc\cyclonedds.xsd . && ^
 .\deps\venv\Scripts\pyside6-lrelease .\src\translations\cyclonedds-insight_en.ts && ^
 .\deps\venv\Scripts\pyside6-lrelease .\src\translations\cyclonedds-insight_de.ts && ^
 .\deps\venv\Scripts\pyside6-lrelease .\src\translations\cyclonedds-insight_nl.ts && ^
+.\deps\venv\Scripts\pyside6-lrelease .\src\translations\cyclonedds-insight_fr.ts && ^
 .\deps\venv\Scripts\pyside6-rcc .\resources.qrc -o .\src\qrc_file.py && ^
 python .\src\main.py --loglevel=trace
