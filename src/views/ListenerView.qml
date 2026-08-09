@@ -114,7 +114,7 @@ Rectangle {
 
             Button {
                 id: importButton
-                text: "Import"
+                text: qsTrId("general.import")
                 onClicked: importMenu.open()
                 Menu {
                     id: importMenu
@@ -122,14 +122,14 @@ Rectangle {
                     y: importButton.height + 4
 
                     MenuItem {
-                        text: "Import Listener Preset"
+                        text: qsTrId("listener.preset.import")
                         onClicked: importListenerPresetDialog.open()
                     }
                 }
             }
             Button {
                 id: exportButton
-                text: "Export"
+                text: qsTrId("general.export")
                 onClicked: exportMenu.open()
 
                 Menu {
@@ -138,11 +138,11 @@ Rectangle {
                     y: exportButton.height + 4
 
                     MenuItem {
-                        text: "Export Listener Preset"
+                        text: qsTrId("listener.preset.export")
                         onClicked: exportListenerPresetDialog.open()
                     }
                     MenuItem {
-                        text: "Export Sample Log"
+                        text: qsTrId("listener.sample.export")
                         onClicked: exportSampleLogFileDialog.open()
                     }
                 }
@@ -215,7 +215,7 @@ Rectangle {
                 }
 
                 Button {
-                    text: "Auto Scroll"
+                    text: qsTrId("listener.auto.scroll")
                     visible: !listenerTabId.autoScrollEnabled
                     onClicked: {
                         listenerTabId.autoScrollEnabled = true;
@@ -243,7 +243,7 @@ Rectangle {
         id: importListenerPresetDialog
         currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
         fileMode: FileDialog.OpenFiles
-        title: "Import Listener Presets"
+        title: qsTrId("listener.presets.import")
         nameFilters: ["JSON files (*.json)"]
         onAccepted: {
             for (var i = 0; i < selectedFiles.length; i++) {
@@ -260,7 +260,7 @@ Rectangle {
         currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
         fileMode: FileDialog.SaveFile
         defaultSuffix: "json"
-        title: "Export Listener Preset"
+        title: qsTrId("listener.preset.export")
         nameFilters: ["JSON files (*.json)"]
         selectedFile: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0] + "/listener.json"
         property bool exportAll: false
@@ -276,7 +276,7 @@ Rectangle {
         currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0] + "/samples.log"
         fileMode: FileDialog.SaveFile
         defaultSuffix: "log"
-        title: "Export Sample Log"
+        title: qsTrId("listener.sample.export")
         onAccepted: {
             qmlUtils.createFileFromQUrl(selectedFile);
             var localPath = qmlUtils.toLocalFile(selectedFile);
@@ -335,7 +335,9 @@ Rectangle {
 
                     IconActionButton {
                         icon: listenerModel.allChecked ? "deselect-all" : "select-all"
-                        tooltipText: listenerModel.allChecked ? "Deselect all readers" : "Select all readers"
+                        tooltipText: listenerModel.allChecked
+                                     ? qsTrId("listener.readers.deselect.all")
+                                     : qsTrId("listener.readers.select.all")
                         onClicked: {
                             if (listenerModel.allChecked) {
                                 receiverProxyModel.showReaderIds(listenerModel.readerIds(), false);
@@ -349,7 +351,9 @@ Rectangle {
 
                     IconActionButton {
                         icon: listenerTabId.started ? "stop-all" : "play-all"
-                        tooltipText: listenerTabId.started ? "Stop all readers" : "Start all readers"
+                        tooltipText: listenerTabId.started
+                                     ? qsTrId("listener.readers.stop.all")
+                                     : qsTrId("listener.readers.start.all")
                         onClicked: {
                             listenerTabId.started = !listenerTabId.started;
                             if (listenerTabId.started) {
@@ -362,7 +366,7 @@ Rectangle {
 
                     IconActionButton {
                         icon: "delete-all"
-                        tooltipText: "Delete all readers"
+                        tooltipText: qsTrId("listener.readers.delete.all")
                         destructive: true
                         onClicked: listenerModel.deleteAllReaders()
                     }
@@ -423,7 +427,9 @@ Rectangle {
 
                             IconActionButton {
                                 icon: model.stoppedReader ? "play" : "stop"
-                                tooltipText: model.stoppedReader ? "Start reader" : "Stop reader"
+                                tooltipText: model.stoppedReader
+                                             ? qsTrId("listener.reader.start")
+                                             : qsTrId("listener.reader.stop")
                                 onClicked: {
                                     if (model.stoppedReader) {
                                         listenerModel.startReader(model.readerId);
@@ -435,7 +441,7 @@ Rectangle {
 
                             IconActionButton {
                                 icon: "delete"
-                                tooltipText: "Delete reader"
+                                tooltipText: qsTrId("listener.reader.delete")
                                 destructive: true
                                 onClicked: {
                                     listenerModel.deleteReader(model.readerId);

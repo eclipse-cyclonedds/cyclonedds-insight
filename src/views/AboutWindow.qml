@@ -34,7 +34,7 @@ Window {
     maximumWidth: aboutWidth
     maximumHeight: aboutHeight
 
-    title: "About CycloneDDS Insight"
+    title: qsTrId("about.window.title")
     visible: false
     flags: Qt.Dialog
     modality: Qt.ApplicationModal
@@ -84,7 +84,7 @@ Window {
             }
 
             Label {
-                text: "About"
+                text: qsTrId("general.about.short")
                 font.pixelSize: Constants.pageTitleFontSize
                 font.bold: true
             }
@@ -133,7 +133,7 @@ Window {
                     spacing: 5
 
                     Label {
-                        text: "Version " + CYCLONEDDS_INSIGHT_VERSION
+                        text: qsTrId("about.version").arg(CYCLONEDDS_INSIGHT_VERSION)
                         font.pixelSize: 15
                         color: aboutWindow.secondaryTextColor
                     }
@@ -182,13 +182,13 @@ Window {
 
             Label {
                 Layout.fillWidth: true
-                text: "Thanks to all contributors of the Eclipse Cyclone DDS project ❤️"
+                text: qsTrId("about.contributors")
                 wrapMode: Text.Wrap
                 color: aboutWindow.secondaryTextColor
             }
 
             Button {
-                text: "Close"
+                text: qsTrId("general.close")
                 onClicked: aboutWindow.close()
             }
         }

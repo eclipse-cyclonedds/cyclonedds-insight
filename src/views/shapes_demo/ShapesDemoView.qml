@@ -23,7 +23,7 @@ import "qrc:/src/views/selection_details"
 
 Window {
     id: shapeDemoViewId
-    title: "Shapes Demo"
+    title: qsTrId("shapes.title")
     width: 800
     minimumWidth: 400
     height: 490
@@ -175,7 +175,9 @@ Window {
                 }
 
                 Label {
-                    text: shapeDemoViewId.paused ? "Paused" : "Running"
+                    text: shapeDemoViewId.paused
+                          ? qsTrId("status.paused")
+                          : qsTrId("status.running")
                     font.bold: true
                 }
             }
@@ -697,7 +699,7 @@ Window {
                                                     detailsMouseArea
                                                     .containsMouse
                                                 delay: 200
-                                                text: "Qos:\n" + manageDelegate.qos
+                                                text: qsTrId("shapes.qos.value").arg(manageDelegate.qos)
                                                 contentItem: Label {
                                                     text: infoTooltip.text
                                                 }
@@ -780,7 +782,7 @@ Window {
                                                     removeMouseArea
                                                     .containsMouse
                                                 delay: 300
-                                                text: qsTr("Remove endpoint")
+                                                text: qsTrId("shapes.endpoint.remove")
                                                 contentItem: Label {
                                                     text: removeTooltip.text
                                                     padding: 4
@@ -844,7 +846,7 @@ Window {
                         Label {
                             id: pausedLabel
                             anchors.centerIn: parent
-                            text: "Paused"
+                            text: qsTrId("shapes.paused")
                             font.bold: true
                             color: rootWindow.isDarkMode
                                    ? "#ffaaaa"

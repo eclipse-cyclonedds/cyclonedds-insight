@@ -45,7 +45,7 @@ Rectangle {
                 spacing: 0
 
                 Label {
-                    text: "Data Model"
+                    text: qsTrId("datamodel.title")
                     Layout.leftMargin: 10
                 }
                 Item {
@@ -54,7 +54,7 @@ Rectangle {
 
                 Button {
                     id: importBtnId
-                    text: "Import"
+                    text: qsTrId("general.import")
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     onClicked: {
                         console.log("Import idl files clicked")
@@ -161,7 +161,7 @@ Rectangle {
         id: dataModelContextMenu
 
         MenuItem {
-            text: "Create Reader (Listener)"
+            text: qsTrId("listener.create.reader")
             onTriggered: {
                 readerTesterDialogId.setType(
                             dataModelOverviewId.contextMenuTopicName, 3)
@@ -169,7 +169,7 @@ Rectangle {
             }
         }
         MenuItem {
-            text: "Create Writer (Tester)"
+            text: qsTrId("tester.create.writer")
             onTriggered: {
                 readerTesterDialogId.setType(
                             dataModelOverviewId.contextMenuTopicName, 4)

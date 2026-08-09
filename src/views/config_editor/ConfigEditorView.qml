@@ -268,7 +268,7 @@ Rectangle {
 
                             Button {
                                 visible: configEditorView.configFileAvailable
-                                text: "Reload"
+                                text: qsTrId("general.reload")
                                 flat: true
                                 onClicked: {
                                     configEditorView.fileContent =
@@ -285,7 +285,7 @@ Rectangle {
                             visible: configEditorView.configFileAvailable
 
                             Label {
-                                text: "Changes take effect after restarting the application."
+                                text: qsTrId("config.restart.notice")
                                 color: configEditorView.secondaryTextColor
                                 font.pixelSize: Constants.captionFontSize
                                 elide: Text.ElideRight
@@ -296,7 +296,7 @@ Rectangle {
                                 text: configEditorView.lastSavedTime.length > 0
                                       ? "Automatically saved: "
                                         + configEditorView.lastSavedTime
-                                      : "Automatically saved"
+                                      : qsTrId("config.automatically.saved")
                                 color: configEditorView.secondaryTextColor
                                 font.pixelSize: Constants.captionFontSize
                             }
@@ -620,7 +620,7 @@ Rectangle {
                                 Label {
                                     width: parent.width
                                     horizontalAlignment: Text.AlignHCenter
-                                    text: "No configuration file was found in CYCLONEDDS_URI."
+                                    text: qsTrId("config.not.found")
                                     font.bold: true
                                     wrapMode: Text.Wrap
                                 }
@@ -628,14 +628,14 @@ Rectangle {
                                 Label {
                                     width: parent.width
                                     horizontalAlignment: Text.AlignHCenter
-                                    text: "Create a new XML file and configure the environment variable to use it."
+                                    text: qsTrId("config.create.description")
                                     color: configEditorView.secondaryTextColor
                                     wrapMode: Text.Wrap
                                 }
 
                                 Button {
                                     anchors.horizontalCenter: parent.horizontalCenter
-                                    text: "Create New Configuration"
+                                    text: qsTrId("config.create")
                                     highlighted: true
                                     onClicked: fileDialog.open()
                                 }
@@ -663,7 +663,7 @@ Rectangle {
                                            StandardPaths.HomeLocation)[0]
                         fileMode: FileDialog.SaveFile
                         defaultSuffix: "xml"
-                        title: "Create New Configuration File"
+                        title: qsTrId("config.create.file")
 
                         onAccepted: {
                             qmlUtils.createFileFromQUrl(selectedFile)

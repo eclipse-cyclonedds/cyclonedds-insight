@@ -29,7 +29,7 @@ Window {
         "CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE"
     ]
 
-    title: "Application Log"
+    title: qsTrId("log.application")
     visible: false
     width: 860
     height: 520
@@ -104,7 +104,7 @@ Window {
             }
 
             Label {
-                text: "Application Log"
+                text: qsTrId("log.application")
                 font.pixelSize: Constants.pageTitleFontSize
                 font.bold: true
             }
@@ -122,7 +122,9 @@ Window {
             }
 
             Label {
-                text: logWindowId.autoScrollEnabled ? "Live" : "Paused"
+                text: logWindowId.autoScrollEnabled
+                      ? qsTrId("status.live")
+                      : qsTrId("status.paused")
                 font.bold: true
             }
         }
@@ -132,13 +134,15 @@ Window {
             spacing: 8
 
             Button {
-                text: logWindowId.autoScrollEnabled ? "Pause" : "Resume"
+                text: logWindowId.autoScrollEnabled
+                      ? qsTrId("general.pause")
+                      : qsTrId("general.resume")
                 onClicked: logWindowId.setAutoScroll(
                                !logWindowId.autoScrollEnabled)
             }
 
             Button {
-                text: "Clear"
+                text: qsTrId("general.clear")
                 onClicked: logWindowId.logClear()
             }
 
@@ -147,7 +151,7 @@ Window {
             }
 
             Label {
-                text: "Log level"
+                text: qsTrId("log.level")
                 color: logWindowId.secondaryTextColor
             }
 

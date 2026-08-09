@@ -39,14 +39,14 @@ ApplicationWindow {
     menuBar: MenuBar {
         visible: Qt.platform.os === "osx"
         Menu {
-            title: "File"
+            title: qsTrId("general.file")
             MenuItem {
                 text: qsTrId("general.export.ddsentities")
                 onTriggered: exportDdsSystemFileDialog.open()
             }
         }
         Menu {
-            title: "View"
+            title: qsTrId("general.view")
             MenuItem {
                 text: qsTrId("general.configeditor")
                 onTriggered: layout.currentIndex = 2
@@ -61,7 +61,7 @@ ApplicationWindow {
             }
         }
         Menu {
-            title: "Help"
+            title: qsTrId("general.help")
 
             MenuItem {
                 text: qsTrId("general.about")
@@ -216,7 +216,7 @@ ApplicationWindow {
         currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
         fileMode: FileDialog.SaveFile
         defaultSuffix: "json"
-        title: "Export DDS System to json"
+        title: qsTrId("export.dds.dialog")
         onAccepted: {
             qmlUtils.createFileFromQUrl(selectedFile)
             var localPath = qmlUtils.toLocalFile(selectedFile);

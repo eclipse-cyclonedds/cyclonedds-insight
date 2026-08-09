@@ -34,7 +34,7 @@ Rectangle {
     }
 
     Label {
-        text: "Loading ..."
+        text: qsTrId("general.loading")
         anchors.top: animatedLoadingId.bottom
         anchors.horizontalCenter: animatedLoadingId.horizontalCenter
     }

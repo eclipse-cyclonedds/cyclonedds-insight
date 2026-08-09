@@ -31,7 +31,7 @@ Window {
                                            ? Constants.warningColor
                                            : Constants.successColor
 
-    title: "Check for Updates"
+    title: qsTrId("update.check.title")
     visible: false
     flags: Qt.Dialog
     modality: Qt.ApplicationModal
@@ -107,7 +107,7 @@ Window {
             }
 
             Label {
-                text: "Software Update"
+                text: qsTrId("update.software")
                 font.pixelSize: Constants.pageTitleFontSize
                 font.bold: true
             }
@@ -165,14 +165,14 @@ Window {
                     Label {
                         Layout.fillWidth: true
                         text: updateCheckRunning
-                              ? "Checking for updates..."
+                              ? qsTrId("update.checking")
                               : updateError
-                                ? "Update check failed"
+                                ? qsTrId("update.check.failed")
                                 : updateAvailable
                                   ? "A new version is available"
                                   : checkedForUpdate
-                                    ? "CycloneDDS Insight is up to date"
-                                    : "Ready to check for updates"
+                                    ? qsTrId("update.current")
+                                    : qsTrId("update.check.ready")
                         font.pixelSize: 14
                         font.bold: true
                         wrapMode: Text.Wrap
@@ -181,10 +181,10 @@ Window {
                     Label {
                         Layout.fillWidth: true
                         text: updateError
-                              ? "Please try again later."
+                              ? qsTrId("update.try.again")
                               : lastUpdateTime.length > 0
                                 ? "Last checked: " + lastUpdateTime
-                                : "Checks the configured release channel."
+                                : qsTrId("update.channel.description")
                         color: checkForUpdatesWindow.secondaryTextColor
                         wrapMode: Text.Wrap
                     }
@@ -192,7 +192,7 @@ Window {
                     Label {
                         visible: updateAvailable && !updateCheckRunning
                                  && !updateError
-                        text: "Open build artifacts"
+                        text: qsTrId("update.artifacts.open")
                         font.bold: true
                         color: Constants.accentColor
 
@@ -218,7 +218,7 @@ Window {
                 id: updaterButton
                 visible: updateAvailable && !updateCheckRunning
                          && !updateError && IS_FROZEN
-                text: "Update Now"
+                text: qsTrId("update.now")
                 highlighted: true
                 onClicked: {
                     checkForUpdatesWindow.visible = false
@@ -228,7 +228,9 @@ Window {
             }
 
             Button {
-                text: checkedForUpdate ? "Check Again" : "Check for Updates"
+                text: checkedForUpdate
+                      ? qsTrId("update.check.again")
+                      : qsTrId("update.check.title")
                 enabled: !updateCheckRunning
                 onClicked: getLatestBuildArtifacts()
             }
@@ -238,7 +240,7 @@ Window {
             }
 
             Button {
-                text: "Close"
+                text: qsTrId("general.close")
                 onClicked: checkForUpdatesWindow.visible = false
             }
         }

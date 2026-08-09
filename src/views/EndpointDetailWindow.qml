@@ -94,8 +94,10 @@ Window {
 
                 Label {
                     text: detailWindow.structured
-                          ? detailWindow.isWriter ? "Writer" : "Reader"
-                          : qsTrId("Endpoint")
+                          ? detailWindow.isWriter
+                            ? qsTrId("entity.writer")
+                            : qsTrId("entity.reader")
+                          : qsTrId("entity.endpoint")
                     font.pixelSize: Constants.pageTitleFontSize
                     font.bold: true
                 }
@@ -124,7 +126,7 @@ Window {
                 Label {
                     id: mismatchLabel
                     anchors.centerIn: parent
-                    text: "QoS mismatch"
+                    text: qsTrId("endpoint.qos.mismatch")
                     font.bold: true
                 }
             }
@@ -161,27 +163,27 @@ Window {
                         rowSpacing: 9
 
                         DetailValue {
-                            label: "Process"
+                            label: qsTrId("entity.process")
                             value: detailWindow.processName
                         }
                         DetailValue {
-                            label: "Process ID"
+                            label: qsTrId("entity.process.id")
                             value: detailWindow.processId
                         }
                         DetailValue {
-                            label: "Host"
+                            label: qsTrId("entity.host")
                             value: detailWindow.hostname
                         }
                         DetailValue {
-                            label: "Addresses"
+                            label: qsTrId("entity.addresses")
                             value: detailWindow.addresses
                         }
                         DetailValue {
-                            label: "Topic"
+                            label: qsTrId("entity.topic")
                             value: detailWindow.topicName
                         }
                         DetailValue {
-                            label: "Topic Type"
+                            label: qsTrId("qos.topic.type")
                             value: detailWindow.topicType
                         }
                     }
@@ -205,23 +207,23 @@ Window {
                         spacing: 8
 
                         Label {
-                            text: "Identifiers"
+                            text: qsTrId("endpoint.identifiers")
                             font.bold: true
                         }
                         DetailValue {
-                            label: "Endpoint Key"
+                            label: qsTrId("entity.endpoint.key")
                             value: detailWindow.endpointKey
                         }
                         DetailValue {
-                            label: "Participant Key"
+                            label: qsTrId("entity.participant.key")
                             value: detailWindow.participantKey
                         }
                         DetailValue {
-                            label: "Instance Handle"
+                            label: qsTrId("entity.instance.handle")
                             value: detailWindow.instanceHandle
                         }
                         DetailValue {
-                            label: "Type ID"
+                            label: qsTrId("entity.type.id")
                             value: detailWindow.typeId
                         }
                     }
@@ -247,7 +249,8 @@ Window {
 
                         Label {
                             text: detailWindow.structured
-                                  ? "Quality of Service" : "Details"
+                                  ? qsTrId("qos.full.name")
+                                  : qsTrId("tab.details")
                             font.bold: true
                         }
 

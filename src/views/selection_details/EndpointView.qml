@@ -46,7 +46,7 @@ Rectangle {
                 }
 
                 Label {
-                    text: qsTrId("Endpoint")
+                    text: qsTrId("entity.endpoint")
                     font.pixelSize: Constants.pageTitleFontSize
                     font.bold: true
                 }
@@ -62,7 +62,7 @@ Rectangle {
                 spacing: 8
 
                 Label {
-                    text: qsTrId("Domain ID: ")
+                    text: qsTrId("entity.domain.id.label")
                     color: endpointViewId.secondaryTextColor
                 }
 
@@ -78,7 +78,7 @@ Rectangle {
                 spacing: 8
 
                 Label {
-                    text: qsTrId("Endpoint-Key: ")
+                    text: qsTrId("entity.endpoint.key.label")
                     color: endpointViewId.secondaryTextColor
                 }
 
