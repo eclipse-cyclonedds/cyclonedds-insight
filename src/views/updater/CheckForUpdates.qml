@@ -38,7 +38,7 @@ Window {
     color: Constants.mainContentColor(rootWindow.isDarkMode)
 
 
-    property int updateCheckWidth: 400
+    property int updateCheckWidth: 500
     property int updateCheckHeight: 200
 
     width: updateCheckWidth
@@ -169,7 +169,7 @@ Window {
                               : updateError
                                 ? qsTrId("update.check.failed")
                                 : updateAvailable
-                                  ? "A new version is available"
+                                  ? qsTrId("update.available")
                                   : checkedForUpdate
                                     ? qsTrId("update.current")
                                     : qsTrId("update.check.ready")
@@ -183,7 +183,7 @@ Window {
                         text: updateError
                               ? qsTrId("update.try.again")
                               : lastUpdateTime.length > 0
-                                ? "Last checked: " + lastUpdateTime
+                                ? qsTrId("update.last.checked").arg(lastUpdateTime)
                                 : qsTrId("update.channel.description")
                         color: checkForUpdatesWindow.secondaryTextColor
                         wrapMode: Text.Wrap
