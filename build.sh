@@ -19,7 +19,8 @@ pyside6-lrelease ./src/translations/cyclonedds-insight_en.ts && \
 pyside6-lrelease ./src/translations/cyclonedds-insight_de.ts  && \
 pyside6-lrelease ./src/translations/cyclonedds-insight_nl.ts  && \
 pyside6-lrelease ./src/translations/cyclonedds-insight_fr.ts  && \
-pyside6-lrelease ./src/translations/cyclonedds-insight_ja.ts  && \
+pyside6-lrelease ./src/translations/cyclonedds-insight_jp.ts  && \
+pyside6-lrelease ./src/translations/cyclonedds-insight_cn.ts  && \
 pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && \
 DYLD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib" \
 LD_LIBRARY_PATH="$CYCLONEDDS_HOME/lib:$LD_LIBRARY_PATH" \

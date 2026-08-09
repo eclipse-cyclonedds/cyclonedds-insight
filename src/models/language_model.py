@@ -24,7 +24,14 @@ class LanguageModel(QAbstractListModel):
         super().__init__(parent)
         self.app = app
         self.engine = engine
-        self.languages = ["en", "de", "nl", "fr", "ja"]
+        self.languages = [
+            {"code": "en", "name": "English (EN)"},
+            {"code": "de", "name": "Deutsch (DE)"},
+            {"code": "nl", "name": "Nederlands (NL)"},
+            {"code": "fr", "name": "Français (FR)"},
+            {"code": "jp", "name": "日本語 (JP)"},
+            {"code": "cn", "name": "简体中文 (CN)"},
+        ]
 
         # default language
         app.translator = QTranslator()
@@ -36,7 +43,7 @@ class LanguageModel(QAbstractListModel):
         row = index.row()
 
         if role == self.NameRole or role == Qt.DisplayRole:
-            return f"{self.languages[row]}"
+            return self.languages[row]["name"]
         
         return None
 
@@ -51,7 +58,7 @@ class LanguageModel(QAbstractListModel):
     @Slot(int)
     def loadLanguageByIndex(self, index):
         if 0 <= index < len(self.languages):
-            self.loadLanguage(self.languages[index])
+            self.loadLanguage(self.languages[index]["code"])
 
     def loadLanguage(self, languageCode: str):
         qmFile = f":/src/translations/cyclonedds-insight_{languageCode}.qm"
