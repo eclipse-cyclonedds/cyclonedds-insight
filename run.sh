@@ -9,5 +9,6 @@ pyside6-lrelease ./src/translations/cyclonedds-insight_en.ts && \
 pyside6-lrelease ./src/translations/cyclonedds-insight_de.ts  && \
 pyside6-lrelease ./src/translations/cyclonedds-insight_nl.ts  && \
 pyside6-lrelease ./src/translations/cyclonedds-insight_fr.ts  && \
+pyside6-lrelease ./src/translations/cyclonedds-insight_ja.ts  && \
 pyside6-rcc ./resources.qrc -o ./src/qrc_file.py && \
 python3 ./src/main.py --loglevel=trace
