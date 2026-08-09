@@ -10,7 +10,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, QByteArray
+from PySide6.QtCore import (
+    Qt,
+    QModelIndex,
+    QAbstractListModel,
+    QByteArray,
+    Property,
+    QSettings,
+)
 from PySide6.QtCore import QTranslator
 from PySide6.QtCore import QObject, Slot
 from loguru import logger as logging
@@ -19,6 +26,7 @@ from loguru import logger as logging
 class LanguageModel(QAbstractListModel):
 
     NameRole = Qt.UserRole + 1
+    LanguageSettingKey = "general/language"
 
     def __init__(self, app, engine, parent=QObject()):
         super().__init__(parent)
@@ -33,9 +41,23 @@ class LanguageModel(QAbstractListModel):
             {"code": "cn", "name": "简体中文 (CN)"},
         ]
 
-        # default language
+        self.settings = QSettings()
+        stored_language = self.settings.value(
+            self.LanguageSettingKey, "en", type=str)
+        self.current_language_index = self._index_for_code(stored_language)
+
         app.translator = QTranslator()
-        self.loadLanguageByIndex(0)
+        self.loadLanguageByIndex(self.current_language_index)
+
+    def _index_for_code(self, language_code: str) -> int:
+        for index, language in enumerate(self.languages):
+            if language["code"] == language_code:
+                return index
+        return 0
+
+    @Property(int, constant=True)
+    def currentLanguageIndex(self):
+        return self.current_language_index
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
         if not index.isValid():
@@ -58,12 +80,16 @@ class LanguageModel(QAbstractListModel):
     @Slot(int)
     def loadLanguageByIndex(self, index):
         if 0 <= index < len(self.languages):
-            self.loadLanguage(self.languages[index]["code"])
+            language_code = self.languages[index]["code"]
+            if self.loadLanguage(language_code):
+                self.current_language_index = index
+                self.settings.setValue(self.LanguageSettingKey, language_code)
+                self.settings.sync()
 
     def loadLanguage(self, languageCode: str):
         qmFile = f":/src/translations/cyclonedds-insight_{languageCode}.qm"
         logging.info(f"Switching language to {languageCode}, loading file: {qmFile}")
-        self.switchLanguage(qmFile)
+        return self.switchLanguage(qmFile)
 
     def switchLanguage(self, qm_file):
 
@@ -77,3 +103,5 @@ class LanguageModel(QAbstractListModel):
             self.engine.retranslate()
         else:
             logging.error(f"Failed to load translation file {qm_file}")
+
+        return ok
