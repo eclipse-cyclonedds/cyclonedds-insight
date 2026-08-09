@@ -24,7 +24,7 @@ class LanguageModel(QAbstractListModel):
         super().__init__(parent)
         self.app = app
         self.engine = engine
-        self.languages = ["en", "de"]
+        self.languages = ["en", "de", "nl"]
 
         # default language
         app.translator = QTranslator()
