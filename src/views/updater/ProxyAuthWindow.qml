@@ -20,7 +20,7 @@ import "qrc:/src/views"
 Window {
     id: proxyAuthWindow
 
-    title: "Proxy Authentication"
+    title: qsTrId("update.proxy.auth")
     visible: false
     flags: Qt.Dialog
     modality: Qt.ApplicationModal

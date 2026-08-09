@@ -63,7 +63,7 @@ DropArea {
 
         Label {
             anchors.centerIn: parent
-            text: "Drop .idl files here"
+            text: qsTrId("idl.drop")
             font.pixelSize: 30
             color: "black"
         }

@@ -86,7 +86,7 @@ Rectangle {
                 }
 
                 Label {
-                    text: qsTrId("Topic")
+                    text: qsTrId("entity.topic")
                     font.pixelSize: Constants.pageTitleFontSize
                     font.bold: true
                 }
@@ -96,7 +96,7 @@ Rectangle {
                 }
 
                 Button {
-                    text: "Create Reader (Listener)"
+                    text: qsTrId("listener.create.reader")
                     onClicked: {
                         var writerTypes = endpointWriterModel.getAllTopicTypes()
                         var readerTypes = endpointReaderModel.getAllTopicTypes()
@@ -119,7 +119,7 @@ Rectangle {
                 }
 
                 Button {
-                    text: "Create Writer (Tester)"
+                    text: qsTrId("tester.create.writer")
                     onClicked: {
                         var writerTypes = endpointWriterModel.getAllTopicTypes()
                         var readerTypes = endpointReaderModel.getAllTopicTypes()
@@ -146,7 +146,7 @@ Rectangle {
                     Layout.preferredHeight: 30
                     Layout.preferredWidth: 30
                     enableTooltip: true
-                    tooltipText: "Qos mismatch detected."
+                    tooltipText: qsTrId("endpoint.qos.mismatch.detected")
                     visible: topicEndpointView.hasQosMismatch
                 }
             }
@@ -159,7 +159,7 @@ Rectangle {
                 spacing: 8
 
                 Label {
-                    text: "Domain ID:"
+                    text: qsTrId("topic.domain.id")
                     color: topicEndpointView.secondaryTextColor
                 }
 
@@ -169,7 +169,7 @@ Rectangle {
                 }
 
                 Label {
-                    text: "Topic Name:"
+                    text: qsTrId("topic.name.label")
                     color: topicEndpointView.secondaryTextColor
                     Layout.leftMargin: 12
                 }
@@ -194,7 +194,7 @@ Rectangle {
                         Layout.fillWidth: true
 
                         Label {
-                            text: "Writers"
+                            text: qsTrId("topic.writers")
                             font.pixelSize: 14
                             font.bold: true
                         }
@@ -246,7 +246,7 @@ Rectangle {
                         Layout.fillWidth: true
 
                         Label {
-                            text: "Readers"
+                            text: qsTrId("topic.readers")
                             font.pixelSize: 14
                             font.bold: true
                         }

@@ -102,7 +102,7 @@ Rectangle {
                         spacing: 0
 
                         Label {
-                            text: "Update Interval:"
+                            text: qsTrId("statistics.update.interval")
                         }
 
                         ComboBox {
@@ -114,7 +114,7 @@ Rectangle {
                         }
 
                         Label {
-                            text: "seconds."
+                            text: qsTrId("statistics.seconds")
                         }
                     }
 
@@ -124,7 +124,7 @@ Rectangle {
                         spacing: 0
 
                         Label {
-                            text: "Show data from last"
+                            text: qsTrId("statistics.show.last")
                         }
 
                         ComboBox {
@@ -135,7 +135,7 @@ Rectangle {
                         }
 
                         Label {
-                            text: "minutes."
+                            text: qsTrId("statistics.minutes")
                         }
                     }
 
@@ -146,7 +146,7 @@ Rectangle {
                         spacing: 0
 
                         Label {
-                            text: "Aggregate by:"
+                            text: qsTrId("statistics.aggregate")
                         }
 
                         ComboBox {
@@ -251,20 +251,20 @@ Rectangle {
                         spacing: 0
 
                         Button {
-                            text: "Add Marker"
+                            text: qsTrId("statistics.marker.add")
                             enabled: statsRunning
                             onClicked: {
                                 statisticsView.addMarkerToAllCharts(markerTextField.text, Date.now()); 
                             }
                         }
                         Button {
-                            text: "Clear Markers"
+                            text: qsTrId("statistics.markers.clear")
                             onClicked: clearMarkerDialog.open()
                         }
                     }
                     TextField {
                         id: markerTextField
-                        placeholderText: "Enter Marker Name"
+                        placeholderText: qsTrId("statistics.marker.placeholder")
                         Layout.fillWidth: true
                     }
                 }

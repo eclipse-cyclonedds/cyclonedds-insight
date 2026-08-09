@@ -120,14 +120,14 @@ Item {
                     Layout.fillWidth: true
                     text: card.endpoint_process_name.length > 0
                           ? card.endpoint_process_name
-                          : "Unknown process"
+                          : qsTrId("entity.process.unknown")
                     font.bold: true
                     elide: Text.ElideRight
                 }
 
                 Label {
                     text: card.endpoint_process_id.length > 0
-                          ? "PID " + card.endpoint_process_id
+                          ? qsTrId("entity.pid.value").arg(card.endpoint_process_id)
                           : ""
                     visible: text.length > 0
                     opacity: 0.6
@@ -174,7 +174,7 @@ Item {
                 spacing: 6
 
                 Label {
-                    text: "No partition"
+                    text: qsTrId("endpoint.no.partition")
                     visible: !card.has_partitions
                 }
 
@@ -296,7 +296,9 @@ Item {
 
     EndpointDetailWindow {
         id: detailWindow
-        title: (card.isWriter ? "Writer " : "Reader ") + card.endpoint_key
+        title: (card.isWriter
+                ? qsTrId("entity.writer.value")
+                : qsTrId("entity.reader.value")).arg(card.endpoint_key)
         endpointText: card.endpointDetails
         structured: true
         isWriter: card.isWriter

@@ -125,7 +125,8 @@ Popup {
                 Label {
                     anchors.verticalCenter: parent.verticalCenter
                     text: readerTesterDiaId.entityType === 3
-                          ? "Create Reader" : "Create Writer"
+                          ? qsTrId("qos.create.reader")
+                          : qsTrId("qos.create.writer")
                     font.bold: true
                     font.pixelSize: Constants.pageTitleFontSize
                 }
@@ -152,7 +153,7 @@ Popup {
                     Label {
                         Layout.row: 0
                         Layout.column: 0
-                        text: "Domain"
+                        text: qsTrId("qos.domain")
                         color: readerTesterDiaId.secondaryTextColor
                     }
                     TextField {
@@ -176,7 +177,7 @@ Popup {
                     Label {
                         Layout.row: 1
                         Layout.column: 0
-                        text: "Topic Type"
+                        text: qsTrId("qos.topic.type")
                         color: readerTesterDiaId.secondaryTextColor
                     }
                     ComboBox {
@@ -203,7 +204,7 @@ Popup {
                     Label {
                         Layout.row: 2
                         Layout.column: 0
-                        text: "Topic Name"
+                        text: qsTrId("qos.topic.name")
                         color: readerTesterDiaId.secondaryTextColor
                     }
                     TextField {
@@ -217,7 +218,7 @@ Popup {
             }
 
             Label {
-                text: "Quality of Service (QoS)"
+                text: qsTrId("qos.title")
                 font.bold: true
             }
 
@@ -293,10 +294,10 @@ Popup {
                     Repeater {
                         model: [
                             readerTesterDiaId.entityType === 3
-                            ? qsTrId("Reader") : qsTrId("Writer"),
+                            ? qsTrId("entity.reader") : qsTrId("entity.writer"),
                             readerTesterDiaId.entityType === 3
-                            ? qsTrId("Subscriber") : qsTrId("Publisher"),
-                            qsTrId("Topic")
+                            ? qsTrId("entity.subscriber") : qsTrId("entity.publisher"),
+                            qsTrId("entity.topic")
                         ]
 
                         Rectangle {
@@ -383,7 +384,7 @@ Popup {
                                 id: endpointTabCol
 
                         Label {
-                            text: "Reliability"
+                            text: qsTrId("qos.reliability")
                             font.bold: true
                         }
                         Column {
@@ -395,7 +396,7 @@ Popup {
                             Row {
                                 visible: reliabilityComboId.currentText === "DDS_RELIABILITY_RELIABLE" 
                                 Label {
-                                    text: "max_blocking_time in milliseconds: "
+                                    text: qsTrId("qos.max.blocking.ms")
                                 }
                                 SpinBox {
                                     id: reliabilitySpinBox
@@ -412,7 +413,7 @@ Popup {
                         }
 
                         Label {
-                            text: "Durability"
+                            text: qsTrId("qos.durability")
                             font.bold: true
                         }
                         ComboBox {
@@ -422,7 +423,7 @@ Popup {
                         }
 
                         Label {
-                            text: "Ownership"
+                            text: qsTrId("qos.ownership")
                             font.bold: true
                         }
                         ComboBox {
@@ -434,14 +435,14 @@ Popup {
 
 
                         Label {
-                            text: "DataRepresentation"
+                            text: qsTrId("qos.data.representation")
                             font.bold: true
                         }
                         Row {
                             CheckBox {
                                 id: dataReprDefaultCheckbox
                                 checked: true
-                                text: qsTrId("Default")
+                                text: qsTrId("general.default")
                                 onCheckedChanged: {
                                     if (checked) {
                                         dataReprXcdr1Checkbox.checked = false;
@@ -484,7 +485,7 @@ Popup {
 
                         Label {
                             visible: readerTesterDiaId.entityType === 3
-                            text: "TypeConsistency"
+                            text: qsTrId("qos.type.consistency")
                             font.bold: true
                         }
                         Column {
@@ -536,7 +537,7 @@ Popup {
                         }
 
                         Label {
-                            text: "History"
+                            text: qsTrId("qos.history")
                             font.bold: true
                         }
                         Column {
@@ -561,7 +562,7 @@ Popup {
                         }
 
                         Label {
-                            text: "DestinationOrder"
+                            text: qsTrId("qos.destination.order")
                             font.bold: true
                         }
                         ComboBox {
@@ -571,7 +572,7 @@ Popup {
                         }
 
                         Label {
-                            text: "Liveliness"
+                            text: qsTrId("qos.liveliness")
                             font.bold: true
                         }
                         Column {
@@ -582,7 +583,7 @@ Popup {
                             }
                             Row {
                                 Label {
-                                    text: "Seconds: "
+                                    text: qsTrId("qos.seconds")
                                 }
                                 SpinBox {
                                     id: livelinessSpinBox
@@ -600,13 +601,13 @@ Popup {
 
                         Label {
                             visible: readerTesterDiaId.entityType === 4
-                            text: "Lifespan"
+                            text: qsTrId("qos.lifespan")
                             font.bold: true
                         }
                         Row {
                             visible: readerTesterDiaId.entityType === 4
                             Label {
-                                text: "Seconds: "
+                                text: qsTrId("qos.seconds")
                             }
                             SpinBox {
                                 id: lifespanSpinBox
@@ -622,12 +623,12 @@ Popup {
                         }
 
                         Label {
-                            text: "Deadline"
+                            text: qsTrId("qos.deadline")
                             font.bold: true
                         }
                         Row {
                             Label {
-                                text: "Seconds: "
+                                text: qsTrId("qos.seconds")
                             }
                             SpinBox {
                                 id: deadlineSpinBox
@@ -643,12 +644,12 @@ Popup {
                         }
 
                         Label {
-                            text: "LatencyBudget"
+                            text: qsTrId("qos.latency.budget")
                             font.bold: true
                         }
                         Row {
                             Label {
-                                text: "Seconds: "
+                                text: qsTrId("qos.seconds")
                             }
                             SpinBox {
                                 id: latencyBudgetSpinBox
@@ -665,7 +666,7 @@ Popup {
 
                         Label {
                             visible: readerTesterDiaId.entityType === 4
-                            text: "OwnershipStrength"
+                            text: qsTrId("qos.ownership.strength")
                             font.bold: true
                         }
                         SpinBox {
@@ -677,7 +678,7 @@ Popup {
 
                         Label {
                             visible: readerTesterDiaId.entityType === 4
-                            text: "WriterDataLifecycle"
+                            text: qsTrId("qos.writer.lifecycle")
                             font.bold: true
                         }
                         CheckBox {
@@ -689,14 +690,14 @@ Popup {
 
                         Label {
                             visible: readerTesterDiaId.entityType === 3
-                            text: "ReaderDataLifecycle"
+                            text: qsTrId("qos.reader.lifecycle")
                             font.bold: true
                         }
                         Column {
                             visible: readerTesterDiaId.entityType === 3
                             Row {
                                 Label {
-                                    text: "autopurge_nowriter_samples_delay in minutes: "
+                                    text: qsTrId("qos.autopurge.nowriter.min")
                                 }
                                 SpinBox {
                                     id: autopurge_nowriter_samples_delaySpinBox
@@ -712,7 +713,7 @@ Popup {
                             }
                             Row {
                                 Label {
-                                    text: "autopurge_disposed_samples_delay in minutes: "
+                                    text: qsTrId("qos.autopurge.disposed.min")
                                 }
                                 SpinBox {
                                     id: autopurge_disposed_samples_delaySpinBox
@@ -730,7 +731,7 @@ Popup {
                         }
 
                         Label {
-                            text: "TransportPriority"
+                            text: qsTrId("qos.transport.priority")
                             font.bold: true
                         }
                         SpinBox {
@@ -740,7 +741,7 @@ Popup {
                         }
                         
                         Label {
-                            text: "ResourceLimits"
+                            text: qsTrId("qos.resource.limits")
                             font.bold: true
                         }
                         Column {
@@ -781,13 +782,13 @@ Popup {
 
                         Label {
                             visible: readerTesterDiaId.entityType === 3
-                            text: "TimeBasedFilter"
+                            text: qsTrId("qos.time.filter")
                             font.bold: true
                         }
                         Row {
                             visible: readerTesterDiaId.entityType === 3
                             Label {
-                                text: "filter_fn in seconds: "
+                                text: qsTrId("qos.filter.seconds")
                             }
                             SpinBox {
                                 id: timeBasedFilterSpinBox
@@ -797,7 +798,7 @@ Popup {
                         }
 
                         Label {
-                            text: "IgnoreLocal"
+                            text: qsTrId("qos.ignore.local")
                             font.bold: true
                         }
                         ComboBox {
@@ -808,14 +809,14 @@ Popup {
 
                         Label {
                             visible: readerTesterDiaId.entityType === 4
-                            text: "DurabilityService"
+                            text: qsTrId("qos.durability.service")
                             font.bold: true
                         }
                         Column {
                             visible: readerTesterDiaId.entityType === 4
                             Row {
                                 Label {
-                                    text: "cleanup_delay in minutes: "
+                                    text: qsTrId("qos.cleanup.minutes")
                                 }
                                 SpinBox {
                                     id: cleanup_delaySpinBox
@@ -831,7 +832,7 @@ Popup {
                             }
                             Column {
                                 Label {
-                                    text: "History"
+                                    text: qsTrId("qos.history")
                                 }
                                 Column {
                                     ComboBox {
@@ -890,71 +891,71 @@ Popup {
                         }
 
                         Label {
-                            text: "UserData"
+                            text: qsTrId("qos.user.data")
                             font.bold: true
                         }
                         TextField {
                             leftPadding: 10
                             id: userdataField
-                            placeholderText: "Enter Userdata"
+                            placeholderText: qsTrId("placeholder.userdata")
                             text: ""
                         }
 
                         Label {
-                            text: "EntityName"
+                            text: qsTrId("qos.entity.name")
                             font.bold: true
                         }
                         TextField {
                             leftPadding: 10
                             id: entityNameField
-                            placeholderText: "Enter EntityName"
+                            placeholderText: qsTrId("placeholder.entity.name")
                             text: ""
                         }
 
                         Label {
-                            text: "Property"
+                            text: qsTrId("qos.property")
                             font.bold: true
                         }
                         Row {
                             TextField {
                                 leftPadding: 10
                                 id: propertyKeyField
-                                placeholderText: "Enter key"
+                                placeholderText: qsTrId("placeholder.key")
                                 text: ""
                             }
                             TextField {
                                 leftPadding: 10
                                 id: propertyValueField
-                                placeholderText: "Enter value"
+                                placeholderText: qsTrId("placeholder.value")
                                 text: ""
                             }
                             Switch {
                                 id: prop_propagate
-                                text: qsTrId("Propagate")
+                            text: qsTrId("qos.propagate")
                                 checked: false
                             }
                         }
 
                         Label {
-                            text: "BinaryProperty"
+                            text: qsTrId("qos.binary.property")
                             font.bold: true
                         }
                         Row {
                             TextField {
                                 leftPadding: 10
                                 id: binaryPropertyKeyField
-                                placeholderText: "Enter key"
+                                placeholderText: qsTrId("placeholder.key")
                                 text: ""
                             }
                             TextField {
                                 leftPadding: 10
                                 id: binaryPropertyValueField
-                                placeholderText: "Enter value"
+                                placeholderText: qsTrId("placeholder.value")
                                 text: ""
                             }
                             Switch {
                                 id: bin_prop_propagate
-                                text: qsTrId("Propagate")
+                            text: qsTrId("qos.propagate")
                                 checked: false
                             }
                         }
@@ -970,12 +971,12 @@ Popup {
                         
                         Column {
                             Label {
-                                text: "Partitions"
+                                text: qsTrId("qos.partitions")
                                 font.bold: true
                             }
 
                             Button {
-                                text: "Add Partition"
+                                text: qsTrId("qos.partition.add")
                                 onClicked: partitionModel.append({"partition": ""})
                             }
                         }
@@ -992,19 +993,19 @@ Popup {
                                 TextField {
                                     leftPadding: 10
                                     id: partitionField
-                                    placeholderText: "Enter partition"
+                                    placeholderText: qsTrId("placeholder.partition")
                                     text: modelData
                                     onTextChanged: partitionModel.set(index, {"partition": text})
                                 }
                                 Button {
-                                    text: "Remove"
+                                    text: qsTrId("general.remove")
                                     onClicked: partitionModel.remove(index)
                                 }
                             }
                         }
 
                         Label {
-                            text: "Presentation"
+                            text: qsTrId("qos.presentation")
                             font.bold: true
                         }
                         Column {
@@ -1028,29 +1029,29 @@ Popup {
                         }
 
                         Label {
-                            text: "Groupdata"
+                            text: qsTrId("qos.group.data")
                             font.bold: true
                         }
                         TextField {
                             leftPadding: 10
                             id: puSubGroupdataField
-                            placeholderText: "Enter Groupdata"
+                            placeholderText: qsTrId("placeholder.groupdata")
                             text: ""
                         }
 
                         Label {
-                            text: "UserData"
+                            text: qsTrId("qos.user.data")
                             font.bold: true
                         }
                         TextField {
                             leftPadding: 10
                             id: pubSubUserdataField
-                            placeholderText: "Enter Userdata"
+                            placeholderText: qsTrId("placeholder.userdata")
                             text: ""
                         }
 
                         Label {
-                            text: "EntityFactory"
+                            text: qsTrId("qos.entity.factory")
                             enabled: false
                             font.bold: true
                         }
@@ -1071,7 +1072,7 @@ Popup {
                         id: topicTabCol
 
                         Label {
-                            text: "Reliability"
+                            text: qsTrId("qos.reliability")
                             font.bold: true
                         }
                         Column {
@@ -1083,7 +1084,7 @@ Popup {
                             Row {
                                 visible: topicQosReliabilityComboId.currentText === "DDS_RELIABILITY_RELIABLE" 
                                 Label {
-                                    text: "max_blocking_time in milliseconds: "
+                                    text: qsTrId("qos.max.blocking.ms")
                                 }
                                 SpinBox {
                                     id: topicQosReliabilitySpinBox
@@ -1100,7 +1101,7 @@ Popup {
                         }
 
                         Label {
-                            text: "Durability"
+                            text: qsTrId("qos.durability")
                             font.bold: true
                         }
                         ComboBox {
@@ -1110,7 +1111,7 @@ Popup {
                         }
 
                         Label {
-                            text: "Ownership"
+                            text: qsTrId("qos.ownership")
                             font.bold: true
                         }
                         ComboBox {
@@ -1122,14 +1123,14 @@ Popup {
 
 
                         Label {
-                            text: "DataRepresentation"
+                            text: qsTrId("qos.data.representation")
                             font.bold: true
                         }
                         Row {
                             CheckBox {
                                 id: topicQosDataReprDefaultCheckbox
                                 checked: true
-                                text: qsTrId("Default")
+                                text: qsTrId("general.default")
                                 onCheckedChanged: {
                                     if (checked) {
                                         topicQosDataReprXcdr1Checkbox.checked = false;
@@ -1171,7 +1172,7 @@ Popup {
                         }
                         
                         Label {
-                            text: "History"
+                            text: qsTrId("qos.history")
                             font.bold: true
                         }
                         Column {
@@ -1196,7 +1197,7 @@ Popup {
                         }
 
                         Label {
-                            text: "DestinationOrder"
+                            text: qsTrId("qos.destination.order")
                             font.bold: true
                         }
                         ComboBox {
@@ -1206,7 +1207,7 @@ Popup {
                         }
 
                         Label {
-                            text: "Liveliness"
+                            text: qsTrId("qos.liveliness")
                             font.bold: true
                         }
                         Column {
@@ -1217,7 +1218,7 @@ Popup {
                             }
                             Row {
                                 Label {
-                                    text: "Seconds: "
+                                    text: qsTrId("qos.seconds")
                                 }
                                 SpinBox {
                                     id: topicQosLivelinessSpinBox
@@ -1234,12 +1235,12 @@ Popup {
                         }
 
                         Label {
-                            text: "Lifespan"
+                            text: qsTrId("qos.lifespan")
                             font.bold: true
                         }
                         Row {
                             Label {
-                                text: "Seconds: "
+                                text: qsTrId("qos.seconds")
                             }
                             SpinBox {
                                 id: topicQosLifespanSpinBox
@@ -1255,12 +1256,12 @@ Popup {
                         }
 
                         Label {
-                            text: "Deadline"
+                            text: qsTrId("qos.deadline")
                             font.bold: true
                         }
                         Row {
                             Label {
-                                text: "Seconds: "
+                                text: qsTrId("qos.seconds")
                             }
                             SpinBox {
                                 id: topicQosDeadlineSpinBox
@@ -1276,12 +1277,12 @@ Popup {
                         }
 
                         Label {
-                            text: "LatencyBudget"
+                            text: qsTrId("qos.latency.budget")
                             font.bold: true
                         }
                         Row {
                             Label {
-                                text: "Seconds: "
+                                text: qsTrId("qos.seconds")
                             }
                             SpinBox {
                                 id: topicQosLatencyBudgetSpinBox
@@ -1297,7 +1298,7 @@ Popup {
                         }
 
                         Label {
-                            text: "TransportPriority"
+                            text: qsTrId("qos.transport.priority")
                             font.bold: true
                         }
                         SpinBox {
@@ -1307,7 +1308,7 @@ Popup {
                         }
 
                         Label {
-                            text: "ResourceLimits"
+                            text: qsTrId("qos.resource.limits")
                             font.bold: true
                         }
                         Column {
@@ -1347,13 +1348,13 @@ Popup {
                         }
 
                         Label {
-                            text: "DurabilityService"
+                            text: qsTrId("qos.durability.service")
                             font.bold: true
                         }
                         Column {
                             Row {
                                 Label {
-                                    text: "cleanup_delay in minutes: "
+                                    text: qsTrId("qos.cleanup.minutes")
                                 }
                                 SpinBox {
                                     id: topicQosCleanup_delaySpinBox
@@ -1369,7 +1370,7 @@ Popup {
                             }
                             Column {
                                 Label {
-                                    text: "History"
+                                    text: qsTrId("qos.history")
                                 }
                                 Column {
                                     ComboBox {
@@ -1428,13 +1429,13 @@ Popup {
                         }
 
                         Label {
-                            text: "TopicData"
+                            text: qsTrId("qos.topic.data")
                             font.bold: true
                         }
                         TextField {
                             leftPadding: 10
                             id: topicQosDataField
-                            placeholderText: "Enter TopicData"
+                            placeholderText: qsTrId("placeholder.topicdata")
                             text: ""
                         }
                     }
@@ -1448,30 +1449,30 @@ Popup {
                         id: participantTabCol
 
                         Label {
-                            text: "Participant Handling"
+                            text: qsTrId("qos.participant.handling")
                             font.bold: true
                         }
                         CheckBox {
                             id: dpReuseParticipantCheckbox
                             checked: true
-                            text: "Use the default participant (otherwise create a new one)"
+                            text: qsTrId("qos.participant.default")
                         }
 
                         Label {
                             visible: !dpReuseParticipantCheckbox.checked
-                            text: "UserData"
+                            text: qsTrId("qos.user.data")
                             font.bold: true
                         }
                         TextField {
                             visible: !dpReuseParticipantCheckbox.checked
                             leftPadding: 10
                             id: dpUserdataField
-                            placeholderText: "Enter Userdata"
+                            placeholderText: qsTrId("placeholder.userdata")
                             text: ""
                         }
 
                         Label {
-                            text: "EntityFactory"
+                            text: qsTrId("qos.entity.factory")
                             enabled: false
                             visible: !dpReuseParticipantCheckbox.checked
                             font.bold: true

@@ -107,7 +107,15 @@ TreeView {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - padding - x - 10
             clip: true
-            text: model.is_domain ? "Domain " + model.display : model.is_reader ? "Reader: " + model.display : model.is_writer ? "Writer: " + model.display : model.is_participant ? "Participant: " + model.display : model.display 
+            text: model.is_domain
+                  ? qsTrId("entity.domain.value").arg(model.display)
+                  : model.is_reader
+                    ? qsTrId("entity.reader.label.value").arg(model.display)
+                    : model.is_writer
+                      ? qsTrId("entity.writer.label.value").arg(model.display)
+                      : model.is_participant
+                        ? qsTrId("entity.participant.label.value").arg(model.display)
+                        : model.display
         }
     }
 

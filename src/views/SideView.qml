@@ -51,7 +51,7 @@ ColumnLayout {
                 spacing: 2
 
                 Repeater {
-                    model: ["Topics", "Participants"]
+                    model: [qsTrId("entity.topics"), qsTrId("entity.participants")]
 
                     Rectangle {
                         id: viewOption

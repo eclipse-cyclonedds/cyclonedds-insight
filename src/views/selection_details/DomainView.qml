@@ -47,7 +47,7 @@ Rectangle {
                 }
 
                 Label {
-                    text: qsTrId("Domain")
+                    text: qsTrId("entity.domain")
                     font.pixelSize: Constants.pageTitleFontSize
                     font.bold: true
                 }
@@ -63,7 +63,7 @@ Rectangle {
                 spacing: 8
 
                 Label {
-                    text: qsTrId("Domain ID: ")
+                    text: qsTrId("entity.domain.id.label")
                     color: domainViewId.secondaryTextColor
                 }
 

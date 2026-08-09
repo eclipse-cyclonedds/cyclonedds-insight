@@ -52,7 +52,7 @@ Window {
         updaterRootWindow.isExternUpdater = isExternUpdater
         updaterRootWindow.isError = false
         progressBar.value = 0
-        statusText.text = "Preparing update..."
+        statusText.text = qsTrId("update.preparing")
         updaterView.visible = true
         updaterModel.downloadFile(
             organization, project, newBuildId, isExternUpdater)
@@ -104,7 +104,8 @@ Window {
 
             Label {
                 text: updaterRootWindow.isError
-                      ? "Error" : "Zap! Pow! Update!"
+                      ? qsTrId("general.error")
+                      : qsTrId("update.ready.title")
                 font.pixelSize: Constants.pageTitleFontSize
                 font.bold: true
             }
@@ -166,7 +167,7 @@ Window {
                 Label {
                     id: statusText
                     Layout.fillWidth: true
-                    text: "Preparing update..."
+                    text: qsTrId("update.preparing")
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.Wrap
                     font.bold: true
@@ -185,8 +186,8 @@ Window {
                 Label {
                     Layout.fillWidth: true
                     text: updaterRootWindow.isError
-                          ? "The update could not be completed."
-                          : "Keep this window open while files are installed."
+                          ? qsTrId("update.failed.description")
+                          : qsTrId("update.keep.open")
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.Wrap
                     color: updaterRootWindow.secondaryTextColor
@@ -202,7 +203,9 @@ Window {
             }
 
             Button {
-                text: updaterRootWindow.isError ? "Exit" : "Cancel"
+                text: updaterRootWindow.isError
+                      ? qsTrId("general.exit")
+                      : qsTrId("general.cancel")
                 onClicked: {
                     updaterModel.cancel()
                     Qt.quit()

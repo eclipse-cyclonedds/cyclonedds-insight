@@ -222,7 +222,7 @@ Rectangle {
                                     color: chartControlMiniMouseArea.pressed ? "lightgrey" : "transparent"
                                     
                                     Label {
-                                        text: "Export CSV"
+                                        text: qsTrId("statistics.csv.export")
                                         anchors.centerIn: parent
                                         color: "black"
                                     }
@@ -326,7 +326,7 @@ Rectangle {
                         currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
                         fileMode: FileDialog.SaveFile
                         defaultSuffix: "json"
-                        title: "Export Tester Preset"
+                        title: qsTrId("tester.preset.export")
                         nameFilters: ["CSV files (*.csv)"]
                         selectedFile: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0] + "/" + name_role + ".csv"
                         onAccepted: {

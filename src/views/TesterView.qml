@@ -90,13 +90,13 @@ Rectangle {
             }
 
             Button {
-                text: "Import"
+                text: qsTrId("general.import")
                 onClicked: importPresetDialog.open()
             }
 
             Button {
                 id: presetActionsButton
-                text: "Preset Actions"
+                text: qsTrId("tester.preset.actions")
                 rightPadding: 28
                 onClicked: presetActionsMenu.open()
 
@@ -134,7 +134,7 @@ Rectangle {
                     MenuSeparator {}
 
                     MenuItem {
-                        text: "Export Current"
+                        text: qsTrId("tester.export.current")
                         enabled: librariesCombobox.count > 0
                         onClicked: {
                             exportPresetDialog.exportAll = false
@@ -143,7 +143,7 @@ Rectangle {
                     }
 
                     MenuItem {
-                        text: "Export All"
+                        text: qsTrId("tester.export.all")
                         enabled: librariesCombobox.count > 0
                         onClicked: {
                             exportPresetDialog.exportAll = true
@@ -154,7 +154,7 @@ Rectangle {
                     MenuSeparator {}
 
                     MenuItem {
-                        text: "Delete Current"
+                        text: qsTrId("tester.delete.current")
                         enabled: librariesCombobox.count > 0
                         onClicked: {
                             const idx = librariesCombobox.currentIndex
@@ -167,7 +167,7 @@ Rectangle {
                     }
 
                     MenuItem {
-                        text: "Delete All"
+                        text: qsTrId("tester.delete.all")
                         enabled: librariesCombobox.count > 0
                         onClicked: testerModel.deleteAllWriters()
                     }
@@ -196,7 +196,7 @@ Rectangle {
                     spacing: 8
 
                     Label {
-                        text: "Preset"
+                        text: qsTrId("tester.preset")
                         font.bold: true
                         color: listenerTabId.secondaryTextColor
                     }
@@ -284,8 +284,8 @@ Rectangle {
                     IconActionButton {
                         icon: "edit"
                         tooltipText: listenerTabId.isPresetNameEditorVisible
-                                     ? "Hide preset name editor"
-                                     : "Rename preset"
+                                     ? qsTrId("tester.preset.editor.hide")
+                                     : qsTrId("tester.preset.rename")
                         enabled: librariesCombobox.count > 0
                         opacity: enabled ? 1 : 0.5
                         onClicked: {
@@ -308,14 +308,14 @@ Rectangle {
                              && listenerTabId.isPresetNameEditorVisible
 
                     Label {
-                        text: "Name"
+                        text: qsTrId("general.name")
                         color: listenerTabId.secondaryTextColor
                     }
 
                     TextField {
                         id: presetNameField
                         text: testerModel.count > 0 ? testerModel.getPresetName(librariesCombobox.currentIndex) : ""
-                        placeholderText: "Enter Preset-Name"
+                        placeholderText: qsTrId("tester.preset.name.placeholder")
                         Layout.fillWidth: true
                         onTextChanged: {
                             if (testerModel) {
@@ -354,8 +354,8 @@ Rectangle {
                         Button {
                             text: (testerRev, testerModel.getIsStarted(
                                        librariesCombobox.currentIndex))
-                                  ? "Stop"
-                                  : "Start"
+                                  ? qsTrId("general.stop")
+                                  : qsTrId("general.start")
                             highlighted: !(testerRev, testerModel.getIsStarted(
                                                librariesCombobox.currentIndex))
                             onClicked: {
@@ -598,7 +598,7 @@ Rectangle {
                             parent: dataItemTab
                             visible: dataItemTabMouseArea.containsMouse && !tabNameEditor.visible
                             delay: 500
-                            text: "Double-click to rename"
+                            text: qsTrId("tester.rename.hint")
                             contentItem: Label {
                                 text: dataItemTabTooltip.text
                             }
@@ -698,7 +698,7 @@ Rectangle {
                     parent: duplicateDataItemButton
                     visible: duplicateDataItemButton.hovered
                     delay: 300
-                    text: "Duplicate selected data item"
+                    text: qsTrId("tester.duplicate.item")
                     contentItem: Label {
                         text: duplicateDataItemTooltip.text
                     }
@@ -759,7 +759,7 @@ Rectangle {
                         Layout.fillWidth: true
 
                         Label {
-                            text: "Sequence"
+                            text: qsTrId("tester.sequence")
                             font.bold: true
                         }
 
@@ -768,7 +768,9 @@ Rectangle {
                         }
 
                         Button {
-                            text: isSequenceEditorVisible ? "Done" : "Edit sequence"
+                            text: isSequenceEditorVisible
+                                  ? qsTrId("general.done")
+                                  : qsTrId("tester.sequence.edit")
                             flat: true
                             onClicked: {
                                 isSequenceEditorVisible = !isSequenceEditorVisible
@@ -784,7 +786,7 @@ Rectangle {
                         property int sequenceIndex: -1
 
                         GroupBox {
-                            title: "Available"
+                            title: qsTrId("general.available")
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             visible: isSequenceEditorVisible
@@ -826,7 +828,7 @@ Rectangle {
                                     spacing: 5
 
                                     Label {
-                                        text: "Add"
+                                        text: qsTrId("general.add")
                                         color: addSequenceItemButton.enabled ? addSequenceItemButton.palette.buttonText : addSequenceItemButton.palette.mid
                                     }
 
@@ -866,7 +868,7 @@ Rectangle {
                                     }
 
                                     Label {
-                                        text: "Remove"
+                                        text: qsTrId("general.remove")
                                         color: removeSequenceItemButton.enabled ? removeSequenceItemButton.palette.buttonText : removeSequenceItemButton.palette.mid
                                     }
                                 }
@@ -880,7 +882,9 @@ Rectangle {
                         }
 
                         GroupBox {
-                            title: isSequenceEditorVisible ? "Sequence" : ""
+                            title: isSequenceEditorVisible
+                                   ? qsTrId("tester.sequence")
+                                   : ""
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
@@ -995,7 +999,7 @@ Rectangle {
                         visible: model.is_str
                         enabled: model.is_str
                         text: dataTreeModel !== null ? dataTreeModel.getStrValue(treeView.index(row, column)) : ""
-                        placeholderText: "Enter text"
+                        placeholderText: qsTrId("tester.text.placeholder")
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: label.right
                         anchors.leftMargin: 5
@@ -1131,7 +1135,7 @@ Rectangle {
 
                 Button {
                     id: writeButton
-                    text: "Write"
+                    text: qsTrId("general.write")
                     font.bold: true
                     onClicked: testerModel.writeData(
                                    librariesCombobox.currentIndex,
@@ -1143,7 +1147,7 @@ Rectangle {
                 }
 
                 Button {
-                    text: "Dispose"
+                    text: qsTrId("general.dispose")
                     flat: true
                     onClicked: testerModel.disposeData(
                                    librariesCombobox.currentIndex,
@@ -1151,7 +1155,7 @@ Rectangle {
                 }
 
                 Button {
-                    text: "Unregister"
+                    text: qsTrId("general.unregister")
                     flat: true
                     onClicked: testerModel.unregisterData(
                                    librariesCombobox.currentIndex,
@@ -1166,7 +1170,7 @@ Rectangle {
         currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
         fileMode: FileDialog.SaveFile
         defaultSuffix: "json"
-        title: "Export Tester Preset"
+        title: qsTrId("tester.preset.export")
         nameFilters: ["JSON files (*.json)"]
         selectedFile: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0] + "/" + (presetNameField.text !== "" ? presetNameField.text : "preset") + ".json"
         property bool exportAll: false
@@ -1185,7 +1189,7 @@ Rectangle {
         id: importPresetDialog
         currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
         fileMode: FileDialog.OpenFiles
-        title: "Import Tester Presets"
+        title: qsTrId("tester.presets.import")
         nameFilters: ["JSON files (*.json)"]
         onAccepted: {
             for (var i = 0; i < selectedFiles.length; i++) {

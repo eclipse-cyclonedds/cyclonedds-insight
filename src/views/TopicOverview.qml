@@ -98,7 +98,9 @@ TreeView {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - padding - x - 10
             clip: true
-            text: model.is_domain ? "Domain " + model.display : model.display 
+            text: model.is_domain
+                  ? qsTrId("entity.domain.value").arg(model.display)
+                  : model.display
         }
 
         WarningTriangle {
@@ -110,7 +112,7 @@ TreeView {
             anchors.right: model.is_domain ? label.right : label.left
             anchors.margins: 5
             enableTooltip: true
-            tooltipText: "Qos mismatch detected."
+            tooltipText: qsTrId("endpoint.qos.mismatch.detected")
         }
     }
 

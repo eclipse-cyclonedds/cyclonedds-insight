@@ -132,8 +132,8 @@ SplitView {
                 visible: sidebarCollapseMouseArea.containsMouse
                 delay: 500
                 text: overviewRoot.sidebarCollapsed
-                      ? "Show sidebar"
-                      : "Hide sidebar"
+                      ? qsTrId("sidebar.show")
+                      : qsTrId("sidebar.hide")
                 contentItem: Label {
                     text: sidebarCollapseTooltip.text
                 }

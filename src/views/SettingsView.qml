@@ -90,7 +90,7 @@ Rectangle {
                     spacing: 10
 
                     Label {
-                        text: "Configuration"
+                        text: qsTrId("settings.configuration")
                         font.pixelSize: Constants.sectionTitleFontSize
                         font.bold: true
                     }
@@ -125,7 +125,7 @@ Rectangle {
 
                         Button {
                             id: editConfigButton
-                            text: "Edit Configuration File"
+                            text: qsTrId("settings.config.edit")
                             onClicked: layout.currentIndex = 2
                         }
                     }
@@ -152,7 +152,7 @@ Rectangle {
                         }
 
                         Button {
-                            text: "Open Folder"
+                            text: qsTrId("settings.folder.open")
                             onClicked: Qt.openUrlExternally(
                                            StandardPaths.writableLocation(
                                                StandardPaths.AppDataLocation))
@@ -184,7 +184,7 @@ Rectangle {
                     }
 
                     Label {
-                        text: "Choose how the application follows the system color scheme."
+                        text: qsTrId("settings.appearance.description")
                         color: settingsViewId.secondaryTextColor
                     }
 
@@ -193,18 +193,18 @@ Rectangle {
                         spacing: 14
 
                         RadioButton {
-                            text: "Automatic (System)"
+                            text: qsTrId("settings.theme.system")
                             checked: true
                             onClicked: if (checked) qmlUtils.setColorScheme(0)
                         }
 
                         RadioButton {
-                            text: "Light"
+                            text: qsTrId("settings.theme.light")
                             onClicked: if (checked) qmlUtils.setColorScheme(1)
                         }
 
                         RadioButton {
-                            text: "Dark"
+                            text: qsTrId("settings.theme.dark")
                             onClicked: if (checked) qmlUtils.setColorScheme(2)
                         }
 
@@ -253,7 +253,7 @@ Rectangle {
                     }
 
                     Label {
-                        text: "The proxy is used for update checks and downloading updates."
+                        text: qsTrId("settings.proxy.description")
                         color: settingsViewId.secondaryTextColor
                     }
 
@@ -264,7 +264,7 @@ Rectangle {
                         spacing: 8
 
                         Label {
-                            text: "HTTP proxy"
+                            text: qsTrId("settings.proxy.http")
                             color: settingsViewId.secondaryTextColor
                         }
 
@@ -276,7 +276,7 @@ Rectangle {
                         }
 
                         Label {
-                            text: "Port"
+                            text: qsTrId("settings.proxy.port")
                             color: settingsViewId.secondaryTextColor
                         }
 
