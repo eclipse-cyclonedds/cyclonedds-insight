@@ -113,6 +113,9 @@
     <message id="domain.add">
         <translation>添加域</translation>
     </message>
+    <message id="domain.allowed.range">
+        <translation>允许使用逗号分隔的 0 到 232 范围内的域 ID。</translation>
+    </message>
     <message id="domain.discover.automatically">
         <translation>自动发现 Domain</translation>
     </message>
@@ -121,6 +124,9 @@
     </message>
     <message id="domain.remove.selected">
         <translation>移除所选 Domain</translation>
+    </message>
+    <message id="domain.remove.confirm">
+        <translation>确定要移除所选 Domain 吗？</translation>
     </message>
     <message id="domain.show.all">
         <translation>显示所有 Domain</translation>

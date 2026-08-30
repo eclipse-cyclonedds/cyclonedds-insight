@@ -111,7 +111,10 @@
 
     <!-- domain -->
     <message id="domain.add">
-        <translation>Ajouter un domaine</translation>
+        <translation>Ajouter un ou plusieurs domaines</translation>
+    </message>
+    <message id="domain.allowed.range">
+        <translation>Les ID de domaine de 0 à 232, séparés par des virgules, sont autorisés.</translation>
     </message>
     <message id="domain.discover.automatically">
         <translation>Détecter automatiquement les domaines</translation>
@@ -121,6 +124,9 @@
     </message>
     <message id="domain.remove.selected">
         <translation>Retirer le domaine sélectionné</translation>
+    </message>
+    <message id="domain.remove.confirm">
+        <translation>Voulez-vous vraiment retirer le domaine sélectionné ?</translation>
     </message>
     <message id="domain.show.all">
         <translation>Afficher tous les domaines</translation>
