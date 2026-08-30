@@ -111,7 +111,10 @@
 
     <!-- domain -->
     <message id="domain.add">
-        <translation>Add Domain</translation>
+        <translation>Add Domain(s)</translation>
+    </message>
+    <message id="domain.allowed.range">
+        <translation>Comma-separated domain IDs from 0 to 232 are allowed.</translation>
     </message>
     <message id="domain.discover.automatically">
         <translation>Automatically discover domains</translation>
@@ -121,6 +124,9 @@
     </message>
     <message id="domain.remove.selected">
         <translation>Remove the selected domain</translation>
+    </message>
+    <message id="domain.remove.confirm">
+        <translation>Are you sure you want to remove the selected domain?</translation>
     </message>
     <message id="domain.show.all">
         <translation>Show all domains</translation>

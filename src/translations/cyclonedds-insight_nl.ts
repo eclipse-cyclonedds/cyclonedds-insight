@@ -111,7 +111,10 @@
 
     <!-- domain -->
     <message id="domain.add">
-        <translation>Domein toevoegen</translation>
+        <translation>Domein(en) toevoegen</translation>
+    </message>
+    <message id="domain.allowed.range">
+        <translation>Door komma's gescheiden domein-ID's van 0 tot 232 zijn toegestaan.</translation>
     </message>
     <message id="domain.discover.automatically">
         <translation>Domeinen automatisch detecteren</translation>
@@ -121,6 +124,9 @@
     </message>
     <message id="domain.remove.selected">
         <translation>Geselecteerd domein verwijderen</translation>
+    </message>
+    <message id="domain.remove.confirm">
+        <translation>Weet u zeker dat u het geselecteerde domein wilt verwijderen?</translation>
     </message>
     <message id="domain.show.all">
         <translation>Alle domeinen tonen</translation>

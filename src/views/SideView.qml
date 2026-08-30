@@ -14,14 +14,41 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views/icons"
 
 
 ColumnLayout {
+    id: sideView
     anchors.fill: parent
     spacing: 0
+
+    function requestDomainRemoval() {
+        if (viewSelector.currentIndex === 0) {
+            if (treeModelProxy.getIsRowDomain(topicOverview.getCurrentIndex())) {
+                removeDomainDialog.open()
+            } else {
+                noDomainSelectedDialog.open()
+            }
+        } else {
+            if (participantModel.getIsRowDomain(participantOverview.getCurrentIndex())) {
+                removeDomainDialog.open()
+            } else {
+                noDomainSelectedDialog.open()
+            }
+        }
+    }
+
+    function removePendingDomain() {
+        if (viewSelector.currentIndex === 0)
+            treeModelProxy.removeDomainRequest(topicOverview.getCurrentIndex())
+        else
+            participantModel.removeDomainRequest(participantOverview.getCurrentIndex())
+
+        stackView.clear()
+    }
 
     RowLayout {
         id: viewToolbar
@@ -189,23 +216,7 @@ ColumnLayout {
             Layout.minimumWidth: viewToolbar.actionWidth
             Layout.maximumWidth: viewToolbar.actionWidth
             Layout.preferredHeight: viewToolbar.controlHeight
-            onClicked: {
-                if (viewSelector.currentIndex === 0) {
-                    if (treeModelProxy.getIsRowDomain(topicOverview.getCurrentIndex())) {
-                        treeModelProxy.removeDomainRequest(topicOverview.getCurrentIndex())
-                        stackView.clear()
-                    } else {
-                        noDomainSelectedDialog.open()
-                    }
-                } else {
-                    if (participantModel.getIsRowDomain(participantOverview.getCurrentIndex())) {
-                        participantModel.removeDomainRequest(participantOverview.getCurrentIndex())
-                        stackView.clear()
-                    } else {
-                        noDomainSelectedDialog.open()
-                    }
-                }
-            }
+            onClicked: sideView.requestDomainRemoval()
             hoverEnabled: true
             ToolTip {
                 id: removeDomainTooltip
@@ -223,6 +234,7 @@ ColumnLayout {
                 }
             }
         }
+
         Button {
             flat: true
             highlighted: searchField.visible
@@ -288,5 +300,17 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
         Layout.leftMargin: 10
+    }
+
+    MessageDialog {
+        id: removeDomainDialog
+        title: qsTrId("general.alert")
+        text: qsTrId("domain.remove.confirm")
+        buttons: MessageDialog.Ok | MessageDialog.Cancel
+        onButtonClicked: function(button, role) {
+            if (role === MessageDialog.AcceptRole
+                    || role === MessageDialog.YesRole)
+                sideView.removePendingDomain()
+        }
     }
 }

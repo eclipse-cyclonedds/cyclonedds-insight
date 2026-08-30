@@ -113,6 +113,9 @@
     <message id="domain.add">
         <translation>ドメインを追加</translation>
     </message>
+    <message id="domain.allowed.range">
+        <translation>0 から 232 までのドメイン ID をカンマ区切りで入力できます。</translation>
+    </message>
     <message id="domain.discover.automatically">
         <translation>ドメインを自動検出</translation>
     </message>
@@ -121,6 +124,9 @@
     </message>
     <message id="domain.remove.selected">
         <translation>選択したドメインを削除</translation>
+    </message>
+    <message id="domain.remove.confirm">
+        <translation>選択したドメインを削除してもよろしいですか？</translation>
     </message>
     <message id="domain.show.all">
         <translation>すべてのドメインを表示</translation>

@@ -111,7 +111,10 @@
 
     <!-- domain -->
     <message id="domain.add">
-        <translation>Domain hinzufügen</translation>
+        <translation>Domain(s) hinzufügen</translation>
+    </message>
+    <message id="domain.allowed.range">
+        <translation>Kommagetrennte Domain-IDs von 0 bis 232 sind zulässig.</translation>
     </message>
     <message id="domain.discover.automatically">
         <translation>Domains automatisch erkennen</translation>
@@ -121,6 +124,9 @@
     </message>
     <message id="domain.remove.selected">
         <translation>Ausgewählte Domain entfernen</translation>
+    </message>
+    <message id="domain.remove.confirm">
+        <translation>Möchten Sie die ausgewählte Domain wirklich entfernen?</translation>
     </message>
     <message id="domain.show.all">
         <translation>Alle Domains anzeigen</translation>
