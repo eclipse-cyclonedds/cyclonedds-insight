@@ -29,6 +29,7 @@ Rectangle {
     property string fileContent: ""
     property string lastSavedTime: ""
     property bool configFileAvailable: false
+    property bool configSaveEnabled: false
     property bool completionInsertionInProgress: false
     property int viewMode: 0
     readonly property bool editorVisible: viewMode !== 2
@@ -271,10 +272,12 @@ Rectangle {
                                 text: qsTrId("general.reload")
                                 flat: true
                                 onClicked: {
+                                    configEditorView.configSaveEnabled = false
                                     configEditorView.fileContent =
                                             qmlUtils.loadFileContent(CYCLONEDDS_URI)
                                     configTextArea.text =
                                         configEditorView.fileContent
+                                    configEditorView.configSaveEnabled = true
                                 }
                             }
                         }
@@ -399,6 +402,9 @@ Rectangle {
                                     padding: 10
 
                                     onTextChanged: {
+                                        if (!configEditorView.configSaveEnabled)
+                                            return
+
                                         qmlUtils.saveFileContent(
                                             CYCLONEDDS_URI, text)
                                         configEditorView.lastSavedTime =
@@ -699,6 +705,7 @@ Rectangle {
                                 qmlUtils.loadFileContent(CYCLONEDDS_URI)
                             configTextArea.text =
                                 configEditorView.fileContent
+                            configEditorView.configSaveEnabled = true
                         } else {
                             configEditorView.configFileAvailable = false
                         }
