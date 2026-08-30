@@ -188,17 +188,21 @@ class DispatcherThread(QThread):
                     amount_triggered = self.waitset.wait(duration(infinite=True))
                 except:
                     pass
-                received_timestamp_ns = time.time_ns()
                 if amount_triggered == 0:
                     continue
 
-                received_time = datetime.datetime.fromtimestamp(
-                    received_timestamp_ns / 1_000_000_000,
-                    tz=datetime.timezone.utc
-                ).astimezone()
-
                 for (_id, topic, _, readItem, condItem) in self.readerData:
-                    for sample in readItem.take(condition=condItem):
+                    samples = readItem.take(condition=condItem)
+                    if not samples:
+                        continue
+
+                    received_timestamp_ns = time.time_ns()
+                    received_time = datetime.datetime.fromtimestamp(
+                        received_timestamp_ns / 1_000_000_000,
+                        tz=datetime.timezone.utc
+                    ).astimezone()
+
+                    for sample in samples:
                         logging.trace(f"Received sample: {str(sample)}")
                         sample_data = ""
                         if isinstance(sample, InvalidSample):
