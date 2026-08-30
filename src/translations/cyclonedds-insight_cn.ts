@@ -404,6 +404,66 @@
     <message id="listener.sample.export">
         <translation>导出 Sample 日志</translation>
     </message>
+    <message id="listener.sample.info">
+        <translation>Sample 信息</translation>
+    </message>
+    <message id="listener.sample.invalid">
+        <translation>已不存在</translation>
+    </message>
+    <message id="listener.sample.source.timestamp">
+        <translation>源时间</translation>
+    </message>
+    <message id="listener.sample.received.timestamp">
+        <translation>接收时间</translation>
+    </message>
+    <message id="listener.sample.writer.id">
+        <translation>发送端点</translation>
+    </message>
+    <message id="listener.sample.sent.from">
+        <translation>发送自</translation>
+    </message>
+    <message id="listener.sample.topic.type">
+        <translation>Topic 类型</translation>
+    </message>
+    <message id="listener.sample.topic.name">
+        <translation>Topic 名称</translation>
+    </message>
+    <message id="listener.sample.writer.addresses">
+        <translation>地址</translation>
+    </message>
+    <message id="listener.sample.group.path">
+        <translation>消息路径</translation>
+    </message>
+    <message id="listener.sample.group.destination">
+        <translation>目标</translation>
+    </message>
+    <message id="listener.sample.group.topic">
+        <translation>Topic</translation>
+    </message>
+    <message id="listener.sample.group.timing">
+        <translation>时间</translation>
+    </message>
+    <message id="listener.sample.group.raw">
+        <translation>原始 Sample 信息</translation>
+    </message>
+    <message id="listener.sample.reader.id">
+        <translation>接收端点</translation>
+    </message>
+    <message id="listener.sample.writer.application">
+        <translation>应用程序</translation>
+    </message>
+    <message id="listener.sample.writer.hostname">
+        <translation>主机</translation>
+    </message>
+    <message id="listener.sample.writer.process.id">
+        <translation>进程 ID</translation>
+    </message>
+    <message id="listener.sample.transmission.time">
+        <translation>预计传输时间</translation>
+    </message>
+    <message id="listener.sample.transmission.hint">
+        <translation>仅当发送方和接收方的时钟同步时才有意义。</translation>
+    </message>
 
     <!-- log -->
     <message id="log.application">

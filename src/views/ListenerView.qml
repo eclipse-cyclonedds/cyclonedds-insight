@@ -31,6 +31,20 @@ Rectangle {
     readonly property color surfaceColor: Constants.cardBackgroundColor(rootWindow.isDarkMode)
     readonly property color borderColor: Constants.designBorderColor(rootWindow.isDarkMode)
 
+    component DetailValue: TextEdit {
+        readOnly: true
+        selectByMouse: true
+        wrapMode: Text.Wrap
+        padding: 0
+        color: Constants.secondaryTextColor(rootWindow.isDarkMode)
+        Layout.fillWidth: true
+        onActiveFocusChanged: {
+            if (activeFocus) {
+                listenerTabId.autoScrollEnabled = false;
+            }
+        }
+    }
+
     Connections {
         target: receiverProxyModel
         function onRowsInserted(parent, first, last) {
@@ -174,7 +188,9 @@ Rectangle {
                     clip: true
 
                     delegate: Column {
-                        width: ListView.view.width
+                        id: sampleDelegate
+                        width: ListView.view.width - listenerScrollBar.width
+                        property bool sampleInfoVisible: false
 
                         Item {
                             height: index > 0 ? 4 : 0
@@ -191,17 +207,233 @@ Rectangle {
                             width: parent.width
                         }
 
-                        TextEdit {
-                            text: model.receivedMsg
-                            readOnly: true
-                            color: rootWindow.isDarkMode ? "white" : "black"
-                            wrapMode: Text.Wrap
-                            selectByMouse: true
-                            padding: 2
+                        RowLayout {
                             width: parent.width
-                            onActiveFocusChanged: {
-                                if (activeFocus) {
-                                    listenerTabId.autoScrollEnabled = false;
+                            spacing: 6
+
+                            Item {
+                                implicitHeight: receivedMessageText.implicitHeight
+                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignTop
+
+                                property int timestampSpacing:
+                                    Math.ceil((receivedTimestampText.contentWidth + 6)
+                                              / Math.max(receivedTextSpace.advanceWidth, 1))
+
+                                TextMetrics {
+                                    id: receivedTextSpace
+                                    font: receivedMessageText.font
+                                    text: "\u00a0"
+                                }
+
+                                TextEdit {
+                                    id: receivedMessageText
+                                    width: parent.width
+                                    text: "\u00a0".repeat(parent.timestampSpacing)
+                                          + "•  " + model.receivedMsg
+                                    readOnly: true
+                                    color: rootWindow.isDarkMode ? "white" : "black"
+                                    wrapMode: Text.Wrap
+                                    selectByMouse: true
+                                    padding: 2
+                                    onActiveFocusChanged: {
+                                        if (activeFocus) {
+                                            listenerTabId.autoScrollEnabled = false;
+                                        }
+                                    }
+                                }
+
+                                TextEdit {
+                                    id: receivedTimestampText
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 2
+                                    y: receivedMessageText.padding
+                                       + Math.max(0, (receivedTextSpace.height - height) / 2)
+                                    width: contentWidth
+                                    height: contentHeight
+                                    text: model.receivedTimestamp
+                                    readOnly: true
+                                    selectByMouse: true
+                                    padding: 0
+                                    color: Constants.secondaryTextColor(rootWindow.isDarkMode)
+                                    font.pixelSize: Constants.captionFontSize
+                                    onActiveFocusChanged: {
+                                        if (activeFocus) {
+                                            listenerTabId.autoScrollEnabled = false;
+                                        }
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                visible: !model.validData
+                                implicitWidth: invalidSampleLabel.implicitWidth + 12
+                                implicitHeight: 24
+                                radius: Constants.badgeRadius
+                                color: Constants.errorColor
+                                Layout.alignment: Qt.AlignTop
+
+                                Label {
+                                    id: invalidSampleLabel
+                                    anchors.centerIn: parent
+                                    text: qsTrId("listener.sample.invalid")
+                                    color: "white"
+                                    font.bold: true
+                                    font.pixelSize: Constants.captionFontSize
+                                }
+                            }
+
+                            IconActionButton {
+                                icon: "info"
+                                active: sampleDelegate.sampleInfoVisible
+                                Layout.alignment: Qt.AlignTop
+                                onClicked: sampleDelegate.sampleInfoVisible =
+                                           !sampleDelegate.sampleInfoVisible
+                            }
+
+                        }
+
+                        Rectangle {
+                            visible: sampleDelegate.sampleInfoVisible
+                            width: parent.width
+                            height: sampleInfoLayout.implicitHeight + 12
+                            radius: Constants.controlRadius
+                            color: rootWindow.isDarkMode
+                                   ? Constants.mainContentBackgroundColor(true)
+                                   : "#eeeeee"
+                            border.width: 1
+                            border.color: listenerTabId.borderColor
+
+                            ColumnLayout {
+                                id: sampleInfoLayout
+                                anchors.fill: parent
+                                anchors.margins: 6
+                                spacing: 6
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    implicitHeight: originLayout.implicitHeight + 12
+                                    radius: Constants.controlRadius
+                                    color: rootWindow.isDarkMode ? "#292929" : "#fafafa"
+
+                                    ColumnLayout {
+                                        id: originLayout
+                                        anchors.fill: parent
+                                        anchors.margins: 6
+                                        spacing: 3
+
+                                        Label {
+                                            text: qsTrId("listener.sample.group.path")
+                                            color: Constants.secondaryTextColor(rootWindow.isDarkMode)
+                                            font.bold: true
+                                            font.pixelSize: Constants.captionFontSize
+                                        }
+                                        GridLayout {
+                                            Layout.fillWidth: true
+                                            columns: 2
+                                            columnSpacing: 12
+                                            rowSpacing: 2
+
+                                            Label { text: qsTrId("listener.sample.sent.from"); font.bold: true }
+                                            DetailValue {
+                                                text: model.writerApplication + ":"
+                                                      + model.writerProcessId + "@"
+                                                      + model.writerHostname
+                                            }
+                                            Label { text: qsTrId("listener.sample.writer.addresses"); font.bold: true }
+                                            DetailValue {
+                                                text: model.writerAddresses
+                                            }
+                                            Label { text: qsTrId("listener.sample.writer.id"); font.bold: true }
+                                            DetailValue {
+                                                text: model.writerId
+                                            }
+                                            Label { text: qsTrId("listener.sample.reader.id"); font.bold: true }
+                                            DetailValue {
+                                                text: model.ddsReaderId
+                                            }
+                                            Label { text: qsTrId("listener.sample.topic.name"); font.bold: true }
+                                            DetailValue {
+                                                text: model.topicName
+                                            }
+                                            Label { text: qsTrId("listener.sample.topic.type"); font.bold: true }
+                                            DetailValue {
+                                                text: model.topicType
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    implicitHeight: timingLayout.implicitHeight + 12
+                                    radius: Constants.controlRadius
+                                    color: rootWindow.isDarkMode ? "#292929" : "#fafafa"
+
+                                    ColumnLayout {
+                                        id: timingLayout
+                                        anchors.fill: parent
+                                        anchors.margins: 6
+                                        spacing: 3
+
+                                        Label {
+                                            text: qsTrId("listener.sample.group.timing")
+                                            color: Constants.secondaryTextColor(rootWindow.isDarkMode)
+                                            font.bold: true
+                                            font.pixelSize: Constants.captionFontSize
+                                        }
+                                        GridLayout {
+                                            Layout.fillWidth: true
+                                            columns: 2
+                                            columnSpacing: 12
+                                            rowSpacing: 2
+
+                                            Label { text: qsTrId("listener.sample.source.timestamp"); font.bold: true }
+                                            DetailValue {
+                                                text: model.sourceTimestamp
+                                            }
+                                            Label { text: qsTrId("listener.sample.received.timestamp"); font.bold: true }
+                                            DetailValue {
+                                                text: model.receivedTimestamp
+                                            }
+                                            Label { text: qsTrId("listener.sample.transmission.time"); font.bold: true }
+                                            DetailValue {
+                                                text: model.transmissionTime
+                                            }
+                                        }
+                                        Label {
+                                            text: qsTrId("listener.sample.transmission.hint")
+                                            color: Constants.secondaryTextColor(rootWindow.isDarkMode)
+                                            font.pixelSize: Constants.captionFontSize
+                                            font.italic: true
+                                            wrapMode: Text.Wrap
+                                            Layout.fillWidth: true
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    implicitHeight: rawInfoLayout.implicitHeight + 12
+                                    radius: Constants.controlRadius
+                                    color: rootWindow.isDarkMode ? "#292929" : "#fafafa"
+
+                                    ColumnLayout {
+                                        id: rawInfoLayout
+                                        anchors.fill: parent
+                                        anchors.margins: 6
+                                        spacing: 3
+
+                                        Label {
+                                            text: qsTrId("listener.sample.group.raw")
+                                            color: Constants.secondaryTextColor(rootWindow.isDarkMode)
+                                            font.bold: true
+                                            font.pixelSize: Constants.captionFontSize
+                                        }
+                                        DetailValue {
+                                            text: model.sampleInfo
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -210,6 +442,7 @@ Rectangle {
                         listenerTabId.autoScrollEnabled = false;
                     }
                     ScrollBar.vertical: ScrollBar {
+                        id: listenerScrollBar
                         policy: ScrollBar.AsNeeded
                     }
                 }

@@ -23,8 +23,11 @@ Rectangle {
     property string icon: "play"
     property string tooltipText: ""
     property bool destructive: false
+    property bool active: false
     readonly property color iconColor:
-        destructive && mouseArea.containsMouse
+        active
+        ? "white"
+        : destructive && mouseArea.containsMouse
         ? Constants.errorColor
         : rootWindow.isDarkMode ? "#e0e0e0" : "#404040"
     signal clicked()
@@ -32,13 +35,17 @@ Rectangle {
     implicitWidth: 28
     implicitHeight: 28
     radius: Constants.controlRadius
-    color: mouseArea.containsMouse
+    color: active
+           ? Constants.accentColor
+           : mouseArea.containsMouse
            ? destructive
              ? rootWindow.isDarkMode ? "#4b2528" : "#ffe6e8"
              : rootWindow.isDarkMode ? "#383838" : "#e9e9e9"
            : rootWindow.isDarkMode ? "#292929" : "#f5f5f5"
     border.width: 1
-    border.color: mouseArea.containsMouse && destructive
+    border.color: active
+                  ? Constants.accentColor
+                  : mouseArea.containsMouse && destructive
                   ? Constants.errorColor
                   : Constants.borderColor(rootWindow.isDarkMode)
 
@@ -180,6 +187,19 @@ Rectangle {
                 context.moveTo(11, 3)
                 context.lineTo(3, 11)
                 context.stroke()
+            } else if (iconActionButton.icon === "info") {
+                context.beginPath()
+                context.arc(7, 7, 5, 0, Math.PI * 2)
+                context.stroke()
+
+                context.beginPath()
+                context.moveTo(7, 6)
+                context.lineTo(7, 10)
+                context.stroke()
+
+                context.beginPath()
+                context.arc(7, 4, 0.7, 0, Math.PI * 2)
+                context.fill()
             }
         }
     }
@@ -196,7 +216,7 @@ Rectangle {
     ToolTip {
         id: actionTooltip
         parent: iconActionButton
-        visible: mouseArea.containsMouse
+        visible: mouseArea.containsMouse && iconActionButton.tooltipText.length > 0
         delay: 300
         text: iconActionButton.tooltipText
 
@@ -213,5 +233,6 @@ Rectangle {
 
     onIconChanged: iconCanvas.requestPaint()
     onDestructiveChanged: iconCanvas.requestPaint()
+    onActiveChanged: iconCanvas.requestPaint()
     onIconColorChanged: iconCanvas.requestPaint()
 }

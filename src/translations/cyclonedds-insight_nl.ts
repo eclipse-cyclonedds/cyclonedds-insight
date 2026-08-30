@@ -404,6 +404,66 @@
     <message id="listener.sample.export">
         <translation>Samplelog exporteren</translation>
     </message>
+    <message id="listener.sample.info">
+        <translation>Sample-informatie</translation>
+    </message>
+    <message id="listener.sample.invalid">
+        <translation>Niet meer aanwezig</translation>
+    </message>
+    <message id="listener.sample.source.timestamp">
+        <translation>Brontijd</translation>
+    </message>
+    <message id="listener.sample.received.timestamp">
+        <translation>Ontvangsttijd</translation>
+    </message>
+    <message id="listener.sample.writer.id">
+        <translation>Zender-endpoint</translation>
+    </message>
+    <message id="listener.sample.sent.from">
+        <translation>Verzonden vanaf</translation>
+    </message>
+    <message id="listener.sample.topic.type">
+        <translation>Topictype</translation>
+    </message>
+    <message id="listener.sample.topic.name">
+        <translation>Topicnaam</translation>
+    </message>
+    <message id="listener.sample.writer.addresses">
+        <translation>Adressen</translation>
+    </message>
+    <message id="listener.sample.group.path">
+        <translation>Berichtpad</translation>
+    </message>
+    <message id="listener.sample.group.destination">
+        <translation>Bestemming</translation>
+    </message>
+    <message id="listener.sample.group.topic">
+        <translation>Topic</translation>
+    </message>
+    <message id="listener.sample.group.timing">
+        <translation>Tijd</translation>
+    </message>
+    <message id="listener.sample.group.raw">
+        <translation>Ruwe sample-informatie</translation>
+    </message>
+    <message id="listener.sample.reader.id">
+        <translation>Ontvanger-endpoint</translation>
+    </message>
+    <message id="listener.sample.writer.application">
+        <translation>Applicatie</translation>
+    </message>
+    <message id="listener.sample.writer.hostname">
+        <translation>Host</translation>
+    </message>
+    <message id="listener.sample.writer.process.id">
+        <translation>Proces-ID</translation>
+    </message>
+    <message id="listener.sample.transmission.time">
+        <translation>Geschatte overdracht</translation>
+    </message>
+    <message id="listener.sample.transmission.hint">
+        <translation>Alleen zinvol als de klokken van zender en ontvanger gesynchroniseerd zijn.</translation>
+    </message>
 
     <!-- log -->
     <message id="log.application">
