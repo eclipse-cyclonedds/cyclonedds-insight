@@ -25,7 +25,7 @@ Window {
 
 
     property int aboutWidth: 570
-    property int aboutHeight: 260
+    property int aboutHeight: 280
 
     width: aboutWidth
     height: aboutHeight
@@ -150,6 +150,35 @@ Window {
                             onClicked: Qt.openUrlExternally(
                                 "https://github.com/eclipse-cyclonedds/cyclonedds-insight/commit/"
                                 + CYCLONEDDS_INSIGHT_GIT_HASH)
+                        }
+                    }
+                }
+
+                Rectangle {
+                    implicitWidth: branchLayout.implicitWidth + 14
+                    implicitHeight: 22
+                    radius: Constants.controlRadius
+                    color: rootWindow.isDarkMode ? "#292929" : "#f3f3f3"
+                    border.width: 1
+                    border.color: Constants.designBorderColor(rootWindow.isDarkMode)
+
+                    RowLayout {
+                        id: branchLayout
+                        anchors.centerIn: parent
+                        spacing: 5
+
+                        Label {
+                            text: "Branch"
+                            color: aboutWindow.secondaryTextColor
+                            font.pixelSize: Constants.captionFontSize
+                        }
+
+                        Label {
+                            text: CYCLONEDDS_INSIGHT_GIT_BRANCH
+                                  .replace("refs/heads/", "")
+                            color: aboutWindow.secondaryTextColor
+                            font.bold: true
+                            font.pixelSize: Constants.captionFontSize
                         }
                     }
                 }
