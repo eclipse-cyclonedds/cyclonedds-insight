@@ -12,6 +12,7 @@
 
 from loguru import logger as logging
 import datetime
+import time
 from PySide6.QtCore import Signal, Slot, QThread
 from cyclonedds import core
 from cyclonedds.util import duration
@@ -19,6 +20,7 @@ from cyclonedds.core import SampleState, ViewState, InstanceState
 from cyclonedds.topic import Topic
 from cyclonedds.sub import Subscriber, DataReader
 from cyclonedds.pub import Publisher, DataWriter
+from cyclonedds.internal import InvalidSample
 from dds_access.dds_listener import DdsListener
 from threading import Lock, Event
 from dds_access.domain_participant_factory import DomainParticipantFactory
@@ -27,7 +29,36 @@ from dds_access.datatypes.entity_type import EntityType
 
 class DispatcherThread(QThread):
 
-    onData = Signal(str, str)
+    onData = Signal(
+        str, str, str, bool, str, str, str, str, str, int, str, str, str
+    )
+
+    @staticmethod
+    def _format_sample_timing(sample_info, received_timestamp_ns):
+        source_timestamp_ns = sample_info.source_timestamp
+
+        if source_timestamp_ns <= 0:
+            return "-", "-"
+
+        source_time = datetime.datetime.fromtimestamp(
+            source_timestamp_ns / 1_000_000_000,
+            tz=datetime.timezone.utc
+        ).astimezone()
+        readable_timestamp = source_time.isoformat(timespec="milliseconds")
+
+        elapsed_ns = received_timestamp_ns - source_timestamp_ns
+        if elapsed_ns >= 1_000_000_000:
+            elapsed = f"{elapsed_ns / 1_000_000_000:.3f} s"
+        elif elapsed_ns >= 1_000_000:
+            elapsed = f"{elapsed_ns / 1_000_000:.3f} ms"
+        elif elapsed_ns >= 1_000:
+            elapsed = f"{elapsed_ns / 1_000:.3f} us"
+        elif elapsed_ns >= 0:
+            elapsed = f"{elapsed_ns} ns"
+        else:
+            elapsed = "unavailable (source clock is ahead)"
+
+        return readable_timestamp, elapsed
 
     def __init__(self, id: str, domain_id: int, topic_name: str, topic_type, qos, entityType, parent=None):
         super().__init__(parent)
@@ -36,6 +67,8 @@ class DispatcherThread(QThread):
         self.domain_participant = None
         self.running = False
         self.readerData = []
+        self.writerIdsByHandle = {}
+        self.writerParticipantIdsByHandle = {}
         self.writerData = {}
         self.mutex = Lock()
         self.dpSetUpDone = Event()
@@ -158,10 +191,59 @@ class DispatcherThread(QThread):
                 if amount_triggered == 0:
                     continue
 
-                for (_id, _, _, readItem, condItem) in self.readerData:
-                    for sample in readItem.take(condition=condItem):
+                for (_id, topic, _, readItem, condItem) in self.readerData:
+                    samples = readItem.take(condition=condItem)
+                    if not samples:
+                        continue
+
+                    received_timestamp_ns = time.time_ns()
+                    received_time = datetime.datetime.fromtimestamp(
+                        received_timestamp_ns / 1_000_000_000,
+                        tz=datetime.timezone.utc
+                    ).astimezone()
+
+                    for sample in samples:
                         logging.trace(f"Received sample: {str(sample)}")
-                        self.onData.emit(_id, f"[{str(datetime.datetime.now().isoformat())}]  -  {str(sample)}")
+                        sample_data = ""
+                        if isinstance(sample, InvalidSample):
+                            sample_data = f"{str(sample.key_sample)}"
+                        else:
+                            sample_data = str(sample)
+                        source_timestamp, transmission_time = self._format_sample_timing(
+                            sample.sample_info,
+                            received_timestamp_ns
+                        )
+                        publication_handle = sample.sample_info.publication_handle
+                        writer_id = self.writerIdsByHandle.get(publication_handle, "-")
+                        writer_participant_id = self.writerParticipantIdsByHandle.get(
+                            publication_handle, ""
+                        )
+                        try:
+                            publication = readItem.get_matched_publication_data(publication_handle)
+                            if publication is not None:
+                                writer_id = str(publication.key)
+                                writer_participant_id = str(publication.participant_key)
+                                self.writerIdsByHandle[publication_handle] = writer_id
+                                self.writerParticipantIdsByHandle[publication_handle] = \
+                                    writer_participant_id
+                        except Exception:
+                            pass
+                        received_timestamp = received_time.isoformat(timespec="milliseconds")
+                        self.onData.emit(
+                            _id,
+                            sample_data,
+                            str(sample.sample_info),
+                            sample.sample_info.valid_data,
+                            source_timestamp,
+                            transmission_time,
+                            received_timestamp,
+                            writer_id,
+                            str(readItem.guid),
+                            self.domain_id,
+                            writer_participant_id,
+                            str(topic.typename),
+                            str(topic.name)
+                        )
 
                 # clean up references to last items
                 _id = None

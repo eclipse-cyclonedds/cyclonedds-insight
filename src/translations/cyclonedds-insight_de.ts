@@ -404,6 +404,66 @@
     <message id="listener.sample.export">
         <translation>Sample-Protokoll exportieren</translation>
     </message>
+    <message id="listener.sample.info">
+        <translation>Sample-Info</translation>
+    </message>
+    <message id="listener.sample.invalid">
+        <translation>Nicht mehr vorhanden</translation>
+    </message>
+    <message id="listener.sample.source.timestamp">
+        <translation>Quellzeit</translation>
+    </message>
+    <message id="listener.sample.received.timestamp">
+        <translation>Empfangszeit</translation>
+    </message>
+    <message id="listener.sample.writer.id">
+        <translation>Sender-Endpunkt</translation>
+    </message>
+    <message id="listener.sample.sent.from">
+        <translation>Gesendet von</translation>
+    </message>
+    <message id="listener.sample.topic.type">
+        <translation>Topic-Typ</translation>
+    </message>
+    <message id="listener.sample.topic.name">
+        <translation>Topic-Name</translation>
+    </message>
+    <message id="listener.sample.writer.addresses">
+        <translation>Adressen</translation>
+    </message>
+    <message id="listener.sample.group.path">
+        <translation>Nachrichtenpfad</translation>
+    </message>
+    <message id="listener.sample.group.destination">
+        <translation>Ziel</translation>
+    </message>
+    <message id="listener.sample.group.topic">
+        <translation>Topic</translation>
+    </message>
+    <message id="listener.sample.group.timing">
+        <translation>Zeitangaben</translation>
+    </message>
+    <message id="listener.sample.group.raw">
+        <translation>Unverarbeitete Sample-Info</translation>
+    </message>
+    <message id="listener.sample.reader.id">
+        <translation>Empfänger-Endpunkt</translation>
+    </message>
+    <message id="listener.sample.writer.application">
+        <translation>Anwendung</translation>
+    </message>
+    <message id="listener.sample.writer.hostname">
+        <translation>Host</translation>
+    </message>
+    <message id="listener.sample.writer.process.id">
+        <translation>Prozess-ID</translation>
+    </message>
+    <message id="listener.sample.transmission.time">
+        <translation>Ungefähre Übertragung</translation>
+    </message>
+    <message id="listener.sample.transmission.hint">
+        <translation>Nur aussagekräftig, wenn Sender- und Empfängeruhren synchronisiert sind.</translation>
+    </message>
 
     <!-- log -->
     <message id="log.application">

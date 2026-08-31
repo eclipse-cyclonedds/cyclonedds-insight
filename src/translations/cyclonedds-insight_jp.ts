@@ -404,6 +404,66 @@
     <message id="listener.sample.export">
         <translation>Sample ログをエクスポート</translation>
     </message>
+    <message id="listener.sample.info">
+        <translation>Sample 情報</translation>
+    </message>
+    <message id="listener.sample.invalid">
+        <translation>存在しません</translation>
+    </message>
+    <message id="listener.sample.source.timestamp">
+        <translation>送信元時刻</translation>
+    </message>
+    <message id="listener.sample.received.timestamp">
+        <translation>受信時刻</translation>
+    </message>
+    <message id="listener.sample.writer.id">
+        <translation>送信側エンドポイント</translation>
+    </message>
+    <message id="listener.sample.sent.from">
+        <translation>送信元</translation>
+    </message>
+    <message id="listener.sample.topic.type">
+        <translation>Topic 型</translation>
+    </message>
+    <message id="listener.sample.topic.name">
+        <translation>Topic 名</translation>
+    </message>
+    <message id="listener.sample.writer.addresses">
+        <translation>アドレス</translation>
+    </message>
+    <message id="listener.sample.group.path">
+        <translation>メッセージ経路</translation>
+    </message>
+    <message id="listener.sample.group.destination">
+        <translation>受信先</translation>
+    </message>
+    <message id="listener.sample.group.topic">
+        <translation>Topic</translation>
+    </message>
+    <message id="listener.sample.group.timing">
+        <translation>タイミング</translation>
+    </message>
+    <message id="listener.sample.group.raw">
+        <translation>Raw Sample 情報</translation>
+    </message>
+    <message id="listener.sample.reader.id">
+        <translation>受信側エンドポイント</translation>
+    </message>
+    <message id="listener.sample.writer.application">
+        <translation>アプリケーション</translation>
+    </message>
+    <message id="listener.sample.writer.hostname">
+        <translation>ホスト</translation>
+    </message>
+    <message id="listener.sample.writer.process.id">
+        <translation>プロセス ID</translation>
+    </message>
+    <message id="listener.sample.transmission.time">
+        <translation>推定転送時間</translation>
+    </message>
+    <message id="listener.sample.transmission.hint">
+        <translation>送信側と受信側の時計が同期している場合のみ有効です。</translation>
+    </message>
 
     <!-- log -->
     <message id="log.application">

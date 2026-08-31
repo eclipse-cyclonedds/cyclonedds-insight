@@ -19,6 +19,19 @@ class ReceiverModel(QAbstractListModel):
 
     ReaderIdRole = Qt.UserRole + 1
     ReceivedMsgRole = Qt.UserRole + 2
+    SampleInfoRole = Qt.UserRole + 3
+    ValidDataRole = Qt.UserRole + 4
+    SourceTimestampRole = Qt.UserRole + 5
+    TransmissionTimeRole = Qt.UserRole + 6
+    ReceivedTimestampRole = Qt.UserRole + 7
+    WriterIdRole = Qt.UserRole + 8
+    DdsReaderIdRole = Qt.UserRole + 9
+    WriterApplicationRole = Qt.UserRole + 10
+    WriterHostnameRole = Qt.UserRole + 11
+    WriterProcessIdRole = Qt.UserRole + 12
+    WriterAddressesRole = Qt.UserRole + 13
+    TopicTypeRole = Qt.UserRole + 14
+    TopicNameRole = Qt.UserRole + 15
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -38,18 +51,62 @@ class ReceiverModel(QAbstractListModel):
             return item["readerId"]
         if role == self.ReceivedMsgRole:
             return item["msg"]
+        if role == self.SampleInfoRole:
+            return item["sampleInfo"]
+        if role == self.ValidDataRole:
+            return item["validData"]
+        if role == self.SourceTimestampRole:
+            return item["sourceTimestamp"]
+        if role == self.TransmissionTimeRole:
+            return item["transmissionTime"]
+        if role == self.ReceivedTimestampRole:
+            return item["receivedTimestamp"]
+        if role == self.WriterIdRole:
+            return item["writerId"]
+        if role == self.DdsReaderIdRole:
+            return item["ddsReaderId"]
+        if role == self.WriterApplicationRole:
+            return item["writerApplication"]
+        if role == self.WriterHostnameRole:
+            return item["writerHostname"]
+        if role == self.WriterProcessIdRole:
+            return item["writerProcessId"]
+        if role == self.WriterAddressesRole:
+            return item["writerAddresses"]
+        if role == self.TopicTypeRole:
+            return item["topicType"]
+        if role == self.TopicNameRole:
+            return item["topicName"]
 
         return None
 
     def roleNames(self):
         return {
             self.ReaderIdRole: b"readerId",
-            self.ReceivedMsgRole: b"receivedMsg"
+            self.ReceivedMsgRole: b"receivedMsg",
+            self.SampleInfoRole: b"sampleInfo",
+            self.ValidDataRole: b"validData",
+            self.SourceTimestampRole: b"sourceTimestamp",
+            self.TransmissionTimeRole: b"transmissionTime",
+            self.ReceivedTimestampRole: b"receivedTimestamp",
+            self.WriterIdRole: b"writerId",
+            self.DdsReaderIdRole: b"ddsReaderId",
+            self.WriterApplicationRole: b"writerApplication",
+            self.WriterHostnameRole: b"writerHostname",
+            self.WriterProcessIdRole: b"writerProcessId",
+            self.WriterAddressesRole: b"writerAddresses",
+            self.TopicTypeRole: b"topicType",
+            self.TopicNameRole: b"topicName"
         }
 
 
-    @Slot(str, str)
-    def addReceivedMsg(self, readerId, msg):
+    @Slot(str, str, str, bool, str, str, str, str, str, str, str, str, str, str,
+          str)
+    def addReceivedMsg(self, readerId, msg, sampleInfo, validData,
+                       sourceTimestamp, transmissionTime, receivedTimestamp,
+                       writerId, ddsReaderId, writerApplication,
+                       writerHostname, writerProcessId, writerAddresses,
+                       topicType, topicName):
         row = len(self._messages)
 
         self.beginInsertRows(QModelIndex(), row, row)
@@ -57,6 +114,19 @@ class ReceiverModel(QAbstractListModel):
         self._messages.append({
             "readerId": readerId,
             "msg": msg,
+            "sampleInfo": sampleInfo,
+            "validData": validData,
+            "sourceTimestamp": sourceTimestamp,
+            "transmissionTime": transmissionTime,
+            "receivedTimestamp": receivedTimestamp,
+            "writerId": writerId,
+            "ddsReaderId": ddsReaderId,
+            "writerApplication": writerApplication,
+            "writerHostname": writerHostname,
+            "writerProcessId": writerProcessId,
+            "writerAddresses": writerAddresses,
+            "topicType": topicType,
+            "topicName": topicName,
         })
 
         if readerId not in self._rows_by_reader:
@@ -82,6 +152,6 @@ class ReceiverModel(QAbstractListModel):
         try:
             with open(filePath, "w", encoding="utf-8") as f:
                 for item in self._messages:
-                    f.write(f"{item['msg']}\n")
+                    f.write(f"[{item['receivedTimestamp']}]  -  {item['msg']}\n")
         except Exception as e:
             logging.error(f"Error exporting messages to file: {e}")

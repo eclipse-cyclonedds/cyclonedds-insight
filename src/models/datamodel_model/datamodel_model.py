@@ -29,13 +29,17 @@ from dds_access.datatypes.entity_type import EntityType
 from module_handler import DataModelHandler
 from utils.qml_utils import QmlUtils
 import time
+from pathlib import Path
 
 
 class DatamodelModel(QAbstractListModel):
 
     NameRole = Qt.UserRole + 1
 
-    newDataArrived = Signal(str, str)
+    newDataArrived = Signal(
+        str, str, str, bool, str, str, str, str, str, str, str, str, str, str,
+        str
+    )
     isLoadingSignal = Signal(bool)
     requestDataType = Signal(str, int, str, str)
     newWriterSignal = Signal(str, int, str, str, object)
@@ -98,9 +102,30 @@ class DatamodelModel(QAbstractListModel):
     def endInsertModule(self):
         self.endInsertRows()
 
-    @Slot(str, str)
-    def onData(self, _id: str, data: str):
-        self.newDataArrived.emit(_id, data)
+    @Slot(str, str, str, bool, str, str, str, str, str, int, str, str, str)
+    def onData(self, _id: str, data: str, sample_info: str, valid_data: bool,
+               source_timestamp: str, transmission_time: str,
+               received_timestamp: str, writer_id: str, reader_id: str,
+               domain_id: int, writer_participant_id: str, topic_type: str,
+               topic_name: str):
+        participant = None
+        if domain_id in self.ddsData.the_domains:
+            participant = self.ddsData.the_domains[domain_id].getParticipantByKey(
+                writer_participant_id
+            )
+
+        process_name = dds_utils.getProperty(participant, dds_utils.PROCESS_NAMES)
+        if process_name != "Unknown":
+            process_name = Path(process_name.replace("\\", os.path.sep)).stem
+        hostname = dds_utils.getHostname(participant)
+        process_id = dds_utils.getProperty(participant, dds_utils.PIDS)
+        addresses = dds_utils.getProperty(participant, dds_utils.ADDRESSES)
+
+        self.newDataArrived.emit(
+            _id, data, sample_info, valid_data, source_timestamp,
+            transmission_time, received_timestamp, writer_id, reader_id,
+            process_name, hostname, process_id, addresses, topic_type, topic_name
+        )
 
     @Slot()
     def shutdownEndpoints(self):

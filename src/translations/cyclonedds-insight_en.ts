@@ -404,6 +404,66 @@
     <message id="listener.sample.export">
         <translation>Export Sample Log</translation>
     </message>
+    <message id="listener.sample.info">
+        <translation>Sample Info</translation>
+    </message>
+    <message id="listener.sample.invalid">
+        <translation>Not Alive</translation>
+    </message>
+    <message id="listener.sample.source.timestamp">
+        <translation>Source time</translation>
+    </message>
+    <message id="listener.sample.received.timestamp">
+        <translation>Received time</translation>
+    </message>
+    <message id="listener.sample.writer.id">
+        <translation>Sender endpoint</translation>
+    </message>
+    <message id="listener.sample.sent.from">
+        <translation>Sent from</translation>
+    </message>
+    <message id="listener.sample.topic.type">
+        <translation>Topic type</translation>
+    </message>
+    <message id="listener.sample.topic.name">
+        <translation>Topic name</translation>
+    </message>
+    <message id="listener.sample.writer.addresses">
+        <translation>Addresses</translation>
+    </message>
+    <message id="listener.sample.group.path">
+        <translation>Message path</translation>
+    </message>
+    <message id="listener.sample.group.destination">
+        <translation>Destination</translation>
+    </message>
+    <message id="listener.sample.group.topic">
+        <translation>Topic</translation>
+    </message>
+    <message id="listener.sample.group.timing">
+        <translation>Timing</translation>
+    </message>
+    <message id="listener.sample.group.raw">
+        <translation>Raw Sample Info</translation>
+    </message>
+    <message id="listener.sample.reader.id">
+        <translation>Receiver endpoint</translation>
+    </message>
+    <message id="listener.sample.writer.application">
+        <translation>Application</translation>
+    </message>
+    <message id="listener.sample.writer.hostname">
+        <translation>Host</translation>
+    </message>
+    <message id="listener.sample.writer.process.id">
+        <translation>Process ID</translation>
+    </message>
+    <message id="listener.sample.transmission.time">
+        <translation>Approx. transmission</translation>
+    </message>
+    <message id="listener.sample.transmission.hint">
+        <translation>Meaningful only when sender and receiver clocks are synchronized.</translation>
+    </message>
 
     <!-- log -->
     <message id="log.application">
