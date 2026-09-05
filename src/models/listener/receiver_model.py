@@ -12,7 +12,7 @@
 
 from loguru import logger as logging
 
-from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, Slot
+from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Property, Signal, Slot
 
 
 class ReceiverModel(QAbstractListModel):
@@ -33,19 +33,39 @@ class ReceiverModel(QAbstractListModel):
     TopicTypeRole = Qt.UserRole + 14
     TopicNameRole = Qt.UserRole + 15
 
+    instanceViewChanged = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._messages = []
-        self._rows_by_reader = {}
+        self._instances = []
+        self._instance_rows = {}
+        self._instance_view = False
+
+    @Property(bool, notify=instanceViewChanged)
+    def instanceView(self):
+        return self._instance_view
+
+    @instanceView.setter
+    def instanceView(self, enabled):
+        if self._instance_view == enabled:
+            return
+        self.beginResetModel()
+        self._instance_view = enabled
+        self.endResetModel()
+        self.instanceViewChanged.emit()
+
+    def _visible_messages(self):
+        return self._instances if self._instance_view else self._messages
 
     def rowCount(self, parent=QModelIndex()):
-        return 0 if parent.isValid() else len(self._messages)
+        return 0 if parent.isValid() else len(self._visible_messages())
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
             return None
 
-        item = self._messages[index.row()]
+        item = self._visible_messages()[index.row()]
 
         if role == self.ReaderIdRole:
             return item["readerId"]
@@ -101,17 +121,13 @@ class ReceiverModel(QAbstractListModel):
 
 
     @Slot(str, str, str, bool, str, str, str, str, str, str, str, str, str, str,
-          str)
+          str, str)
     def addReceivedMsg(self, readerId, msg, sampleInfo, validData,
                        sourceTimestamp, transmissionTime, receivedTimestamp,
                        writerId, ddsReaderId, writerApplication,
                        writerHostname, writerProcessId, writerAddresses,
-                       topicType, topicName):
-        row = len(self._messages)
-
-        self.beginInsertRows(QModelIndex(), row, row)
-
-        self._messages.append({
+                       topicType, topicName, instanceHandle):
+        item = {
             "readerId": readerId,
             "msg": msg,
             "sampleInfo": sampleInfo,
@@ -127,14 +143,29 @@ class ReceiverModel(QAbstractListModel):
             "writerAddresses": writerAddresses,
             "topicType": topicType,
             "topicName": topicName,
-        })
+        }
+        # DDS handles identify keyed (including composite-key) and unkeyed
+        # instances within a reader, independently of their publishing writer.
+        key = (readerId, instanceHandle)
+        instance_row = self._instance_rows.get(key)
+        is_new = instance_row is None
+        row = len(self._instances) if self._instance_view else len(self._messages)
+        inserting = not self._instance_view or is_new
+        if inserting:
+            self.beginInsertRows(QModelIndex(), row, row)
 
-        if readerId not in self._rows_by_reader:
-            self._rows_by_reader[readerId] = []
+        self._messages.append(item)
+        if is_new:
+            self._instance_rows[key] = len(self._instances)
+            self._instances.append(item)
+        else:
+            self._instances[instance_row] = item
 
-        self._rows_by_reader[readerId].append(row)
-
-        self.endInsertRows()
+        if inserting:
+            self.endInsertRows()
+        else:
+            index = self.index(instance_row, 0)
+            self.dataChanged.emit(index, index, list(self.roleNames()))
 
 
     @Slot()
@@ -142,7 +173,8 @@ class ReceiverModel(QAbstractListModel):
         self.beginResetModel()
 
         self._messages.clear()
-        self._rows_by_reader.clear()
+        self._instances.clear()
+        self._instance_rows.clear()
 
         self.endResetModel()
 

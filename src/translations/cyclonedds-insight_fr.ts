@@ -3,6 +3,13 @@
 <TS version="2.1" language="fr">
 <context>
     <name></name>
+    <message id="listener.view.log">
+        <translation>Journal des messages</translation>
+    </message>
+    <message id="listener.view.instances">
+        <translation>Dernier message par instance</translation>
+    </message>
+
     <!-- about -->
     <message id="about.contributors">
         <translation>Merci à toutes les personnes ayant contribué au projet Eclipse Cyclone DDS ❤️</translation>

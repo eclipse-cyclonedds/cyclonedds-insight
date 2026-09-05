@@ -30,7 +30,7 @@ from dds_access.datatypes.entity_type import EntityType
 class DispatcherThread(QThread):
 
     onData = Signal(
-        str, str, str, bool, str, str, str, str, str, int, str, str, str
+        str, str, str, bool, str, str, str, str, str, int, str, str, str, str
     )
     endpointCreated = Signal(str)
     endpointCreationFailed = Signal(str, str)
@@ -248,7 +248,8 @@ class DispatcherThread(QThread):
                                 self.domain_id,
                                 writer_participant_id,
                                 str(topic.typename),
-                                str(topic.name)
+                                str(topic.name),
+                                str(sample.sample_info.instance_handle)
                             )
 
                     _id = None

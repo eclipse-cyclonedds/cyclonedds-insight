@@ -38,7 +38,7 @@ class DatamodelModel(QAbstractListModel):
 
     newDataArrived = Signal(
         str, str, str, bool, str, str, str, str, str, str, str, str, str, str,
-        str
+        str, str
     )
     isLoadingSignal = Signal(bool)
     requestDataType = Signal(str, int, str, str)
@@ -105,12 +105,12 @@ class DatamodelModel(QAbstractListModel):
     def endInsertModule(self):
         self.endInsertRows()
 
-    @Slot(str, str, str, bool, str, str, str, str, str, int, str, str, str)
+    @Slot(str, str, str, bool, str, str, str, str, str, int, str, str, str, str)
     def onData(self, _id: str, data: str, sample_info: str, valid_data: bool,
                source_timestamp: str, transmission_time: str,
                received_timestamp: str, writer_id: str, reader_id: str,
                domain_id: int, writer_participant_id: str, topic_type: str,
-               topic_name: str):
+               topic_name: str, instance_handle: str):
         participant = None
         if domain_id in self.ddsData.the_domains:
             participant = self.ddsData.the_domains[domain_id].getParticipantByKey(
@@ -127,7 +127,8 @@ class DatamodelModel(QAbstractListModel):
         self.newDataArrived.emit(
             _id, data, sample_info, valid_data, source_timestamp,
             transmission_time, received_timestamp, writer_id, reader_id,
-            process_name, hostname, process_id, addresses, topic_type, topic_name
+            process_name, hostname, process_id, addresses, topic_type, topic_name,
+            instance_handle
         )
 
     @Slot()

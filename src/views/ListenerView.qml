@@ -108,6 +108,13 @@ Rectangle {
                 onClicked: receiverModel.clear()
             }
 
+            ComboBox {
+                implicitContentWidthPolicy: ComboBox.WidestText
+                model: [qsTrId("listener.view.log"), qsTrId("listener.view.instances")]
+                currentIndex: receiverModel.instanceView ? 1 : 0
+                onActivated: receiverModel.instanceView = currentIndex === 1
+            }
+
             Item {
                 implicitHeight: 1
                 Layout.fillWidth: true
