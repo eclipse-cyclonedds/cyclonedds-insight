@@ -10,13 +10,29 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import QSortFilterProxyModel, Slot
+from PySide6.QtCore import Property, QSortFilterProxyModel, Signal, Slot
 
 
 class ReceiverProxyModel(QSortFilterProxyModel):
+    searchTextChanged = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._hidden_reader_ids = set()
+        self._search_text = ""
+        self._search_term = ""
+
+    @Property(str, notify=searchTextChanged)
+    def searchText(self):
+        return self._search_text
+
+    @searchText.setter
+    def searchText(self, text):
+        if self._search_text != text:
+            self._search_text = text
+            self._search_term = text.strip().casefold()
+            self.invalidateFilter()
+            self.searchTextChanged.emit()
 
     @Slot(str, bool)
     def showReaderId(self, reader_id: str, show: bool):
@@ -67,4 +83,8 @@ class ReceiverProxyModel(QSortFilterProxyModel):
             return False
 
         reader_id = model.data(index, model.ReaderIdRole)
-        return reader_id not in self._hidden_reader_ids
+        if reader_id in self._hidden_reader_ids:
+            return False
+
+        message = model.data(index, model.ReceivedMsgRole) or ""
+        return not self._search_term or self._search_term in message.casefold()
