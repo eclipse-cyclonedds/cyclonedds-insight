@@ -3,6 +3,13 @@
 <TS version="2.1" language="de">
 <context>
     <name></name>
+    <message id="listener.view.log">
+        <translation>Nachrichtenprotokoll</translation>
+    </message>
+    <message id="listener.view.instances">
+        <translation>Neuester Wert pro Instanz</translation>
+    </message>
+
     <!-- about -->
     <message id="about.contributors">
         <translation>Danke an alle Mitwirkenden des Eclipse-Cyclone-DDS-Projekts ❤️</translation>

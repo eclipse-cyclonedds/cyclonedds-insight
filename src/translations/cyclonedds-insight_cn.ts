@@ -3,6 +3,13 @@
 <TS version="2.1" language="zh_CN">
 <context>
     <name></name>
+    <message id="listener.view.log">
+        <translation>消息日志</translation>
+    </message>
+    <message id="listener.view.instances">
+        <translation>每个实例的最新值</translation>
+    </message>
+
     <!-- about -->
     <message id="about.contributors">
         <translation>感谢 Eclipse Cyclone DDS 项目的所有贡献者 ❤️</translation>
