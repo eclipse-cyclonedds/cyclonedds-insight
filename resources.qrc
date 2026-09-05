@@ -59,6 +59,8 @@
         <file>src/views/QosSelector.qml</file>
         <file>src/views/ListenerView.qml</file>
         <file>src/views/LoadingView.qml</file>
+        <file>src/views/errors/ErrorCenter.qml</file>
+        <file>src/views/errors/ErrorsDialog.qml</file>
         <file>src/views/TesterView.qml</file>
         <file>src/views/AboutWindow.qml</file>
         <file>src/views/updater/CheckForUpdates.qml</file>

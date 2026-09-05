@@ -20,7 +20,7 @@ import glob
 
 class IdlcWorkerThread(QThread):
 
-    doneSignale = Signal()
+    doneSignale = Signal(bool, str)
     
     def __init__(self, urls, destination_folder_py, destination_folder_idl, parent=None):
         super().__init__(parent)
@@ -30,6 +30,7 @@ class IdlcWorkerThread(QThread):
 
     def run(self):
         logging.info("Start idlc ...")
+        errors = []
         for url in self.urls:
             logging.debug("Copy " + str(url) + " ...")
             if url.isLocalFile():
@@ -47,10 +48,16 @@ class IdlcWorkerThread(QThread):
                 if QFile.copy(source_file, destination_file):
                     logging.debug("File copied successfully. " + os.path.basename(source_file))
                 else:
-                    logging.error("Failed to copy file.")
-                    break
+                    errors.append(f"Could not copy '{os.path.basename(source_file)}' into the application data folder.")
+            else:
+                errors.append(f"Only local IDL files can be imported: {url.toString()}")
 
         parent_dir = self.destination_folder_idl
+        if not os.path.isdir(parent_dir):
+            message = "No IDL files could be prepared for import."
+            logging.error(message)
+            self.doneSignale.emit(False, message)
+            return
         idls = [name for name in os.listdir(parent_dir) if os.path.isfile(os.path.join(parent_dir, name))]
 
         for idl in idls:
@@ -75,7 +82,8 @@ class IdlcWorkerThread(QThread):
                     arguments.append(os.path.normpath(matching_files[0]))
                     logging.debug("Found _idlpy: " + matching_files[0])
                 else:
-                    logging.critical("No _idlpy lib found")
+                    errors.append("The IDL Python generator library (_idlpy) was not found.")
+                    continue
             else:
                 arguments.append("py")
                 # Started as python program
@@ -102,13 +110,20 @@ class IdlcWorkerThread(QThread):
             process.start(command, arguments)
 
             if process.waitForFinished():
-                if process.exitStatus() == QProcess.NormalExit:
-                    logging.debug(str(process.readAll()))
+                output = bytes(process.readAll()).decode(errors="replace").strip()
+                if process.exitStatus() == QProcess.NormalExit and process.exitCode() == 0:
+                    logging.debug(output)
                     logging.debug("Process finished successfully.") 
                 else:
-                    logging.error("Process failed with error code: " + str(process.exitCode()))
+                    detail = output or f"idlc exited with code {process.exitCode()}"
+                    errors.append(f"Failed to compile '{idl}': {detail}")
             else:
-                logging.error("Failed to start process:" + str(process.errorString()))
+                errors.append(f"Failed to run idlc for '{idl}': {process.errorString()}")
 
         logging.info("idlc done.")
-        self.doneSignale.emit()
+        if errors:
+            message = "\n\n".join(errors)
+            logging.error(message)
+            self.doneSignale.emit(False, message)
+        else:
+            self.doneSignale.emit(True, "")

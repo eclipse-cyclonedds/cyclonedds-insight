@@ -1,10 +1,12 @@
-rm -r ./deps &&
+mkdir -p deps && 
+rm -rf ./deps &&
 export CYCLONEDDS_HOME=$PWD/deps/cyclonedds/build/install &&
 export CYCLONEDDS_PYTHON_HOME=$PWD/deps/cyclonedds-python && 
 mkdir -p deps && 
 cd deps && 
 python3 -m venv venv && 
 source venv/bin/activate && 
+pip3 install --upgrade pip && 
 git clone https://github.com/eclipse-cyclonedds/cyclonedds.git && 
 cd cyclonedds && mkdir build && cd build && 
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./install -DENABLE_SSL=off -DENABLE_SECURITY=off .. && cmake --build . --config Release --target install && 

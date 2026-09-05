@@ -231,6 +231,7 @@ class TesterModel(QAbstractListModel):
 
     showQml = Signal(str, str)
     countChanged = Signal()
+    operationError = Signal(str)
 
     createEndpointFromTesterSignal = Signal(str, int, str, str, int, str, object, object)
 
@@ -268,6 +269,16 @@ class TesterModel(QAbstractListModel):
         if messageRoot:
             dataTreeModel.fromJson(messageRoot, self.dataModelHandler)
         return dataTreeModel
+
+    def _createValidatedDataTreeModel(self, topicType, messageRoot=None):
+        unresolvedTypes = set()
+        rootNode = self.dataModelHandler.getRootNode(topicType, unresolvedTypes)
+        if unresolvedTypes:
+            return None, unresolvedTypes
+        dataTreeModel = DataTreeModel(rootNode, parent=self)
+        if messageRoot:
+            dataTreeModel.fromJson(messageRoot, self.dataModelHandler)
+        return dataTreeModel, unresolvedTypes
 
     def _getDataReference(self, dataItemId):
         for writerId, item in self.items.items():
@@ -771,66 +782,109 @@ class TesterModel(QAbstractListModel):
     @Slot(str)
     def importJson(self, filePath):
         if not os.path.isfile(filePath):
-            logging.error(f"File does not exist: {filePath}")
+            message = f"Cannot import preset: file does not exist: {filePath}"
+            logging.error(message)
+            self.operationError.emit(message)
             return
-        with open(filePath, "r", encoding="utf-8") as f:
-            content = f.read()
-            logging.debug(f"Load file content as json from file: {filePath}")
-            j = None
-            try:
-                j = json.loads(content)
-            except Exception as e:
-                logging.error(f"Failed to parse JSON: {e} from file {filePath}")
-                return
+        try:
+            with open(filePath, "r", encoding="utf-8") as f:
+                content = f.read()
+        except Exception as error:
+            message = f"Cannot read preset '{os.path.basename(filePath)}': {error}"
+            logging.error(message)
+            self.operationError.emit(message)
+            return
+        logging.debug(f"Load file content as json from file: {filePath}")
+        try:
+            j = json.loads(content)
+        except Exception as e:
+            message = f"Cannot import preset '{os.path.basename(filePath)}': invalid JSON ({e})"
+            logging.error(message)
+            self.operationError.emit(message)
+            return
+        if not isinstance(j, dict):
+            message = f"Cannot import preset '{os.path.basename(filePath)}': the JSON root must be an object."
+            logging.error(message)
+            self.operationError.emit(message)
+            return
 
-            presets = j.get("presets", [])
-            for preset in presets:
-                _id = preset.get("id", str(uuid.uuid4()))
-                presetName = preset.get("preset_name", "Unknown")
-                description = preset.get("description", "")
-                topicType = preset.get("topic_type", "")
-                domainId = preset.get("domain_id", 0)
-                topicName = preset.get("topic_name", "")
-                qos = preset.get("qos", {})
-                firstMessage = preset.get("message", {"root": {}})
-                additionalMessages = preset.get("messages", [])
+        presets = j.get("presets", [])
+        if not isinstance(presets, list):
+            message = f"Cannot import preset '{os.path.basename(filePath)}': 'presets' must be a list."
+            logging.error(message)
+            self.operationError.emit(message)
+            return
+        invalidPresets = []
+        for preset in presets:
+            _id = preset.get("id", str(uuid.uuid4()))
+            presetName = preset.get("preset_name", "Unknown")
+            description = preset.get("description", "")
+            topicType = preset.get("topic_type", "")
+            domainId = preset.get("domain_id", 0)
+            topicName = preset.get("topic_name", "")
+            qos = preset.get("qos", {})
+            firstMessage = preset.get("message", {"root": {}})
+            additionalMessages = preset.get("messages", [])
+            messages = [firstMessage] + additionalMessages
 
-                messages = [firstMessage] + additionalMessages
+            dataTreeModels = []
+            messageNames = []
+            dataItemIds = []
+            for index, message in enumerate(messages):
+                messageRoot = message.get("root", {}) if isinstance(message, dict) else {}
+                dataTreeModel, unresolvedTypes = self._createValidatedDataTreeModel(
+                    topicType, messageRoot
+                )
+                if unresolvedTypes:
+                    invalidPresets.append((presetName, topicType, unresolvedTypes))
+                    dataTreeModels = []
+                    break
+                dataTreeModels.append(dataTreeModel)
+                messageName = message.get("name", "") if isinstance(message, dict) else ""
+                messageNames.append(messageName or f"Data {index + 1}")
+                dataItemIds.append(
+                    _id if index == 0 else message.get("id", "") or str(uuid.uuid4())
+                )
 
-                dataTreeModels = []
-                messageNames = []
-                dataItemIds = []
-                for index, message in enumerate(messages):
-                    messageRoot = message.get("root", {}) if isinstance(message, dict) else {}
-                    dataTreeModels.append(self._createDataTreeModel(topicType, messageRoot))
-                    messageName = message.get("name", "") if isinstance(message, dict) else ""
-                    messageNames.append(messageName or f"Data {index + 1}")
-                    if index == 0:
-                        dataItemIds.append(_id)
-                    else:
-                        messageId = message.get("id", "") if isinstance(message, dict) else ""
-                        dataItemIds.append(messageId or str(uuid.uuid4()))
+            if not dataTreeModels:
+                continue
 
-                self.beginResetModel()
-                self.items[_id] = WriterItem(_id, domainId, topicName, topicType, None, None, dataTreeModels, presetName, copy.deepcopy(qos), description, messageNames, dataItemIds)
-                self.endResetModel()
-                self.countChanged.emit()
+            self.beginResetModel()
+            self.items[_id] = WriterItem(_id, domainId, topicName, topicType, None, None, dataTreeModels, presetName, copy.deepcopy(qos), description, messageNames, dataItemIds)
+            self.endResetModel()
+            self.countChanged.emit()
 
-            sequence_presets = j.get("sequence_presets", [])
-            for sequencePreset in sequence_presets:
-                mId = sequencePreset.get("id", str(uuid.uuid4()))
-                presetName = sequencePreset.get("preset_name", "Unknown")
-                description = sequencePreset.get("description", "")
-                sequenceItem = SequenceItem(presetName, description)
-                for sequenceReference in sequencePreset.get("sequence_items", []):
-                    dataItemId = self._getImportedSequenceDataItemId(sequenceReference)
-                    if dataItemId:
-                        sequenceItem.addSequenceItem(dataItemId)
+        if invalidPresets:
+            details = []
+            for presetName, topicType, unresolvedTypes in invalidPresets:
+                missing = ", ".join(sorted(unresolvedTypes))
+                details.append(
+                    f"• {presetName} ({topicType}): missing {missing}"
+                )
+            message = (
+                f"Some presets from '{os.path.basename(filePath)}' were not imported "
+                "because their datatypes are unavailable:\n\n"
+                + "\n".join(details)
+                + "\n\nImport the required IDL files and try again."
+            )
+            logging.error(message)
+            self.operationError.emit(message)
 
-                self.beginResetModel()
-                self.items[mId] = sequenceItem
-                self.endResetModel()
-                self.countChanged.emit()
+        sequence_presets = j.get("sequence_presets", [])
+        for sequencePreset in sequence_presets:
+            mId = sequencePreset.get("id", str(uuid.uuid4()))
+            presetName = sequencePreset.get("preset_name", "Unknown")
+            description = sequencePreset.get("description", "")
+            sequenceItem = SequenceItem(presetName, description)
+            for sequenceReference in sequencePreset.get("sequence_items", []):
+                dataItemId = self._getImportedSequenceDataItemId(sequenceReference)
+                if dataItemId:
+                    sequenceItem.addSequenceItem(dataItemId)
+
+            self.beginResetModel()
+            self.items[mId] = sequenceItem
+            self.endResetModel()
+            self.countChanged.emit()
 
     @Slot(str, int)
     def exportJson(self, filePath, currentIndex: int):
@@ -840,7 +894,8 @@ class TesterModel(QAbstractListModel):
 
         self.exportCount = None
         qmlUtils = QmlUtils()
-        qmlUtils.saveFileContent(filePath, json.dumps(self.exportData, indent=4))
+        if not qmlUtils.saveFileContent(filePath, json.dumps(self.exportData, indent=4)):
+            self.operationError.emit(f"Could not export preset to '{filePath}'.")
         self.resetExportData()
 
     @Slot(str)
@@ -851,7 +906,8 @@ class TesterModel(QAbstractListModel):
 
         self.exportCount = None
         qmlUtils = QmlUtils()
-        qmlUtils.saveFileContent(filePath, json.dumps(self.exportData, indent=4))
+        if not qmlUtils.saveFileContent(filePath, json.dumps(self.exportData, indent=4)):
+            self.operationError.emit(f"Could not export presets to '{filePath}'.")
         self.resetExportData()
 
     def _exportJsonItem(self, currentIndex: int):

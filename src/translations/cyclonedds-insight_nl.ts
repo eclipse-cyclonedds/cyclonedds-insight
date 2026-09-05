@@ -1018,6 +1018,67 @@
         <translation>Writers</translation>
     </message>
 
+    <!-- errors -->
+    <message id="errors.unknown">
+        <translation>Onbekende fout</translation>
+    </message>
+    <message id="idl.import.invalid-files">
+        <translation>IDL-import accepteert alleen .idl-bestanden. %1 bestand(en) zijn geweigerd.</translation>
+    </message>
+    <message id="errors.title">
+        <translation>Fouten</translation>
+    </message>
+    <message id="errors.count">
+        <translation>Fouten (%1)</translation>
+    </message>
+    <message id="errors.window.title">
+        <translation>Toepassingsfouten</translation>
+    </message>
+    <message id="errors.active.count">
+        <translation>%1 actief</translation>
+    </message>
+    <message id="errors.all.acknowledged">
+        <translation>Alle bevestigd</translation>
+    </message>
+    <message id="errors.none.reported">
+        <translation>Geen gemeld</translation>
+    </message>
+    <message id="errors.acknowledge.all">
+        <translation>Alles bevestigen</translation>
+    </message>
+    <message id="errors.recorded.one">
+        <translation>1 fout geregistreerd tijdens deze sessie</translation>
+    </message>
+    <message id="errors.recorded.count">
+        <translation>%1 fouten geregistreerd tijdens deze sessie</translation>
+    </message>
+    <message id="errors.acknowledged">
+        <translation>Bevestigd</translation>
+    </message>
+    <message id="errors.active">
+        <translation>Actief</translation>
+    </message>
+    <message id="errors.acknowledged.with-icon">
+        <translation>✓ Bevestigd</translation>
+    </message>
+    <message id="errors.acknowledge">
+        <translation>Bevestigen</translation>
+    </message>
+    <message id="errors.empty.title">
+        <translation>Geen fouten gemeld</translation>
+    </message>
+    <message id="errors.empty.description">
+        <translation>Fouten uit deze sessie verschijnen hier.</translation>
+    </message>
+    <message id="errors.view.details">
+        <translation>Details bekijken</translation>
+    </message>
+    <message id="errors.view.count">
+        <translation>%1 fouten bekijken</translation>
+    </message>
+    <message id="errors.notification.dismiss">
+        <translation>Melding sluiten</translation>
+    </message>
     <!-- update -->
     <message id="update.artifacts.open">
         <translation>Buildartefacten openen</translation>

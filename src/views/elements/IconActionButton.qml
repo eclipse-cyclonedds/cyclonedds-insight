@@ -216,7 +216,8 @@ Rectangle {
     ToolTip {
         id: actionTooltip
         parent: iconActionButton
-        visible: mouseArea.containsMouse && iconActionButton.tooltipText.length > 0
+        visible: mouseArea.containsMouse
+                 && iconActionButton.tooltipText.trim().length > 0
         delay: 300
         text: iconActionButton.tooltipText
 

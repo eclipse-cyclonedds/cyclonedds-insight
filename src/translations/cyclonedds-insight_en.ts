@@ -1018,6 +1018,67 @@
         <translation>Writers</translation>
     </message>
 
+    <!-- errors -->
+    <message id="errors.unknown">
+        <translation>Unknown error</translation>
+    </message>
+    <message id="idl.import.invalid-files">
+        <translation>IDL import accepts only .idl files. %1 file(s) were rejected.</translation>
+    </message>
+    <message id="errors.title">
+        <translation>Errors</translation>
+    </message>
+    <message id="errors.count">
+        <translation>Errors (%1)</translation>
+    </message>
+    <message id="errors.window.title">
+        <translation>Application errors</translation>
+    </message>
+    <message id="errors.active.count">
+        <translation>%1 active</translation>
+    </message>
+    <message id="errors.all.acknowledged">
+        <translation>All acknowledged</translation>
+    </message>
+    <message id="errors.none.reported">
+        <translation>None reported</translation>
+    </message>
+    <message id="errors.acknowledge.all">
+        <translation>Acknowledge all</translation>
+    </message>
+    <message id="errors.recorded.one">
+        <translation>1 error recorded during this session</translation>
+    </message>
+    <message id="errors.recorded.count">
+        <translation>%1 errors recorded during this session</translation>
+    </message>
+    <message id="errors.acknowledged">
+        <translation>Acknowledged</translation>
+    </message>
+    <message id="errors.active">
+        <translation>Active</translation>
+    </message>
+    <message id="errors.acknowledged.with-icon">
+        <translation>✓ Acknowledged</translation>
+    </message>
+    <message id="errors.acknowledge">
+        <translation>Acknowledge</translation>
+    </message>
+    <message id="errors.empty.title">
+        <translation>No errors reported</translation>
+    </message>
+    <message id="errors.empty.description">
+        <translation>Errors from this session will appear here.</translation>
+    </message>
+    <message id="errors.view.details">
+        <translation>View details</translation>
+    </message>
+    <message id="errors.view.count">
+        <translation>View %1 errors</translation>
+    </message>
+    <message id="errors.notification.dismiss">
+        <translation>Dismiss notification</translation>
+    </message>
     <!-- update -->
     <message id="update.artifacts.open">
         <translation>Open build artifacts</translation>
