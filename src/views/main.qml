@@ -22,6 +22,7 @@ import "qrc:/src/views/selection_details"
 import "qrc:/src/views/shapes_demo"
 import "qrc:/src/views/config_editor"
 import "qrc:/src/views/updater"
+import "qrc:/src/views/errors"
 
 
 ApplicationWindow {
@@ -33,6 +34,12 @@ ApplicationWindow {
 
     property bool isDarkMode: false
     property bool shutdownInitiated: false
+    readonly property int problemCount: errorCenter.count
+    readonly property int totalProblemCount: errorCenter.totalCount
+
+    function openProblems() {
+        errorCenter.openProblems()
+    }
 
     header: HeaderToolBar {}
 
@@ -150,6 +157,14 @@ ApplicationWindow {
         buttons: MessageDialog.Ok;
     }
 
+    function showOperationError(message) {
+        errorCenter.addError(message)
+    }
+
+    ErrorCenter {
+        id: errorCenter
+    }
+
     IdlDropArea {
         id: idlDropAreaId
     }
@@ -170,6 +185,23 @@ ApplicationWindow {
         function onIsLoadingSignal(loading) {
             loadingViewId.visible = loading
         }
+        function onOperationError(message) {
+            rootWindow.showOperationError(message)
+        }
+    }
+
+    Connections {
+        target: testerModel
+        function onOperationError(message) {
+            rootWindow.showOperationError(message)
+        }
+    }
+
+    Connections {
+        target: qmlUtils
+        function onOperationError(message) {
+            rootWindow.showOperationError(message)
+        }
     }
 
     LoadingView {
@@ -187,7 +219,7 @@ ApplicationWindow {
             shutdownInitiated = true
             console.log("Shutdown QML ...")
             overviewId.aboutToClose()
-            treeModel.aboutToClose()  
+            treeModel.aboutToClose()
             console.log("Shutdown QML ... DONE")
         }
     }

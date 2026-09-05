@@ -27,6 +27,7 @@ class QmlUtils(QObject):
 
     aboutToQuit = Signal()
     requestDdsDataJsonSignal = Signal(str)
+    operationError = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -45,7 +46,9 @@ class QmlUtils(QObject):
         file_path = self.removeFilePrefix(file_path)
 
         if not os.path.isfile(file_path):
-            logging.error(f"File does not exist: {file_path}")
+            message = f"File does not exist: {file_path}"
+            logging.error(message)
+            self.operationError.emit(message)
             return ""
 
         try:
@@ -53,21 +56,29 @@ class QmlUtils(QObject):
                 content = file.read()
                 return content
         except Exception as e:
-            logging.error(f"Error reading file {file_path}: {e}")
+            message = f"Could not read file '{file_path}': {e}"
+            logging.error(message)
+            self.operationError.emit(message)
             return ""
 
-    @Slot(str, str)
+    @Slot(str, str, result=bool)
     def saveFileContent(self, file_path, content):
         file_path = self.removeFilePrefix(file_path)
         if not os.path.isfile(file_path):
-            logging.error(f"File does not exist: {file_path}")
-            return ""
+            message = f"Cannot save file because it does not exist: {file_path}"
+            logging.error(message)
+            self.operationError.emit(message)
+            return False
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content)
             logging.info(f"Saved content to file: {file_path}")
+            return True
         except Exception as e:
-            logging.error(f"Error writing file: {e}")
+            message = f"Could not write file '{file_path}': {e}"
+            logging.error(message)
+            self.operationError.emit(message)
+            return False
 
     @Slot(result=str)
     def getUserHome(self):
@@ -82,7 +93,7 @@ class QmlUtils(QObject):
     def toLocalFile(self, uri):
         return uri.toLocalFile()
 
-    @Slot(QUrl)
+    @Slot(QUrl, result=bool)
     def createFileFromQUrl(self, url):
         path = url.toLocalFile()
         file = QFile(path)
@@ -90,16 +101,22 @@ class QmlUtils(QObject):
         if not info.exists():
             dir_path = info.absolutePath()
             if not QDir().mkpath(dir_path):
-                logging.error(f"Failed to create directories: {dir_path}")
-                return
+                message = f"Could not create folder: {dir_path}"
+                logging.error(message)
+                self.operationError.emit(message)
+                return False
 
             if file.open(QFile.WriteOnly):
                 logging.debug(f"Created new file: {path}")
                 file.close()
             else:
-                logging.error(f"Failed to create file: {path}")
+                message = f"Could not create file: {path}"
+                logging.error(message)
+                self.operationError.emit(message)
+                return False
         else:
             logging.info(f"File already exists: {path}")
+        return True
 
     def removeFilePrefix(self, file_path: str) -> str:
         if file_path.startswith("file://"):

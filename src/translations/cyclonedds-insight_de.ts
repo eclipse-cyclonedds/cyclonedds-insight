@@ -1018,6 +1018,67 @@
         <translation>Writer</translation>
     </message>
 
+    <!-- errors -->
+    <message id="errors.unknown">
+        <translation>Unbekannter Fehler</translation>
+    </message>
+    <message id="idl.import.invalid-files">
+        <translation>Der IDL-Import akzeptiert nur .idl-Dateien. %1 Datei(en) wurden abgelehnt.</translation>
+    </message>
+    <message id="errors.title">
+        <translation>Fehler</translation>
+    </message>
+    <message id="errors.count">
+        <translation>Fehler (%1)</translation>
+    </message>
+    <message id="errors.window.title">
+        <translation>Anwendungsfehler</translation>
+    </message>
+    <message id="errors.active.count">
+        <translation>%1 aktiv</translation>
+    </message>
+    <message id="errors.all.acknowledged">
+        <translation>Alle bestätigt</translation>
+    </message>
+    <message id="errors.none.reported">
+        <translation>Keine gemeldet</translation>
+    </message>
+    <message id="errors.acknowledge.all">
+        <translation>Alle bestätigen</translation>
+    </message>
+    <message id="errors.recorded.one">
+        <translation>1 Fehler in dieser Sitzung erfasst</translation>
+    </message>
+    <message id="errors.recorded.count">
+        <translation>%1 Fehler in dieser Sitzung erfasst</translation>
+    </message>
+    <message id="errors.acknowledged">
+        <translation>Bestätigt</translation>
+    </message>
+    <message id="errors.active">
+        <translation>Aktiv</translation>
+    </message>
+    <message id="errors.acknowledged.with-icon">
+        <translation>✓ Bestätigt</translation>
+    </message>
+    <message id="errors.acknowledge">
+        <translation>Bestätigen</translation>
+    </message>
+    <message id="errors.empty.title">
+        <translation>Keine Fehler gemeldet</translation>
+    </message>
+    <message id="errors.empty.description">
+        <translation>Fehler aus dieser Sitzung werden hier angezeigt.</translation>
+    </message>
+    <message id="errors.view.details">
+        <translation>Details anzeigen</translation>
+    </message>
+    <message id="errors.view.count">
+        <translation>%1 Fehler anzeigen</translation>
+    </message>
+    <message id="errors.notification.dismiss">
+        <translation>Benachrichtigung schließen</translation>
+    </message>
     <!-- update -->
     <message id="update.artifacts.open">
         <translation>Build-Artefakte öffnen</translation>

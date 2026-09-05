@@ -50,6 +50,9 @@ DropArea {
         if (rejectedCount === 0) {
             drag.accept(Qt.CopyAction)
             datamodelRepoModel.addUrls(drag.urls)
+        } else {
+            rootWindow.showOperationError(
+                        qsTrId("idl.import.invalid-files").arg(rejectedCount))
         }
     }
 

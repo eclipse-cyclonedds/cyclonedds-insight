@@ -1018,6 +1018,67 @@
         <translation>Writers</translation>
     </message>
 
+    <!-- errors -->
+    <message id="errors.unknown">
+        <translation>不明なエラー</translation>
+    </message>
+    <message id="idl.import.invalid-files">
+        <translation>IDL インポートでは .idl ファイルのみ使用できます。%1 個のファイルが拒否されました。</translation>
+    </message>
+    <message id="errors.title">
+        <translation>エラー</translation>
+    </message>
+    <message id="errors.count">
+        <translation>エラー (%1)</translation>
+    </message>
+    <message id="errors.window.title">
+        <translation>アプリケーションエラー</translation>
+    </message>
+    <message id="errors.active.count">
+        <translation>%1 件が未確認</translation>
+    </message>
+    <message id="errors.all.acknowledged">
+        <translation>すべて確認済み</translation>
+    </message>
+    <message id="errors.none.reported">
+        <translation>報告なし</translation>
+    </message>
+    <message id="errors.acknowledge.all">
+        <translation>すべて確認済みにする</translation>
+    </message>
+    <message id="errors.recorded.one">
+        <translation>このセッションで 1 件のエラーを記録</translation>
+    </message>
+    <message id="errors.recorded.count">
+        <translation>このセッションで %1 件のエラーを記録</translation>
+    </message>
+    <message id="errors.acknowledged">
+        <translation>確認済み</translation>
+    </message>
+    <message id="errors.active">
+        <translation>未確認</translation>
+    </message>
+    <message id="errors.acknowledged.with-icon">
+        <translation>✓ 確認済み</translation>
+    </message>
+    <message id="errors.acknowledge">
+        <translation>確認済みにする</translation>
+    </message>
+    <message id="errors.empty.title">
+        <translation>エラーは報告されていません</translation>
+    </message>
+    <message id="errors.empty.description">
+        <translation>このセッションのエラーがここに表示されます。</translation>
+    </message>
+    <message id="errors.view.details">
+        <translation>詳細を表示</translation>
+    </message>
+    <message id="errors.view.count">
+        <translation>%1 件のエラーを表示</translation>
+    </message>
+    <message id="errors.notification.dismiss">
+        <translation>通知を閉じる</translation>
+    </message>
     <!-- update -->
     <message id="update.artifacts.open">
         <translation>ビルド成果物を開く</translation>

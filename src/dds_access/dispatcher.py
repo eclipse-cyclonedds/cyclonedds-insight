@@ -32,6 +32,8 @@ class DispatcherThread(QThread):
     onData = Signal(
         str, str, str, bool, str, str, str, str, str, int, str, str, str
     )
+    endpointCreated = Signal(str)
+    endpointCreationFailed = Signal(str, str)
 
     @staticmethod
     def _format_sample_timing(sample_info, received_timestamp_ns):
@@ -163,95 +165,103 @@ class DispatcherThread(QThread):
                 self.writerData[id] = (publisher, writer, topic_name)
 
             logging.info(f"Add endpoint {topic_name} ... Success")
+            self.endpointCreated.emit(id)
 
         except Exception as e:
-            logging.error(f"Error creating endpoint {topic_name}: {e}")
+            message = f"Failed to create endpoint '{topic_name}': {e}"
+            logging.error(message)
+            self.endpointCreationFailed.emit(id, message)
 
     def run(self):
         self.dpSetUpDone.clear()
-        with DomainParticipantFactory.get_participant(self.domain_id) as domain_participant:
-            logging.info(f"Worker thread for domain({str(self.domain_id)}) ...")
-            self.running = True
-            self.domain_participant = domain_participant
-            self.waitset = core.WaitSet(self.domain_participant)
-            self.guardCondition = core.GuardCondition(self.domain_participant)
-            self.waitset.attach(self.guardCondition)
-            logging.info(f"Worker thread is set up domain({str(self.domain_id)})")
+        try:
+            with DomainParticipantFactory.get_participant(self.domain_id) as domain_participant:
+                logging.info(f"Worker thread for domain({str(self.domain_id)}) ...")
+                self.running = True
+                self.domain_participant = domain_participant
+                self.waitset = core.WaitSet(self.domain_participant)
+                self.guardCondition = core.GuardCondition(self.domain_participant)
+                self.waitset.attach(self.guardCondition)
+                logging.info(f"Worker thread is set up domain({str(self.domain_id)})")
 
-            self.addEndpoint(self.id, self.topic_name, self.topic_type, self.qos, self.entityType)
+                self.addEndpoint(self.id, self.topic_name, self.topic_type, self.qos, self.entityType)
 
-            self.dpSetUpDone.set()
+                self.dpSetUpDone.set()
 
-            while self.running:
-                amount_triggered = 0
-                try:
-                    amount_triggered = self.waitset.wait(duration(infinite=True))
-                except:
-                    pass
-                if amount_triggered == 0:
-                    continue
-
-                for (_id, topic, _, readItem, condItem) in self.readerData:
-                    samples = readItem.take(condition=condItem)
-                    if not samples:
+                while self.running:
+                    amount_triggered = 0
+                    try:
+                        amount_triggered = self.waitset.wait(duration(infinite=True))
+                    except Exception as error:
+                        logging.error(f"DDS wait failed in domain {self.domain_id}: {error}")
+                    if amount_triggered == 0:
                         continue
 
-                    received_timestamp_ns = time.time_ns()
-                    received_time = datetime.datetime.fromtimestamp(
-                        received_timestamp_ns / 1_000_000_000,
-                        tz=datetime.timezone.utc
-                    ).astimezone()
+                    for (_id, topic, _, readItem, condItem) in self.readerData:
+                        samples = readItem.take(condition=condItem)
+                        if not samples:
+                            continue
 
-                    for sample in samples:
-                        logging.trace(f"Received sample: {str(sample)}")
-                        sample_data = ""
-                        if isinstance(sample, InvalidSample):
-                            sample_data = f"{str(sample.key_sample)}"
-                        else:
-                            sample_data = str(sample)
-                        source_timestamp, transmission_time = self._format_sample_timing(
-                            sample.sample_info,
-                            received_timestamp_ns
-                        )
-                        publication_handle = sample.sample_info.publication_handle
-                        writer_id = self.writerIdsByHandle.get(publication_handle, "-")
-                        writer_participant_id = self.writerParticipantIdsByHandle.get(
-                            publication_handle, ""
-                        )
-                        try:
-                            publication = readItem.get_matched_publication_data(publication_handle)
-                            if publication is not None:
-                                writer_id = str(publication.key)
-                                writer_participant_id = str(publication.participant_key)
-                                self.writerIdsByHandle[publication_handle] = writer_id
-                                self.writerParticipantIdsByHandle[publication_handle] = \
-                                    writer_participant_id
-                        except Exception:
-                            pass
-                        received_timestamp = received_time.isoformat(timespec="milliseconds")
-                        self.onData.emit(
-                            _id,
-                            sample_data,
-                            str(sample.sample_info),
-                            sample.sample_info.valid_data,
-                            source_timestamp,
-                            transmission_time,
-                            received_timestamp,
-                            writer_id,
-                            str(readItem.guid),
-                            self.domain_id,
-                            writer_participant_id,
-                            str(topic.typename),
-                            str(topic.name)
-                        )
+                        received_timestamp_ns = time.time_ns()
+                        received_time = datetime.datetime.fromtimestamp(
+                            received_timestamp_ns / 1_000_000_000,
+                            tz=datetime.timezone.utc
+                        ).astimezone()
 
-                # clean up references to last items
-                _id = None
-                readItem = None
-                condItem = None
+                        for sample in samples:
+                            logging.trace(f"Received sample: {str(sample)}")
+                            sample_data = (
+                                f"{str(sample.key_sample)}"
+                                if isinstance(sample, InvalidSample)
+                                else str(sample)
+                            )
+                            source_timestamp, transmission_time = self._format_sample_timing(
+                                sample.sample_info,
+                                received_timestamp_ns
+                            )
+                            publication_handle = sample.sample_info.publication_handle
+                            writer_id = self.writerIdsByHandle.get(publication_handle, "-")
+                            writer_participant_id = self.writerParticipantIdsByHandle.get(
+                                publication_handle, ""
+                            )
+                            try:
+                                publication = readItem.get_matched_publication_data(publication_handle)
+                                if publication is not None:
+                                    writer_id = str(publication.key)
+                                    writer_participant_id = str(publication.participant_key)
+                                    self.writerIdsByHandle[publication_handle] = writer_id
+                                    self.writerParticipantIdsByHandle[publication_handle] = \
+                                        writer_participant_id
+                            except Exception:
+                                pass
+                            received_timestamp = received_time.isoformat(timespec="milliseconds")
+                            self.onData.emit(
+                                _id,
+                                sample_data,
+                                str(sample.sample_info),
+                                sample.sample_info.valid_data,
+                                source_timestamp,
+                                transmission_time,
+                                received_timestamp,
+                                writer_id,
+                                str(readItem.guid),
+                                self.domain_id,
+                                writer_participant_id,
+                                str(topic.typename),
+                                str(topic.name)
+                            )
 
-            logging.info(f"Worker thread for domain({str(self.domain_id)}) ... DONE")
+                    _id = None
+                    readItem = None
+                    condItem = None
 
+                logging.info(f"Worker thread for domain({str(self.domain_id)}) ... DONE")
+        except Exception as error:
+            message = f"Failed to initialize DDS domain {self.domain_id}: {error}"
+            logging.error(message)
+            self.endpointCreationFailed.emit(self.id, message)
+        finally:
+            self.dpSetUpDone.set()
     def stop(self):
         logging.info(f"Request to stop worker thread for domain({str(self.domain_id)})")
         self.running = False

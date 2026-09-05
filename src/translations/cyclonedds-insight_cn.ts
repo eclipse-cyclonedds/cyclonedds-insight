@@ -1018,6 +1018,67 @@
         <translation>Writers</translation>
     </message>
 
+    <!-- errors -->
+    <message id="errors.unknown">
+        <translation>未知错误</translation>
+    </message>
+    <message id="idl.import.invalid-files">
+        <translation>IDL 导入仅接受 .idl 文件。已拒绝 %1 个文件。</translation>
+    </message>
+    <message id="errors.title">
+        <translation>错误</translation>
+    </message>
+    <message id="errors.count">
+        <translation>错误 (%1)</translation>
+    </message>
+    <message id="errors.window.title">
+        <translation>应用程序错误</translation>
+    </message>
+    <message id="errors.active.count">
+        <translation>%1 个未确认</translation>
+    </message>
+    <message id="errors.all.acknowledged">
+        <translation>已全部确认</translation>
+    </message>
+    <message id="errors.none.reported">
+        <translation>未报告错误</translation>
+    </message>
+    <message id="errors.acknowledge.all">
+        <translation>全部确认</translation>
+    </message>
+    <message id="errors.recorded.one">
+        <translation>本次会话记录了 1 个错误</translation>
+    </message>
+    <message id="errors.recorded.count">
+        <translation>本次会话记录了 %1 个错误</translation>
+    </message>
+    <message id="errors.acknowledged">
+        <translation>已确认</translation>
+    </message>
+    <message id="errors.active">
+        <translation>未确认</translation>
+    </message>
+    <message id="errors.acknowledged.with-icon">
+        <translation>✓ 已确认</translation>
+    </message>
+    <message id="errors.acknowledge">
+        <translation>确认</translation>
+    </message>
+    <message id="errors.empty.title">
+        <translation>未报告错误</translation>
+    </message>
+    <message id="errors.empty.description">
+        <translation>本次会话中的错误将显示在此处。</translation>
+    </message>
+    <message id="errors.view.details">
+        <translation>查看详情</translation>
+    </message>
+    <message id="errors.view.count">
+        <translation>查看 %1 个错误</translation>
+    </message>
+    <message id="errors.notification.dismiss">
+        <translation>关闭通知</translation>
+    </message>
     <!-- update -->
     <message id="update.artifacts.open">
         <translation>打开构建产物</translation>

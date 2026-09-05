@@ -95,6 +95,76 @@ ToolBar {
         Item {
             Layout.fillWidth: true
         }
+
+        Rectangle {
+            id: problemsButton
+            implicitWidth: problemsContent.implicitWidth + 18
+            implicitHeight: 30
+            radius: Constants.controlRadius
+            color: rootWindow.problemCount > 0
+                   ? problemsMouse.containsMouse
+                     ? (rootWindow.isDarkMode ? "#463033" : "#fbe9eb")
+                     : (rootWindow.isDarkMode ? "#35282a" : "#fff4f5")
+                   : problemsMouse.containsMouse
+                     ? (rootWindow.isDarkMode ? "#383838" : "#e9e9e9")
+                     : (rootWindow.isDarkMode ? "#292929" : "#f5f5f5")
+            border.width: 1
+            border.color: rootWindow.problemCount > 0
+                          ? Constants.errorColor
+                          : Constants.designBorderColor(rootWindow.isDarkMode)
+
+            Behavior on color { ColorAnimation { duration: 100 } }
+
+            RowLayout {
+                id: problemsContent
+                anchors.centerIn: parent
+                spacing: 6
+
+                Item {
+                    Layout.preferredWidth: 17
+                    Layout.preferredHeight: 17
+
+                    WarningTriangle {
+                        anchors.fill: parent
+                        visible: rootWindow.problemCount > 0
+                        warningColor: Constants.errorColor
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        visible: rootWindow.problemCount === 0
+                        radius: width / 2
+                        color: rootWindow.isDarkMode ? "#3a3a3a" : "#e2e2e2"
+                        border.width: 1
+                        border.color: Constants.designBorderColor(rootWindow.isDarkMode)
+
+                        Label {
+                            anchors.centerIn: parent
+                            text: "✓"
+                            color: rootWindow.isDarkMode ? "#b8b8b8" : "#5a5a5a"
+                            font.bold: true
+                            font.pixelSize: 10
+                        }
+                    }
+                }
+
+                Label {
+                    text: rootWindow.problemCount > 0
+                          ? qsTrId("errors.count").arg(rootWindow.problemCount)
+                          : qsTrId("errors.title")
+                    font.bold: rootWindow.problemCount > 0
+                }
+            }
+
+            MouseArea {
+                id: problemsMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: rootWindow.openProblems()
+            }
+        }
+
         ComboBox {
             model: langModel
             textRole: "name"
