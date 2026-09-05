@@ -84,7 +84,7 @@ def getAppName(p: Optional[DcpsParticipant]):
 def looksLikeHostname(s: str) -> bool:
     if not s or len(s) > 255:
         return False
-    if " " in s:
+    if " " in s or "<" in s or ">" in s:
         return False
     return True
 
