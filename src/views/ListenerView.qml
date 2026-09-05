@@ -115,9 +115,10 @@ Rectangle {
                 onActivated: receiverModel.instanceView = currentIndex === 1
             }
 
-            Item {
-                implicitHeight: 1
+            TextField {
                 Layout.fillWidth: true
+                placeholderText: qsTrId("general.search.placeholder")
+                onAccepted: receiverProxyModel.searchText = text
             }
 
             Button {
