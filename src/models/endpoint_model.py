@@ -15,15 +15,13 @@ from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant
 from cyclonedds import core
 from cyclonedds import qos
 from loguru import logger as logging
-import os
-from pathlib import Path
 import time
 import uuid
 from typing import Optional, List
 
 from dds_access import dds_data
 from dds_access.dds_data import DataEndpoint
-from dds_access.dds_utils import getProperty, getHostname, PROCESS_NAMES, PIDS, ADDRESSES
+from dds_access.dds_utils import getProperty, getHostname, getProcessName, PIDS, ADDRESSES
 from dds_access.dds_qos import partitions_match_p
 from dds_access.datatypes.entity_type import EntityType
 
@@ -186,8 +184,7 @@ class EndpointModel(QAbstractItemModel):
         elif role == self.ProcessIdRole:
             return getProperty(p, PIDS)
         elif role == self.ProcessNameRole:
-            appname: str = getProperty(p, PROCESS_NAMES)
-            return Path(appname.replace("\\", f"{os.path.sep}")).stem
+            return getProcessName(p)
         elif role == self.AddressesRole:
             return getProperty(p, ADDRESSES)
         elif role == self.EndpointHasQosMismatch:

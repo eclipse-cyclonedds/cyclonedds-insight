@@ -29,7 +29,6 @@ from dds_access.datatypes.entity_type import EntityType
 from module_handler import DataModelHandler
 from utils.qml_utils import QmlUtils
 import time
-from pathlib import Path
 
 
 class DatamodelModel(QAbstractListModel):
@@ -117,9 +116,7 @@ class DatamodelModel(QAbstractListModel):
                 writer_participant_id
             )
 
-        process_name = dds_utils.getProperty(participant, dds_utils.PROCESS_NAMES)
-        if process_name != "Unknown":
-            process_name = Path(process_name.replace("\\", os.path.sep)).stem
+        process_name = dds_utils.getProcessName(participant)
         hostname = dds_utils.getHostname(participant)
         process_id = dds_utils.getProperty(participant, dds_utils.PIDS)
         addresses = dds_utils.getProperty(participant, dds_utils.ADDRESSES)
