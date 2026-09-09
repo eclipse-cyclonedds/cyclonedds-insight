@@ -77,7 +77,7 @@ def getProperty(p: Optional[DcpsParticipant], names: List[str]):
 
 def formatProcessName(name: str) -> str:
     # Strip directories while preserving the full executable or application ID.
-    return Path(name.replace("\\", "/")).name
+    return Path(name.replace("\\", os.path.sep)).name
 
 def getProcessName(p: Optional[DcpsParticipant]) -> str:
     return formatProcessName(getProperty(p, PROCESS_NAMES))
