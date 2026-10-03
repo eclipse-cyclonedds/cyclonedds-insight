@@ -13,6 +13,7 @@
 import sys
 import os
 import platform
+from utils.platform_utils import IS_ANDROID, IS_IOS, IS_MOBILE
 
 # Execution before first import of cyclonedds
 if getattr(sys, 'frozen', False):
@@ -31,15 +32,15 @@ else:
     IS_FROZEN = False
     # In non-bundle mode we need the path to idlc executable
     cyclonedds_home = os.getenv('CYCLONEDDS_HOME')
-    if not cyclonedds_home:
+    if not cyclonedds_home and not IS_MOBILE:
         raise Exception('CYCLONEDDS_HOME environment variable is not set.')
-    else:
+    elif cyclonedds_home:
         print('cyclonedds_home: ' + cyclonedds_home)
 
 import argparse
 from PySide6.QtWidgets import QApplication
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
-from PySide6.QtCore import qInstallMessageHandler, QUrl, QThread, qVersion, Qt, QSettings
+from PySide6.QtCore import qInstallMessageHandler, QUrl, QThread, qVersion, Qt, QSettings, QTimer
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtQuickControls2 import QQuickStyle
 from loguru import logger as logging
@@ -68,6 +69,7 @@ from module_handler import DataModelHandler
 from models.statistics_model import StatisticsModel, StatisticsUnitModel
 from models.updater_model import UpdaterModel
 from models.language_model import LanguageModel
+from models.dds_config_model import DdsConfigModel
 from models.config_editor_model.xsd_schema import parse_xsd_schema
 from models.config_editor_model.xsd_tree_model import XsdTreeModel
 from models.config_editor_model.xml_completion_model import XmlCompletionModel
@@ -92,6 +94,11 @@ if __name__ == "__main__":
     loglevel = args.loglevel.upper()
     loggerConfig = LoggerConfig()
     loggerConfig.setupLogger(loglevel)
+    # Set the process-local URI before DdsData or any participant is created.
+    ddsConfig = DdsConfigModel()
+    app.aboutToQuit.connect(ddsConfig.shutdown)
+    if ddsConfig.status:
+        logging.warning(ddsConfig.status)
 
     # Print qml log messages into the python log
     qInstallMessageHandler(loggerConfig.qt_message_handler)
@@ -105,8 +112,16 @@ if __name__ == "__main__":
     logging.info(f"Python version: {str(sys.version)}")
     logging.info(f"Qt version: {qVersion()}")
 
-    if sys.platform == "darwin":
+    if IS_ANDROID:
+        os.environ["QT_QUICK_CONTROLS_STYLE"] = "Material"
+        os.environ["QT_QUICK_CONTROLS_MATERIAL_THEME"] = "System"
+        QQuickStyle.setStyle("Material")
+    elif IS_IOS:
+        QQuickStyle.setStyle("iOS")
+    elif sys.platform == "darwin":
         QQuickStyle.setStyle("macOS")
+    elif sys.platform == "win32":
+        QQuickStyle.setStyle("FluentWinUI3")
     else:
         QQuickStyle.setStyle("Fusion")
 
@@ -150,6 +165,7 @@ if __name__ == "__main__":
     app.aboutToQuit.connect(qmlUtils.aboutToQuit)
 
     engine = QQmlApplicationEngine()
+    engine.rootContext().setContextProperty("ddsConfig", ddsConfig)
 
     langModel = LanguageModel(app, engine)
     xsdSchema = parse_xsd_schema("qrc:/cyclonedds.xsd")
@@ -185,6 +201,7 @@ if __name__ == "__main__":
     engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_BUILD_ID", build_info_helper.getBuildId())
     engine.rootContext().setContextProperty("CYCLONEDDS_INSIGHT_BUILD_PIPELINE_ID", build_info_helper.getBuildPipelineId())
     engine.rootContext().setContextProperty("IS_FROZEN", IS_FROZEN)
+    engine.rootContext().setContextProperty("IS_MOBILE", IS_MOBILE)
 
     qmlRegisterType(EndpointModel, "org.eclipse.cyclonedds.insight", 1, 0, "EndpointModel")
     qmlRegisterType(StatisticsModel, "org.eclipse.cyclonedds.insight", 1, 0, "StatisticsModel")

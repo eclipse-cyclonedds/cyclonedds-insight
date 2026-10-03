@@ -3,6 +3,21 @@
 <TS version="2.1" language="nl">
 <context>
     <name></name>
+    <message id="summary.overview">
+        <translation>Overzicht</translation>
+    </message>
+    <message id="summary.processes">
+        <translation>Processen</translation>
+    </message>
+    <message id="listener.view.log.short">
+        <translation>Log</translation>
+    </message>
+    <message id="listener.view.instances.short">
+        <translation>Instanties</translation>
+    </message>
+    <message id="listener.actions">
+        <translation>Acties</translation>
+    </message>
     <message id="listener.view.log">
         <translation>Berichtenlogboek</translation>
     </message>
@@ -125,9 +140,6 @@
     </message>
     <message id="domain.discover.automatically">
         <translation>Domeinen automatisch detecteren</translation>
-    </message>
-    <message id="domain.discover.automatically.hint">
-        <translation>Domein handmatig toevoegen of automatisch detecteren</translation>
     </message>
     <message id="domain.remove.selected">
         <translation>Geselecteerd domein verwijderen</translation>
@@ -774,6 +786,9 @@
     </message>
 
     <!-- settings -->
+    <message id="settings.storage.location">
+        <translation>Opslaglocatie van instellingen</translation>
+    </message>
     <message id="settings.appdata.location">
         <translation>Locatie van appgegevens</translation>
     </message>
@@ -783,11 +798,14 @@
     <message id="settings.appearance.description">
         <translation>Kies hoe de toepassing het kleurenschema van het systeem volgt.</translation>
     </message>
+    <message id="settings.config.use.environment">
+        <translation>Systeemomgevingsvariabele gebruiken</translation>
+    </message>
     <message id="settings.config.edit">
         <translation>Configuratiebestand bewerken</translation>
     </message>
     <message id="settings.configuration">
-        <translation>Configuratie</translation>
+        <translation>Cyclone DDS-configuratie</translation>
     </message>
     <message id="settings.default_domains.description">
         <translation>Door komma's gescheiden lijst met domeinen die bij het opstarten worden toegevoegd.</translation>
@@ -1032,6 +1050,9 @@
     <message id="idl.import.invalid-files">
         <translation>IDL-import accepteert alleen .idl-bestanden. %1 bestand(en) zijn geweigerd.</translation>
     </message>
+    <message id="errors.none">
+        <translation>Geen fouten</translation>
+    </message>
     <message id="errors.title">
         <translation>Fouten</translation>
     </message>
@@ -1152,6 +1173,27 @@
     </message>
     <message id="update.try.again">
         <translation>Probeer het later opnieuw.</translation>
+    </message>
+    <message id="view.detach">
+        <translation>In apart venster openen</translation>
+    </message>
+    <message id="view.dock">
+        <translation>Terug naar hoofdvenster</translation>
+    </message>
+    <message id="view.detached.message">
+        <translation>%1 is geopend in een apart venster.</translation>
+    </message>
+    <message id="view.detached.show">
+        <translation>Venster tonen</translation>
+    </message>
+    <message id="config.network.interfaces">
+        <translation>Netwerkadapters en IP-adressen</translation>
+    </message>
+    <message id="config.network.empty">
+        <translation>Geen netwerkadapters gemeld.</translation>
+    </message>
+    <message id="config.network.copy.address">
+        <translation>Kopiëren</translation>
     </message>
 </context>
 </TS>

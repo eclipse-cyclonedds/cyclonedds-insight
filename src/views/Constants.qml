@@ -44,6 +44,9 @@ Item {
     property color darkSecondaryText: "#c2c2c2"
     property color darkMutedForeground: "#d0d0d0"
 
+    property color lightSplitHandle: "#d0d0d0"
+    property color darkSplitHandle: "#404040"
+
     // Brand and semantic colors
     property color accentColor: "#274ff6"
     property color successColor: "#36a269"
@@ -101,6 +104,10 @@ Item {
 
     function mutedForegroundColor(darkMode) {
         return darkMode ? darkMutedForeground : lightMutedForeground
+    }
+
+    function splitHandleColor(darkMode) {
+        return darkMode ? darkSplitHandle : lightSplitHandle
     }
 
     function separatorColor(darkMode) {

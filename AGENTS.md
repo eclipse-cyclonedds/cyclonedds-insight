@@ -133,3 +133,10 @@ before the first CycloneDDS import in the entry points.
 - Version metadata lives in `src/version.py` and `docs/manual/variables.json`.
   Change versions only as part of a requested version/release change. CI generates
   build metadata, while `utils/build_info_helper.py` supplies development fallbacks.
+
+## UI translations
+
+- Whenever adding or changing translatable user-visible text, update all translation files in `src/translations/cyclonedds-insight_*.ts` in the same change, including English. Never leave new or changed translatable strings untranslated or unfinished.
+- Translate natural-language UI labels, instructions, and messages, not every displayed string literally. Keep technical identifiers and terms unchanged where translation would be misleading or unhelpful: for example `CYCLONEDDS_URI`, XML tags, API/type names, commands, file paths, protocol names, and product names. Standalone technical identifiers do not need translation entries; in translated sentences, preserve them and translate the surrounding prose.
+- Follow the existing ID-based translation convention: use `qsTrId("...")` in QML and matching message IDs in every TS file instead of hard-coded text or new `qsTr(...)` strings.
+- Before completing the change, check that the affected IDs exist with nonempty translations in every language and compile the catalogs with `pyside6-lrelease`. Regenerate bundled resources when preparing a build.

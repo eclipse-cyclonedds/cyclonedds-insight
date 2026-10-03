@@ -3,6 +3,21 @@
 <TS version="2.1" language="de">
 <context>
     <name></name>
+    <message id="summary.overview">
+        <translation>Übersicht</translation>
+    </message>
+    <message id="summary.processes">
+        <translation>Prozesse</translation>
+    </message>
+    <message id="listener.view.log.short">
+        <translation>Log</translation>
+    </message>
+    <message id="listener.view.instances.short">
+        <translation>Instanzen</translation>
+    </message>
+    <message id="listener.actions">
+        <translation>Aktionen</translation>
+    </message>
     <message id="listener.view.log">
         <translation>Nachrichtenprotokoll</translation>
     </message>
@@ -125,9 +140,6 @@
     </message>
     <message id="domain.discover.automatically">
         <translation>Domains automatisch erkennen</translation>
-    </message>
-    <message id="domain.discover.automatically.hint">
-        <translation>Domain manuell hinzufügen oder automatisch erkennen</translation>
     </message>
     <message id="domain.remove.selected">
         <translation>Ausgewählte Domain entfernen</translation>
@@ -774,6 +786,9 @@
     </message>
 
     <!-- settings -->
+    <message id="settings.storage.location">
+        <translation>Speicherort der Einstellungen</translation>
+    </message>
     <message id="settings.appdata.location">
         <translation>App-Datenverzeichnis</translation>
     </message>
@@ -783,11 +798,14 @@
     <message id="settings.appearance.description">
         <translation>Legen Sie fest, wie die Anwendung dem Farbschema des Systems folgt.</translation>
     </message>
+    <message id="settings.config.use.environment">
+        <translation>System-Umgebungsvariable verwenden</translation>
+    </message>
     <message id="settings.config.edit">
         <translation>Konfigurationsdatei bearbeiten</translation>
     </message>
     <message id="settings.configuration">
-        <translation>Konfiguration</translation>
+        <translation>Cyclone DDS-Konfiguration</translation>
     </message>
     <message id="settings.default_domains.description">
         <translation>Komma-separierte Liste von Domains welche beim Start beigetreten werden.</translation>
@@ -1032,6 +1050,9 @@
     <message id="idl.import.invalid-files">
         <translation>Der IDL-Import akzeptiert nur .idl-Dateien. %1 Datei(en) wurden abgelehnt.</translation>
     </message>
+    <message id="errors.none">
+        <translation>Keine Fehler</translation>
+    </message>
     <message id="errors.title">
         <translation>Fehler</translation>
     </message>
@@ -1152,6 +1173,27 @@
     </message>
     <message id="update.try.again">
         <translation>Bitte versuchen Sie es später erneut.</translation>
+    </message>
+    <message id="view.detach">
+        <translation>In eigenem Fenster öffnen</translation>
+    </message>
+    <message id="view.dock">
+        <translation>Zurück ins Hauptfenster</translation>
+    </message>
+    <message id="view.detached.message">
+        <translation>%1 ist in einem eigenen Fenster geöffnet.</translation>
+    </message>
+    <message id="view.detached.show">
+        <translation>Fenster anzeigen</translation>
+    </message>
+    <message id="config.network.interfaces">
+        <translation>Netzwerkadapter und IP-Adressen</translation>
+    </message>
+    <message id="config.network.empty">
+        <translation>Keine Netzwerkadapter gemeldet.</translation>
+    </message>
+    <message id="config.network.copy.address">
+        <translation>Kopieren</translation>
     </message>
 </context>
 </TS>

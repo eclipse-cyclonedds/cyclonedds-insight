@@ -14,6 +14,7 @@ import QtCore
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
+import QtQuick.Controls.Basic as Basic
 import QtQuick.Layouts
 import QtQuick.Dialogs
 
@@ -99,73 +100,116 @@ Rectangle {
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.leftMargin: 14
-            Layout.preferredHeight: 36
             spacing: 8
 
-            Button {
-                text: qsTrId("general.clear")
-                onClicked: receiverModel.clear()
-            }
+            Rectangle {
+                id: viewModeSelector
+                Layout.preferredWidth: Math.min(160, listenerTabId.width * 0.34)
+                Layout.preferredHeight: 32
+                radius: 5
+                color: rootWindow.isDarkMode ? "#292929" : "#e9e9e9"
+                border.width: 1
+                border.color: rootWindow.isDarkMode ? "#484848" : "#d0d0d0"
 
-            ComboBox {
-                implicitContentWidthPolicy: ComboBox.WidestText
-                model: [qsTrId("listener.view.log"), qsTrId("listener.view.instances")]
-                currentIndex: receiverModel.instanceView ? 1 : 0
-                onActivated: receiverModel.instanceView = currentIndex === 1
+                Row {
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    spacing: 2
+
+                    Repeater {
+                        model: [qsTrId("listener.view.log.short"),
+                                qsTrId("listener.view.instances.short")]
+
+                        Basic.ToolButton {
+                            id: modeOption
+                            required property int index
+                            required property string modelData
+                            readonly property bool selected: receiverModel.instanceView === (index === 1)
+                            width: (parent.width - parent.spacing) / 2
+                            height: parent.height
+                            padding: 4
+                            hoverEnabled: true
+                            Accessible.name: index === 0 ? qsTrId("listener.view.log")
+                                                       : qsTrId("listener.view.instances")
+                            Accessible.checkable: true
+                            Accessible.checked: selected
+                            onClicked: receiverModel.instanceView = index === 1
+
+                            contentItem: Label {
+                                text: modeOption.modelData
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                                color: Constants.secondaryTextColor(rootWindow.isDarkMode)
+                            }
+                            background: Rectangle {
+                                radius: 3
+                                color: modeOption.selected
+                                       ? (rootWindow.isDarkMode ? "#484848" : "#ffffff")
+                                       : modeOption.hovered
+                                         ? (rootWindow.isDarkMode ? "#363636" : Constants.lightDesignBorder)
+                                         : "transparent"
+                                border.width: modeOption.selected || modeOption.visualFocus ? 1 : 0
+                                border.color: modeOption.visualFocus ? Constants.accentColor
+                                              : rootWindow.isDarkMode ? "#747474" : "#c6c6c6"
+                            }
+                            HoverHandler {
+                                cursorShape: Qt.PointingHandCursor
+                            }
+                        }
+                    }
+                }
             }
 
             TextField {
                 Layout.fillWidth: true
+                Layout.minimumWidth: 0
                 placeholderText: qsTrId("general.search.placeholder")
                 onAccepted: receiverProxyModel.searchText = text
             }
 
-            Button {
-                id: comboButton
-                text: qsTrId("listener.manage.readers")
-                checkable: true
-                checked: listenerTabId.manageReadersVisible
-                onClicked: {
-                    listenerTabId.manageReadersVisible = checked;
-                    if (!checked) {
-                        listenerProxyModel.searchText = "";
-                    }
-                }
-            }
+            ExpandButton {
+                id: actionsButton
+                text: qsTrId("listener.actions")
+                onClicked: actionsMenu.open()
 
-            Button {
-                id: importButton
-                text: qsTrId("general.import")
-                onClicked: importMenu.open()
                 Menu {
-                    id: importMenu
-                    x: importButton.width - width
-                    y: importButton.height + 4
+                    id: actionsMenu
+                    x: actionsButton.width - width
+                    y: actionsButton.height + 4
+                    width: Math.min(implicitWidth, listenerTabId.width - 2 * Constants.pageMargin)
+
+                    MenuItem {
+                        text: qsTrId("listener.manage.readers")
+                        checkable: true
+                        checked: listenerTabId.manageReadersVisible
+                        onTriggered: {
+                            listenerTabId.manageReadersVisible = !listenerTabId.manageReadersVisible
+                            if (!listenerTabId.manageReadersVisible)
+                                listenerProxyModel.searchText = ""
+                        }
+                    }
+
+                    MenuSeparator {}
 
                     MenuItem {
                         text: qsTrId("listener.preset.import")
-                        onClicked: importListenerPresetDialog.open()
+                        onTriggered: importListenerPresetDialog.open()
                     }
-                }
-            }
-            Button {
-                id: exportButton
-                text: qsTrId("general.export")
-                onClicked: exportMenu.open()
-
-                Menu {
-                    id: exportMenu
-                    x: exportButton.width - width
-                    y: exportButton.height + 4
-
                     MenuItem {
                         text: qsTrId("listener.preset.export")
-                        onClicked: exportListenerPresetDialog.open()
+                        onTriggered: exportListenerPresetDialog.open()
                     }
                     MenuItem {
                         text: qsTrId("listener.sample.export")
-                        onClicked: exportSampleLogFileDialog.open()
+                        onTriggered: exportSampleLogFileDialog.open()
+                    }
+
+                    MenuSeparator {}
+
+                    MenuItem {
+                        text: qsTrId("general.clear")
+                        onTriggered: receiverModel.clear()
                     }
                 }
             }
@@ -175,10 +219,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
             orientation: Qt.Horizontal
-            handle: Rectangle {
-                implicitWidth: 10
-                color: listenerTabId.color
-            }
+            handle: ResizeHandle {}
 
             Rectangle {
                 color: listenerTabId.surfaceColor

@@ -51,8 +51,9 @@ Rectangle {
         currentDataIndex = dataItemCount > 0
                 ? Math.min(currentDataIndex, dataItemCount - 1)
                 : 0
-        dataTreeModel = testerModel.getTreeModel(librariesCombobox.currentIndex, currentDataIndex)
-        sequenceModel = testerModel.getSequenceModel(librariesCombobox.currentIndex)
+        // Empty QVariant returns become undefined in QML; keep model state nullable.
+        dataTreeModel = testerModel.getTreeModel(librariesCombobox.currentIndex, currentDataIndex) || null
+        sequenceModel = testerModel.getSequenceModel(librariesCombobox.currentIndex) || null
     }
 
     Connections {
@@ -61,7 +62,10 @@ Rectangle {
         function onModelReset()  { testerRev++ }
         function onRowsInserted(){ testerRev++ }
         function onRowsRemoved() { testerRev++ }
-        function onCountChanged() { testerRev++ }
+        function onCountChanged() {
+            testerRev++
+            refreshCurrentModels()
+        }
     }
 
     ColumnLayout {
@@ -268,10 +272,12 @@ Rectangle {
                         }
 
                         onCurrentIndexChanged: {
+                            currentDataIndex = 0
+                            refreshCurrentModels()
                             if (testerModel && currentIndex >= 0) {
-                                currentDataIndex = 0
-                                refreshCurrentModels()
                                 descriptionField.text = testerModel.getDescription(currentIndex)
+                            } else {
+                                descriptionField.text = ""
                             }
                         }
 

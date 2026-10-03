@@ -30,6 +30,8 @@ Rectangle {
     property int keepHistoryMinutes: 10
     property int itemCellHeight: 400
     property int itemChartWidth: 450
+    readonly property bool compactLayout: width < 700
+    clip: true
 
     property var markers: []
 
@@ -77,12 +79,16 @@ Rectangle {
     }
 
     ScrollView {
+        id: chartsScroll
         anchors.fill: parent
+        contentWidth: availableWidth
+        contentHeight: repeaterItem.implicitHeight
+        clip: true
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
         ColumnLayout {
             id: repeaterItem
-            anchors.fill: parent
+            width: chartsScroll.availableWidth
             spacing: 0
 
             Repeater {
@@ -90,8 +96,8 @@ Rectangle {
                 model: statisticModel
                 delegate: Item {
                     id: currentStatUnitId
-                    Layout.preferredHeight: itemCellHeight
-                    Layout.preferredWidth: rootStatViewId.width
+                    Layout.preferredHeight: rootStatViewId.compactLayout ? itemCellHeight + 200 : itemCellHeight
+                    Layout.preferredWidth: chartsScroll.availableWidth
 
                     property var lineSeriesDict: Object.create(null)
 
@@ -169,26 +175,34 @@ Rectangle {
                         spacing: 0
 
                         Label {
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
                             text: name_role
                             font.bold: true
                             padding: 5
                         }
 
                         Label {
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
                             text: description_role
                             padding: 2
                         }
 
-                        RowLayout {
+                        GridLayout {
+                            columns: rootStatViewId.compactLayout ? 1 : 2
                             Layout.fillHeight: true
                             Layout.fillWidth: true
-                            spacing: 0
+                            columnSpacing: 0
+                            rowSpacing: 8
 
                             ChartView {
                                 id: myChart
 
                                 Layout.preferredHeight: itemCellHeight * 0.9
-                                Layout.preferredWidth: itemChartWidth
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
+                                Layout.preferredWidth: rootStatViewId.compactLayout ? chartsScroll.availableWidth : itemChartWidth
                                 Layout.alignment: Qt.AlignTop
                                 
                                 title: name_role
@@ -244,8 +258,10 @@ Rectangle {
 
                             ColumnLayout {
                                 id: tableLayout
-                                Layout.preferredHeight: itemCellHeight * 0.9
-                                Layout.preferredWidth: rootStatViewId.width - itemChartWidth
+                                Layout.preferredHeight: rootStatViewId.compactLayout ? 180 : itemCellHeight * 0.9
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
+                                Layout.preferredWidth: Math.max(180, chartsScroll.availableWidth - itemChartWidth)
                                 Layout.alignment: Qt.AlignTop
                                 spacing: 0
 

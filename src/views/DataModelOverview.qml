@@ -18,6 +18,7 @@ import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views/icons"
+import "qrc:/src/views/elements"
 
 
 Rectangle {
@@ -38,15 +39,22 @@ Rectangle {
         Rectangle {
             color: Constants.headerBackgroundColor(rootWindow.isDarkMode)
             Layout.fillWidth: true
-            Layout.preferredHeight: 30
+            Layout.preferredHeight: Math.max(30, dataModelToolbar.implicitHeight)
 
             RowLayout {
+                id: dataModelToolbar
                 anchors.fill: parent
                 spacing: 0
 
+                EntityIcon {
+                    symbol: "layers"
+                    iconColor: Constants.mutedForegroundColor(rootWindow.isDarkMode)
+                    Layout.leftMargin: 10
+                    Layout.rightMargin: 6
+                    Layout.alignment: Qt.AlignVCenter
+                }
                 Label {
                     text: qsTrId("datamodel.title")
-                    Layout.leftMargin: 10
                 }
                 Item {
                     Layout.fillWidth: true
@@ -54,6 +62,9 @@ Rectangle {
 
                 Button {
                     id: importBtnId
+                    enabled: !IS_MOBILE
+                    ToolTip.visible: hovered && IS_MOBILE
+                    ToolTip.text: "Mobile devices use types discovered from the network; IDL file compilation is unavailable."
                     text: qsTrId("general.import")
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     onClicked: {
@@ -66,16 +77,10 @@ Rectangle {
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     onClicked: clearDialog.open()
                 }
-                Button {
-                    flat: true
-                    highlighted: searchField.visible
+                SearchToggleButton {
+                    isDarkMode: rootWindow.isDarkMode
+                    expanded: searchField.visible
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    SearchIcon {
-                        anchors.centerIn: parent
-                        z: 1
-                        expanded: searchField.visible
-                        iconColor: Constants.mutedForegroundColor(rootWindow.isDarkMode)
-                    }
                     onClicked: {
                         if (searchField.visible) {
                             searchField.clear()
@@ -85,8 +90,8 @@ Rectangle {
                             searchField.visible = true
                         }
                     }
-                    Layout.preferredWidth: Qt.platform.os === "osx" ? 50 : 30
-                    Layout.preferredHeight: Qt.platform.os === "osx" ? 30 : 24
+                    Layout.preferredWidth: 32
+                    Layout.preferredHeight: 30
                 }
             }
         }

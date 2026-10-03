@@ -14,13 +14,14 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import "qrc:/src/views"
+import "qrc:/src/views/icons"
 
 Rectangle {
     id: badge
 
     property string kind: "participant"
     property real iconScale: 1.0
-    readonly property color iconColor: Constants.accentColor
+    property color iconColor: Constants.accentColor
 
     implicitWidth: 24
     implicitHeight: 24
@@ -72,66 +73,44 @@ Rectangle {
     Component {
         id: participantIcon
 
-        Item {
-            width: 12
-            height: 14
-
-            Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: 6
-                height: 6
-                radius: 3
-                color: badge.iconColor
-            }
-
-            Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                width: 12
-                height: 7
-                radius: 3.5
-                color: badge.iconColor
-            }
+        EntityIcon {
+            width: 18
+            height: 18
+            symbol: "participant"
+            iconColor: badge.iconColor
         }
     }
 
     Component {
         id: domainIcon
 
-        Item {
-            width: 14
-            height: 14
+        Canvas {
+            width: 18
+            height: 18
+            property color strokeColor: badge.iconColor
+            onStrokeColorChanged: requestPaint()
 
-            Rectangle {
-                x: 3
-                y: 3
-                width: 8
-                height: 1.5
-                rotation: 30
-                color: badge.iconColor
-            }
-
-            Rectangle {
-                x: 3
-                y: 9
-                width: 8
-                height: 1.5
-                rotation: -30
-                color: badge.iconColor
-            }
-
-            Repeater {
-                model: [[1, 5], [9, 1], [9, 9]]
-
-                Rectangle {
-                    required property var modelData
-                    x: modelData[0]
-                    y: modelData[1]
-                    width: 4
-                    height: 4
-                    radius: 2
-                    color: badge.iconColor
-                }
+            onPaint: {
+                const ctx = getContext("2d")
+                ctx.clearRect(0, 0, width, height)
+                ctx.strokeStyle = strokeColor
+                ctx.lineWidth = 1.6
+                ctx.lineCap = "round"
+                ctx.lineJoin = "round"
+                ctx.beginPath()
+                ctx.moveTo(9, 1.5)
+                ctx.lineTo(16, 5.3)
+                ctx.lineTo(16, 12.7)
+                ctx.lineTo(9, 16.5)
+                ctx.lineTo(2, 12.7)
+                ctx.lineTo(2, 5.3)
+                ctx.closePath()
+                ctx.moveTo(2, 5.3)
+                ctx.lineTo(9, 9.1)
+                ctx.lineTo(16, 5.3)
+                ctx.moveTo(9, 9.1)
+                ctx.lineTo(9, 16.5)
+                ctx.stroke()
             }
         }
     }
@@ -210,36 +189,11 @@ Rectangle {
     Component {
         id: topicIcon
 
-        Item {
-            width: 14
-            height: 13
-
-            Rectangle {
-                width: 14
-                height: 11
-                radius: 3
-                color: "transparent"
-                border.width: 1.5
-                border.color: badge.iconColor
-            }
-
-            Rectangle {
-                x: 3
-                y: 4
-                width: 8
-                height: 1.5
-                radius: 0.75
-                color: badge.iconColor
-            }
-
-            Rectangle {
-                x: 3
-                y: 7
-                width: 6
-                height: 1.5
-                radius: 0.75
-                color: badge.iconColor
-            }
+        EntityIcon {
+            width: 18
+            height: 18
+            symbol: "topic"
+            iconColor: badge.iconColor
         }
     }
 
@@ -338,46 +292,24 @@ Rectangle {
     Component {
         id: testerIcon
 
-        Item {
-            width: 14
-            height: 12
-
-            Rectangle {
-                x: 0
-                y: 2
-                width: 7
-                height: 8
-                radius: 2
-                color: "transparent"
-                border.width: 1.5
-                border.color: badge.iconColor
-            }
-
-            Rectangle {
-                x: 2
-                y: 5
-                width: 3
-                height: 1.5
-                radius: 0.75
-                color: badge.iconColor
-            }
-
-            Rectangle {
-                x: 7
-                anchors.verticalCenter: parent.verticalCenter
-                width: 4
-                height: 1.5
-                radius: 0.75
-                color: badge.iconColor
-            }
-
-            Rectangle {
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                width: 5
-                height: 5
-                radius: 2.5
-                color: badge.iconColor
+        Canvas {
+            width: 18
+            height: 18
+            property color strokeColor: badge.iconColor
+            onStrokeColorChanged: requestPaint()
+            onPaint: {
+                const ctx = getContext("2d")
+                ctx.clearRect(0, 0, width, height)
+                ctx.strokeStyle = badge.iconColor
+                ctx.lineWidth = 1.6
+                ctx.lineCap = "round"
+                ctx.lineJoin = "round"
+                ctx.beginPath()
+                ctx.moveTo(5, 2.5)
+                ctx.lineTo(15.5, 9)
+                ctx.lineTo(5, 15.5)
+                ctx.closePath()
+                ctx.stroke()
             }
         }
     }
@@ -385,46 +317,30 @@ Rectangle {
     Component {
         id: listenerIcon
 
-        Item {
-            width: 14
-            height: 12
-
-            Rectangle {
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                width: 5
-                height: 5
-                radius: 2.5
-                color: badge.iconColor
-            }
-
-            Rectangle {
-                x: 4
-                anchors.verticalCenter: parent.verticalCenter
-                width: 4
-                height: 1.5
-                radius: 0.75
-                color: badge.iconColor
-            }
-
-            Rectangle {
-                x: 7
-                y: 2
-                width: 7
-                height: 8
-                radius: 2
-                color: "transparent"
-                border.width: 1.5
-                border.color: badge.iconColor
-            }
-
-            Rectangle {
-                x: 9
-                y: 5
-                width: 3
-                height: 1.5
-                radius: 0.75
-                color: badge.iconColor
+        Canvas {
+            width: 18
+            height: 18
+            property color strokeColor: badge.iconColor
+            onStrokeColorChanged: requestPaint()
+            onPaint: {
+                const ctx = getContext("2d")
+                ctx.clearRect(0, 0, width, height)
+                ctx.strokeStyle = badge.iconColor
+                ctx.lineWidth = 1.6
+                ctx.lineCap = "round"
+                ctx.lineJoin = "round"
+                ctx.beginPath()
+                ctx.arc(9, 11, 1.8, 0, Math.PI * 2)
+                ctx.fillStyle = badge.iconColor
+                ctx.fill()
+                ctx.beginPath()
+                ctx.moveTo(9, 13)
+                ctx.lineTo(9, 16)
+                ctx.moveTo(5.8, 14.2)
+                ctx.arc(9, 11, 4.5, Math.PI * 0.75, Math.PI * 2.25)
+                ctx.moveTo(3.7, 16.3)
+                ctx.arc(9, 11, 7.5, Math.PI * 0.75, Math.PI * 2.25)
+                ctx.stroke()
             }
         }
     }

@@ -3,6 +3,21 @@
 <TS version="2.1" language="fr">
 <context>
     <name></name>
+    <message id="summary.overview">
+        <translation>Vue d’ensemble</translation>
+    </message>
+    <message id="summary.processes">
+        <translation>Processus</translation>
+    </message>
+    <message id="listener.view.log.short">
+        <translation>Journal</translation>
+    </message>
+    <message id="listener.view.instances.short">
+        <translation>Instances</translation>
+    </message>
+    <message id="listener.actions">
+        <translation>Actions</translation>
+    </message>
     <message id="listener.view.log">
         <translation>Journal des messages</translation>
     </message>
@@ -125,9 +140,6 @@
     </message>
     <message id="domain.discover.automatically">
         <translation>Détecter automatiquement les domaines</translation>
-    </message>
-    <message id="domain.discover.automatically.hint">
-        <translation>Ajouter un domaine manuellement ou le détecter automatiquement</translation>
     </message>
     <message id="domain.remove.selected">
         <translation>Retirer le domaine sélectionné</translation>
@@ -774,6 +786,9 @@
     </message>
 
     <!-- settings -->
+    <message id="settings.storage.location">
+        <translation>Emplacement des paramètres</translation>
+    </message>
     <message id="settings.appdata.location">
         <translation>Emplacement des données de l’application</translation>
     </message>
@@ -783,11 +798,14 @@
     <message id="settings.appearance.description">
         <translation>Choisissez comment l’application suit le thème de couleurs du système.</translation>
     </message>
+    <message id="settings.config.use.environment">
+        <translation>Utiliser la variable d’environnement système</translation>
+    </message>
     <message id="settings.config.edit">
         <translation>Modifier le fichier de configuration</translation>
     </message>
     <message id="settings.configuration">
-        <translation>Configuration</translation>
+        <translation>Configuration Cyclone DDS</translation>
     </message>
     <message id="settings.default_domains.description">
         <translation>Liste de domaines séparés par des virgules à rejoindre au démarrage.</translation>
@@ -1032,6 +1050,9 @@
     <message id="idl.import.invalid-files">
         <translation>L’import IDL accepte uniquement les fichiers .idl. %1 fichier(s) ont été refusés.</translation>
     </message>
+    <message id="errors.none">
+        <translation>Aucune erreur</translation>
+    </message>
     <message id="errors.title">
         <translation>Erreurs</translation>
     </message>
@@ -1152,6 +1173,27 @@
     </message>
     <message id="update.try.again">
         <translation>Veuillez réessayer plus tard.</translation>
+    </message>
+    <message id="view.detach">
+        <translation>Ouvrir dans une fenêtre séparée</translation>
+    </message>
+    <message id="view.dock">
+        <translation>Revenir à la fenêtre principale</translation>
+    </message>
+    <message id="view.detached.message">
+        <translation>%1 est ouvert dans une fenêtre séparée.</translation>
+    </message>
+    <message id="view.detached.show">
+        <translation>Afficher la fenêtre</translation>
+    </message>
+    <message id="config.network.interfaces">
+        <translation>Interfaces réseau et adresses IP</translation>
+    </message>
+    <message id="config.network.empty">
+        <translation>Aucune interface réseau signalée.</translation>
+    </message>
+    <message id="config.network.copy.address">
+        <translation>Copier</translation>
     </message>
 </context>
 </TS>

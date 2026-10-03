@@ -27,11 +27,8 @@ Popup {
 
     anchors.centerIn: parent
     modal: true
-    x: (rootWindow.width - width) / 2
-    y: (rootWindow.height - height) / 2
-
-    width: 600
-    height: 400
+    width: Math.min(600, Math.max(0, parent ? parent.width - 24 : 0))
+    height: Math.min(400, Math.max(0, parent ? parent.height - 24 : 0))
     padding: 0
 
     property int domainId: 0

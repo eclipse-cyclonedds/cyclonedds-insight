@@ -17,12 +17,12 @@ import QtQuick.Layouts
 import "qrc:/src/views"
 
 
-Window {
+SecondaryWindow {
     id: proxyAuthWindow
 
     title: qsTrId("update.proxy.auth")
     visible: false
-    flags: Qt.Dialog
+    flags: mobileWindow ? Qt.Window : (Qt.Dialog)
     modality: Qt.ApplicationModal
     color: Constants.overviewBackgroundColor(rootWindow.isDarkMode)
 
@@ -32,10 +32,10 @@ Window {
 
     width: proxyAuthWidth
     height: proxyAuthHeight
-    minimumWidth: proxyAuthWidth
-    minimumHeight: proxyAuthHeight
-    maximumWidth: proxyAuthWidth
-    maximumHeight: proxyAuthHeight
+    minimumWidth: mobileWindow ? 0 : proxyAuthWidth
+    minimumHeight: mobileWindow ? 0 : proxyAuthHeight
+    maximumWidth: mobileWindow ? 16777215 : proxyAuthWidth
+    maximumHeight: mobileWindow ? 16777215 : proxyAuthHeight
 
     ColumnLayout {
         anchors.fill: parent

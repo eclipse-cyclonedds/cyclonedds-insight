@@ -18,6 +18,7 @@ import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views/icons"
+import "qrc:/src/views/elements"
 
 
 ColumnLayout {
@@ -72,6 +73,25 @@ ColumnLayout {
             border.width: 1
             border.color: rootWindow.isDarkMode ? "#484848" : "#d0d0d0"
 
+            Rectangle {
+                id: selectedSegment
+                x: 2 + viewSelector.currentIndex * (width + 2)
+                y: 2
+                width: (viewSelector.width - 6) / 2
+                height: viewSelector.height - 4
+                radius: 3
+                color: rootWindow.isDarkMode ? "#414141" : "#fafafa"
+                border.width: 1
+                border.color: rootWindow.isDarkMode ? "#535353" : "#d5d5d5"
+
+                Behavior on x {
+                    NumberAnimation {
+                        duration: 140
+                        easing.type: Easing.OutCubic
+                    }
+                }
+            }
+
             Row {
                 anchors.fill: parent
                 anchors.margins: 2
@@ -91,46 +111,32 @@ ColumnLayout {
                         width: (parent.width - 2) / 2
                         height: parent.height
                         radius: 3
-                        color: selected
-                               ? rootWindow.isDarkMode
-                                 ? "#484848" : "#ffffff"
-                               : optionMouseArea.containsMouse
-                                 ? rootWindow.isDarkMode
-                                   ? "#363636" : Constants.lightDesignBorder
-                                 : rootWindow.isDarkMode
-                                   ? "#242424" : "transparent"
-                        border.width: 1
-                        border.color: selected
-                                      ? rootWindow.isDarkMode
-                                        ? "#747474" : "#c6c6c6"
-                                      : "transparent"
+                        color: !selected && optionMouseArea.containsMouse
+                               ? rootWindow.isDarkMode ? "#333333" : "#e0e0e0"
+                               : "transparent"
 
-                        Rectangle {
-                            visible: viewOption.selected
+                        EntityIcon {
+                            id: viewOptionIcon
                             anchors.left: parent.left
+                            anchors.leftMargin: 6
                             anchors.verticalCenter: parent.verticalCenter
-                            anchors.leftMargin: 5
-                            width: 2
-                            height: parent.height - 8
-                            radius: 1
-                            color: Constants.accentColor
+                            symbol: viewOption.index === 0 ? "topic" : "participant"
+                            iconColor: viewOptionLabel.color
                         }
 
                         Label {
-                            anchors.left: parent.left
+                            id: viewOptionLabel
+                            anchors.left: viewOptionIcon.right
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
-                            anchors.leftMargin: 11
+                            anchors.leftMargin: 5
                             anchors.rightMargin: 6
                             text: viewOption.modelData
-                            font.bold: viewOption.selected
                             horizontalAlignment: Text.AlignLeft
                             verticalAlignment: Text.AlignVCenter
                             elide: Text.ElideRight
                             color: rootWindow.isDarkMode
-                                   ? viewOption.selected
-                                     ? "#ffffff" : "#b8b8b8"
-                                   : "#262626"
+                                   ? Constants.darkMutedForeground : "#262626"
                         }
 
                         MouseArea {
@@ -146,7 +152,7 @@ ColumnLayout {
                             id: viewOptionTooltip
                             parent: viewOption
                             visible: optionMouseArea.containsMouse
-                                     && viewOption.width < 105
+                                     && viewOptionLabel.truncated
                             delay: 400
                             text: viewOption.modelData
                             contentItem: Label {
@@ -167,9 +173,14 @@ ColumnLayout {
             }
         }
 
-        Button {
+        SidebarActionButton {
             id: addDomainButton
-            text: "+"
+            isDarkMode: rootWindow.isDarkMode
+            Accessible.name: qsTrId("domain.add")
+            PlusMinusIcon {
+                anchors.centerIn: parent
+                iconColor: Constants.mutedForegroundColor(rootWindow.isDarkMode)
+            }
             onClicked: menu.open()
             hoverEnabled: true
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -191,26 +202,17 @@ ColumnLayout {
                     onClicked: treeModel.scanDomains()
                 }
             }
-            ToolTip {
-                id: addDomainTooltip
-                parent: addDomainButton
-                visible: addDomainButton.hovered
-                delay: 200
-                text: qsTrId("domain.discover.automatically.hint")
-                contentItem: Label {
-                    text: addDomainTooltip.text
-                }
-                background: Rectangle {
-                    border.color: Constants.borderColor(rootWindow.isDarkMode)
-                    border.width: 1
-                    color: Constants.cardBackgroundColor(rootWindow.isDarkMode)
-                }
-            }
         }
 
-        Button {
+        SidebarActionButton {
             id: removeDomainButton
-            text: "-"
+            isDarkMode: rootWindow.isDarkMode
+            Accessible.name: qsTrId("domain.remove.selected")
+            PlusMinusIcon {
+                anchors.centerIn: parent
+                minus: true
+                iconColor: Constants.mutedForegroundColor(rootWindow.isDarkMode)
+            }
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             Layout.preferredWidth: viewToolbar.actionWidth
             Layout.minimumWidth: viewToolbar.actionWidth
@@ -218,35 +220,14 @@ ColumnLayout {
             Layout.preferredHeight: viewToolbar.controlHeight
             onClicked: sideView.requestDomainRemoval()
             hoverEnabled: true
-            ToolTip {
-                id: removeDomainTooltip
-                parent: removeDomainButton
-                visible: removeDomainButton.hovered
-                delay: 200
-                text: qsTrId("domain.remove.selected")
-                contentItem: Label {
-                    text: removeDomainTooltip.text
-                }
-                background: Rectangle {
-                    border.color: Constants.borderColor(rootWindow.isDarkMode)
-                    border.width: 1
-                    color: Constants.cardBackgroundColor(rootWindow.isDarkMode)
-                }
-            }
         }
 
-        Button {
-            flat: true
-            highlighted: searchField.visible
+        SearchToggleButton {
+            isDarkMode: rootWindow.isDarkMode
+            expanded: searchField.visible
             opacity: viewSelector.currentIndex === 0 ? 1 : 0
             enabled: viewSelector.currentIndex === 0
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-            SearchIcon {
-                anchors.centerIn: parent
-                z: 1
-                expanded: searchField.visible
-                iconColor: Constants.mutedForegroundColor(rootWindow.isDarkMode)
-            }
             onClicked: {
                 if (viewSelector.currentIndex === 0) {
                     if (searchField.visible) {

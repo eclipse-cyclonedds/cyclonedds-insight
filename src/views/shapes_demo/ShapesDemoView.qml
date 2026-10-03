@@ -13,26 +13,25 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
+import QtQuick.Controls.Basic as Basic
 import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
 import "qrc:/src/views/selection_details"
+import "qrc:/src/views/icons"
+import "qrc:/src/views/elements"
 
 
-Window {
+Item {
     id: shapeDemoViewId
-    title: qsTrId("shapes.title")
-    width: 800
-    minimumWidth: 400
-    height: 490
-    minimumHeight: 400
-    flags: Qt.Window
+    property var viewHost: null
     property var shapesMap
     property var pendingWriterMap
     property var triangleScale: 0.7
     property bool paused: false
+    property bool controlsCollapsed: false
     property int currentControlTab: 0
     readonly property color surfaceColor: Constants.cardBackgroundColor(rootWindow.isDarkMode)
     readonly property color borderColor: Constants.designBorderColor(rootWindow.isDarkMode)
@@ -158,6 +157,9 @@ Window {
                 }
 
                 Label {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    elide: Text.ElideRight
                     text: qsTrId("general.shapedemo")
                     font.pixelSize: Constants.pageTitleFontSize
                     font.bold: true
@@ -180,6 +182,11 @@ Window {
                           : qsTrId("status.running")
                     font.bold: true
                 }
+
+                DetachViewButton {
+                    viewHost: shapeDemoViewId.viewHost
+                    visible: viewHost !== null
+                }
             }
 
             RowLayout {
@@ -187,147 +194,387 @@ Window {
                 Layout.fillHeight: true
                 spacing: 12
 
-                ColumnLayout {
-                    id: leftColumnOverview
-                    objectName: "shapeControls"
-                    Layout.preferredWidth: 245
-                    Layout.minimumWidth: 240
-                    Layout.maximumWidth: 250
+                Item {
+                    Layout.preferredWidth: shapeDemoViewId.controlsCollapsed ? 24 : 245
+                    Layout.minimumWidth: shapeDemoViewId.controlsCollapsed ? 24 : 240
+                    Layout.maximumWidth: shapeDemoViewId.controlsCollapsed ? 24 : 250
                     Layout.fillHeight: true
-                    spacing: 0
-
-                    Row {
-                        Layout.preferredHeight: 30
-                        Layout.bottomMargin: -1
-                        spacing: 3
-                        z: 2
-
-                        Repeater {
-                            model: [
-                                qsTrId("demo.shapes.shapelab"),
-                                qsTrId("demo.shapes.manage")
-                            ]
-
-                            Rectangle {
-                                id: controlTab
-
-                                required property int index
-                                required property string modelData
-                                readonly property bool selected:
-                                    index === shapeDemoViewId.currentControlTab
-
-                                width: (leftColumnOverview.width - 3) / 2
-                                height: selected ? 30 : 27
-                                y: selected ? 0 : 3
-                                radius: Constants.controlRadius
-                                color: selected
-                                       ? shapeDemoViewId.surfaceColor
-                                       : rootWindow.isDarkMode
-                                         ? "#383838"
-                                         : "#e2e2e2"
-                                border.width: 1
-                                border.color: selected
-                                              ? shapeDemoViewId.borderColor
-                                              : Constants.separatorColor(rootWindow.isDarkMode)
-                                opacity: selected || tabMouseArea.containsMouse
-                                         ? 1 : 0.78
-
-                                Rectangle {
-                                    visible: controlTab.selected
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.bottom: parent.bottom
-                                    anchors.leftMargin: 1
-                                    anchors.rightMargin: 1
-                                    height: 2
-                                    color: parent.color
-                                }
-
-                                Label {
-                                    anchors.centerIn: parent
-                                    text: controlTab.modelData
-                                    font.bold: controlTab.selected
-                                }
-
-                                MouseArea {
-                                    id: tabMouseArea
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        shapeDemoViewId.currentControlTab =
-                                            controlTab.index
-                                    }
-                                }
-                            }
-                        }
-                    }
 
                     Rectangle {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.topMargin: shapeDemoViewId.controlsCollapsed ? 0 : 29
+                        anchors.bottom: parent.bottom
                         radius: Constants.cardRadius
                         color: shapeDemoViewId.surfaceColor
                         border.width: 1
                         border.color: shapeDemoViewId.borderColor
-                        clip: true
-                        z: 1
+                    }
 
-                        StackLayout {
-                            id: mainLayoutId
-                            anchors.fill: parent
-                            anchors.margins: 10
-                            currentIndex: shapeDemoViewId.currentControlTab
+                    ColumnLayout {
+                        id: leftColumnOverview
+                        objectName: "shapeControls"
+                        visible: !shapeDemoViewId.controlsCollapsed
+                        anchors.fill: parent
+                        spacing: 0
 
-                            Item {
-                                id: createTabItem
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
+                        Row {
+                            Layout.preferredHeight: 30
+                            Layout.bottomMargin: -1
+                            spacing: 3
+                            z: 2
 
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    id: leftColumn
-                                    spacing: 8
+                            Repeater {
+                                model: [
+                                    qsTrId("demo.shapes.shapelab"),
+                                    qsTrId("demo.shapes.manage")
+                                ]
 
-                                        Rectangle {
-                                            Layout.fillWidth: true
-                                            implicitHeight:
-                                                publishShapeLayout.implicitHeight
-                                                + 16
-                                            radius: Constants.controlRadius
-                                            color: rootWindow.isDarkMode
-                                                   ? "#292929"
-                                                   : "#f8f8f8"
+                                Rectangle {
+                                    id: controlTab
 
-                                ColumnLayout {
-                                    id: publishShapeLayout
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.top: parent.top
-                                    anchors.margins: 8
-                                    spacing: 5
+                                    required property int index
+                                    required property string modelData
+                                    readonly property bool selected:
+                                        index === shapeDemoViewId.currentControlTab
 
-                                    Label {
-                                        text: qsTrId("demo.shapes.publish.shape")
-                                        font.bold: true
+                                    width: (leftColumnOverview.width - controlsCollapseButton.width - 6) / 2
+                                    height: selected ? 30 : 27
+                                    y: selected ? 0 : 3
+                                    radius: Constants.controlRadius
+                                    color: selected
+                                           ? shapeDemoViewId.surfaceColor
+                                           : rootWindow.isDarkMode
+                                             ? "#383838"
+                                             : "#e2e2e2"
+                                    border.width: 1
+                                    border.color: selected
+                                                  ? shapeDemoViewId.borderColor
+                                                  : Constants.separatorColor(rootWindow.isDarkMode)
+                                    opacity: selected || tabMouseArea.containsMouse
+                                             ? 1 : 0.78
+
+                                    Rectangle {
+                                        visible: controlTab.selected
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.bottom
+                                        anchors.leftMargin: 1
+                                        anchors.rightMargin: 1
+                                        height: 2
+                                        color: parent.color
                                     }
 
-                                    GridLayout {
-                                        Layout.fillWidth: true
-                                        columns: 2
-                                        columnSpacing: 8
-                                        rowSpacing: 5
+                                    Label {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 6
+                                        anchors.rightMargin: 6
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                        elide: Text.ElideRight
+                                        text: controlTab.modelData
+                                        font.bold: controlTab.selected
+                                    }
+
+                                    MouseArea {
+                                        id: tabMouseArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            shapeDemoViewId.currentControlTab =
+                                                controlTab.index
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            radius: Constants.cardRadius
+                            color: "transparent"
+                            clip: true
+                            z: 1
+
+                            StackLayout {
+                                id: mainLayoutId
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                currentIndex: shapeDemoViewId.currentControlTab
+
+                                ScrollView {
+                                    id: createTabItem
+                                    objectName: "shapeLabScroll"
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    Layout.minimumHeight: 0
+                                    implicitWidth: 0
+                                    implicitHeight: 0
+                                    clip: true
+                                    contentWidth: availableWidth
+                                    contentHeight: leftColumn.implicitHeight
+                                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                                    ColumnLayout {
+                                        id: leftColumn
+                                        width: createTabItem.availableWidth
+                                        spacing: 8
+
+                                            Rectangle {
+                                                Layout.fillWidth: true
+                                                implicitHeight:
+                                                    publishShapeLayout.implicitHeight
+                                                    + 16
+                                                radius: Constants.controlRadius
+                                                color: rootWindow.isDarkMode
+                                                       ? "#292929"
+                                                       : "#f8f8f8"
+
+                                    ColumnLayout {
+                                        id: publishShapeLayout
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.top: parent.top
+                                        anchors.margins: 8
+                                        spacing: 5
+
+                                        Label {
+                                            text: qsTrId("demo.shapes.publish.shape")
+                                            font.bold: true
+                                        }
+
+                                        GridLayout {
+                                            Layout.fillWidth: true
+                                            columns: 2
+                                            columnSpacing: 8
+                                            rowSpacing: 5
+
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 2
+
+                                                Label {
+                                                    text: qsTrId("demo.shapes.shape")
+                                                }
+
+                                                ComboBox {
+                                                    id: shapeSelector
+                                                    Layout.fillWidth: true
+                                                    model: ["Square", "Triangle", "Circle", "<<ALL>>"]
+                                                    currentIndex: 0
+                                                    onCurrentIndexChanged: {
+                                                        console.log("Selected shape:", currentText)
+                                                    }
+                                                }
+                                            }
+
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 2
+
+                                                Label {
+                                                    text: qsTrId("demo.shapes.color")
+                                                }
+
+                                                ComboBox {
+                                                    id: colorSelector
+                                                    Layout.fillWidth: true
+                                                    model: ["Red", "Blue", "Green", "Yellow", "Orange", "Cyan", "Magenta", "Purple", "Gray", "Black", "<<ALL>>"]
+                                                    currentIndex: 0
+                                                }
+                                            }
+                                        }
 
                                         ColumnLayout {
                                             Layout.fillWidth: true
                                             spacing: 2
+
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 5
+
+                                                Label {
+                                                    Layout.preferredWidth: 92
+                                                    text: qsTrId(
+                                                              "demo.shapes.size")
+                                                    elide: Text.ElideRight
+                                                }
+                                                Slider {
+                                                    id: sizeSlider
+                                                    Layout.fillWidth: true
+                                                    Layout.preferredHeight: 22
+                                                    from: 1
+                                                    to: 99
+                                                    value: 30
+                                                    stepSize: 1
+                                                }
+                                                Label {
+                                                    Layout.preferredWidth: 22
+                                                    text: sizeSlider.value
+                                                    horizontalAlignment:
+                                                        Text.AlignRight
+                                                }
+                                            }
+
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 5
+
+                                                Label {
+                                                    Layout.preferredWidth: 92
+                                                    text: qsTrId(
+                                                              "demo.shapes.speed")
+                                                    elide: Text.ElideRight
+                                                }
+                                                Slider {
+                                                    id: speedSlider
+                                                    Layout.fillWidth: true
+                                                    Layout.preferredHeight: 22
+                                                    from: 1
+                                                    to: 20
+                                                    value: 4
+                                                    stepSize: 1
+                                                }
+                                                Label {
+                                                    Layout.preferredWidth: 22
+                                                    text: speedSlider.value
+                                                    horizontalAlignment:
+                                                        Text.AlignRight
+                                                }
+                                            }
+
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                enabled: rotationSpeedSlider.value === 0
+                                                spacing: 5
+
+                                                Label {
+                                                    Layout.preferredWidth: 92
+                                                    text: qsTrId(
+                                                              "demo.shapes.angle")
+                                                    elide: Text.ElideRight
+                                                }
+                                                Slider {
+                                                    id: rotationSlider
+                                                    Layout.fillWidth: true
+                                                    Layout.preferredHeight: 22
+                                                    from: 0
+                                                    to: 360
+                                                    value: 0
+                                                    stepSize: 1
+                                                }
+                                                Label {
+                                                    Layout.preferredWidth: 22
+                                                    text: rotationSlider.value
+                                                          + "\u00B0"
+                                                    horizontalAlignment:
+                                                        Text.AlignRight
+                                                }
+                                            }
+
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 5
+
+                                                Label {
+                                                    Layout.preferredWidth: 92
+                                                    text: qsTrId(
+                                                              "demo.shapes.rotation.speed")
+                                                    elide: Text.ElideRight
+                                                }
+                                                Slider {
+                                                    id: rotationSpeedSlider
+                                                    Layout.fillWidth: true
+                                                    Layout.preferredHeight: 22
+                                                    from: 0
+                                                    to: 20
+                                                    value: 0
+                                                    stepSize: 1
+                                                }
+                                                Label {
+                                                    Layout.preferredWidth: 22
+                                                    text:
+                                                        rotationSpeedSlider.value
+                                                    horizontalAlignment:
+                                                        Text.AlignRight
+                                                }
+                                            }
+                                        }
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+
+                                            Label {
+                                                text: qsTrId("demo.shapes.fill")
+                                            }
+                                            ComboBox {
+                                                id: fillKindSelector
+                                                Layout.fillWidth: true
+                                                model: ["SOLID_FILL", "TRANSPARENT_FILL", "HORIZONTAL_HATCH_FILL", "VERTICAL_HATCH_FILL"]
+                                                currentIndex: 0
+                                                onCurrentIndexChanged: {
+                                                    console.log("Selected fill:", currentText)
+                                                }
+                                            }
+                                        }
+
+                                        Button {
+                                            Layout.fillWidth: true
+                                            text: qsTrId("demo.shapes.publish")
+                                            onClicked: {
+                                                console.log("Publish shape:", shapeSelector.currentText, "Color:", colorSelector.currentText, "Size:", sizeSlider.value, "Speed:", speedSlider.value);
+                                                shapesDemoModel.setPublishInfos(
+                                                    shapeSelector.currentText,
+                                                    colorSelector.currentText,
+                                                    sizeSlider.value,
+                                                    speedSlider.value,
+                                                    rotationSlider.value,
+                                                    rotationSpeedSlider.value,
+                                                    fillKindSelector.currentIndex);
+
+                                                shapesDemoQosSelector.setType(shapeSelector.currentText, 4)
+                                                shapesDemoQosSelector.setButtonName(qsTrId("demo.shapes.publish.shape"))
+                                                shapesDemoQosSelector.open()
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    implicitHeight:
+                                        subscribeShapeLayout.implicitHeight + 16
+                                    radius: Constants.controlRadius
+                                    color: rootWindow.isDarkMode
+                                           ? "#292929"
+                                           : "#f8f8f8"
+
+                                    ColumnLayout {
+                                        id: subscribeShapeLayout
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.top: parent.top
+                                        anchors.margins: 8
+                                        spacing: 5
+
+                                        Label {
+                                            text: qsTrId("demo.shapes.subscribe.shape")
+                                            font.bold: true
+                                        }
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
 
                                             Label {
                                                 text: qsTrId("demo.shapes.shape")
                                             }
 
                                             ComboBox {
-                                                id: shapeSelector
+                                                id: shapeSelectorSubscribe
                                                 Layout.fillWidth: true
                                                 model: ["Square", "Triangle", "Circle", "<<ALL>>"]
                                                 currentIndex: 0
@@ -337,486 +584,316 @@ Window {
                                             }
                                         }
 
-                                        ColumnLayout {
+                                        Button {
                                             Layout.fillWidth: true
-                                            spacing: 2
-
-                                            Label {
-                                                text: qsTrId("demo.shapes.color")
+                                            text: qsTrId("demo.shapes.subscribe")
+                                            onClicked: {
+                                                shapesDemoModel.setSubscribeInfos(shapeSelectorSubscribe.currentText);
+                                                shapesDemoQosSelector.setType(shapeSelectorSubscribe.currentText, 3)
+                                                shapesDemoQosSelector.setButtonName(qsTrId("demo.shapes.subscribe.shape"))
+                                                shapesDemoQosSelector.open()
                                             }
-
-                                            ComboBox {
-                                                id: colorSelector
-                                                Layout.fillWidth: true
-                                                model: ["Red", "Blue", "Green", "Yellow", "Orange", "Cyan", "Magenta", "Purple", "Gray", "Black", "<<ALL>>"]
-                                                currentIndex: 0
-                                            }
-                                        }
-                                    }
-
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 2
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 5
-
-                                            Label {
-                                                Layout.preferredWidth: 92
-                                                text: qsTrId(
-                                                          "demo.shapes.size")
-                                                elide: Text.ElideRight
-                                            }
-                                            Slider {
-                                                id: sizeSlider
-                                                Layout.fillWidth: true
-                                                Layout.preferredHeight: 22
-                                                from: 1
-                                                to: 99
-                                                value: 30
-                                                stepSize: 1
-                                            }
-                                            Label {
-                                                Layout.preferredWidth: 22
-                                                text: sizeSlider.value
-                                                horizontalAlignment:
-                                                    Text.AlignRight
-                                            }
-                                        }
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 5
-
-                                            Label {
-                                                Layout.preferredWidth: 92
-                                                text: qsTrId(
-                                                          "demo.shapes.speed")
-                                                elide: Text.ElideRight
-                                            }
-                                            Slider {
-                                                id: speedSlider
-                                                Layout.fillWidth: true
-                                                Layout.preferredHeight: 22
-                                                from: 1
-                                                to: 20
-                                                value: 4
-                                                stepSize: 1
-                                            }
-                                            Label {
-                                                Layout.preferredWidth: 22
-                                                text: speedSlider.value
-                                                horizontalAlignment:
-                                                    Text.AlignRight
-                                            }
-                                        }
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            enabled: rotationSpeedSlider.value === 0
-                                            spacing: 5
-
-                                            Label {
-                                                Layout.preferredWidth: 92
-                                                text: qsTrId(
-                                                          "demo.shapes.angle")
-                                                elide: Text.ElideRight
-                                            }
-                                            Slider {
-                                                id: rotationSlider
-                                                Layout.fillWidth: true
-                                                Layout.preferredHeight: 22
-                                                from: 0
-                                                to: 360
-                                                value: 0
-                                                stepSize: 1
-                                            }
-                                            Label {
-                                                Layout.preferredWidth: 22
-                                                text: rotationSlider.value
-                                                      + "\u00B0"
-                                                horizontalAlignment:
-                                                    Text.AlignRight
-                                            }
-                                        }
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 5
-
-                                            Label {
-                                                Layout.preferredWidth: 92
-                                                text: qsTrId(
-                                                          "demo.shapes.rotation.speed")
-                                                elide: Text.ElideRight
-                                            }
-                                            Slider {
-                                                id: rotationSpeedSlider
-                                                Layout.fillWidth: true
-                                                Layout.preferredHeight: 22
-                                                from: 0
-                                                to: 20
-                                                value: 0
-                                                stepSize: 1
-                                            }
-                                            Label {
-                                                Layout.preferredWidth: 22
-                                                text:
-                                                    rotationSpeedSlider.value
-                                                horizontalAlignment:
-                                                    Text.AlignRight
-                                            }
-                                        }
-                                    }
-
-                                    RowLayout {
-                                        Layout.fillWidth: true
-
-                                        Label {
-                                            text: qsTrId("demo.shapes.fill")
-                                        }
-                                        ComboBox {
-                                            id: fillKindSelector
-                                            Layout.fillWidth: true
-                                            model: ["SOLID_FILL", "TRANSPARENT_FILL", "HORIZONTAL_HATCH_FILL", "VERTICAL_HATCH_FILL"]
-                                            currentIndex: 0
-                                            onCurrentIndexChanged: {
-                                                console.log("Selected fill:", currentText)
-                                            }
-                                        }
-                                    }
-
-                                    Button {
-                                        Layout.fillWidth: true
-                                        text: qsTrId("demo.shapes.publish")
-                                        onClicked: {
-                                            console.log("Publish shape:", shapeSelector.currentText, "Color:", colorSelector.currentText, "Size:", sizeSlider.value, "Speed:", speedSlider.value);
-                                            shapesDemoModel.setPublishInfos(
-                                                shapeSelector.currentText,
-                                                colorSelector.currentText,
-                                                sizeSlider.value,
-                                                speedSlider.value,
-                                                rotationSlider.value,
-                                                rotationSpeedSlider.value,
-                                                fillKindSelector.currentIndex);
-
-                                            shapesDemoQosSelector.setType(shapeSelector.currentText, 4)
-                                            shapesDemoQosSelector.setButtonName(qsTrId("demo.shapes.publish.shape"))
-                                            shapesDemoQosSelector.open()
                                         }
                                     }
                                 }
-                            }
-
-                            Rectangle {
-                                Layout.fillWidth: true
-                                implicitHeight:
-                                    subscribeShapeLayout.implicitHeight + 16
-                                radius: Constants.controlRadius
-                                color: rootWindow.isDarkMode
-                                       ? "#292929"
-                                       : "#f8f8f8"
-
-                                ColumnLayout {
-                                    id: subscribeShapeLayout
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.top: parent.top
-                                    anchors.margins: 8
-                                    spacing: 5
-
-                                    Label {
-                                        text: qsTrId("demo.shapes.subscribe.shape")
-                                        font.bold: true
-                                    }
-
-                                    RowLayout {
-                                        Layout.fillWidth: true
-
-                                        Label {
-                                            text: qsTrId("demo.shapes.shape")
-                                        }
-
-                                        ComboBox {
-                                            id: shapeSelectorSubscribe
-                                            Layout.fillWidth: true
-                                            model: ["Square", "Triangle", "Circle", "<<ALL>>"]
-                                            currentIndex: 0
-                                            onCurrentIndexChanged: {
-                                                console.log("Selected shape:", currentText)
-                                            }
-                                        }
-                                    }
-
-                                    Button {
-                                        Layout.fillWidth: true
-                                        text: qsTrId("demo.shapes.subscribe")
-                                        onClicked: {
-                                            shapesDemoModel.setSubscribeInfos(shapeSelectorSubscribe.currentText);
-                                            shapesDemoQosSelector.setType(shapeSelectorSubscribe.currentText, 3)
-                                            shapesDemoQosSelector.setButtonName(qsTrId("demo.shapes.subscribe.shape"))
-                                            shapesDemoQosSelector.open()
-                                        }
-                                    }
+                                Item {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
                                 }
-                            }
-                            Item {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
                             }
                         }
-                    }
 
-                            Item {
-                                id: listTabItem
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
+                                Item {
+                                    id: listTabItem
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
 
-                                ListView {
-                                    id: manageList
-                                    objectName: "manageList"
-                                    anchors.fill: parent
-                                    clip: true
-                                    ScrollBar.vertical: ScrollBar {}
-                                    model: shapesDemoModel
-                                    spacing: 4
+                                    ListView {
+                                        id: manageList
+                                        objectName: "manageList"
+                                        anchors.fill: parent
+                                        clip: true
+                                        ScrollBar.vertical: ScrollBar {}
+                                        model: shapesDemoModel
+                                        spacing: 4
 
-                                    delegate: Rectangle {
-                                        id: manageDelegate
+                                        delegate: Rectangle {
+                                            id: manageDelegate
 
-                                        required property int index
-                                        required property string name
-                                        required property string qos
-                                        readonly property color textColor:
-                                            rootWindow.isDarkMode
-                                            ? "#eeeeee" : "#262626"
-                                        readonly property color detailsColor:
-                                            rootWindow.isDarkMode
-                                            ? Constants.darkMutedForeground : "#555555"
+                                            required property int index
+                                            required property string name
+                                            required property string qos
+                                            readonly property color textColor:
+                                                rootWindow.isDarkMode
+                                                ? "#eeeeee" : "#262626"
+                                            readonly property color detailsColor:
+                                                rootWindow.isDarkMode
+                                                ? Constants.darkMutedForeground : "#555555"
 
-                                        width: ListView.view.width
-                                        height: 44
-                                        radius: Constants.controlRadius
-                                        color: rowMouseArea.containsMouse
-                                               ? rootWindow.isDarkMode
-                                                 ? "#3b3f49"
-                                                 : "#e9edf7"
-                                               : rootWindow.isDarkMode
-                                                 ? "#292929"
-                                                 : "#f8f8f8"
-                                        border.width: 1
-                                        border.color:
-                                            rowMouseArea.containsMouse
-                                            ? rootWindow.isDarkMode
-                                              ? "#626a7b"
-                                              : "#c7cee0"
-                                            : shapeDemoViewId.borderColor
-
-                                        Label {
-                                            text: manageDelegate.name
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            anchors.left: parent.left
-                                            anchors.leftMargin: 10
-                                            anchors.right: detailsButton.left
-                                            anchors.rightMargin: 8
-                                            color: manageDelegate.textColor
-                                            elide: Text.ElideRight
-                                        }
-
-                                        MouseArea {
-                                            id: rowMouseArea
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            acceptedButtons: Qt.NoButton
-                                        }
-
-                                        Rectangle {
-                                            id: detailsButton
-                                            width: detailsLabel.implicitWidth + 16
-                                            height: 28
-                                            radius: 5
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            anchors.right: removeButton.left
-                                            anchors.rightMargin: 5
-                                            color: detailsMouseArea.pressed
+                                            width: ListView.view.width
+                                            height: 44
+                                            radius: Constants.controlRadius
+                                            color: rowMouseArea.containsMouse
                                                    ? rootWindow.isDarkMode
-                                                     ? "#4a4a4a"
-                                                     : "#d7d7d7"
-                                                   : detailsMouseArea.containsMouse
-                                                     ? rootWindow.isDarkMode
-                                                       ? "#3e3e3e"
-                                                       : "#e8e8e8"
-                                                     : rootWindow.isDarkMode
-                                                       ? "#303030"
-                                                       : "#f1f1f1"
+                                                     ? "#3b3f49"
+                                                     : "#e9edf7"
+                                                   : rootWindow.isDarkMode
+                                                     ? "#292929"
+                                                     : "#f8f8f8"
                                             border.width: 1
-                                            border.color: rootWindow.isDarkMode
-                                                          ? "#666666"
-                                                          : "#b5b5b5"
+                                            border.color:
+                                                rowMouseArea.containsMouse
+                                                ? rootWindow.isDarkMode
+                                                  ? "#626a7b"
+                                                  : "#c7cee0"
+                                                : shapeDemoViewId.borderColor
 
                                             Label {
-                                                id: detailsLabel
-                                                anchors.centerIn: parent
-                                                text: qsTrId(
-                                                          "endpoint.details")
-                                                color:
-                                                    manageDelegate.detailsColor
-                                                font.bold: true
+                                                text: manageDelegate.name
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                anchors.left: parent.left
+                                                anchors.leftMargin: 10
+                                                anchors.right: detailsButton.left
+                                                anchors.rightMargin: 8
+                                                color: manageDelegate.textColor
+                                                elide: Text.ElideRight
                                             }
 
                                             MouseArea {
-                                                id: detailsMouseArea
+                                                id: rowMouseArea
                                                 anchors.fill: parent
                                                 hoverEnabled: true
-                                                cursorShape:
-                                                    Qt.PointingHandCursor
-                                                onClicked: {
-                                                    if (endpDetailWindow.visible) {
-                                                        endpDetailWindow.raise()
-                                                    } else {
-                                                        var centerPos =
-                                                            detailsButton
-                                                            .mapToGlobal(
-                                                                width / 2,
-                                                                height)
-                                                        endpDetailWindow.x =
-                                                            centerPos.x
-                                                            - endpDetailWindow
-                                                              .width / 2
-                                                        endpDetailWindow.y =
-                                                            centerPos.y
-                                                        endpDetailWindow
-                                                            .visible = true
+                                                acceptedButtons: Qt.NoButton
+                                            }
+
+                                            Rectangle {
+                                                id: detailsButton
+                                                width: detailsLabel.implicitWidth + 16
+                                                height: 28
+                                                radius: 5
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                anchors.right: removeButton.left
+                                                anchors.rightMargin: 5
+                                                color: detailsMouseArea.pressed
+                                                       ? rootWindow.isDarkMode
+                                                         ? "#4a4a4a"
+                                                         : "#d7d7d7"
+                                                       : detailsMouseArea.containsMouse
+                                                         ? rootWindow.isDarkMode
+                                                           ? "#3e3e3e"
+                                                           : "#e8e8e8"
+                                                         : rootWindow.isDarkMode
+                                                           ? "#303030"
+                                                           : "#f1f1f1"
+                                                border.width: 1
+                                                border.color: rootWindow.isDarkMode
+                                                              ? "#666666"
+                                                              : "#b5b5b5"
+
+                                                Label {
+                                                    id: detailsLabel
+                                                    anchors.centerIn: parent
+                                                    text: qsTrId(
+                                                              "endpoint.details")
+                                                    color:
+                                                        manageDelegate.detailsColor
+                                                    font.bold: true
+                                                }
+
+                                                MouseArea {
+                                                    id: detailsMouseArea
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    cursorShape:
+                                                        Qt.PointingHandCursor
+                                                    onClicked: {
+                                                        if (endpDetailWindow.visible) {
+                                                            endpDetailWindow.raise()
+                                                        } else {
+                                                            var centerPos =
+                                                                detailsButton
+                                                                .mapToGlobal(
+                                                                    width / 2,
+                                                                    height)
+                                                            endpDetailWindow.x =
+                                                                centerPos.x
+                                                                - endpDetailWindow
+                                                                  .width / 2
+                                                            endpDetailWindow.y =
+                                                                centerPos.y
+                                                            endpDetailWindow
+                                                                .visible = true
+                                                        }
+                                                    }
+                                                }
+
+                                                ToolTip {
+                                                    id: infoTooltip
+                                                    parent: detailsButton
+                                                    visible:
+                                                        detailsMouseArea
+                                                        .containsMouse
+                                                    delay: 200
+                                                    text: qsTrId("shapes.qos.value").arg(manageDelegate.qos)
+                                                    contentItem: Label {
+                                                        text: infoTooltip.text
+                                                    }
+                                                    background: Rectangle {
+                                                        border.color: Constants.borderColor(rootWindow.isDarkMode)
+                                                        border.width: 1
+                                                        color: Constants.cardBackgroundColor(rootWindow.isDarkMode)
                                                     }
                                                 }
                                             }
 
-                                            ToolTip {
-                                                id: infoTooltip
-                                                parent: detailsButton
-                                                visible:
-                                                    detailsMouseArea
-                                                    .containsMouse
-                                                delay: 200
-                                                text: qsTrId("shapes.qos.value").arg(manageDelegate.qos)
-                                                contentItem: Label {
-                                                    text: infoTooltip.text
-                                                }
-                                                background: Rectangle {
-                                                    border.color: Constants.borderColor(rootWindow.isDarkMode)
-                                                    border.width: 1
-                                                    color: Constants.cardBackgroundColor(rootWindow.isDarkMode)
-                                                }
-                                            }
-                                        }
+                                            Rectangle {
+                                                id: removeButton
+                                                width: 28
+                                                height: 28
+                                                radius: 5
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                anchors.right: parent.right
+                                                anchors.rightMargin: 7
+                                                color: removeMouseArea.pressed
+                                                       ? rootWindow.isDarkMode
+                                                         ? "#5a292d"
+                                                         : "#ffd9dc"
+                                                       : removeMouseArea
+                                                         .containsMouse
+                                                         ? rootWindow.isDarkMode
+                                                           ? "#47272a"
+                                                           : "#ffeaec"
+                                                         : "transparent"
+                                                border.width: 1
+                                                border.color: rootWindow.isDarkMode
+                                                              ? "#e56b73"
+                                                              : "#c83f49"
 
-                                        Rectangle {
-                                            id: removeButton
-                                            width: 28
-                                            height: 28
-                                            radius: 5
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            anchors.right: parent.right
-                                            anchors.rightMargin: 7
-                                            color: removeMouseArea.pressed
-                                                   ? rootWindow.isDarkMode
-                                                     ? "#5a292d"
-                                                     : "#ffd9dc"
-                                                   : removeMouseArea
-                                                     .containsMouse
-                                                     ? rootWindow.isDarkMode
-                                                       ? "#47272a"
-                                                       : "#ffeaec"
-                                                     : "transparent"
-                                            border.width: 1
-                                            border.color: rootWindow.isDarkMode
-                                                          ? "#e56b73"
-                                                          : "#c83f49"
-
-                                            Item {
-                                                anchors.centerIn: parent
-                                                width: 10
-                                                height: 10
-
-                                                Rectangle {
+                                                Item {
                                                     anchors.centerIn: parent
-                                                    width: 12
-                                                    height: 1.5
-                                                    radius: 1
-                                                    rotation: 45
-                                                    color:
-                                                        rootWindow.isDarkMode
-                                                        ? "#ff949b"
-                                                        : "#b72f39"
+                                                    width: 10
+                                                    height: 10
+
+                                                    Rectangle {
+                                                        anchors.centerIn: parent
+                                                        width: 12
+                                                        height: 1.5
+                                                        radius: 1
+                                                        rotation: 45
+                                                        color:
+                                                            rootWindow.isDarkMode
+                                                            ? "#ff949b"
+                                                            : "#b72f39"
+                                                    }
+
+                                                    Rectangle {
+                                                        anchors.centerIn: parent
+                                                        width: 12
+                                                        height: 1.5
+                                                        radius: 1
+                                                        rotation: -45
+                                                        color:
+                                                            rootWindow.isDarkMode
+                                                            ? "#ff949b"
+                                                            : "#b72f39"
+                                                    }
                                                 }
 
-                                                Rectangle {
-                                                    anchors.centerIn: parent
-                                                    width: 12
-                                                    height: 1.5
-                                                    radius: 1
-                                                    rotation: -45
-                                                    color:
-                                                        rootWindow.isDarkMode
-                                                        ? "#ff949b"
-                                                        : "#b72f39"
+                                                MouseArea {
+                                                    id: removeMouseArea
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    cursorShape:
+                                                        Qt.PointingHandCursor
+                                                    onClicked:
+                                                        shapesDemoModel.removeItem(
+                                                            manageDelegate.index)
+                                                }
+
+                                                ToolTip {
+                                                    id: removeTooltip
+                                                    parent: removeButton
+                                                    visible:
+                                                        removeMouseArea
+                                                        .containsMouse
+                                                    delay: 300
+                                                    text: qsTrId("shapes.endpoint.remove")
+                                                    contentItem: Label {
+                                                        text: removeTooltip.text
+                                                        padding: 4
+                                                        color:
+                                                            rootWindow.isDarkMode
+                                                            ? "#eeeeee"
+                                                            : "#262626"
+                                                    }
+                                                    background: Rectangle {
+                                                        radius: 4
+                                                        border.width: 1
+                                                        border.color:
+                                                            rootWindow.isDarkMode
+                                                            ? Constants
+                                                              .darkBorderColor
+                                                            : Constants
+                                                              .lightBorderColor
+                                                        color:
+                                                            rootWindow.isDarkMode
+                                                            ? Constants
+                                                              .darkCardBackgroundColor
+                                                            : Constants
+                                                              .lightCardBackgroundColor
+                                                    }
                                                 }
                                             }
 
-                                            MouseArea {
-                                                id: removeMouseArea
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                cursorShape:
-                                                    Qt.PointingHandCursor
-                                                onClicked:
-                                                    shapesDemoModel.removeItem(
-                                                        manageDelegate.index)
+                                            EndpointDetailWindow {
+                                                id: endpDetailWindow
+                                                title: manageDelegate.name
+                                                endpointText: infoTooltip.text
                                             }
-
-                                            ToolTip {
-                                                id: removeTooltip
-                                                parent: removeButton
-                                                visible:
-                                                    removeMouseArea
-                                                    .containsMouse
-                                                delay: 300
-                                                text: qsTrId("shapes.endpoint.remove")
-                                                contentItem: Label {
-                                                    text: removeTooltip.text
-                                                    padding: 4
-                                                    color:
-                                                        rootWindow.isDarkMode
-                                                        ? "#eeeeee"
-                                                        : "#262626"
-                                                }
-                                                background: Rectangle {
-                                                    radius: 4
-                                                    border.width: 1
-                                                    border.color:
-                                                        rootWindow.isDarkMode
-                                                        ? Constants
-                                                          .darkBorderColor
-                                                        : Constants
-                                                          .lightBorderColor
-                                                    color:
-                                                        rootWindow.isDarkMode
-                                                        ? Constants
-                                                          .darkCardBackgroundColor
-                                                        : Constants
-                                                          .lightCardBackgroundColor
-                                                }
-                                            }
-                                        }
-
-                                        EndpointDetailWindow {
-                                            id: endpDetailWindow
-                                            title: manageDelegate.name
-                                            endpointText: infoTooltip.text
                                         }
                                     }
                                 }
+                            }
+                        }
+                    }
+
+                    Basic.Button {
+                        id: controlsCollapseButton
+                        objectName: "shapeControlsCollapseButton"
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        z: 3
+                        width: 24
+                        height: 30
+                        padding: 0
+                        Accessible.name: shapeDemoViewId.controlsCollapsed
+                                         ? qsTrId("sidebar.show")
+                                         : qsTrId("sidebar.hide")
+                        onClicked: shapeDemoViewId.controlsCollapsed =
+                                       !shapeDemoViewId.controlsCollapsed
+
+                        contentItem: Item {
+                            ArrowIcon {
+                                anchors.centerIn: parent
+                                width: 10
+                                height: 10
+                                direction: shapeDemoViewId.controlsCollapsed
+                                           ? "right" : "left"
+                                iconColor: Constants.mutedForegroundColor(
+                                               rootWindow.isDarkMode)
+                                lineWidth: 1.5
+                                opacity: controlsCollapseButton.hovered || controlsCollapseButton.activeFocus ? 1 : 0.65
+                            }
+                        }
+                        background: Item {
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: Math.min(32, parent.width)
+                                height: 22
+                                radius: Constants.controlRadius
+                                color: rootWindow.isDarkMode ? "#383838" : "#e9e9e9"
+                                visible: controlsCollapseButton.hovered
+                                         || controlsCollapseButton.activeFocus
                             }
                         }
                     }
@@ -961,8 +1038,16 @@ Window {
         return Qt.rgba(rgb.r / 255, rgb.g / 255, rgb.b / 255, opacity);
     }
 
+    Connections {
+        target: shapeDemoViewId.viewHost
+        function onAboutToMove() {
+            shapesDemoQosSelector.close()
+        }
+    }
+
     QosSelector {
         id: shapesDemoQosSelector
+        parent: shapeDemoViewId
         model: shapesDemoModel
     }
 }

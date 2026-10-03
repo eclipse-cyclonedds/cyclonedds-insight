@@ -21,12 +21,12 @@ from PySide6.QtCore import QThread, Signal, QStandardPaths
 from PySide6.QtCore import QObject
 import inspect
 from utils.system import delete_folder
-from dds_access.idlc import IdlcWorkerThread
 from dataclasses import dataclass, fields, is_dataclass
 import typing
 from models.data_tree_model import DataTreeModel, DataTreeNode
 import cyclonedds
 import re
+from utils.platform_utils import IS_MOBILE
 
 @dataclass
 class DataModelItem:
@@ -44,7 +44,7 @@ class DataModelHandler(QObject):
     def __init__(self, parent=typing.Optional[QObject]):
         super().__init__()
 
-        self.idlcWorker: typing.Optional[IdlcWorkerThread] = None
+        self.idlcWorker = None
         self.app_data_dir: str = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
         self.datamodel_dir: str = os.path.join(self.app_data_dir, "datamodel")
         self.destination_folder_idl: str = os.path.join(self.datamodel_dir, "idl")
@@ -73,12 +73,17 @@ class DataModelHandler(QObject):
         return None
 
     def addUrls(self, urls):
+        if IS_MOBILE:
+            logging.warning("IDL file compilation is unavailable on mobile devices; use types discovered from the network.")
+            return
         if self.idlcWorker:
             return
         
         self.isLoadingSignal.emit(True)
 
         logging.debug("add urls:" + str(urls))
+
+        from dds_access.idlc import IdlcWorkerThread
 
         self.idlcWorker = IdlcWorkerThread(urls, self.destination_folder_py, self.destination_folder_idl)
         self.idlcWorker.doneSignale.connect(self.idlcWorkerDone)

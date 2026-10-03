@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, QByteArray, QStandardPaths, QFile, QDir, QProcess, QThread, Property
+from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, QByteArray, QStandardPaths, QFile, QDir, QThread, Property
 from PySide6.QtCore import QObject, Signal, Slot
 from loguru import logger as logging
 import os
@@ -19,7 +19,6 @@ import importlib
 import copy
 from pathlib import Path
 import uuid
-import subprocess
 import glob
 from dataclasses import dataclass
 import typing
@@ -343,7 +342,7 @@ class TesterModel(QAbstractListModel):
     def rowCount(self, index: QModelIndex = QModelIndex()) -> int:
         return len(self.items.keys())
 
-    @Slot(int, int, result=DataTreeModel)
+    @Slot(int, int, result="QVariant")
     def getTreeModel(self, currentIndex: int, dataIndex: int = 0) -> DataTreeModel:
         if currentIndex < 0 or currentIndex >= len(self.items.keys()):
             return None
@@ -480,7 +479,7 @@ class TesterModel(QAbstractListModel):
         self.dataChanged.emit(idx, idx, [self.DataModelRole])
         return min(dataIndex, item.getDataTreeModelCount() - 1)
 
-    @Slot(int, result=SequenceItem)
+    @Slot(int, result="QVariant")
     def getSequenceModel(self, currentIndex: int) -> SequenceItem:
         if currentIndex < 0 or currentIndex >= len(self.items.keys()):
             return None
@@ -610,7 +609,7 @@ class TesterModel(QAbstractListModel):
         idx = self.index(currentIndex)
         self.dataChanged.emit(idx, idx, [self.DescriptionRole])
 
-    @Slot(int, str, str, str, object)
+    @Slot(str, int, str, str, object)
     def addWriter(self, id: str, domainId, topic_name, topic_type: str, qos):
         logging.info("AddWriter to TesterModel")
 

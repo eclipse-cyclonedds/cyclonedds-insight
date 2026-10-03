@@ -17,6 +17,7 @@ import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views/icons"
+import "qrc:/src/views/selection_details"
 
 
 TreeView {
@@ -92,11 +93,22 @@ TreeView {
                 }
             }
         }
-        Label {
-            id: label
+        DetailBadge {
+            id: entityIcon
             x: padding + (isTreeNode ? (depth + 1) * indentation : 0)
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - padding - x - 10
+            width: 18
+            height: 18
+            color: "transparent"
+            iconColor: label.color
+            kind: model.is_domain ? "domain" : "topic"
+        }
+
+        Label {
+            id: label
+            x: entityIcon.x + entityIcon.width + 5
+            anchors.verticalCenter: parent.verticalCenter
+            width: Math.max(0, parent.width - padding - x - 10 - (warning_triangle.visible ? 25 : 0))
             clip: true
             text: model.is_domain
                   ? qsTrId("entity.domain.value").arg(model.display)
@@ -109,8 +121,8 @@ TreeView {
             width: 15
             height: 15
             anchors.verticalCenter: label.verticalCenter
-            anchors.right: model.is_domain ? label.right : label.left
-            anchors.margins: 5
+            anchors.right: parent.right
+            anchors.rightMargin: 15
             enableTooltip: true
             tooltipText: qsTrId("endpoint.qos.mismatch.detected")
         }

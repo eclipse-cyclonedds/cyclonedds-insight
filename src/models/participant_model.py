@@ -19,7 +19,7 @@ from typing import List
 from cyclonedds.builtin import DcpsParticipant
 from loguru import logger as logging
 from dds_access import dds_data
-from dds_access.dds_utils import getHostname, getAppName, getVendorName
+from dds_access.dds_utils import getHostname, getAppName, getVendorName, getProcessName, getProperty, PIDS, ADDRESSES
 from enum import Enum
 
 
@@ -437,6 +437,50 @@ class ParticipantTreeModel(QAbstractItemModel):
             display = self.data(index, role=self.DisplayRole)
             return str(display)
         return ""
+
+    @Slot(QModelIndex, result=str)
+    def getEndpointTopicName(self, index):
+        if index.isValid() and self.getIsEndpoint(index):
+            return str(index.internalPointer().parentItem.itemData)
+        return ""
+
+    @Slot(QModelIndex, result=bool)
+    def getIsWriter(self, index):
+        return bool(index.isValid() and self.data(index, role=self.IsWriterRole))
+
+    @Slot(QModelIndex, result="QVariantMap")
+    def getNodeSummary(self, index):
+        if not index.isValid():
+            return {}
+        node = index.internalPointer()
+        if node.layer not in (DisplayLayerEnum.HOSTNAME, DisplayLayerEnum.APP):
+            return {}
+        participants = []
+        topics = set()
+        counts = {"processes": 0, "participants": 0, "readers": 0, "writers": 0}
+        pending = [node]
+        while pending:
+            child = pending.pop()
+            pending.extend(child.childMap.values())
+            if child.layer == DisplayLayerEnum.APP:
+                counts["processes"] += 1
+            elif child.layer == DisplayLayerEnum.PARTICIPANT:
+                counts["participants"] += 1
+                participants.append(child.itemData)
+            elif child.layer == DisplayLayerEnum.TOPIC:
+                topics.add(str(child.itemData))
+            elif child.layer == DisplayLayerEnum.READER:
+                counts["readers"] += 1
+            elif child.layer == DisplayLayerEnum.WRITER:
+                counts["writers"] += 1
+        def known(value):
+            return "" if value == "Unknown" else value
+        addresses = sorted({known(getProperty(p, ADDRESSES)) for p in participants} - {""})
+        return dict(counts, topics=len(topics),
+                    hostname=known(getHostname(node.itemData)),
+                    processName=known(getProcessName(node.itemData)),
+                    processId=known(getProperty(node.itemData, PIDS)),
+                    addresses="\n".join(addresses))
 
     @Slot(QModelIndex, result=str)
     def getVendorName(self, index: QModelIndex):

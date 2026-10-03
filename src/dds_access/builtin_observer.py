@@ -13,6 +13,7 @@
 import sys
 from loguru import logger as logging
 from queue import Queue
+from threading import Event
 from PySide6.QtCore import QThread
 from cyclonedds import core, builtin, internal
 from cyclonedds.util import duration
@@ -59,17 +60,51 @@ class BuiltInObserver(QThread):
         self.queue = queue
         self.running = False
         self.guardCondition = None
+        self._stop_requested = Event()
 
     def stop(self):
+        self._stop_requested.set()
         self.running = False
-        if self.guardCondition is not None:
-            self.guardCondition.set(True)
+        guard = self.guardCondition
+        if guard is not None:
+            try:
+                guard.set(True)
+            except Exception:
+                logging.exception("Builtin observer domain {}: could not wake observer during shutdown",
+                                  self.domain_id)
 
     def run(self):
         logging.info(f"builtin_observer({self.domain_id}) ...")
-        self.running = True
+        self.running = not self._stop_requested.is_set()
+        retry_delay = 1
+        try:
+            while self.running:
+                try:
+                    self._run_session()
+                    break
+                except Exception:
+                    if self._stop_requested.is_set():
+                        break
+                    logging.exception(
+                        "Builtin observer domain {}: initialization/session failed; retrying in {} seconds. "
+                        "Check DDS configuration and Local Network permission if this persists.",
+                        self.domain_id, retry_delay)
+                finally:
+                    self.guardCondition = None
 
-        with DomainParticipantFactory.get_participant(self.domain_id) as domain_participant:
+                # Wait outside the exception handler so failed session objects
+                # and their traceback can be released before retrying.
+                if self._stop_requested.wait(retry_delay):
+                    break
+                retry_delay = min(retry_delay * 2, 10)
+        finally:
+            self.running = False
+            self.guardCondition = None
+            logging.info(f"builtin_observer({self.domain_id}) ... DONE")
+
+    def _run_session(self):
+        participant = DomainParticipantFactory.get_participant(self.domain_id)
+        with participant as domain_participant:
 
             waitset = core.WaitSet(domain_participant)
 
@@ -117,51 +152,64 @@ class BuiltInObserver(QThread):
                 amount_triggered = 0
                 try:
                     amount_triggered = waitset.wait(duration(infinite=True))
-                except Exception as e:
-                    logging.error(str(e))
+                except Exception:
+                    if self.running:
+                        logging.exception("Builtin observer domain {}: wait failed; retrying", self.domain_id)
+                        self.msleep(100)
+                    continue
+                if not self.running:
+                    break
                 if amount_triggered == 0:
                     continue
 
                 dataItem = BuiltInDataItem()
 
-                for p in rdp.take(condition=rcp):
-                    if p.sample_info.sample_state == core.SampleState.NotRead and p.sample_info.instance_state == core.InstanceState.Alive:
-                        logging.trace(str(p))
-                        dataItem.new_participants.append((self.domain_id, p))
-                    elif p.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
-                        dataItem.remove_participants.append((self.domain_id, p))
+                try:
+                    for p in rdp.take(condition=rcp):
+                        if p.sample_info.sample_state == core.SampleState.NotRead and p.sample_info.instance_state == core.InstanceState.Alive:
+                            logging.trace(str(p))
+                            dataItem.new_participants.append((self.domain_id, p))
+                        elif p.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
+                            dataItem.remove_participants.append((self.domain_id, p))
 
-                for pub in rdw.take(condition=rcw):
-                    if pub.sample_info.sample_state == core.SampleState.NotRead and pub.sample_info.instance_state == core.InstanceState.Alive:
-                        if pub.topic_name not in IGNORE_TOPICS:
-                            logging.trace(str(pub))
-                            dataItem.new_endpoints.append((self.domain_id, pub, EntityType.WRITER))
-                    elif pub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
-                        dataItem.remove_endpoints.append((self.domain_id, pub))
+                    for pub in rdw.take(condition=rcw):
+                        if pub.sample_info.sample_state == core.SampleState.NotRead and pub.sample_info.instance_state == core.InstanceState.Alive:
+                            if pub.topic_name not in IGNORE_TOPICS:
+                                logging.trace(str(pub))
+                                dataItem.new_endpoints.append((self.domain_id, pub, EntityType.WRITER))
+                        elif pub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
+                            dataItem.remove_endpoints.append((self.domain_id, pub))
 
-                for sub in rdr.take(condition=rcr):
-                    if sub.sample_info.sample_state == core.SampleState.NotRead and sub.sample_info.instance_state == core.InstanceState.Alive:
-                        if sub.topic_name not in IGNORE_TOPICS:
-                            logging.trace(str(sub))
-                            dataItem.new_endpoints.append((self.domain_id, sub, EntityType.READER))
-                    elif sub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
-                        dataItem.remove_endpoints.append((self.domain_id, sub))
+                    for sub in rdr.take(condition=rcr):
+                        if sub.sample_info.sample_state == core.SampleState.NotRead and sub.sample_info.instance_state == core.InstanceState.Alive:
+                            if sub.topic_name not in IGNORE_TOPICS:
+                                logging.trace(str(sub))
+                                dataItem.new_endpoints.append((self.domain_id, sub, EntityType.READER))
+                        elif sub.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
+                            dataItem.remove_endpoints.append((self.domain_id, sub))
 
-                if internal.feature_topic_discovery:
-                    for topic in rdt.take(condition=rct):
-                        if topic.sample_info.sample_state == core.SampleState.NotRead and topic.sample_info.instance_state == core.InstanceState.Alive:
-                            if topic.topic_name not in IGNORE_TOPICS:
-                                logging.trace(str(topic))
-                                dataItem.new_topics.append((self.domain_id, topic))
-                        elif topic.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
-                            pass # topics are automatically removed when last endpoint is gone
+                    if internal.feature_topic_discovery:
+                        for topic in rdt.take(condition=rct):
+                            if topic.sample_info.sample_state == core.SampleState.NotRead and topic.sample_info.instance_state == core.InstanceState.Alive:
+                                if topic.topic_name not in IGNORE_TOPICS:
+                                    logging.trace(str(topic))
+                                    dataItem.new_topics.append((self.domain_id, topic))
+                            elif topic.sample_info.instance_state == core.InstanceState.NotAliveDisposed:
+                                pass # topics are automatically removed when last endpoint is gone
 
-                for ospl_participant in ospl_reader.take(condition=ospl_read_condition):
-                    if ospl_participant.sample_info.sample_state == core.SampleState.NotRead and ospl_participant.sample_info.instance_state == core.InstanceState.Alive:
-                        p_update = from_ospl(ospl_participant)
-                        if p_update:
-                            dataItem.update_participants.append((self.domain_id, p_update))
+                    for ospl_participant in ospl_reader.take(condition=ospl_read_condition):
+                        if ospl_participant.sample_info.sample_state == core.SampleState.NotRead and ospl_participant.sample_info.instance_state == core.InstanceState.Alive:
+                            p_update = from_ospl(ospl_participant)
+                            if p_update:
+                                dataItem.update_participants.append((self.domain_id, p_update))
 
-                self.queue.put(dataItem)
-
-        logging.info(f"builtin_observer({self.domain_id}) ... DONE")
+                except Exception:
+                    if self.running:
+                        logging.exception("Builtin observer domain {}: discovery read failed; skipping this cycle",
+                                          self.domain_id)
+                        self.msleep(100)
+                finally:
+                    # take() consumes samples: preserve successful reads even if a
+                    # later reader or sample conversion fails in the same cycle.
+                    if any(vars(dataItem).values()):
+                        self.queue.put(dataItem)

@@ -19,7 +19,7 @@ import "qrc:/src/views"
 import "qrc:/src/views/selection_details"
 
 
-Window {
+SecondaryWindow {
     id: checkForUpdatesWindow
 
     readonly property color surfaceColor: Constants.cardBackgroundColor(rootWindow.isDarkMode)
@@ -33,7 +33,7 @@ Window {
 
     title: qsTrId("update.check.title")
     visible: false
-    flags: Qt.Dialog
+    flags: mobileWindow ? Qt.Window : (Qt.Dialog)
     modality: Qt.ApplicationModal
     color: Constants.mainContentColor(rootWindow.isDarkMode)
 
@@ -43,10 +43,10 @@ Window {
 
     width: updateCheckWidth
     height: updateCheckHeight
-    minimumWidth: updateCheckWidth
-    minimumHeight: updateCheckHeight
-    maximumWidth: updateCheckWidth
-    maximumHeight: updateCheckHeight
+    minimumWidth: mobileWindow ? 0 : updateCheckWidth
+    minimumHeight: mobileWindow ? 0 : updateCheckHeight
+    maximumWidth: mobileWindow ? 16777215 : updateCheckWidth
+    maximumHeight: mobileWindow ? 16777215 : updateCheckHeight
 
     property string organization: "eclipse-cyclonedds"
     property string project: "cyclonedds-insight"

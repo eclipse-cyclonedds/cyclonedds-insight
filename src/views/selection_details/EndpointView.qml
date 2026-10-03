@@ -11,92 +11,35 @@
 */
 
 import QtQuick
-import QtQuick.Window
-import QtQuick.Controls
-import QtQuick.Layouts
-
 import org.eclipse.cyclonedds.insight
-import "qrc:/src/views"
 
-
-Rectangle {
-    id: endpointViewId
-    color: Constants.mainContentColor(rootWindow.isDarkMode)
-
+EndpointDetailsView {
+    id: endpointView
     property int domainId
-    property string endpointKey
+    property var endpointData: ({})
+    structured: true
 
-    readonly property color secondaryTextColor: Constants.secondaryTextColor(rootWindow.isDarkMode)
-
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Constants.pageMargin
-        spacing: 14
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 7
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 9
-
-                DetailBadge {
-                    kind: "endpoint"
-                }
-
-                Label {
-                    text: qsTrId("entity.endpoint")
-                    font.pixelSize: Constants.pageTitleFontSize
-                    font.bold: true
-                }
-
-                Item {
-                    Layout.fillWidth: true
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.leftMargin: 14
-                spacing: 8
-
-                Label {
-                    text: qsTrId("entity.domain.id.label")
-                    color: endpointViewId.secondaryTextColor
-                }
-
-                Label {
-                    text: endpointViewId.domainId
-                    font.bold: true
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.leftMargin: 14
-                spacing: 8
-
-                Label {
-                    text: qsTrId("entity.endpoint.key.label")
-                    color: endpointViewId.secondaryTextColor
-                }
-
-                Text {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 17
-                    text: endpointViewId.endpointKey
-                    color: rootWindow.isDarkMode ? "#e0e0e0" : "#303030"
-                    minimumPixelSize: 8
-                    fontSizeMode: Text.HorizontalFit
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-        }
-
-        Item {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-        }
+    EndpointModel {
+        id: endpointModel
     }
+    function refreshDetails() {
+        endpointData = endpointModel.getEndpointDetails(endpointKey)
+    }
+    Component.onCompleted: endpointModel.setDomainId(domainId, topicName, isWriter ? 4 : 3)
+    Connections {
+        target: endpointModel
+        function onTotalEndpointsSignal(count) { endpointView.refreshDetails() }
+        function onDataChanged() { endpointView.refreshDetails() }
+    }
+    participantKey: endpointData.endpoint_participant_key || ""
+    instanceHandle: endpointData.endpoint_participant_instance_handle || ""
+    topicType: endpointData.endpoint_topic_type || ""
+    typeId: endpointData.endpoint_type_id || ""
+    hostname: endpointData.endpoint_hostname || ""
+    processId: endpointData.endpoint_process_id || ""
+    processName: endpointData.endpoint_process_name || ""
+    addresses: endpointData.addresses || ""
+    qos: endpointData.endpoint_qos || ""
+    hasQosMismatch: endpointData.endpoint_has_qos_mismatch || false
+    qosMismatchText: endpointData.endpoint_qos_mismatch_text || ""
 }

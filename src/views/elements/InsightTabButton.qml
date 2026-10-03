@@ -16,10 +16,15 @@ import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
+import "qrc:/src/views/selection_details"
 
 TabButton {
     id: control
     property alias tabText: label.text
+    property string tabIcon: ""
+    readonly property real minimumTabWidth: label.implicitWidth + 32
+                                           + (tabIcon.length > 0 ? 26 : 0)
+                                           + (paneToggleMode ? 30 : 0)
     property bool showLeftSeparator: false
     property bool paneToggleMode: false
     property bool paneIncluded: false
@@ -121,6 +126,17 @@ TabButton {
         anchors.margins: 0
         spacing: 0
 
+        DetailBadge {
+            visible: control.tabIcon.length > 0
+            kind: control.tabIcon
+            iconColor: control.checked ? Constants.accentColor : label.color
+            color: "transparent"
+            Layout.preferredWidth: 18
+            Layout.preferredHeight: 24
+            Layout.leftMargin: 12
+            Layout.alignment: Qt.AlignVCenter
+        }
+
         Label {
             id: label
             text: control.tabText
@@ -128,7 +144,7 @@ TabButton {
             font.bold: control.checked
 
             Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
-            Layout.leftMargin: 16
+            Layout.leftMargin: control.tabIcon.length > 0 ? 8 : 16
         }
 
         Item {

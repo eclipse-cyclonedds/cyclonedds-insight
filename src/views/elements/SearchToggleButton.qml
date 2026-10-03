@@ -11,7 +11,22 @@
 */
 
 import QtQuick
+import QtQuick.Controls
+import "qrc:/src/views"
+import "qrc:/src/views/icons"
 
-NodeSummaryView {
-    process: true
+SidebarActionButton {
+    id: control
+
+    property bool expanded: false
+
+    Accessible.name: qsTrId("general.search.placeholder")
+    highlighted: expanded
+
+    SearchIcon {
+        anchors.centerIn: parent
+        z: 1
+        expanded: control.expanded
+        iconColor: Constants.mutedForegroundColor(control.isDarkMode)
+    }
 }

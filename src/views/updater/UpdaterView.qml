@@ -20,7 +20,7 @@ import "qrc:/src/views"
 import "qrc:/src/views/selection_details"
 
 
-Window {
+SecondaryWindow {
     id: updaterRootWindow
 
     readonly property color surfaceColor: Constants.cardBackgroundColor(rootWindow.isDarkMode)
@@ -32,12 +32,12 @@ Window {
     visible: true
     title: "CycloneDDS Insight Updater"
     color: Constants.mainContentColor(rootWindow.isDarkMode)
-    flags: Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint
+    flags: mobileWindow ? Qt.Window : (Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint)
     modality: Qt.ApplicationModal
-    maximumWidth: width
-    maximumHeight: height
-    minimumWidth: width
-    minimumHeight: height
+    maximumWidth: mobileWindow ? 16777215 : width
+    maximumHeight: mobileWindow ? 16777215 : height
+    minimumWidth: mobileWindow ? 0 : width
+    minimumHeight: mobileWindow ? 0 : height
 
     property bool isError: false
     property string organization: ""

@@ -11,70 +11,7 @@
 */
 
 import QtQuick
-import QtQuick.Window
-import QtQuick.Controls
-import QtQuick.Layouts
 
-import org.eclipse.cyclonedds.insight
-import "qrc:/src/views"
-
-
-Rectangle {
-    id: hostViewId
-    color: Constants.mainContentColor(rootWindow.isDarkMode)
-
-    property int domainId
-
-    readonly property color secondaryTextColor: Constants.secondaryTextColor(rootWindow.isDarkMode)
-
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Constants.pageMargin
-        spacing: 14
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 7
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 9
-
-                DetailBadge {
-                    kind: "host"
-                }
-
-                Label {
-                    text: qsTrId("entity.host")
-                    font.pixelSize: Constants.pageTitleFontSize
-                    font.bold: true
-                }
-
-                Item {
-                    Layout.fillWidth: true
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.leftMargin: 14
-                spacing: 8
-
-                Label {
-                    text: qsTrId("entity.domain.id.label")
-                    color: hostViewId.secondaryTextColor
-                }
-
-                Label {
-                    text: hostViewId.domainId
-                    font.bold: true
-                }
-            }
-        }
-
-        Item {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-        }
-    }
+NodeSummaryView {
+    process: false
 }

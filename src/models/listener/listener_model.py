@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, QByteArray, QStandardPaths, QFile, QDir, QProcess, QThread, Property
+from PySide6.QtCore import Qt, QModelIndex, QAbstractListModel, Qt, QByteArray, QStandardPaths, QFile, QDir, QThread, Property
 from PySide6.QtCore import QObject, Signal, Slot
 from loguru import logger as logging
 import os
@@ -19,7 +19,6 @@ import importlib
 import copy
 from pathlib import Path
 import uuid
-import subprocess
 import glob
 from dataclasses import dataclass
 import typing

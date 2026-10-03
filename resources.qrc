@@ -13,6 +13,13 @@
 <!DOCTYPE RCC>
 <RCC version="1.0">
     <qresource prefix="">
+        <file>src/views/SecondaryWindow.qml</file>
+        <file>src/views/DetachableView.qml</file>
+        <file>src/views/elements/DetachViewButton.qml</file>
+        <file>src/views/elements/ExpandButton.qml</file>
+        <file>src/views/elements/DetailGroup.qml</file>
+        <file>src/views/elements/ResizeHandle.qml</file>
+        <file>src/views/icons/WindowActionIcon.qml</file>
         <!-- images -->
         <file>res/images/cyclonedds.png</file>
         <file>res/images/cyclonedds@2x.png</file>
@@ -35,7 +42,9 @@
         <file>src/views/selection_details/ProcessView.qml</file>
         <file>src/views/selection_details/ParticipantView.qml</file>
         <file>src/views/selection_details/HostView.qml</file>
+        <file>src/views/selection_details/NodeSummaryView.qml</file>
         <file>src/views/selection_details/EndpointView.qml</file>
+        <file>src/views/selection_details/EndpointDetailsView.qml</file>
         <file>src/views/EndpointDetailWindow.qml</file>
         <file>src/views/main.qml</file>
         <file>src/views/AddDomainView.qml</file>
@@ -50,6 +59,11 @@
         <file>src/views/icons/WarningTriangle.qml</file>
         <file>src/views/icons/ChevronIcon.qml</file>
         <file>src/views/icons/SearchIcon.qml</file>
+        <file>src/views/icons/EntityIcon.qml</file>
+        <file>src/views/icons/ConfigurationViewIcon.qml</file>
+        <file>src/views/icons/PlusMinusIcon.qml</file>
+        <file>src/views/elements/SidebarActionButton.qml</file>
+        <file>src/views/elements/SearchToggleButton.qml</file>
         <file>src/views/icons/MenuIcon.qml</file>
         <file>src/views/icons/ArrowIcon.qml</file>
         <file>src/views/icons/SplitViewIcon.qml</file>
@@ -62,11 +76,11 @@
         <file>src/views/errors/ErrorCenter.qml</file>
         <file>src/views/errors/ErrorsDialog.qml</file>
         <file>src/views/TesterView.qml</file>
-        <file>src/views/AboutWindow.qml</file>
+        <file>src/views/AboutView.qml</file>
         <file>src/views/updater/CheckForUpdates.qml</file>
         <file>src/views/ParticipantsOverview.qml</file>
         <file>src/views/SideView.qml</file>
-        <file>src/views/LogWindow.qml</file>
+        <file>src/views/LogView.qml</file>
         <file>src/views/statistics/StatisticsView.qml</file>
         <file>src/views/statistics/StatisticsWindow.qml</file>
         <file>src/views/statistics/Marker.qml</file>
@@ -76,6 +90,7 @@
         <file>src/views/shapes_demo/ShapesDemoSquare.qml</file>
         <file>src/views/shapes_demo/ShapesDemoTriangle.qml</file>
         <file>src/views/config_editor/ConfigEditorView.qml</file>
+        <file>src/views/config_editor/NetworkInterfacesPanel.qml</file>
         <file>src/views/nodes/NodeView.qml</file>
         <file>src/views/nodes/NodeDetailView.qml</file>
         <file>src/views/nodes/Node.qml</file>
