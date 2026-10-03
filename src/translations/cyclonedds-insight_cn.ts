@@ -3,6 +3,21 @@
 <TS version="2.1" language="zh_CN">
 <context>
     <name></name>
+    <message id="summary.overview">
+        <translation>概览</translation>
+    </message>
+    <message id="summary.processes">
+        <translation>进程</translation>
+    </message>
+    <message id="listener.view.log.short">
+        <translation>日志</translation>
+    </message>
+    <message id="listener.view.instances.short">
+        <translation>实例</translation>
+    </message>
+    <message id="listener.actions">
+        <translation>操作</translation>
+    </message>
     <message id="listener.view.log">
         <translation>消息日志</translation>
     </message>
@@ -125,9 +140,6 @@
     </message>
     <message id="domain.discover.automatically">
         <translation>自动发现 Domain</translation>
-    </message>
-    <message id="domain.discover.automatically.hint">
-        <translation>手动添加 Domain 或自动发现</translation>
     </message>
     <message id="domain.remove.selected">
         <translation>移除所选 Domain</translation>
@@ -774,6 +786,9 @@
     </message>
 
     <!-- settings -->
+    <message id="settings.storage.location">
+        <translation>设置存储位置</translation>
+    </message>
     <message id="settings.appdata.location">
         <translation>应用数据位置</translation>
     </message>
@@ -783,11 +798,14 @@
     <message id="settings.appearance.description">
         <translation>选择应用程序如何跟随系统配色方案。</translation>
     </message>
+    <message id="settings.config.use.environment">
+        <translation>使用系统环境变量</translation>
+    </message>
     <message id="settings.config.edit">
         <translation>编辑配置文件</translation>
     </message>
     <message id="settings.configuration">
-        <translation>配置</translation>
+        <translation>Cyclone DDS 配置</translation>
     </message>
     <message id="settings.default_domains.description">
         <translation>启动时加入的 Domain 列表，以逗号分隔。</translation>
@@ -1032,6 +1050,9 @@
     <message id="idl.import.invalid-files">
         <translation>IDL 导入仅接受 .idl 文件。已拒绝 %1 个文件。</translation>
     </message>
+    <message id="errors.none">
+        <translation>无错误</translation>
+    </message>
     <message id="errors.title">
         <translation>错误</translation>
     </message>
@@ -1152,6 +1173,27 @@
     </message>
     <message id="update.try.again">
         <translation>请稍后重试。</translation>
+    </message>
+    <message id="view.detach">
+        <translation>在独立窗口中打开</translation>
+    </message>
+    <message id="view.dock">
+        <translation>返回主窗口</translation>
+    </message>
+    <message id="view.detached.message">
+        <translation>%1 已在独立窗口中打开。</translation>
+    </message>
+    <message id="view.detached.show">
+        <translation>显示窗口</translation>
+    </message>
+    <message id="config.network.interfaces">
+        <translation>网络适配器和 IP 地址</translation>
+    </message>
+    <message id="config.network.empty">
+        <translation>未发现网络适配器。</translation>
+    </message>
+    <message id="config.network.copy.address">
+        <translation>复制</translation>
     </message>
 </context>
 </TS>

@@ -187,6 +187,18 @@ Rectangle {
                 context.moveTo(11, 3)
                 context.lineTo(3, 11)
                 context.stroke()
+            } else if (iconActionButton.icon === "network") {
+                context.strokeRect(4.5, 1, 5, 3.5)
+                context.beginPath()
+                context.moveTo(7, 4.5)
+                context.lineTo(7, 7.5)
+                context.moveTo(3, 9.5)
+                context.lineTo(3, 7.5)
+                context.lineTo(11, 7.5)
+                context.lineTo(11, 9.5)
+                context.stroke()
+                context.strokeRect(1, 9.5, 4, 3.5)
+                context.strokeRect(9, 9.5, 4, 3.5)
             } else if (iconActionButton.icon === "info") {
                 context.beginPath()
                 context.arc(7, 7, 5, 0, Math.PI * 2)

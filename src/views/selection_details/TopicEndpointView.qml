@@ -77,25 +77,44 @@ Rectangle {
             Layout.fillHeight: true
             spacing: 0
 
-            RowLayout {
+            GridLayout {
+                id: topicHeader
+                readonly property bool compact: width < topicTitleRow.implicitWidth
+                                                + createReaderButton.implicitWidth
+                                                + createWriterButton.implicitWidth + 36
                 Layout.fillWidth: true
-                spacing: 9
+                columns: compact ? 1 : 3
+                columnSpacing: 9
+                rowSpacing: 6
 
-                DetailBadge {
-                    kind: "topic"
-                }
-
-                Label {
-                    text: qsTrId("entity.topic")
-                    font.pixelSize: Constants.pageTitleFontSize
-                    font.bold: true
-                }
-
-                Item {
+                RowLayout {
+                    id: topicTitleRow
                     Layout.fillWidth: true
+                    spacing: 9
+
+                    DetailBadge {
+                        kind: "topic"
+                    }
+                    Label {
+                        text: qsTrId("entity.topic")
+                        font.pixelSize: Constants.pageTitleFontSize
+                        font.bold: true
+                    }
+                    Item { Layout.fillWidth: true }
+                    WarningTriangle {
+                        id: warning_triangle
+                        Layout.preferredHeight: 30
+                        Layout.preferredWidth: 30
+                        enableTooltip: true
+                        tooltipText: qsTrId("endpoint.qos.mismatch.detected")
+                        visible: topicEndpointView.hasQosMismatch
+                    }
                 }
 
                 Button {
+                    id: createReaderButton
+                    Layout.fillWidth: topicHeader.compact
+                    Layout.minimumWidth: 0
                     text: qsTrId("listener.create.reader")
                     onClicked: {
                         var writerTypes = endpointWriterModel.getAllTopicTypes()
@@ -119,6 +138,9 @@ Rectangle {
                 }
 
                 Button {
+                    id: createWriterButton
+                    Layout.fillWidth: topicHeader.compact
+                    Layout.minimumWidth: 0
                     text: qsTrId("tester.create.writer")
                     onClicked: {
                         var writerTypes = endpointWriterModel.getAllTopicTypes()
@@ -141,14 +163,6 @@ Rectangle {
                     }
                 }
 
-                WarningTriangle {
-                    id: warning_triangle
-                    Layout.preferredHeight: 30
-                    Layout.preferredWidth: 30
-                    enableTooltip: true
-                    tooltipText: qsTrId("endpoint.qos.mismatch.detected")
-                    visible: topicEndpointView.hasQosMismatch
-                }
             }
 
             RowLayout {

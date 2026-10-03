@@ -20,6 +20,7 @@ import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
 import "qrc:/src/views/nodes"
 import "qrc:/src/views/icons"
+import "qrc:/src/views/elements"
 
 
 Rectangle {
@@ -63,9 +64,8 @@ Rectangle {
             onClicked: controlsVisible = !controlsVisible
         }
 
-        GroupBox {
+        DetailGroup {
             title: qsTrId("node.view")
-            spacing: 0
             visible: controlsVisible
 
             ColumnLayout {

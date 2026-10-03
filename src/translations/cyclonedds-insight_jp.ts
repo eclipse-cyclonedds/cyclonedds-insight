@@ -3,6 +3,21 @@
 <TS version="2.1" language="ja_JP">
 <context>
     <name></name>
+    <message id="summary.overview">
+        <translation>概要</translation>
+    </message>
+    <message id="summary.processes">
+        <translation>プロセス</translation>
+    </message>
+    <message id="listener.view.log.short">
+        <translation>ログ</translation>
+    </message>
+    <message id="listener.view.instances.short">
+        <translation>インスタンス</translation>
+    </message>
+    <message id="listener.actions">
+        <translation>操作</translation>
+    </message>
     <message id="listener.view.log">
         <translation>メッセージログ</translation>
     </message>
@@ -125,9 +140,6 @@
     </message>
     <message id="domain.discover.automatically">
         <translation>ドメインを自動検出</translation>
-    </message>
-    <message id="domain.discover.automatically.hint">
-        <translation>ドメインを手動で追加するか自動検出します</translation>
     </message>
     <message id="domain.remove.selected">
         <translation>選択したドメインを削除</translation>
@@ -774,6 +786,9 @@
     </message>
 
     <!-- settings -->
+    <message id="settings.storage.location">
+        <translation>設定の保存場所</translation>
+    </message>
     <message id="settings.appdata.location">
         <translation>アプリデータの場所</translation>
     </message>
@@ -783,11 +798,14 @@
     <message id="settings.appearance.description">
         <translation>アプリケーションがシステムのカラースキームに従う方法を選択します。</translation>
     </message>
+    <message id="settings.config.use.environment">
+        <translation>システム環境変数を使用</translation>
+    </message>
     <message id="settings.config.edit">
         <translation>構成ファイルを編集</translation>
     </message>
     <message id="settings.configuration">
-        <translation>構成</translation>
+        <translation>Cyclone DDS 設定</translation>
     </message>
     <message id="settings.default_domains.description">
         <translation>起動時に参加するドメインをカンマ区切りで指定します。</translation>
@@ -1032,6 +1050,9 @@
     <message id="idl.import.invalid-files">
         <translation>IDL インポートでは .idl ファイルのみ使用できます。%1 個のファイルが拒否されました。</translation>
     </message>
+    <message id="errors.none">
+        <translation>エラーなし</translation>
+    </message>
     <message id="errors.title">
         <translation>エラー</translation>
     </message>
@@ -1152,6 +1173,27 @@
     </message>
     <message id="update.try.again">
         <translation>後でもう一度お試しください。</translation>
+    </message>
+    <message id="view.detach">
+        <translation>別ウィンドウで開く</translation>
+    </message>
+    <message id="view.dock">
+        <translation>メインウィンドウに戻す</translation>
+    </message>
+    <message id="view.detached.message">
+        <translation>%1 は別ウィンドウで開いています。</translation>
+    </message>
+    <message id="view.detached.show">
+        <translation>ウィンドウを表示</translation>
+    </message>
+    <message id="config.network.interfaces">
+        <translation>ネットワークアダプターと IP アドレス</translation>
+    </message>
+    <message id="config.network.empty">
+        <translation>ネットワークアダプターが見つかりません。</translation>
+    </message>
+    <message id="config.network.copy.address">
+        <translation>コピー</translation>
     </message>
 </context>
 </TS>

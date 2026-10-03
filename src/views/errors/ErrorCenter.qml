@@ -47,9 +47,7 @@ Item {
     function openProblems() {
         dismissAnimation.stop()
         notification.visible = false
-        errorsDialog.show()
-        errorsDialog.raise()
-        errorsDialog.requestActivate()
+        errorsDialog.open()
     }
 
     function clear() {
@@ -201,6 +199,7 @@ Item {
 
     ErrorsDialog {
         id: errorsDialog
+        parent: errorCenter
         errorModel: errorModel
         activeCount: errorCenter.count
         totalCount: errorCenter.totalCount

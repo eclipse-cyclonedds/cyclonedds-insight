@@ -16,6 +16,7 @@ import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
+import "qrc:/src/views/elements"
 
 
 Rectangle {
@@ -27,8 +28,6 @@ Rectangle {
     property string vendorName
     property bool qosLoaded: false
 
-    readonly property color surfaceColor: Constants.cardBackgroundColor(rootWindow.isDarkMode)
-    readonly property color borderColor: Constants.designBorderColor(rootWindow.isDarkMode)
     readonly property color secondaryTextColor: Constants.secondaryTextColor(rootWindow.isDarkMode)
 
     ParticipantDetailsModel {
@@ -131,66 +130,42 @@ Rectangle {
             }
         }
 
-        Rectangle {
+        DetailGroup {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.minimumHeight: 140
-            radius: Constants.cardRadius
-            color: participantViewId.surfaceColor
-            border.width: 1
-            border.color: participantViewId.borderColor
+            title: qsTrId("participant.qos")
 
-            ColumnLayout {
+            Item {
                 anchors.fill: parent
-                spacing: 0
 
                 Label {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 36
-                    Layout.leftMargin: 12
-                    text: qsTrId("participant.qos")
-                    font.bold: true
-                    verticalAlignment: Text.AlignVCenter
+                    anchors.centerIn: parent
+                    visible: !participantViewId.qosLoaded
+                    text: qsTrId("participant.loading")
+                    color: participantViewId.secondaryTextColor
                 }
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                    color: Constants.separatorColor(rootWindow.isDarkMode)
-                }
+                ScrollView {
+                    id: qosScrollView
+                    anchors.fill: parent
+                    visible: participantViewId.qosLoaded
+                    clip: true
+                    contentWidth: availableWidth
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                Item {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    Label {
-                        anchors.centerIn: parent
-                        visible: !participantViewId.qosLoaded
-                        text: qsTrId("participant.loading")
-                        color: participantViewId.secondaryTextColor
-                    }
-
-                    ScrollView {
-                        id: qosScrollView
-                        anchors.fill: parent
-                        visible: participantViewId.qosLoaded
-                        clip: true
-                        contentWidth: availableWidth
-                        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                        ScrollBar.vertical.policy: ScrollBar.AsNeeded
-
-                        TextEdit {
-                            id: qosTextArea
-                            width: qosScrollView.availableWidth
-                            text: ""
-                            readOnly: true
-                            selectByMouse: true
-                            wrapMode: TextEdit.Wrap
-                            padding: 12
-                            color: rootWindow.isDarkMode
-                                   ? "#e0e0e0"
-                                   : "#303030"
-                        }
+                    TextEdit {
+                        id: qosTextArea
+                        width: qosScrollView.availableWidth
+                        text: ""
+                        readOnly: true
+                        selectByMouse: true
+                        wrapMode: TextEdit.Wrap
+                        padding: 0
+                        color: rootWindow.isDarkMode
+                               ? "#e0e0e0"
+                               : "#303030"
                     }
                 }
             }

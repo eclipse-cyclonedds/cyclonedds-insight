@@ -90,9 +90,11 @@ Rectangle {
                     spacing: 10
 
                     Label {
+                        Layout.fillWidth: true
                         text: qsTrId("settings.configuration")
                         font.pixelSize: Constants.sectionTitleFontSize
                         font.bold: true
+                        wrapMode: Text.WordWrap
                     }
 
                     Rectangle {
@@ -105,59 +107,50 @@ Rectangle {
                         Layout.fillWidth: true
                         spacing: 10
 
-                        ColumnLayout {
+                        Label {
                             Layout.fillWidth: true
-                            spacing: 3
-
-                            Label {
-                                text: "CYCLONEDDS_URI"
-                                color: settingsViewId.secondaryTextColor
-                            }
-
-                            TextField {
-                                id: login
-                                Layout.fillWidth: true
-                                text: CYCLONEDDS_URI
-                                readOnly: true
-                                selectByMouse: true
+                            Layout.minimumWidth: 0
+                            text: qsTrId("settings.config.use.environment")
+                            wrapMode: Text.WordWrap
+                        }
+                        Switch {
+                            Accessible.name: qsTrId("settings.config.use.environment")
+                            checked: ddsConfig.selectedSource === "environment"
+                            onClicked: {
+                                if (checked)
+                                    ddsConfig.useStartupConfiguration()
+                                else
+                                    ddsConfig.useManagedConfiguration()
                             }
                         }
-
+                    }
+                    Label {
+                        text: "CYCLONEDDS_URI"
+                        color: settingsViewId.secondaryTextColor
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 10
+                        TextField {
+                            Layout.fillWidth: true
+                            text: ddsConfig.selectedSource === "xml" ? ddsConfig.editorXml : ddsConfig.startupUri
+                            placeholderText: qsTr("Not set")
+                            readOnly: true
+                            selectByMouse: true
+                        }
                         Button {
-                            id: editConfigButton
                             text: qsTrId("settings.config.edit")
                             onClicked: layout.currentIndex = 2
                         }
                     }
-
-                    RowLayout {
+                    Label {
                         Layout.fillWidth: true
-                        spacing: 10
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 3
-
-                            Label {
-                                text: qsTrId("settings.appdata.location")
-                                font.bold: true
-                            }
-
-                            Label {
-                                Layout.fillWidth: true
-                                text: StandardPaths.writableLocation(StandardPaths.AppDataLocation)
-                                color: settingsViewId.secondaryTextColor
-                                elide: Text.ElideMiddle
-                            }
-                        }
-
-                        Button {
-                            text: qsTrId("settings.folder.open")
-                            onClicked: Qt.openUrlExternally(
-                                           StandardPaths.writableLocation(
-                                               StandardPaths.AppDataLocation))
-                        }
+                        wrapMode: Text.WordWrap
+                        visible: ddsConfig.restartRequired || ddsConfig.status.length > 0
+                        text: ddsConfig.status || (ddsConfig.restartRequired ? qsTr("Restart required") : "")
+                        color: settingsViewId.secondaryTextColor
                     }
+
                 }
             }
 
@@ -349,6 +342,83 @@ Rectangle {
                                 seen.add(parts[i])
                             }
                         }
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: appDataLayout.implicitHeight + 24
+                radius: Constants.cardRadius
+                color: settingsViewId.surfaceColor
+                border.width: 1
+                border.color: settingsViewId.borderColor
+
+                ColumnLayout {
+                    id: appDataLayout
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 12
+                    spacing: 10
+
+                    Label {
+                        Layout.fillWidth: true
+                        text: qsTrId("settings.appdata.location")
+                        font.pixelSize: Constants.sectionTitleFontSize
+                        font.bold: true
+                        wrapMode: Text.WordWrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        Layout.minimumWidth: 0
+                        text: StandardPaths.writableLocation(StandardPaths.AppDataLocation)
+                        color: settingsViewId.secondaryTextColor
+                        wrapMode: Text.WrapAnywhere
+                    }
+                    Button {
+                        text: qsTrId("settings.folder.open")
+                        onClicked: Qt.openUrlExternally(
+                                       StandardPaths.writableLocation(
+                                           StandardPaths.AppDataLocation))
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: settingsFileLayout.implicitHeight + 24
+                radius: Constants.cardRadius
+                color: settingsViewId.surfaceColor
+                border.width: 1
+                border.color: settingsViewId.borderColor
+
+                ColumnLayout {
+                    id: settingsFileLayout
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 12
+                    spacing: 10
+
+                    Label {
+                        Layout.fillWidth: true
+                        text: qsTrId("settings.storage.location")
+                        font.pixelSize: Constants.sectionTitleFontSize
+                        font.bold: true
+                        wrapMode: Text.WordWrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        Layout.minimumWidth: 0
+                        text: ddsConfig.settingsFile
+                        color: settingsViewId.secondaryTextColor
+                        wrapMode: Text.WrapAnywhere
+                    }
+                    Button {
+                        text: qsTr("Open file")
+                        enabled: ddsConfig.settingsFileAvailable
+                        onClicked: ddsConfig.openSettingsFile()
                     }
                 }
             }

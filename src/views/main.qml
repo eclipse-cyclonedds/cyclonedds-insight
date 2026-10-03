@@ -30,6 +30,7 @@ ApplicationWindow {
     width: 1100
     height: 650
     visible: true
+    visibility: IS_MOBILE ? Window.Maximized : Window.AutomaticVisibility
     title: "CycloneDDS Insight"
 
     property bool isDarkMode: false
@@ -60,11 +61,11 @@ ApplicationWindow {
             }
             MenuItem {
                 text: qsTrId("general.shapedemo")
-                onTriggered: shapeDemoViewId.visible = true
+                onTriggered: rootWindow.openShapesDemo()
             }
             MenuItem {
                 text: qsTrId("log.show")
-                onTriggered: logViewId.visible = true
+                onTriggered: rootWindow.openLogs()
             }
         }
         Menu {
@@ -72,7 +73,7 @@ ApplicationWindow {
 
             MenuItem {
                 text: qsTrId("general.about")
-                onTriggered: aboutWindow.visible = true
+                onTriggered: rootWindow.openAbout()
             }
             MenuItem {
                 text: qsTrId("general.settings")
@@ -101,10 +102,6 @@ ApplicationWindow {
             console.debug("Ctrl+0 pressed!")
             layout.currentIndex = 1
         }
-    }
-
-    AboutWindow {
-        id: aboutWindow
     }
 
     CheckForUpdates {
@@ -141,8 +138,70 @@ ApplicationWindow {
             id: overviewId
         }
 
-        ConfigEditorView {
-            id: configEditorViewId
+        Loader {
+            id: configEditorLoader
+            // Create the editor with a visible viewport, not on a hidden page
+            // during startup. Keep it alive afterwards to retain editor state.
+            active: false
+            readonly property bool pageReady: visible && width > 0 && height > 0
+                                              && layout.currentIndex === 2
+            function loadEditor() {
+                if (pageReady)
+                    active = true
+            }
+            onPageReadyChanged: {
+                if (pageReady)
+                    Qt.callLater(loadEditor)
+            }
+            sourceComponent: ConfigEditorView {
+                id: configEditorViewId
+            }
+        }
+
+        DetachableView {
+            id: shapesDemoHost
+            title: qsTrId("shapes.title")
+            onDocked: {
+                if (!rootWindow.shutdownInitiated)
+                    layout.currentIndex = 3
+            }
+            viewComponent: Component {
+                ShapesDemoView {
+                    viewHost: shapesDemoHost
+                }
+            }
+        }
+
+        DetachableView {
+            id: aboutHost
+            title: qsTrId("about.window.title")
+            windowWidth: 640
+            windowHeight: 400
+            onDocked: {
+                if (!rootWindow.shutdownInitiated)
+                    layout.currentIndex = 4
+            }
+            viewComponent: Component {
+                AboutView {
+                    viewHost: aboutHost
+                }
+            }
+        }
+
+        DetachableView {
+            id: logHost
+            title: qsTrId("log.application")
+            windowWidth: 860
+            windowHeight: 520
+            onDocked: {
+                if (!rootWindow.shutdownInitiated)
+                    layout.currentIndex = 5
+            }
+            viewComponent: Component {
+                LogView {
+                    viewHost: logHost
+                }
+            }
         }
     }
 
@@ -171,11 +230,12 @@ ApplicationWindow {
 
     QosSelector {
         id: readerTesterDialogId
+        parent: rootWindow.contentItem
         model: datamodelRepoModel
     }
 
     function getDarkMode() {
-        var isDarkModeVal = (mySysPalette.windowText.hsvValue > mySysPalette.window.hsvValue)
+        var isDarkModeVal = (Application.styleHints.colorScheme === Qt.ColorScheme.Dark)
         console.log("darkmode:", isDarkModeVal)
         return isDarkModeVal
     }
@@ -209,14 +269,12 @@ ApplicationWindow {
         visible: false
     }
 
-    LogWindow {
-        id: logViewId
-        visible: false
-    }
-
     function shutdown() {
         if (!shutdownInitiated) {
             shutdownInitiated = true
+            shapesDemoHost.shutdown()
+            aboutHost.shutdown()
+            logHost.shutdown()
             console.log("Shutdown QML ...")
             overviewId.aboutToClose()
             treeModel.aboutToClose()
@@ -238,9 +296,19 @@ ApplicationWindow {
         close.accepted = true
     }
 
-    ShapesDemoView {
-        id: shapeDemoViewId
-        visible: false
+    function openLogs() {
+        layout.currentIndex = 5
+        logHost.present()
+    }
+
+    function openAbout() {
+        layout.currentIndex = 4
+        aboutHost.present()
+    }
+
+    function openShapesDemo() {
+        layout.currentIndex = 3
+        shapesDemoHost.present()
     }
 
     FileDialog {

@@ -11,7 +11,20 @@
 */
 
 import QtQuick
+import QtQuick.Controls
 
-NodeSummaryView {
-    process: true
+import "qrc:/src/views/icons"
+
+Button {
+    id: control
+    property bool expanded: false
+    rightPadding: leftPadding + 24
+
+    ChevronIcon {
+        anchors.right: parent.right
+        anchors.rightMargin: control.leftPadding
+        anchors.verticalCenter: parent.verticalCenter
+        iconColor: control.palette.buttonText
+        rotation: control.expanded ? 180 : 0
+    }
 }

@@ -211,6 +211,16 @@ class EndpointModel(QAbstractItemModel):
 
         return None
 
+    @Slot(str, result="QVariantMap")
+    def getEndpointDetails(self, key):
+        keys = list(self.endpoints)
+        if key not in self.endpoints:
+            return {}
+        index = self.createIndex(keys.index(key), 0)
+        return {name.decode(): self.data(index, role)
+                for role, name in self.roleNames().items()
+                if role not in (self.PartitionsRole, self.HasPartitionsRole)}
+
     def roleNames(self):
         return {
             self.KeyRole: b'endpoint_key',

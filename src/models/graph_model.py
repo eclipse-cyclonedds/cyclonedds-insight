@@ -17,9 +17,14 @@ from dds_access import dds_utils
 from threading import Lock
 import uuid
 import time
-import psutil
+import os
+import sys
 import requests
 import socket
+from utils.platform_utils import IS_MOBILE
+
+if not IS_MOBILE:
+    import psutil
 
 from dds_access import dds_data
 from dds_access.dds_utils import getAppName, getHostname, getVendorShortName, getVendorPicture, getProperty, DEBUG_MONITORS
@@ -176,9 +181,12 @@ class GraphModel(QAbstractItemModel):
         self.domainIds = {}
         self.ignoreSelf = False
 
-        proc = psutil.Process()
         hostName = socket.gethostname()
-        self.selfName = f"{hostName}:{dds_utils.formatProcessName(proc.exe())}:{proc.pid}"
+        if IS_MOBILE:
+            self.selfName = f"{hostName}:{dds_utils.formatProcessName(sys.executable)}:{os.getpid()}"
+        else:
+            proc = psutil.Process()
+            self.selfName = f"{hostName}:{dds_utils.formatProcessName(proc.exe())}:{proc.pid}"
 
         self.dds_data = dds_data.DdsData()
 

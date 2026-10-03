@@ -26,6 +26,15 @@ import "qrc:/src/views/selection_details"
 SplitView {
     id: overviewRoot
     orientation: Qt.Horizontal
+    handle: sidebarCollapsed ? collapsedSidebarHandle : expandedSidebarHandle
+    property Component expandedSidebarHandle: ResizeHandle {
+        orientation: overviewRoot.orientation
+    }
+    property Component collapsedSidebarHandle: Item {
+        implicitWidth: 0
+        implicitHeight: 0
+        enabled: false
+    }
 
     property var childView
     property bool splitDetails: false
@@ -71,6 +80,7 @@ SplitView {
             id: sidebarContent
             anchors.fill: parent
             orientation: Qt.Vertical
+            handle: ResizeHandle { orientation: sidebarContent.orientation }
             visible: !overviewRoot.sidebarCollapsed
 
             Rectangle {
@@ -167,84 +177,140 @@ SplitView {
                     color: Constants.headerBackgroundColor(rootWindow.isDarkMode)
                 }
 
-                Row {
+                Flickable {
+                    id: tabFlickable
                     anchors.left: parent.left
+                    anchors.right: splitViewStatus.visible
+                                   ? splitViewStatus.left : sideBySideButton.left
+                    anchors.rightMargin: 6
                     anchors.top: parent.top
-                    anchors.bottom: parent.bottom
                     anchors.topMargin: 4
-                    spacing: 0
+                    anchors.bottom: parent.bottom
+                    clip: true
+                    contentWidth: tabRow.width
+                    contentHeight: height
+                    flickableDirection: Flickable.HorizontalFlick
+                    boundsBehavior: Flickable.StopAtBounds
 
-                    InsightTabButton {
-                        tabText: qsTrId("tab.details")
-                        checked: overviewRoot.multiViewEnabled
-                                 ? overviewRoot.splitDetails
-                                 : bar.currentIndex === 0
-                        paneToggleMode: overviewRoot.multiViewEnabled
-                        paneIncluded: overviewRoot.splitDetails
-                        paneToggleToolTip:
-                            overviewRoot.tabToggleToolTip(0)
-                        onClicked: overviewRoot.activateView(0)
-                        height: parent.height
-                        width: 150
+                    function revealTab(index) {
+                        const tab = tabRow.children[index]
+                        if (!tab)
+                            return
+                        const rightEdge = tab.x + tab.width
+                        const target = tab.x < contentX ? tab.x
+                                     : rightEdge > contentX + width ? rightEdge - width
+                                     : contentX
+                        contentX = Math.max(0, Math.min(target, contentWidth - width))
                     }
-                    InsightTabButton {
-                        tabText: qsTrId("tab.statistics")
-                        checked: overviewRoot.multiViewEnabled
-                                 ? overviewRoot.splitStatistics
-                                 : bar.currentIndex === 1
-                        paneToggleMode: overviewRoot.multiViewEnabled
-                        paneIncluded: overviewRoot.splitStatistics
-                        paneToggleToolTip:
-                            overviewRoot.tabToggleToolTip(1)
-                        showLeftSeparator: overviewRoot.multiViewEnabled
-                                           ? !overviewRoot.splitDetails
-                                             && !overviewRoot.splitStatistics
-                                           : bar.currentIndex !== 0
-                                             && bar.currentIndex !== 1
-                        onClicked: overviewRoot.activateView(1)
-                        height: parent.height
-                        width: 150
+
+                    onWidthChanged: revealTab(bar.currentIndex)
+
+                    Connections {
+                        target: bar
+                        function onCurrentIndexChanged() {
+                            tabFlickable.revealTab(bar.currentIndex)
+                        }
                     }
-                    InsightTabButton {
-                        tabText: qsTrId("tab.tester")
-                        checked: overviewRoot.multiViewEnabled
-                                 ? overviewRoot.splitTester
-                                 : bar.currentIndex === 2
-                        paneToggleMode: overviewRoot.multiViewEnabled
-                        paneIncluded: overviewRoot.splitTester
-                        paneToggleToolTip:
-                            overviewRoot.tabToggleToolTip(2)
-                        showLeftSeparator: overviewRoot.multiViewEnabled
-                                           ? !overviewRoot.splitStatistics
-                                             && !overviewRoot.splitTester
-                                           : bar.currentIndex !== 1
-                                             && bar.currentIndex !== 2
-                        onClicked: overviewRoot.activateView(2)
-                        height: parent.height
-                        width: 150
+
+                    WheelHandler {
+                        onWheel: function(event) {
+                            const delta = event.pixelDelta.x || event.pixelDelta.y
+                                       || event.angleDelta.x / 3 || event.angleDelta.y / 3
+                            tabFlickable.contentX = Math.max(0, Math.min(
+                                tabFlickable.contentX - delta,
+                                tabFlickable.contentWidth - tabFlickable.width))
+                            event.accepted = true
+                        }
                     }
-                    InsightTabButton {
-                        tabText: qsTrId("tab.listener")
-                        checked: overviewRoot.multiViewEnabled
-                                 ? overviewRoot.splitListener
-                                 : bar.currentIndex === 3
-                        paneToggleMode: overviewRoot.multiViewEnabled
-                        paneIncluded: overviewRoot.splitListener
-                        paneToggleToolTip:
-                            overviewRoot.tabToggleToolTip(3)
-                        showLeftSeparator: overviewRoot.multiViewEnabled
-                                           ? !overviewRoot.splitTester
-                                             && !overviewRoot.splitListener
-                                           : bar.currentIndex !== 2
-                                             && bar.currentIndex !== 3
-                        onClicked: overviewRoot.activateView(3)
-                        height: parent.height
-                        width: 150
+
+                    Row {
+                        id: tabRow
+                        height: tabFlickable.height
+                        spacing: 0
+
+                        InsightTabButton {
+                            tabText: qsTrId("tab.details")
+                            tabIcon: "details"
+                            checked: overviewRoot.multiViewEnabled
+                                     ? overviewRoot.splitDetails
+                                     : bar.currentIndex === 0
+                            paneToggleMode: overviewRoot.multiViewEnabled
+                            paneIncluded: overviewRoot.splitDetails
+                            paneToggleToolTip:
+                                overviewRoot.tabToggleToolTip(0)
+                            onClicked: overviewRoot.activateView(0)
+                            onActiveFocusChanged: if (activeFocus) tabFlickable.revealTab(0)
+                            height: parent.height
+                            width: Math.max(150, minimumTabWidth)
+                        }
+                        InsightTabButton {
+                            tabText: qsTrId("tab.statistics")
+                            tabIcon: "statistics"
+                            checked: overviewRoot.multiViewEnabled
+                                     ? overviewRoot.splitStatistics
+                                     : bar.currentIndex === 1
+                            paneToggleMode: overviewRoot.multiViewEnabled
+                            paneIncluded: overviewRoot.splitStatistics
+                            paneToggleToolTip:
+                                overviewRoot.tabToggleToolTip(1)
+                            showLeftSeparator: overviewRoot.multiViewEnabled
+                                               ? !overviewRoot.splitDetails
+                                                 && !overviewRoot.splitStatistics
+                                               : bar.currentIndex !== 0
+                                                 && bar.currentIndex !== 1
+                            onClicked: overviewRoot.activateView(1)
+                            onActiveFocusChanged: if (activeFocus) tabFlickable.revealTab(1)
+                            height: parent.height
+                            width: Math.max(150, minimumTabWidth)
+                        }
+                        InsightTabButton {
+                            tabText: qsTrId("tab.tester")
+                            tabIcon: "tester"
+                            checked: overviewRoot.multiViewEnabled
+                                     ? overviewRoot.splitTester
+                                     : bar.currentIndex === 2
+                            paneToggleMode: overviewRoot.multiViewEnabled
+                            paneIncluded: overviewRoot.splitTester
+                            paneToggleToolTip:
+                                overviewRoot.tabToggleToolTip(2)
+                            showLeftSeparator: overviewRoot.multiViewEnabled
+                                               ? !overviewRoot.splitStatistics
+                                                 && !overviewRoot.splitTester
+                                               : bar.currentIndex !== 1
+                                                 && bar.currentIndex !== 2
+                            onClicked: overviewRoot.activateView(2)
+                            onActiveFocusChanged: if (activeFocus) tabFlickable.revealTab(2)
+                            height: parent.height
+                            width: Math.max(150, minimumTabWidth)
+                        }
+                        InsightTabButton {
+                            tabText: qsTrId("tab.listener")
+                            tabIcon: "listener"
+                            checked: overviewRoot.multiViewEnabled
+                                     ? overviewRoot.splitListener
+                                     : bar.currentIndex === 3
+                            paneToggleMode: overviewRoot.multiViewEnabled
+                            paneIncluded: overviewRoot.splitListener
+                            paneToggleToolTip:
+                                overviewRoot.tabToggleToolTip(3)
+                            showLeftSeparator: overviewRoot.multiViewEnabled
+                                               ? !overviewRoot.splitTester
+                                                 && !overviewRoot.splitListener
+                                               : bar.currentIndex !== 2
+                                                 && bar.currentIndex !== 3
+                            onClicked: overviewRoot.activateView(3)
+                            onActiveFocusChanged: if (activeFocus) tabFlickable.revealTab(3)
+                            height: parent.height
+                            width: Math.max(150, minimumTabWidth)
+                        }
                     }
+
                 }
 
                 Rectangle {
+                    id: splitViewStatus
                     visible: overviewRoot.multiViewEnabled
+                             && bar.width >= 600 + width + sideBySideButton.width + 24
                     anchors.right: sideBySideButton.left
                     anchors.rightMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
@@ -332,9 +398,11 @@ SplitView {
                 width: parent.width
                 height: parent.height - bar.height
                 orientation: Qt.Horizontal
+                handle: ResizeHandle { orientation: mainLayoutId.orientation }
 
                 Item {
                     id: inspectTab
+                    clip: true
                     visible: overviewRoot.isViewVisible(0)
                     SplitView.minimumWidth: 160
                     SplitView.preferredWidth:
@@ -342,7 +410,7 @@ SplitView {
 
                     ColumnLayout {
                         anchors.centerIn: parent
-                        width: Math.min(380, Math.max(220, parent.width - 48))
+                        width: Math.min(380, Math.max(0, parent.width - 32))
                         spacing: 8
 
                         DetailBadge {
@@ -357,6 +425,8 @@ SplitView {
                         Label {
                             Layout.fillWidth: true
                             Layout.topMargin: 4
+                            Layout.minimumWidth: 0
+                            wrapMode: Text.Wrap
                             text: qsTrId("general.nothing.selected")
                             horizontalAlignment: Text.AlignHCenter
                             font.pixelSize: Constants.pageTitleFontSize
@@ -365,6 +435,7 @@ SplitView {
 
                         Label {
                             Layout.fillWidth: true
+                            Layout.minimumWidth: 0
                             text: qsTrId("details.selection.hint")
                             horizontalAlignment: Text.AlignHCenter
                             wrapMode: Text.Wrap
@@ -456,15 +527,17 @@ SplitView {
                         })
     }
 
-    function showHostView(domainId) {
+    function showHostView(domainId, summary) {
         showView("selection_details/HostView.qml", {
-                            domainId: domainId
+                            domainId: domainId,
+                            summary: summary
                         })
     }
 
-    function showProcessView(domainId) {
+    function showProcessView(domainId, summary) {
         showView("selection_details/ProcessView.qml", {
-                            domainId: domainId
+                            domainId: domainId,
+                            summary: summary
                         })
     }
 
@@ -483,10 +556,12 @@ SplitView {
                         })
     }
 
-    function showEndpointView(domainId, endpKey) {
+    function showEndpointView(domainId, endpKey, topicName, isWriter) {
         showView("selection_details/EndpointView.qml", {
                             domainId: domainId,
-                            endpointKey: endpKey
+                            endpointKey: endpKey,
+                            topicName: topicName,
+                            isWriter: isWriter
                         })
     }
 

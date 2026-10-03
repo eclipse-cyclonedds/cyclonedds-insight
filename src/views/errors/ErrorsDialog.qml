@@ -20,25 +20,30 @@ import "qrc:/src/views"
 import "qrc:/src/views/icons"
 import "qrc:/src/views/elements"
 
-Window {
+Popup {
     id: errorsDialog
 
-    property var errorModel
     property int activeCount: 0
+    property var errorModel
     property int totalCount: 0
-    signal acknowledgeRequested(int index)
-    signal removeRequested(int index)
-    signal acknowledgeAllRequested()
-    signal clearRequested()
 
-    title: qsTrId("errors.window.title")
-    visible: false
-    width: 760
-    height: 480
-    minimumWidth: 580
-    minimumHeight: 320
-    flags: Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
-    color: Constants.mainContentColor(rootWindow.isDarkMode)
+    signal acknowledgeAllRequested
+    signal acknowledgeRequested(int index)
+    signal clearRequested
+    signal removeRequested(int index)
+
+    anchors.centerIn: parent
+    height: Math.min(480, Math.max(0, parent ? parent.height - 24 : 0))
+    modal: true
+    padding: 0
+    width: Math.min(760, Math.max(0, parent ? parent.width - 24 : 0))
+
+    background: Rectangle {
+        border.color: Constants.designBorderColor(rootWindow.isDarkMode)
+        border.width: 1
+        color: Constants.mainContentColor(rootWindow.isDarkMode)
+        radius: Constants.cardRadius
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -51,258 +56,295 @@ Window {
             spacing: 10
 
             WarningTriangle {
-                Layout.preferredWidth: 25
                 Layout.preferredHeight: 25
+                Layout.preferredWidth: 25
+                visible: errorsDialog.totalCount > 0
             }
+            Rectangle {
+                Layout.preferredHeight: 25
+                Layout.preferredWidth: 25
+                visible: errorsDialog.totalCount === 0
+                border.color: Constants.designBorderColor(rootWindow.isDarkMode)
+                border.width: 1
+                color: rootWindow.isDarkMode ? "#303030" : "#eeeeee"
+                radius: width / 2
 
+                Label {
+                    anchors.centerIn: parent
+                    color: Constants.mutedForegroundColor(rootWindow.isDarkMode)
+                    font.bold: true
+                    font.pixelSize: 14
+                    text: "✓"
+                }
+            }
             Label {
-                text: qsTrId("errors.title")
-                font.pixelSize: Constants.pageTitleFontSize
+                Layout.fillWidth: true
+                Layout.minimumWidth: 0
                 font.bold: true
+                font.pixelSize: Constants.pageTitleFontSize
+                text: errorsDialog.totalCount > 0 ? qsTrId("errors.title") : qsTrId("errors.none")
+                wrapMode: Text.WordWrap
             }
+            IconActionButton {
+                Accessible.name: qsTrId("general.close")
+                icon: "close"
 
-            Label {
-                text: errorsDialog.activeCount > 0
-                      ? qsTrId("errors.active.count").arg(errorsDialog.activeCount)
-                      : errorsDialog.totalCount > 0
-                        ? qsTrId("errors.all.acknowledged") : qsTrId("errors.none.reported")
-                color: errorsDialog.activeCount > 0
-                       ? Constants.errorColor
-                       : Constants.secondaryTextColor(rootWindow.isDarkMode)
-                font.bold: errorsDialog.activeCount > 0
+                onClicked: errorsDialog.close()
             }
-
-            Item { Layout.fillWidth: true }
+        }
+        Label {
+            Layout.fillWidth: true
+            color: errorsDialog.activeCount > 0 ? Constants.errorColor : Constants.secondaryTextColor(rootWindow.isDarkMode)
+            font.bold: errorsDialog.activeCount > 0
+            text: errorsDialog.activeCount > 0 ? qsTrId("errors.active.count").arg(errorsDialog.activeCount) : errorsDialog.totalCount > 0 ? qsTrId("errors.all.acknowledged") : qsTrId("errors.none.reported")
+            wrapMode: Text.WordWrap
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
 
             Rectangle {
                 id: acknowledgeAllButton
-                implicitWidth: acknowledgeAllContent.implicitWidth + 18
-                implicitHeight: 30
-                radius: Constants.controlRadius
-                enabled: errorsDialog.activeCount > 0
-                opacity: enabled ? 1.0 : 0.4
-                color: acknowledgeAllMouse.containsMouse && enabled
-                       ? (rootWindow.isDarkMode ? "#383838" : "#e9e9e9")
-                       : "transparent"
-                border.width: 1
-                border.color: Constants.designBorderColor(rootWindow.isDarkMode)
 
-                Behavior on color { ColorAnimation { duration: 100 } }
+                border.color: Constants.designBorderColor(rootWindow.isDarkMode)
+                border.width: 1
+                color: acknowledgeAllMouse.containsMouse && enabled ? (rootWindow.isDarkMode ? "#383838" : "#e9e9e9") : "transparent"
+                enabled: errorsDialog.activeCount > 0
+                implicitHeight: 30
+                implicitWidth: acknowledgeAllContent.implicitWidth + 18
+                opacity: enabled ? 1.0 : 0.4
+                radius: Constants.controlRadius
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 100
+                    }
+                }
 
                 RowLayout {
                     id: acknowledgeAllContent
+
                     anchors.centerIn: parent
                     spacing: 6
 
                     Label {
+                        color: Constants.mutedForegroundColor(rootWindow.isDarkMode)
+                        font.bold: true
                         text: "✓"
-                        color: Constants.mutedForegroundColor(rootWindow.isDarkMode)
-                        font.bold: true
                     }
-
                     Label {
-                        text: qsTrId("errors.acknowledge.all")
                         color: Constants.mutedForegroundColor(rootWindow.isDarkMode)
                         font.bold: true
+                        text: qsTrId("errors.acknowledge.all")
                     }
                 }
-
                 MouseArea {
                     id: acknowledgeAllMouse
+
                     anchors.fill: parent
+                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                     enabled: acknowledgeAllButton.enabled
                     hoverEnabled: true
-                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+
                     onClicked: errorsDialog.acknowledgeAllRequested()
                 }
             }
-
             IconActionButton {
                 id: clearButton
-                icon: "delete-all"
+
                 destructive: true
                 enabled: errorsDialog.totalCount > 0
+                icon: "delete-all"
                 opacity: enabled ? 1.0 : 0.4
+
                 onClicked: errorsDialog.clearRequested()
             }
         }
-
         Label {
-            visible: errorsDialog.totalCount > 0
-            text: errorsDialog.totalCount === 1
-                  ? qsTrId("errors.recorded.one")
-                  : qsTrId("errors.recorded.count").arg(errorsDialog.totalCount)
+            Layout.fillWidth: true
             color: Constants.secondaryTextColor(rootWindow.isDarkMode)
             font.pixelSize: Constants.captionFontSize
+            text: errorsDialog.totalCount === 1 ? qsTrId("errors.recorded.one") : qsTrId("errors.recorded.count").arg(errorsDialog.totalCount)
+            visible: errorsDialog.totalCount > 0
+            wrapMode: Text.WordWrap
         }
-
         ListView {
             id: errorsList
-            Layout.fillWidth: true
+
             Layout.fillHeight: true
+            Layout.fillWidth: true
             clip: true
-            spacing: 8
             model: errorsDialog.errorModel
+            spacing: 8
+
             ScrollBar.vertical: ScrollBar {
                 id: errorsScrollBar
+
                 policy: ScrollBar.AsNeeded
             }
-
             delegate: Rectangle {
                 id: errorDelegate
+
+                required property bool acknowledged
                 required property int index
                 required property string message
                 required property string timestamp
-                required property bool acknowledged
-                width: errorsList.width
-                       - (errorsScrollBar.visible ? errorsScrollBar.width + 6 : 0)
+
+                border.color: Constants.designBorderColor(rootWindow.isDarkMode)
+                border.width: 1
+                color: Constants.cardBackgroundColor(rootWindow.isDarkMode)
                 implicitHeight: errorContent.implicitHeight + 20
                 radius: Constants.cardRadius
-                color: Constants.cardBackgroundColor(rootWindow.isDarkMode)
-                border.width: 1
-                border.color: Constants.designBorderColor(rootWindow.isDarkMode)
+                width: errorsList.width - (errorsScrollBar.visible ? errorsScrollBar.width + 6 : 0)
 
-                RowLayout {
+                ColumnLayout {
                     id: errorContent
+
                     anchors.fill: parent
                     anchors.margins: 10
                     spacing: 12
 
-                    Item {
-                        Layout.alignment: Qt.AlignTop
-                        Layout.preferredWidth: 22
-                        Layout.preferredHeight: 22
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
 
-                        WarningTriangle {
-                            anchors.fill: parent
-                            warningColor: Constants.errorColor
+                        Item {
+                            Layout.alignment: Qt.AlignTop
+                            Layout.preferredHeight: 22
+                            Layout.preferredWidth: 22
+
+                            WarningTriangle {
+                                anchors.fill: parent
+                                warningColor: Constants.errorColor
+                            }
+                            Rectangle {
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: -2
+                                anchors.right: parent.right
+                                anchors.rightMargin: -2
+                                border.color: Constants.cardBackgroundColor(rootWindow.isDarkMode)
+                                border.width: 1
+                                color: Constants.successColor
+                                height: 12
+                                radius: 6
+                                visible: errorDelegate.acknowledged
+                                width: 12
+
+                                Label {
+                                    anchors.centerIn: parent
+                                    color: "white"
+                                    font.bold: true
+                                    font.pixelSize: 8
+                                    text: "✓"
+                                }
+                            }
                         }
-
-                        Rectangle {
-                            width: 12
-                            height: 12
-                            anchors.right: parent.right
-                            anchors.bottom: parent.bottom
-                            anchors.rightMargin: -2
-                            anchors.bottomMargin: -2
-                            visible: errorDelegate.acknowledged
-                            radius: 6
-                            color: Constants.successColor
-                            border.width: 1
-                            border.color: Constants.cardBackgroundColor(rootWindow.isDarkMode)
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 4
 
                             Label {
-                                anchors.centerIn: parent
-                                text: "✓"
-                                color: "white"
-                                font.bold: true
-                                font.pixelSize: 8
+                                Layout.fillWidth: true
+                                text: errorDelegate.message
+                                textFormat: Text.PlainText
+                                wrapMode: Text.Wrap
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
+                                color: errorDelegate.acknowledged ? Constants.secondaryTextColor(rootWindow.isDarkMode) : Constants.errorColor
+                                font.pixelSize: Constants.captionFontSize
+                                text: errorDelegate.timestamp + "  ·  " + (errorDelegate.acknowledged ? qsTrId("errors.acknowledged") : qsTrId("errors.active"))
+                                wrapMode: Text.Wrap
                             }
                         }
                     }
-
-                    ColumnLayout {
+                    RowLayout {
                         Layout.fillWidth: true
-                        spacing: 4
 
-                        Label {
+                        Item {
                             Layout.fillWidth: true
-                            text: errorDelegate.message
-                            wrapMode: Text.Wrap
-                            textFormat: Text.PlainText
                         }
+                        Rectangle {
+                            id: acknowledgeButton
 
-                        Label {
-                            text: errorDelegate.timestamp + "  ·  "
-                                  + (errorDelegate.acknowledged
-                                     ? qsTrId("errors.acknowledged") : qsTrId("errors.active"))
-                            font.pixelSize: Constants.captionFontSize
-                            color: errorDelegate.acknowledged
-                                   ? Constants.secondaryTextColor(rootWindow.isDarkMode)
-                                   : Constants.errorColor
+                            Layout.alignment: Qt.AlignTop
+                            border.color: errorDelegate.acknowledged ? Constants.successColor : Constants.designBorderColor(rootWindow.isDarkMode)
+                            border.width: 1
+                            color: errorDelegate.acknowledged ? (rootWindow.isDarkMode ? "#254531" : "#def4e7") : acknowledgeMouse.containsMouse ? (rootWindow.isDarkMode ? "#383838" : "#e9e9e9") : "transparent"
+                            implicitHeight: 28
+                            implicitWidth: acknowledgeLabel.implicitWidth + 20
+                            radius: Constants.controlRadius
+
+                            Label {
+                                id: acknowledgeLabel
+
+                                anchors.centerIn: parent
+                                color: errorDelegate.acknowledged ? Constants.successColor : Constants.mutedForegroundColor(rootWindow.isDarkMode)
+                                font.bold: errorDelegate.acknowledged
+                                text: errorDelegate.acknowledged ? qsTrId("errors.acknowledged.with-icon") : qsTrId("errors.acknowledge")
+                            }
+                            MouseArea {
+                                id: acknowledgeMouse
+
+                                anchors.fill: parent
+                                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                enabled: !errorDelegate.acknowledged
+                                hoverEnabled: true
+
+                                onClicked: errorsDialog.acknowledgeRequested(errorDelegate.index)
+                            }
                         }
-                    }
+                        IconActionButton {
+                            Layout.alignment: Qt.AlignTop
+                            destructive: true
+                            icon: "delete"
 
-                    Rectangle {
-                        id: acknowledgeButton
-                        Layout.alignment: Qt.AlignTop
-                        implicitWidth: acknowledgeLabel.implicitWidth + 20
-                        implicitHeight: 28
-                        radius: Constants.controlRadius
-                        color: errorDelegate.acknowledged
-                               ? (rootWindow.isDarkMode ? "#254531" : "#def4e7")
-                               : acknowledgeMouse.containsMouse
-                                 ? (rootWindow.isDarkMode ? "#383838" : "#e9e9e9")
-                                 : "transparent"
-                        border.width: 1
-                        border.color: errorDelegate.acknowledged
-                                      ? Constants.successColor
-                                      : Constants.designBorderColor(rootWindow.isDarkMode)
-
-                        Label {
-                            id: acknowledgeLabel
-                            anchors.centerIn: parent
-                            text: errorDelegate.acknowledged
-                                  ? qsTrId("errors.acknowledged.with-icon") : qsTrId("errors.acknowledge")
-                            color: errorDelegate.acknowledged
-                                   ? Constants.successColor
-                                   : Constants.mutedForegroundColor(rootWindow.isDarkMode)
-                            font.bold: errorDelegate.acknowledged
+                            onClicked: errorsDialog.removeRequested(errorDelegate.index)
                         }
-
-                        MouseArea {
-                            id: acknowledgeMouse
-                            anchors.fill: parent
-                            enabled: !errorDelegate.acknowledged
-                            hoverEnabled: true
-                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                            onClicked: errorsDialog.acknowledgeRequested(errorDelegate.index)
-                        }
-                    }
-
-                    IconActionButton {
-                        Layout.alignment: Qt.AlignTop
-                        icon: "delete"
-                        destructive: true
-                        onClicked: errorsDialog.removeRequested(errorDelegate.index)
                     }
                 }
             }
 
             Column {
                 anchors.centerIn: parent
-                visible: errorsDialog.totalCount === 0
                 spacing: 8
+                visible: errorsDialog.totalCount === 0
+                width: parent.width
 
                 Rectangle {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    width: 42
+                    border.color: Constants.designBorderColor(rootWindow.isDarkMode)
+                    border.width: 1
+                    color: rootWindow.isDarkMode ? "#303030" : "#eeeeee"
                     height: 42
                     radius: 21
-                    color: rootWindow.isDarkMode ? "#303030" : "#eeeeee"
-                    border.width: 1
-                    border.color: Constants.designBorderColor(rootWindow.isDarkMode)
+                    width: 42
 
                     Label {
                         anchors.centerIn: parent
-                        text: "✓"
                         color: Constants.mutedForegroundColor(rootWindow.isDarkMode)
-                        font.pixelSize: 19
                         font.bold: true
+                        font.pixelSize: 19
+                        text: "✓"
                     }
                 }
-
                 Label {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: qsTrId("errors.empty.title")
                     font.bold: true
                     font.pixelSize: Constants.sectionTitleFontSize
+                    horizontalAlignment: Text.AlignHCenter
+                    text: qsTrId("errors.empty.title")
+                    width: parent.width
+                    wrapMode: Text.WordWrap
                 }
-
                 Label {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: qsTrId("errors.empty.description")
                     color: Constants.secondaryTextColor(rootWindow.isDarkMode)
+                    horizontalAlignment: Text.AlignHCenter
+                    text: qsTrId("errors.empty.description")
+                    width: parent.width
+                    wrapMode: Text.WordWrap
                 }
             }
         }

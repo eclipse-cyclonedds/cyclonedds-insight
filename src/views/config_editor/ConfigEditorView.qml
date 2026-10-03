@@ -13,12 +13,14 @@
 import QtCore
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls.Basic as Basic
 import QtQuick.Dialogs
 import QtQuick.Layouts
 
 import org.eclipse.cyclonedds.insight
 import "qrc:/src/views"
 import "qrc:/src/views/icons"
+import "qrc:/src/views/elements"
 import "qrc:/src/views/selection_details"
 
 Rectangle {
@@ -28,8 +30,24 @@ Rectangle {
 
     property string fileContent: ""
     property string lastSavedTime: ""
-    property bool configFileAvailable: false
+    readonly property bool configFileAvailable: ddsConfig.editorWritable
+        || ddsConfig.startupUri.trim().startsWith("<")
     property bool configSaveEnabled: false
+
+    Connections {
+        target: qmlUtils
+        function onAboutToQuit() { configEditorView.configSaveEnabled = false }
+    }
+
+    onVisibleChanged: {
+        if (visible && configSaveEnabled) {
+            configSaveEnabled = false
+            fileContent = ddsConfig.reloadEditor()
+            configTextArea.text = fileContent
+            lastSavedTime = ""
+            configSaveEnabled = true
+        }
+    }
     property bool completionInsertionInProgress: false
     property int viewMode: 0
     readonly property bool editorVisible: viewMode !== 2
@@ -117,6 +135,15 @@ Rectangle {
                 Layout.fillWidth: true
             }
 
+            IconActionButton {
+                Layout.preferredWidth: 28
+                Layout.preferredHeight: 28
+                icon: "network"
+                active: networkInterfacesPanel.expanded
+                Accessible.name: qsTrId("config.network.interfaces")
+                onClicked: networkInterfacesPanel.expanded = !networkInterfacesPanel.expanded
+            }
+
             Rectangle {
                 id: configurationViewSelector
                 Layout.preferredWidth: Math.min(390,
@@ -126,6 +153,24 @@ Rectangle {
                 color: rootWindow.isDarkMode ? "#292929" : "#e9e9e9"
                 border.width: 1
                 border.color: rootWindow.isDarkMode ? "#484848" : "#d0d0d0"
+
+                Rectangle {
+                    x: 2 + configEditorView.viewMode * (width + 2)
+                    y: 2
+                    width: (configurationViewSelector.width - 8) / 3
+                    height: configurationViewSelector.height - 4
+                    radius: 3
+                    color: rootWindow.isDarkMode ? "#414141" : "#fafafa"
+                    border.width: 1
+                    border.color: rootWindow.isDarkMode ? "#535353" : "#d5d5d5"
+
+                    Behavior on x {
+                        NumberAnimation {
+                            duration: 140
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
 
                 Row {
                     anchors.fill: parent
@@ -149,45 +194,32 @@ Rectangle {
                             width: (parent.width - 4) / 3
                             height: parent.height
                             radius: 3
-                            color: selected
-                                   ? rootWindow.isDarkMode
-                                     ? "#484848" : "#ffffff"
-                                   : configurationViewMouseArea.containsMouse
-                                     ? rootWindow.isDarkMode
-                                       ? "#363636"
-                                       : Constants.lightDesignBorder
-                                     : rootWindow.isDarkMode
-                                       ? "#242424" : "transparent"
-                            border.width: 1
-                            border.color: selected
-                                          ? rootWindow.isDarkMode
-                                            ? "#747474" : "#c6c6c6"
-                                          : "transparent"
+                            color: !selected && configurationViewMouseArea.containsMouse
+                                   ? rootWindow.isDarkMode ? "#333333" : "#e0e0e0"
+                                   : "transparent"
 
-                            Rectangle {
-                                visible: configurationViewOption.selected
+                            ConfigurationViewIcon {
+                                id: configurationViewIcon
                                 anchors.left: parent.left
+                                anchors.leftMargin: 6
                                 anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: 5
-                                width: 2
-                                height: parent.height - 8
-                                radius: 1
-                                color: Constants.accentColor
+                                mode: configurationViewOption.index
+                                iconColor: configurationViewLabel.color
                             }
 
                             Label {
-                                anchors.fill: parent
-                                anchors.leftMargin: 11
+                                id: configurationViewLabel
+                                anchors.left: configurationViewIcon.right
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.leftMargin: 5
                                 anchors.rightMargin: 6
                                 text: configurationViewOption.modelData
-                                font.bold: configurationViewOption.selected
                                 horizontalAlignment: Text.AlignLeft
                                 verticalAlignment: Text.AlignVCenter
                                 elide: Text.ElideRight
                                 color: rootWindow.isDarkMode
-                                       ? configurationViewOption.selected
-                                         ? "#ffffff" : "#b8b8b8"
-                                       : "#262626"
+                                       ? Constants.darkMutedForeground : "#262626"
                             }
 
                             MouseArea {
@@ -205,6 +237,13 @@ Rectangle {
             }
         }
 
+        NetworkInterfacesPanel {
+            id: networkInterfacesPanel
+            visible: expanded
+            Layout.fillWidth: true
+            Layout.bottomMargin: 10
+        }
+
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -220,19 +259,8 @@ Rectangle {
                 anchors.fill: parent
                 anchors.margins: 12
                 orientation: Qt.Horizontal
-                handle: Rectangle {
-                    implicitWidth: 14
-                    color: "transparent"
-
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 1
-                        height: parent.height - 12
-                        color: parent.SplitHandle.hovered
-                               || parent.SplitHandle.pressed
-                               ? Constants.accentColor
-                               : configEditorView.borderColor
-                    }
+                handle: ResizeHandle {
+                    orientation: configEditorSplit.orientation
                 }
 
                 Item {
@@ -261,7 +289,7 @@ Rectangle {
                                 TextField {
                                     id: uriField
                                     Layout.fillWidth: true
-                                    text: CYCLONEDDS_URI
+                                    text: ddsConfig.selectedSource === "xml" ? ddsConfig.editorXml : ddsConfig.startupUri
                                     readOnly: true
                                     selectByMouse: true
                                 }
@@ -274,7 +302,7 @@ Rectangle {
                                 onClicked: {
                                     configEditorView.configSaveEnabled = false
                                     configEditorView.fileContent =
-                                            qmlUtils.loadFileContent(CYCLONEDDS_URI)
+                                            ddsConfig.reloadEditor()
                                     configTextArea.text =
                                         configEditorView.fileContent
                                     configEditorView.configSaveEnabled = true
@@ -286,7 +314,6 @@ Rectangle {
                             Layout.fillWidth: true
                             Layout.bottomMargin: 2
                             visible: configEditorView.configFileAvailable
-
                             Label {
                                 text: qsTrId("config.restart.notice")
                                 color: configEditorView.secondaryTextColor
@@ -294,11 +321,10 @@ Rectangle {
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
-
                             Label {
-                                text: configEditorView.lastSavedTime.length > 0
-                                      ? "Automatically saved: "
-                                        + configEditorView.lastSavedTime
+                                text: ddsConfig.status.startsWith("Not saved:") ? qsTr("Not saved — invalid XML or file error")
+                                      : configEditorView.lastSavedTime.length > 0
+                                      ? qsTr("Automatically saved: ") + configEditorView.lastSavedTime
                                       : qsTrId("config.automatically.saved")
                                 color: configEditorView.secondaryTextColor
                                 font.pixelSize: Constants.captionFontSize
@@ -389,12 +415,17 @@ Rectangle {
                                 // deciding whether each scrollbar is visible.
                                 ScrollBar.vertical.policy: ScrollBar.AlwaysOn
 
-                                TextArea {
+                                // This is a custom XML editor with its own background
+                                // and highlighter, so use the same text control on all styles.
+                                Basic.TextArea {
                                     id: configTextArea
+                                    readOnly: !ddsConfig.editorWritable
                                     width: Math.max(configEditorScrollView.availableWidth,
                                                     contentWidth + leftPadding
                                                     + rightPadding)
                                     text: configEditorView.fileContent
+                                    textFormat: TextEdit.PlainText
+                                    color: rootWindow.isDarkMode ? "#eeeeee" : "#262626"
                                     wrapMode: TextEdit.NoWrap
                                     selectByMouse: true
                                     selectByKeyboard: true
@@ -405,10 +436,10 @@ Rectangle {
                                         if (!configEditorView.configSaveEnabled)
                                             return
 
-                                        qmlUtils.saveFileContent(
-                                            CYCLONEDDS_URI, text)
-                                        configEditorView.lastSavedTime =
-                                            new Date().toLocaleString()
+                                        if (ddsConfig.saveEditor(text))
+                                            configEditorView.lastSavedTime = new Date().toLocaleString()
+                                        else
+                                            configEditorView.lastSavedTime = ""
                                         configEditorView.updateCompletions()
                                     }
                                     onCursorPositionChanged:
@@ -697,18 +728,9 @@ Rectangle {
                     }
 
                     Component.onCompleted: {
-                        if (qmlUtils.isValidFile(CYCLONEDDS_URI)
-                                && CYCLONEDDS_URI !== "<not set>"
-                                && CYCLONEDDS_URI !== "") {
-                            configEditorView.configFileAvailable = true
-                            configEditorView.fileContent =
-                                qmlUtils.loadFileContent(CYCLONEDDS_URI)
-                            configTextArea.text =
-                                configEditorView.fileContent
-                            configEditorView.configSaveEnabled = true
-                        } else {
-                            configEditorView.configFileAvailable = false
-                        }
+                        configEditorView.fileContent = ddsConfig.reloadEditor()
+                        configTextArea.text = configEditorView.fileContent
+                        configEditorView.configSaveEnabled = true
                     }
                 }
 
@@ -733,24 +755,8 @@ Rectangle {
                         Layout.fillHeight: true
                         orientation: configEditorView.editorVisible
                                      ? Qt.Vertical : Qt.Horizontal
-                        handle: Rectangle {
-                            implicitWidth: 10
-                            implicitHeight: 10
-                            color: "transparent"
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: configBrowserSplit.orientation
-                                       === Qt.Horizontal
-                                       ? 1 : parent.width - 12
-                                height: configBrowserSplit.orientation
-                                        === Qt.Horizontal
-                                        ? parent.height - 12 : 1
-                                color: parent.SplitHandle.hovered
-                                       || parent.SplitHandle.pressed
-                                       ? Constants.accentColor
-                                       : configEditorView.borderColor
-                            }
+                        handle: ResizeHandle {
+                            orientation: configBrowserSplit.orientation
                         }
 
                         Rectangle {

@@ -22,7 +22,7 @@ import org.eclipse.cyclonedds.insight
 DropArea {
     id: dropAreaId
     anchors.fill: parent
-    enabled: true
+    enabled: !IS_MOBILE
     property bool isEntered: false
     Drag.dragType: Drag.Automatic
     onEntered: {
