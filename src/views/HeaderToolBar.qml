@@ -60,6 +60,7 @@ ToolBar {
 
             Image {
                 id: cycloneLogo
+                anchors.centerIn: parent
                 visible: !isHeaderSpinning
                 source: "qrc:/res/images/cyclonedds.png"
                 sourceSize.width: 30
@@ -67,14 +68,15 @@ ToolBar {
             }
             AnimatedImage {
                 id: headerLoadingId
+                anchors.centerIn: parent
                 source: "qrc:/res/images/spinning.gif"
                 visible: isHeaderSpinning
                 playing: isHeaderSpinning
                 paused: !isHeaderSpinning
-                sourceSize.height: 30
-                sourceSize.width: 30
-                height: 30
-                width: 30
+                sourceSize.height: 42
+                sourceSize.width: 42
+                height: 42
+                width: 42
 
                 onCurrentFrameChanged: {
                     if (headerToolBar.isStartupSpinning
