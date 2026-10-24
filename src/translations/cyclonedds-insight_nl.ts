@@ -141,6 +141,92 @@
     <message id="domain.discover.automatically">
         <translation>Domeinen automatisch detecteren</translation>
     </message>
+    <message id="domain.scan.joined.count">
+        <translation>Al verbonden: %1</translation>
+    </message>
+    <message id="domain.scan.found.prompt">
+        <translation>%1 nieuwe domeinen gevonden. Nu toevoegen?</translation>
+    </message>
+    <message id="domain.scan.select.all">
+        <translation>Alles selecteren</translation>
+    </message>
+    <message id="domain.scan.select.none">
+        <translation>Selectie wissen</translation>
+    </message>
+    <message id="domain.scan.joining">
+        <translation>Verbinding maken met domeinen… %1 resterend</translation>
+    </message>
+    <message id="domain.scan.joining.one">
+        <translation>Verbinden…</translation>
+    </message>
+    <message id="domain.scan.joined">
+        <translation>Verbonden</translation>
+    </message>
+    <message id="domain.scan.join.one">
+        <translation>Verbinden</translation>
+    </message>
+    <message id="domain.scan.join.selected">
+        <translation>Met selectie verbinden (%1)</translation>
+    </message>
+    <message id="domain.scan.join.all">
+        <translation>Met alle verbinden (%1)</translation>
+    </message>
+    <message id="domain.scan.join.stops">
+        <translation>Verbinding maken stopt de huidige zoekopdracht.</translation>
+    </message>
+    <message id="domain.scan.join.failed">
+        <translation>Met sommige domeinen kon geen verbinding worden gemaakt. Details staan hieronder.</translation>
+    </message>
+    <message id="domain.scan.join.error">
+        <translation>Met %1 domeinen kon geen verbinding worden gemaakt.
+%2</translation>
+    </message>
+    <message id="domain.scan.resource.limit">
+        <translation>Onvoldoende bronnen voor meer domeinen. Selecteer minder domeinen of verbreek de verbinding met een bestaand domein.</translation>
+    </message>
+    <message id="domain.scan.start">
+        <translation>Zoeken starten</translation>
+    </message>
+    <message id="domain.scan.ready">
+        <translation>Start een zoekopdracht naar actieve DDS-domeinen.</translation>
+    </message>
+    <message id="domain.scan.range">
+        <translation>Domein-ID’s 0–232. Reeds verbonden domeinen tellen als voltooid.</translation>
+    </message>
+    <message id="domain.scan.background">
+        <translation>Het zoeken gaat door wanneer dit venster wordt gesloten.</translation>
+    </message>
+    <message id="domain.scan.quick">
+        <translation>Domeinen zoeken…</translation>
+    </message>
+    <message id="domain.scan.extended">
+        <translation>Domeinen zonder antwoord opnieuw controleren…</translation>
+    </message>
+    <message id="domain.scan.cancelled">
+        <translation>Zoeken naar domeinen gestopt</translation>
+    </message>
+    <message id="domain.scan.incomplete">
+        <translation>Zoeken naar domeinen onvolledig</translation>
+    </message>
+    <message id="domain.scan.complete">
+        <translation>Zoeken naar domeinen voltooid</translation>
+    </message>
+    <message id="domain.scan.progress">
+        <translation>%1 / %2 · %3 gevonden</translation>
+    </message>
+    <message id="domain.scan.join">
+        <translation>Verbinden met domein %1</translation>
+    </message>
+    <message id="domain.scan.hint">
+        <translation>Selecteer een gevonden domein om verbinding te maken. Domeinen zonder antwoord kunnen nog steeds actief zijn.</translation>
+    </message>
+    <message id="domain.scan.errors">
+        <translation>Niet gecontroleerde domeinen: %1. Details hieronder.</translation>
+    </message>
+    <message id="domain.scan.error">
+        <translation>Tijdens het zoeken konden %1 domeinen niet worden gecontroleerd.
+%2</translation>
+    </message>
     <message id="domain.remove.selected">
         <translation>Geselecteerd domein verwijderen</translation>
     </message>
@@ -358,6 +444,9 @@
     </message>
     <message id="general.start">
         <translation>Starten</translation>
+    </message>
+    <message id="general.hide">
+        <translation>Verbergen</translation>
     </message>
     <message id="general.stop">
         <translation>Stoppen</translation>

@@ -141,6 +141,92 @@
     <message id="domain.discover.automatically">
         <translation>Domains automatisch erkennen</translation>
     </message>
+    <message id="domain.scan.joined.count">
+        <translation>Bereits beigetreten: %1</translation>
+    </message>
+    <message id="domain.scan.found.prompt">
+        <translation>%1 neue Domains gefunden. Jetzt hinzufügen?</translation>
+    </message>
+    <message id="domain.scan.select.all">
+        <translation>Alle auswählen</translation>
+    </message>
+    <message id="domain.scan.select.none">
+        <translation>Auswahl aufheben</translation>
+    </message>
+    <message id="domain.scan.joining">
+        <translation>Domains werden hinzugefügt… %1 verbleibend</translation>
+    </message>
+    <message id="domain.scan.joining.one">
+        <translation>Beitritt läuft…</translation>
+    </message>
+    <message id="domain.scan.joined">
+        <translation>Beigetreten</translation>
+    </message>
+    <message id="domain.scan.join.one">
+        <translation>Beitreten</translation>
+    </message>
+    <message id="domain.scan.join.selected">
+        <translation>Auswahl beitreten (%1)</translation>
+    </message>
+    <message id="domain.scan.join.all">
+        <translation>Allen beitreten (%1)</translation>
+    </message>
+    <message id="domain.scan.join.stops">
+        <translation>Der Beitritt beendet die laufende Suche.</translation>
+    </message>
+    <message id="domain.scan.join.failed">
+        <translation>Einigen Domains konnte nicht beigetreten werden. Details stehen unten.</translation>
+    </message>
+    <message id="domain.scan.join.error">
+        <translation>%1 Domains konnte nicht beigetreten werden.
+%2</translation>
+    </message>
+    <message id="domain.scan.resource.limit">
+        <translation>Nicht genug Ressourcen für weitere Domains. Wähle weniger Domains oder verlasse eine bestehende Domain.</translation>
+    </message>
+    <message id="domain.scan.start">
+        <translation>Suche starten</translation>
+    </message>
+    <message id="domain.scan.ready">
+        <translation>Starte eine Suche nach aktiven DDS-Domains.</translation>
+    </message>
+    <message id="domain.scan.range">
+        <translation>Domain-IDs 0–232. Bereits beigetretene Domains zählen als abgeschlossen.</translation>
+    </message>
+    <message id="domain.scan.background">
+        <translation>Die Suche läuft beim Schließen dieses Fensters weiter.</translation>
+    </message>
+    <message id="domain.scan.quick">
+        <translation>Domains werden gesucht…</translation>
+    </message>
+    <message id="domain.scan.extended">
+        <translation>Domains ohne Antwort werden erneut geprüft…</translation>
+    </message>
+    <message id="domain.scan.cancelled">
+        <translation>Domainsuche gestoppt</translation>
+    </message>
+    <message id="domain.scan.incomplete">
+        <translation>Domain-Suche unvollständig</translation>
+    </message>
+    <message id="domain.scan.complete">
+        <translation>Domain-Suche abgeschlossen</translation>
+    </message>
+    <message id="domain.scan.progress">
+        <translation>%1 / %2 · %3 gefunden</translation>
+    </message>
+    <message id="domain.scan.join">
+        <translation>Domain %1 beitreten</translation>
+    </message>
+    <message id="domain.scan.hint">
+        <translation>Wähle eine gefundene Domain zum Beitreten. Domains ohne Antwort können trotzdem aktiv sein.</translation>
+    </message>
+    <message id="domain.scan.errors">
+        <translation>Nicht geprüfte Domains: %1. Details stehen unten.</translation>
+    </message>
+    <message id="domain.scan.error">
+        <translation>Bei der Domain-Suche konnten %1 Domains nicht geprüft werden.
+%2</translation>
+    </message>
     <message id="domain.remove.selected">
         <translation>Ausgewählte Domain entfernen</translation>
     </message>
@@ -358,6 +444,9 @@
     </message>
     <message id="general.start">
         <translation>Starten</translation>
+    </message>
+    <message id="general.hide">
+        <translation>Ausblenden</translation>
     </message>
     <message id="general.stop">
         <translation>Stoppen</translation>

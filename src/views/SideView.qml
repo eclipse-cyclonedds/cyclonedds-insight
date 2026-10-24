@@ -199,7 +199,8 @@ ColumnLayout {
                 }
                 MenuItem {
                     text: qsTrId("domain.discover.automatically")
-                    onClicked: treeModel.scanDomains()
+                    objectName: "domainDiscoveryMenuItem"
+                    onClicked: domainDiscoveryPopup.open()
                 }
             }
         }

@@ -141,6 +141,92 @@
     <message id="domain.discover.automatically">
         <translation>Automatically discover domains</translation>
     </message>
+    <message id="domain.scan.joined.count">
+        <translation>Already joined: %1</translation>
+    </message>
+    <message id="domain.scan.found.prompt">
+        <translation>%1 new domains found. Add them now?</translation>
+    </message>
+    <message id="domain.scan.select.all">
+        <translation>Select all</translation>
+    </message>
+    <message id="domain.scan.select.none">
+        <translation>Clear selection</translation>
+    </message>
+    <message id="domain.scan.joining">
+        <translation>Joining domains… %1 remaining</translation>
+    </message>
+    <message id="domain.scan.joining.one">
+        <translation>Joining…</translation>
+    </message>
+    <message id="domain.scan.joined">
+        <translation>Joined</translation>
+    </message>
+    <message id="domain.scan.join.one">
+        <translation>Join</translation>
+    </message>
+    <message id="domain.scan.join.selected">
+        <translation>Join selected (%1)</translation>
+    </message>
+    <message id="domain.scan.join.all">
+        <translation>Join all (%1)</translation>
+    </message>
+    <message id="domain.scan.join.stops">
+        <translation>Joining stops the current search.</translation>
+    </message>
+    <message id="domain.scan.join.failed">
+        <translation>Some domains could not be joined. Details are shown below.</translation>
+    </message>
+    <message id="domain.scan.join.error">
+        <translation>Could not join %1 domain(s).
+%2</translation>
+    </message>
+    <message id="domain.scan.resource.limit">
+        <translation>Not enough resources to join more domains. Join fewer domains or remove an existing domain.</translation>
+    </message>
+    <message id="domain.scan.start">
+        <translation>Start search</translation>
+    </message>
+    <message id="domain.scan.ready">
+        <translation>Start a search for active DDS domains.</translation>
+    </message>
+    <message id="domain.scan.range">
+        <translation>Domain IDs 0–232. Already joined domains count as completed.</translation>
+    </message>
+    <message id="domain.scan.background">
+        <translation>The search continues when this window is closed.</translation>
+    </message>
+    <message id="domain.scan.quick">
+        <translation>Finding domains…</translation>
+    </message>
+    <message id="domain.scan.extended">
+        <translation>Checking domains without a response…</translation>
+    </message>
+    <message id="domain.scan.cancelled">
+        <translation>Domain search stopped</translation>
+    </message>
+    <message id="domain.scan.incomplete">
+        <translation>Domain search incomplete</translation>
+    </message>
+    <message id="domain.scan.complete">
+        <translation>Domain search finished</translation>
+    </message>
+    <message id="domain.scan.progress">
+        <translation>%1 / %2 · %3 found</translation>
+    </message>
+    <message id="domain.scan.join">
+        <translation>Join domain %1</translation>
+    </message>
+    <message id="domain.scan.hint">
+        <translation>Select a found domain to join. Domains without a response may still be active.</translation>
+    </message>
+    <message id="domain.scan.errors">
+        <translation>Domains not checked: %1. Details below.</translation>
+    </message>
+    <message id="domain.scan.error">
+        <translation>Domain discovery could not check %1 domain(s).
+%2</translation>
+    </message>
     <message id="domain.remove.selected">
         <translation>Remove the selected domain</translation>
     </message>
@@ -358,6 +444,9 @@
     </message>
     <message id="general.start">
         <translation>Start</translation>
+    </message>
+    <message id="general.hide">
+        <translation>Hide</translation>
     </message>
     <message id="general.stop">
         <translation>Stop</translation>

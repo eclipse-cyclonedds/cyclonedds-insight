@@ -132,13 +132,16 @@ class DataTopic:
                     return self.writer_endpoints[endpKey]
 
 class DataDomain:
-    def __init__(self, domain_id: int, queue) -> None:
+    def __init__(self, domain_id: int, queue, on_ready, on_failure) -> None:
         self.domain_id = domain_id
         self.topics: Dict[str, DataTopic] = {}
         self.endpointToTopic = {} # shortcut for deletion where only endp key is available
         self.participants = {}
         self.pending_participant_updates = {}
+        self.ready = False
         self.obs_thread = BuiltInObserver(domain_id, queue)
+        self.obs_thread.sessionReady.connect(on_ready, Qt.ConnectionType.QueuedConnection)
+        self.obs_thread.initializationFailed.connect(on_failure, Qt.ConnectionType.QueuedConnection)
         self.obs_thread.start()
 
     def add_participant(self, participant: DcpsParticipant):
@@ -330,6 +333,8 @@ class DdsData(QObject):
     new_topic_signal = Signal(int, str)
     remove_topic_signal = Signal(int, str)
     new_domain_signal = Signal(int)
+    domain_ready_signal = Signal(int)
+    domain_initialization_failed_signal = Signal(int, str)
     removed_domain_signal = Signal(int)
     new_endpoint_signal = Signal(str, int, DataEndpoint)
     removed_endpoint_signal = Signal(int, str)
@@ -374,11 +379,28 @@ class DdsData(QObject):
         self.the_domains.clear()
         gc.collect()
 
+    @Slot(int)
     def add_domain(self, domain_id: int):
         if domain_id in self.the_domains:
+            if self.the_domains[domain_id].ready:
+                self.domain_ready_signal.emit(domain_id)
             return
-        self.the_domains[domain_id] = DataDomain(domain_id, self.queue)
+        self.the_domains[domain_id] = DataDomain(domain_id, self.queue, self._observer_ready, self._observer_failed)
         self.new_domain_signal.emit(domain_id)
+
+    @Slot(int)
+    def _observer_ready(self, domain_id):
+        domain = self.the_domains.get(domain_id)
+        if domain is not None and self.sender() == domain.obs_thread:
+            domain.ready = True
+            self.domain_ready_signal.emit(domain_id)
+
+    @Slot(int, str)
+    def _observer_failed(self, domain_id, detail):
+        domain = self.the_domains.get(domain_id)
+        if domain is not None and self.sender() == domain.obs_thread:
+            domain.ready = False
+            self.domain_initialization_failed_signal.emit(domain_id, detail)
 
     @Slot(int)
     def remove_domain(self, domain_id: int):
