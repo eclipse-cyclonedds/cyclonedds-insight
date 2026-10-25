@@ -123,10 +123,16 @@ Rectangle {
                         }
                     }
 
-                    InfoIcon {
-                        width: 15
-                        height: 15
-                        tooltipText: qsTrId("statistic.monitor.usage.hint")
+                }
+
+                ComboBox {
+                    id: sizeModeComboBox
+                    objectName: "nodeSizeModeComboBox"
+                    Layout.fillWidth: true
+                    model: [qsTrId("node.size.uniform"), qsTrId("node.size.participants"), qsTrId("node.size.combined")]
+                    currentIndex: 0
+                    onCurrentIndexChanged: {
+                        if (architectureView !== null) architectureView.sizeMode = currentIndex
                     }
                 }
 
@@ -191,6 +197,13 @@ Rectangle {
                 }
 
                 Button {
+                    objectName: "showHiddenNodesButton"
+                    visible: architectureView !== null && architectureView.hiddenNodeCount > 0
+                    text: qsTrId("node.show.hidden").arg(architectureView ? architectureView.hiddenNodeCount : 0)
+                    onClicked: architectureView.showHiddenNodes()
+                }
+
+                Button {
                     text: architectureView === null ? qsTrId("node.view.start") : qsTrId("node.view.stop")
                     onClicked: {
                         if (architectureView !== null) {
@@ -216,7 +229,8 @@ Rectangle {
                 domainId: domainIdValue,
                 hideSelf: hideSelf,
                 speedEnabled: enableSpeeds,
-                currentSpeedUnit: currentSpeedUnit
+                currentSpeedUnit: currentSpeedUnit,
+                sizeMode: sizeModeComboBox.currentIndex
             })
             if (newView === null) {
                 console.log("Failed to create NodeDetailView")

@@ -346,6 +346,7 @@ class DdsData(QObject):
     response_data_type_signal = Signal(str, object)
     response_endpoints_by_participant_key_signal = Signal(str, int, DataEndpoint)
     response_participants_signal = Signal(str, int, object)
+    response_graph_endpoints_signal = Signal(str, int, object)
     response_participant_by_key = Signal(str, object)
     response_dds_data_json_signal = Signal(str, str)
 
@@ -512,11 +513,27 @@ class DdsData(QObject):
 
         self.response_endpoints_by_participant_key_signal.emit(requestId, domainId, endpoints)
 
+    @Slot(str, int)
+    def requestGraphEndpoints(self, requestId: str, domainId: int):
+        # Lightweight, immutable snapshot for graph counts, without copying QoS
+        # or making one full endpoint traversal for each participant.
+        for currentId, domain in self.the_domains.items():
+            if domainId != -1 and currentId != domainId:
+                continue
+            endpoints = []
+            for topic in domain.topics.values():
+                for group in (topic.reader_endpoints, topic.writer_endpoints):
+                    for data in group.values():
+                        endpoint = data.endpoint
+                        endpoints.append((str(endpoint.key), str(endpoint.participant_key),
+                                          str(endpoint.topic_name)))
+            self.response_graph_endpoints_signal.emit(requestId, currentId, endpoints)
+
     @Slot(str)
     def requestParticipants(self, requestId: str):
         logging.debug(f"requestParticipants {requestId}")
         for domainId in self.the_domains:
-            participants = (self.the_domains[domainId].participants.values())
+            participants = tuple(self.the_domains[domainId].participants.values())
             logging.debug(f"found len: {len(participants)} participants")
             self.response_participants_signal.emit(requestId, domainId, participants)
 

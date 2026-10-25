@@ -591,6 +591,9 @@
     </message>
 
     <!-- node -->
+    <message id="node.show.hidden">
+        <translation>Verborgen knooppunten tonen (%1)</translation>
+    </message>
     <message id="node.hide.self">
         <translation>Eigen node verbergen</translation>
     </message>
@@ -1283,6 +1286,27 @@
     </message>
     <message id="config.network.copy.address">
         <translation>Kopiëren</translation>
+    </message>
+    <message id="entity.endpoints">
+        <translation>Eindpunten</translation>
+    </message>
+    <message id="node.size.uniform">
+        <translation>Grootte: Gelijk</translation>
+    </message>
+    <message id="node.size.participants">
+        <translation>Grootte: Deelnemers</translation>
+    </message>
+    <message id="node.size.combined">
+        <translation>Grootte: Gecombineerd</translation>
+    </message>
+    <message id="node.statistics.empty">
+        <translation>Geen zichtbare knooppunten</translation>
+    </message>
+    <message id="node.statistics.show.domains">
+        <translation>Domeinen tonen</translation>
+    </message>
+    <message id="node.statistics.combined">
+        <translation>Gecombineerd</translation>
     </message>
 </context>
 </TS>

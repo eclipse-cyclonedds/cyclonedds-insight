@@ -94,6 +94,7 @@
         <file>src/views/config_editor/NetworkInterfacesPanel.qml</file>
         <file>src/views/nodes/NodeView.qml</file>
         <file>src/views/nodes/NodeDetailView.qml</file>
+        <file>src/views/nodes/NodeStatisticsPanel.qml</file>
         <file>src/views/nodes/Node.qml</file>
         <file>src/views/nodes/Edge.qml</file>
         <file>src/views/icons/InfoIcon.qml</file>

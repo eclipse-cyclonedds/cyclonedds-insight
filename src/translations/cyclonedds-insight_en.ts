@@ -591,6 +591,9 @@
     </message>
 
     <!-- node -->
+    <message id="node.show.hidden">
+        <translation>Show hidden (%1)</translation>
+    </message>
     <message id="node.hide.self">
         <translation>Hide self</translation>
     </message>
@@ -1283,6 +1286,27 @@
     </message>
     <message id="config.network.copy.address">
         <translation>Copy</translation>
+    </message>
+    <message id="entity.endpoints">
+        <translation>Endpoints</translation>
+    </message>
+    <message id="node.size.uniform">
+        <translation>Size: Equal</translation>
+    </message>
+    <message id="node.size.participants">
+        <translation>Size: Participants</translation>
+    </message>
+    <message id="node.size.combined">
+        <translation>Size: Combined</translation>
+    </message>
+    <message id="node.statistics.empty">
+        <translation>No visible nodes</translation>
+    </message>
+    <message id="node.statistics.show.domains">
+        <translation>Show domains</translation>
+    </message>
+    <message id="node.statistics.combined">
+        <translation>Combined</translation>
     </message>
 </context>
 </TS>

@@ -25,9 +25,16 @@ Shape {
 
     property Item node1
     property Item node2
+    visible: !!(node1 && node2 && !node1.hiddenByUser && !node2.hiddenByUser)
 
-    property color edgeColor: rootWindow.isDarkMode ? "grey": "black"
-    property real edgeWidth: 1
+    readonly property bool selectionActive: !!(node1 && node1.selectionActive)
+    readonly property bool highlighted: !!((node1 && node1.selected) || (node2 && node2.selected)
+        || (!selectionActive && ((node1 && node1.hovered) || (node2 && node2.hovered))))
+    opacity: selectionActive && !highlighted ? 0.35 : 1
+    z: highlighted ? 0 : -1
+    property color edgeColor: highlighted ? Constants.accentColor
+                              : Constants.mutedForegroundColor(rootWindow.isDarkMode)
+    property real edgeWidth: highlighted ? 1.8 : 1.1
 
     property real bytesPerSecCalc: 1.0
     property real kbPerSecCalc: 1024
@@ -60,6 +67,10 @@ Shape {
     property real len: Math.sqrt(dx*dx + dy*dy) || 1
     property real nx: -dy / len // perpendicular unit vector x
     property real ny: dx / len  // perpendicular unit vector y
+    readonly property real ux: dx / len
+    readonly property real uy: dy / len
+    readonly property real startInset: node1 ? node1.width / 2 + 3 : 0
+    readonly property real endInset: node2 ? node2.width / 2 + 3 : 0
 
     Component.onCompleted: {
         setCurrentUnit(currentUnit);
@@ -67,16 +78,18 @@ Shape {
 
     ShapePath {
         strokeWidth: edgeWidth
-        strokeColor: edgeColor
+        strokeColor: Qt.rgba(edgeColor.r, edgeColor.g, edgeColor.b, highlighted ? 0.85 : 0.35)
+        fillColor: "transparent"
+        capStyle: ShapePath.RoundCap
 
         // Dynamically bind the center of node1
-        startX: node1 ? node1.x + node1.width / 2 : 0
-        startY: node1 ? node1.y + node1.height / 2 : 0
+        startX: startXPos + ux * startInset
+        startY: startYPos + uy * startInset
 
         PathLine {
             // Dynamically bind the center of node2
-            x: node2 ? node2.x + node2.width / 2 : 0
-            y: node2 ? node2.y + node2.height / 2 : 0
+            x: edgeShape.endXPos - edgeShape.ux * edgeShape.endInset
+            y: edgeShape.endYPos - edgeShape.uy * edgeShape.endInset
         }
     }
 

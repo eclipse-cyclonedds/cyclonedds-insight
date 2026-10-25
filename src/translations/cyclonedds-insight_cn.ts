@@ -591,6 +591,9 @@
     </message>
 
     <!-- node -->
+    <message id="node.show.hidden">
+        <translation>显示隐藏节点 (%1)</translation>
+    </message>
     <message id="node.hide.self">
         <translation>隐藏自身</translation>
     </message>
@@ -1283,6 +1286,27 @@
     </message>
     <message id="config.network.copy.address">
         <translation>复制</translation>
+    </message>
+    <message id="entity.endpoints">
+        <translation>端点</translation>
+    </message>
+    <message id="node.size.uniform">
+        <translation>大小：相同</translation>
+    </message>
+    <message id="node.size.participants">
+        <translation>大小：参与者数量</translation>
+    </message>
+    <message id="node.size.combined">
+        <translation>大小：综合</translation>
+    </message>
+    <message id="node.statistics.empty">
+        <translation>没有可见节点</translation>
+    </message>
+    <message id="node.statistics.show.domains">
+        <translation>显示域</translation>
+    </message>
+    <message id="node.statistics.combined">
+        <translation>综合</translation>
     </message>
 </context>
 </TS>

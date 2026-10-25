@@ -591,6 +591,9 @@
     </message>
 
     <!-- node -->
+    <message id="node.show.hidden">
+        <translation>Afficher les nœuds masqués (%1)</translation>
+    </message>
     <message id="node.hide.self">
         <translation>Masquer le nœud local</translation>
     </message>
@@ -1283,6 +1286,27 @@
     </message>
     <message id="config.network.copy.address">
         <translation>Copier</translation>
+    </message>
+    <message id="entity.endpoints">
+        <translation>Points de terminaison</translation>
+    </message>
+    <message id="node.size.uniform">
+        <translation>Taille : Identique</translation>
+    </message>
+    <message id="node.size.participants">
+        <translation>Taille : Participants</translation>
+    </message>
+    <message id="node.size.combined">
+        <translation>Taille : Combinée</translation>
+    </message>
+    <message id="node.statistics.empty">
+        <translation>Aucun nœud visible</translation>
+    </message>
+    <message id="node.statistics.show.domains">
+        <translation>Afficher les domaines</translation>
+    </message>
+    <message id="node.statistics.combined">
+        <translation>Combiné</translation>
     </message>
 </context>
 </TS>

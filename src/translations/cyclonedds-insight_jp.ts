@@ -591,6 +591,9 @@
     </message>
 
     <!-- node -->
+    <message id="node.show.hidden">
+        <translation>非表示のノードを表示 (%1)</translation>
+    </message>
     <message id="node.hide.self">
         <translation>自身を非表示</translation>
     </message>
@@ -1283,6 +1286,27 @@
     </message>
     <message id="config.network.copy.address">
         <translation>コピー</translation>
+    </message>
+    <message id="entity.endpoints">
+        <translation>エンドポイント</translation>
+    </message>
+    <message id="node.size.uniform">
+        <translation>サイズ: 均一</translation>
+    </message>
+    <message id="node.size.participants">
+        <translation>サイズ: 参加者数</translation>
+    </message>
+    <message id="node.size.combined">
+        <translation>サイズ: 総合</translation>
+    </message>
+    <message id="node.statistics.empty">
+        <translation>表示中のノードはありません</translation>
+    </message>
+    <message id="node.statistics.show.domains">
+        <translation>ドメインを表示</translation>
+    </message>
+    <message id="node.statistics.combined">
+        <translation>総合</translation>
     </message>
 </context>
 </TS>

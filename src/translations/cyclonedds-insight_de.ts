@@ -591,6 +591,9 @@
     </message>
 
     <!-- node -->
+    <message id="node.show.hidden">
+        <translation>Ausgeblendete einblenden (%1)</translation>
+    </message>
     <message id="node.hide.self">
         <translation>Eigenen Knoten ausblenden</translation>
     </message>
@@ -1283,6 +1286,27 @@
     </message>
     <message id="config.network.copy.address">
         <translation>Kopieren</translation>
+    </message>
+    <message id="entity.endpoints">
+        <translation>Endpunkte</translation>
+    </message>
+    <message id="node.size.uniform">
+        <translation>Größe: Gleich groß</translation>
+    </message>
+    <message id="node.size.participants">
+        <translation>Größe: Teilnehmer</translation>
+    </message>
+    <message id="node.size.combined">
+        <translation>Größe: Gesamtgewicht</translation>
+    </message>
+    <message id="node.statistics.empty">
+        <translation>Keine sichtbaren Nodes</translation>
+    </message>
+    <message id="node.statistics.show.domains">
+        <translation>Domains anzeigen</translation>
+    </message>
+    <message id="node.statistics.combined">
+        <translation>Kombiniert</translation>
     </message>
 </context>
 </TS>
