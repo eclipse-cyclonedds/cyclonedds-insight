@@ -12,70 +12,14 @@
 
 from collections import deque
 import gc
-from pathlib import Path
 from threading import Event
 import time
 
-import psutil
 from loguru import logger as logging
-from PySide6.QtCore import QObject, Property, QThread, Qt, Signal, Slot
+from PySide6.QtCore import QObject, Property, QThread, QTimer, Qt, Signal, Slot
 
 
-def _pids_headroom():
-    """Respect visible cgroup v1/v2 task limits, including ancestor limits."""
-    available = []
-    roots = [Path("/sys/fs/cgroup"), Path("/sys/fs/cgroup/pids")]
-    try:
-        memberships = Path("/proc/self/cgroup").read_text().splitlines()
-    except OSError:
-        return None
-    for entry in memberships:
-        _, controllers, relative = entry.split(":", 2)
-        if controllers and "pids" not in controllers.split(","):
-            continue
-        for root in roots:
-            current = root / relative.lstrip("/")
-            # In a cgroup namespace the mount root may already be our cgroup.
-            candidates = [root]
-            while current != root and root in current.parents:
-                candidates.append(current)
-                current = current.parent
-            for directory in candidates:
-                try:
-                    maximum = (directory / "pids.max").read_text().strip()
-                    if maximum != "max":
-                        used = int((directory / "pids.current").read_text())
-                        available.append(max(0, int(maximum) - used))
-                except (OSError, ValueError):
-                    continue
-    return min(available) if available else None
-
-
-def _available_probe_slots():
-    """Reserve headroom BEFORE native creation, which may abort on exhaustion.
-
-    Measured defaults use six native threads per new domain. Reserve eight per
-    probe and sixteen additional tasks for GUI/worker and concurrent activity.
-    This is conservative admission control, not recovery from a native abort.
-    """
-    try:
-        process = psutil.Process()
-        slots = max(0, (128 - process.num_threads() - 16) // 8)
-        pids = _pids_headroom()
-        if pids is not None:
-            slots = min(slots, max(0, (pids - 16) // 8))
-        try:
-            import resource
-            maximum, _ = resource.getrlimit(resource.RLIMIT_NOFILE)
-            if maximum != resource.RLIM_INFINITY:
-                slots = min(slots, max(0, (maximum - process.num_fds() - 32) // 8))
-        except (ImportError, AttributeError):
-            pass
-        return min(16, slots)
-    except (OSError, psutil.Error):
-        # No trustworthy resource information: fail closed rather than trying
-        # hundreds of native creations and relying on catchable exceptions.
-        return 0
+MAX_SCAN_PARTICIPANTS = 8
 
 
 class _ParticipantProbe:
@@ -96,9 +40,11 @@ class _ParticipantProbe:
 
     def poll(self):
         from cyclonedds.core import InstanceState
+        # One foreign participant is enough. Avoid decoding a batch of QoS
+        # samples just to discard it immediately after the first discovery.
         return any(sample.key != self.participant.guid and sample.sample_info.valid_data and
                    sample.sample_info.instance_state == InstanceState.Alive
-                   for sample in self.reader.take(N=64))
+                   for sample in self.reader.take(N=1))
 
     def close(self):
         # The bindings' reader/read-condition cycle is collected by the scan
@@ -108,25 +54,28 @@ class _ParticipantProbe:
 
 
 class _ScanThread(QThread):
-    phaseStarted = Signal(str)
     domainResult = Signal(int, str, str)
     activeChanged = Signal(int)
     pausedChanged = Signal(bool)
 
-    def __init__(self, domains, quick_seconds, extended_seconds, max_active,
-                 probe_factory, capacity, parent):
+    def __init__(self, domains, observation_seconds, max_active, startup_interval_seconds,
+                 probe_factory, parent):
         super().__init__(parent)
         self.domains = domains
-        self.quick_seconds = quick_seconds
-        self.extended_seconds = extended_seconds
+        self.observation_seconds = observation_seconds
         self.max_active = max_active
+        self.startup_interval_seconds = startup_interval_seconds
         self.probe_factory = probe_factory
-        self.capacity = capacity
         self.stop_requested = Event()
         self.pause_requested = Event()
         self.outcome = "complete"
         self._active = {}
         self._errors = set()
+        self._peak_active = 0
+        self._create_seconds = 0.0
+        self._max_create_seconds = 0.0
+        self._cleanup_seconds = 0.0
+        self._max_cleanup_seconds = 0.0
 
     def stop(self):
         self.stop_requested.set()
@@ -139,6 +88,7 @@ class _ScanThread(QThread):
         self.domainResult.emit(domain, status, detail)
 
     def _release(self, domains):
+        started = time.perf_counter()
         for domain in domains:
             probe, _ = self._active.pop(domain)
             probe.close()
@@ -146,12 +96,15 @@ class _ScanThread(QThread):
         # Release these cycles before the next native participant is created.
         # Remaining live probes stay strongly referenced in _active.
         gc.collect()
+        elapsed = time.perf_counter() - started
+        self._cleanup_seconds += elapsed
+        self._max_cleanup_seconds = max(self._max_cleanup_seconds, elapsed)
         self.activeChanged.emit(len(self._active))
 
-    def _pass(self, domains, seconds):
-        pending = deque(domains)
-        unobserved = []
-        stalled = None
+    def _scan(self):
+        pending = deque(sorted(self.domains))
+        next_start = 0.0
+        startup_remaining = self.max_active
         while pending or self._active:
             if self.stop_requested.is_set():
                 self.outcome = "cancelled"
@@ -167,23 +120,30 @@ class _ScanThread(QThread):
                 while self.pause_requested.is_set() and not self.stop_requested.is_set():
                     self.stop_requested.wait(0.02)
                 self.pausedChanged.emit(False)
-                stalled = None
                 continue
-            admitted = False
-            while pending and len(self._active) < self.max_active:
+            while (pending and len(self._active) < self.max_active
+                   and time.monotonic() >= next_start):
                 if self.stop_requested.is_set() or self.pause_requested.is_set():
                     break
-                if self.capacity() < 1:
-                    break
                 domain = pending.popleft()
-                admitted = True
+                # Spread only the initial group. Afterwards free slots are
+                # filled immediately, without restarting the startup ramp.
+                if startup_remaining:
+                    startup_remaining -= 1
+                    next_start = (time.monotonic() + self.startup_interval_seconds
+                                  if startup_remaining else 0.0)
+                started = time.perf_counter()
                 try:
                     probe = self.probe_factory(domain)
-                    self._active[domain] = (probe, time.monotonic() + seconds)
+                    self._active[domain] = (probe, time.monotonic() + self.observation_seconds)
+                    self._peak_active = max(self._peak_active, len(self._active))
                     self.activeChanged.emit(len(self._active))
                 except Exception as error:
                     self._report(domain, "error", str(error))
-                    unobserved.append(domain)
+                finally:
+                    elapsed = time.perf_counter() - started
+                    self._create_seconds += elapsed
+                    self._max_create_seconds = max(self._max_create_seconds, elapsed)
                 # Failed constructors can retain DDS objects in traceback cycles.
                 if domain not in self._active:
                     gc.collect()
@@ -197,37 +157,21 @@ class _ScanThread(QThread):
                         results.append((domain, "found", ""))
                     elif time.monotonic() >= deadline:
                         results.append((domain, "not_observed", ""))
-                        unobserved.append(domain)
                     else:
                         continue
                 except Exception as error:
                     results.append((domain, "error", str(error)))
-                    unobserved.append(domain)
                 released.append(domain)
             if released:
                 self._release(released)
                 for result in results:
                     self._report(*result)
-            if pending and not self._active and not admitted:
-                if stalled is None:
-                    stalled = time.monotonic()
-                elif time.monotonic() - stalled > 1:
-                    for domain in pending:
-                        self._report(domain, "error", "RESOURCE_HEADROOM_UNAVAILABLE")
-                    unobserved.extend(pending)
-                    break
-            else:
-                stalled = None
             self.stop_requested.wait(0.02)
-        return unobserved
 
     def run(self):
+        started = time.perf_counter()
         try:
-            self.phaseStarted.emit("quick")
-            unobserved = self._pass(self.domains, self.quick_seconds)
-            if unobserved and self.outcome == "complete" and not self.stop_requested.is_set():
-                self.phaseStarted.emit("extended")
-                self._pass(unobserved, self.extended_seconds)
+            self._scan()
             if self._errors and self.outcome == "complete":
                 self.outcome = "incomplete"
         except Exception as error:
@@ -239,33 +183,38 @@ class _ScanThread(QThread):
                 self._release(list(self._active))
             if self.stop_requested.is_set():
                 self.outcome = "cancelled"
+            logging.info("Domain scan: state={}, elapsed={:.2f}s, peak probes={}, "
+                         "participant creation total/max={:.2f}/{:.2f}s, "
+                         "cleanup total/max={:.2f}/{:.2f}s",
+                         self.outcome, time.perf_counter() - started, self._peak_active,
+                         self._create_seconds, self._max_create_seconds,
+                         self._cleanup_seconds, self._max_cleanup_seconds)
 
 
 class DomainScanner(QObject):
     """One background thread, bounded rolling DDS probes, no child processes."""
 
     changed = Signal()
+    elapsedChanged = Signal()
     foundDomain = Signal(int)
     finished = Signal()
     pausedChanged = Signal(bool)
 
-    def __init__(self, parent=None, *, domains=None, quick_seconds=0.8,
-                 extended_seconds=3.0, max_active=16,
-                 probe_factory=None, capacity=None):
+    def __init__(self, parent=None, *, domains=None, observation_seconds=3.8,
+                 max_active=MAX_SCAN_PARTICIPANTS, startup_interval_seconds=1.0,
+                 probe_factory=None):
         super().__init__(parent)
-        self.domains = list(range(233)) if domains is None else list(domains)
-        self.quick_seconds = quick_seconds
-        self.extended_seconds = extended_seconds
-        self.max_active = max(1, min(16, max_active))
+        self.domains = list(range(233)) if domains is None else sorted(set(domains))
+        self.observation_seconds = observation_seconds
+        self.max_active = max(1, min(MAX_SCAN_PARTICIPANTS, max_active))
+        self.startup_interval_seconds = max(0.0, startup_interval_seconds)
         self.probe_factory = probe_factory or _ParticipantProbe
-        self.capacity = capacity or _available_probe_slots
         self._thread = None
         self._running = False
         self._paused = False
         self._resuming = False
         self._pause_after_resume = False
         self._state = "idle"
-        self._phase = "quick"
         self._found = set()
         self._joined = set()
         self._errors = {}
@@ -273,16 +222,21 @@ class DomainScanner(QObject):
         self._progress = 0
         self._completed_domains = set()
         self._active_count = 0
+        self._scan_started_at = None
+        self._elapsed_seconds = 0
+        self._elapsed_timer = QTimer(self)
+        self._elapsed_timer.setInterval(1000)
+        self._elapsed_timer.timeout.connect(self._update_elapsed)
 
     running = Property(bool, lambda self: self._running, notify=changed)
     paused = Property(bool, lambda self: self._paused, notify=changed)
     state = Property(str, lambda self: self._state, notify=changed)
-    phase = Property(str, lambda self: self._phase, notify=changed)
     completed = Property(int, lambda self: self._progress, notify=changed)
     total = Property(int, lambda self: self._total, notify=changed)
     foundCount = Property(int, lambda self: len(self._found - self._joined), notify=changed)
     errorCount = Property(int, lambda self: len(self._errors), notify=changed)
     activeCount = Property(int, lambda self: self._active_count, notify=changed)
+    elapsedSeconds = Property(int, lambda self: self._elapsed_seconds, notify=elapsedChanged)
     candidateDomains = Property("QVariantList", lambda self: sorted(self._found - self._joined), notify=changed)
     joinedCount = Property(int, lambda self: len(self._joined), notify=changed)
     joinedDomains = Property("QVariantList", lambda self: sorted(self._joined), notify=changed)
@@ -318,14 +272,16 @@ class DomainScanner(QObject):
         self._found.clear()
         self._errors.clear()
         self._active_count = 0
-        self._phase = "quick"
         self._state = "running"
         self._running = True
-        thread = _ScanThread(domains, self.quick_seconds, self.extended_seconds,
-                             self.max_active, self.probe_factory,
-                             self.capacity, self)
+        self._scan_started_at = time.monotonic()
+        self._elapsed_seconds = 0
+        self.elapsedChanged.emit()
+        self._elapsed_timer.start()
+        thread = _ScanThread(domains, self.observation_seconds,
+                             self.max_active, self.startup_interval_seconds, self.probe_factory,
+                             self)
         self._thread = thread
-        thread.phaseStarted.connect(self._set_phase, Qt.ConnectionType.QueuedConnection)
         thread.domainResult.connect(self._result, Qt.ConnectionType.QueuedConnection)
         thread.activeChanged.connect(self._set_active, Qt.ConnectionType.QueuedConnection)
         thread.pausedChanged.connect(self._set_paused, Qt.ConnectionType.QueuedConnection)
@@ -356,11 +312,6 @@ class DomainScanner(QObject):
         self.changed.emit()
         self.pausedChanged.emit(paused)
 
-    @Slot(str)
-    def _set_phase(self, phase):
-        self._phase = phase
-        self.changed.emit()
-
     @Slot(int)
     def _set_active(self, count):
         self._active_count = count
@@ -368,9 +319,8 @@ class DomainScanner(QObject):
 
     @Slot(int, str, str)
     def _result(self, domain, status, detail):
-        # A quick negative is still pending its longer observation window.
-        # Count each domain only once, when its final result is available.
-        if domain >= 0 and (status == "found" or self._phase == "extended"):
+        # Each domain has one observation window and one final result.
+        if domain >= 0:
             self._completed_domains.add(domain)
             self._progress = len(self._completed_domains)
         self._errors.pop(domain, None)
@@ -382,10 +332,21 @@ class DomainScanner(QObject):
         self.changed.emit()
 
     @Slot()
+    def _update_elapsed(self):
+        if self._scan_started_at is not None:
+            elapsed = int(time.monotonic() - self._scan_started_at)
+            if elapsed != self._elapsed_seconds:
+                self._elapsed_seconds = elapsed
+                self.elapsedChanged.emit()
+
+    @Slot()
     def _thread_finished(self):
         thread = self._thread
         if thread is None:
             return
+        self._update_elapsed()
+        self._elapsed_timer.stop()
+        self._scan_started_at = None
         self._thread = None
         self._active_count = 0
         self._paused = False

@@ -85,7 +85,15 @@ Popup {
                     from: 0
                     to: Math.max(1, treeModel.scanner.total)
                     value: treeModel.scanner.completed
-                    indeterminate: treeModel.scanner.running && treeModel.scanner.phase === "quick"
+                }
+                Label {
+                    objectName: "domainDiscoveryElapsed"
+                    readonly property int minutes: Math.floor(treeModel.scanner.elapsedSeconds / 60)
+                    readonly property int seconds: treeModel.scanner.elapsedSeconds % 60
+                    text: (minutes < 10 ? "0" : "") + minutes + ":"
+                          + (seconds < 10 ? "0" : "") + seconds
+                    font.pixelSize: Constants.captionFontSize
+                    color: Constants.mutedForegroundColor(rootWindow.isDarkMode)
                 }
                 IconActionButton {
                     objectName: "domainDiscoveryStopButton"
@@ -179,6 +187,8 @@ Popup {
                     text: qsTrId("domain.scan.start")
                     highlighted: true
                     enabled: !treeModel.joiningDomains
+                    Keys.onReturnPressed: clicked()
+                    Keys.onEnterPressed: clicked()
                     onClicked: treeModel.scanDomains()
                 }
                 Button {

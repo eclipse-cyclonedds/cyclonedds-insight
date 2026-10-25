@@ -14,7 +14,7 @@ from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt, QSortFilterP
 from PySide6.QtCore import QObject, QTimer, Signal, Slot, Property, qtTrId
 from loguru import logger as logging
 from dds_access import dds_data
-from dds_access.domain_finder import DomainScanner, _available_probe_slots
+from dds_access.domain_finder import DomainScanner
 from collections import deque
 from models.overview_model.tree_node import TreeNode
 
@@ -284,9 +284,7 @@ class TreeModel(QAbstractItemModel):
 
     @Property(str, notify=domainJoinChanged)
     def domainJoinErrorDetails(self):
-        return "\n".join(f"{domain}: " + (qtTrId("domain.scan.resource.limit")
-                         if detail == "RESOURCE_HEADROOM_UNAVAILABLE" else detail)
-                         for domain, detail in sorted(self._join_errors.items()))
+        return "\n".join(f"{domain}: {detail}" for domain, detail in sorted(self._join_errors.items()))
 
     @Slot("QVariantList")
     def joinDiscoveredDomains(self, domains):
@@ -322,11 +320,6 @@ class TreeModel(QAbstractItemModel):
             domain = self._join_queue.popleft()
             if domain in self.domainScanner.joinedDomains:
                 continue
-            if _available_probe_slots() < 1:
-                for failed in [domain] + list(self._join_queue):
-                    self._join_errors[failed] = "RESOURCE_HEADROOM_UNAVAILABLE"
-                self._join_queue.clear()
-                break
             self._joining_domain = domain
             self.domainJoinChanged.emit()
             self.add_domain_request_signal.emit(domain)
