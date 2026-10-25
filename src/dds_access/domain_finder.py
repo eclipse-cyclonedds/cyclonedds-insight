@@ -15,6 +15,9 @@ import gc
 from threading import Event
 import time
 
+from cyclonedds import builtin
+from cyclonedds.core import InstanceState
+from cyclonedds.domain import DomainParticipant
 from loguru import logger as logging
 from PySide6.QtCore import QObject, Property, QThread, QTimer, Qt, Signal, Slot
 
@@ -26,9 +29,6 @@ class _ParticipantProbe:
     """Independent normal DDS participant; all access stays on the scan thread."""
 
     def __init__(self, domain):
-        from cyclonedds import builtin
-        from cyclonedds.domain import DomainParticipant
-
         self.participant = None
         self.reader = None
         try:
@@ -39,7 +39,6 @@ class _ParticipantProbe:
             raise
 
     def poll(self):
-        from cyclonedds.core import InstanceState
         # One foreign participant is enough. Avoid decoding a batch of QoS
         # samples just to discard it immediately after the first discovery.
         return any(sample.key != self.participant.guid and sample.sample_info.valid_data and
