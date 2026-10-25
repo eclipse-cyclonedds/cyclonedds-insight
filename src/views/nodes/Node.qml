@@ -160,10 +160,10 @@ Rectangle {
         drag.target: pressedButtons & Qt.LeftButton ? node : null
         drag.axis: Drag.XAndYAxis
         cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-        drag.minimumX: 0
-        drag.maximumX: Math.max(0, node.parent.width - node.width)
-        drag.minimumY: 0
-        drag.maximumY: Math.max(0, node.parent.height - node.height)
+        drag.minimumX: node.parent.minimumX
+        drag.maximumX: Math.max(drag.minimumX, node.parent.maximumX - node.width)
+        drag.minimumY: node.parent.minimumY
+        drag.maximumY: Math.max(drag.minimumY, node.parent.maximumY - node.height)
         onClicked: function(mouse) { node.handleClick(dragArea, mouse) }
     }
 }

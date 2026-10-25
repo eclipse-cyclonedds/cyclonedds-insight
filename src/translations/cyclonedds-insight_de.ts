@@ -1308,5 +1308,8 @@
     <message id="node.statistics.combined">
         <translation>Kombiniert</translation>
     </message>
+    <message id="node.view.zoom">
+        <translation>Zoom</translation>
+    </message>
 </context>
 </TS>

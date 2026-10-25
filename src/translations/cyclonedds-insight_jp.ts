@@ -1308,5 +1308,8 @@
     <message id="node.statistics.combined">
         <translation>総合</translation>
     </message>
+    <message id="node.view.zoom">
+        <translation>ズーム</translation>
+    </message>
 </context>
 </TS>

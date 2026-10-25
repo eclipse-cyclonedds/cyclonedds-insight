@@ -165,10 +165,11 @@ Rectangle {
                     spacing: 10
 
                     Label {
-                        text: qsTrId("node.view.size") + ":"
+                        text: qsTrId("node.view.zoom") + ":"
                     }
 
                     Button {
+                        objectName: "nodeZoomOutButton"
                         text: "-"
                         enabled: nodeScale > 0.1
                         onClicked: {
@@ -180,15 +181,18 @@ Rectangle {
                     }
 
                     Label {
+                        objectName: "nodeZoomPercentageLabel"
                         text: Math.round(nodeScale * 100) + "%"
                         width: 45
                         horizontalAlignment: Text.AlignHCenter
                     }
 
                     Button {
+                        objectName: "nodeZoomInButton"
                         text: "+"
+                        enabled: nodeScale < 8
                         onClicked: {
-                            nodeScale = nodeScale + 0.1
+                            nodeScale = Math.min(8, nodeScale + 0.1)
                             if (architectureView !== null) {
                                 architectureView.setNodeScale(nodeScale)
                             }
@@ -237,6 +241,7 @@ Rectangle {
                 return null
             }
             newView.idealLength = idealLengthSlider.value
+            newView.zoomScaleChanged.connect(function() { domainViewId.nodeScale = newView.zoomScale; })
             newView.setNodeScale(nodeScale)
             return newView
         } else {

@@ -38,7 +38,10 @@ Rectangle {
     property var velocities: ({})
     property var hostsMap: ({})       // hostName -> [nodes]
     property int idealLength: 110
-    property real nodeScale: 1.0
+    property real nodeScale: 1.0 // World-space geometry, independent of camera zoom.
+    property real zoomScale: 1.0
+    property rect layoutBounds: Qt.rect(0, 0, 0, 0)
+    property bool changingZoom: false
     property int sizeMode: 0 // Equal size, participants, combined.
     property string selectedNodeKey: ""
     property var hostColors: ({})
@@ -61,6 +64,7 @@ Rectangle {
         edgesMap = {};
         velocities = {};
         hostsMap = {};
+        expandLayoutBounds();
         graphModel.setDomainId(domainId, hideSelf, speedEnabled);
     }
 
@@ -123,7 +127,7 @@ Rectangle {
                 var randomX = 40 + Math.random() * Math.max(0, root.width - 240);
                 var randomY = 60 + Math.random() * Math.max(0, root.height - 180);
 
-                nodeInstance = nodeComponent.createObject(root, {
+                nodeInstance = nodeComponent.createObject(graphContent, {
                     x: randomX,
                     y: randomY,
                     text: name,
@@ -184,7 +188,7 @@ Rectangle {
                         }
 
                         // create the Edge visual
-                        var edgeInstance = edgeComponent.createObject(root, {
+                        var edgeInstance = edgeComponent.createObject(graphContent, {
                             node1: nodesMap[edgeName],
                             node2: nodeInstance,
                             z: -1,
@@ -330,13 +334,31 @@ Rectangle {
     }
 
     function setNodeScale(scale) {
-        nodeDetailViewId.nodeScale = scale;
-        if (!nodesMap) return;
-        for (var key in nodesMap) {
-            if (nodesMap.hasOwnProperty(key)) {
-                nodesMap[key].nodeScale = scale;
-            }
-        }
+        zoomAt(scale, root.width / 2, root.height / 2);
+    }
+
+    function zoomAt(scale, centerX, centerY) {
+        var nextScale = Math.max(0.1, Math.min(8, scale));
+        if (nextScale === zoomScale) return;
+        var ratio = nextScale / zoomScale;
+        changingZoom = true;
+        graphContent.x = centerX - (centerX - graphContent.x) * ratio;
+        graphContent.y = centerY - (centerY - graphContent.y) * ratio;
+        zoomScale = nextScale;
+        changingZoom = false;
+        expandLayoutBounds();
+    }
+
+    function expandLayoutBounds() {
+        if (changingZoom || !graphContent || !root) return;
+        // Keep visited world space available, even after panning back.
+        var left = Math.min(layoutBounds.x, -graphContent.x / graphContent.scale);
+        var top = Math.min(layoutBounds.y, -graphContent.y / graphContent.scale);
+        var right = Math.max(layoutBounds.x + layoutBounds.width,
+                             (root.width - graphContent.x) / graphContent.scale);
+        var bottom = Math.max(layoutBounds.y + layoutBounds.height,
+                              (root.height - graphContent.y) / graphContent.scale);
+        layoutBounds = Qt.rect(left, top, right - left, bottom - top);
     }
 
     function hostColor(hostName) {
@@ -500,16 +522,16 @@ Rectangle {
                 var bottom = bounds.bottom + domainNode.layoutHeight - domainNode.height / 2 + 16 * scale;
                 if (domainX <= left || domainX >= right || domainY <= top || domainY >= bottom) continue;
                 var escape = Infinity, pushX = 0, pushY = 0;
-                if (left >= 12 + domainNode.width / 2) {
+                if (left >= graphContent.minimumX + 12 + domainNode.width / 2) {
                     escape = domainX - left; pushX = -escape;
                 }
-                if (right <= root.width - domainNode.width / 2 - 12 && right - domainX < escape) {
+                if (right <= graphContent.maximumX - domainNode.width / 2 - 12 && right - domainX < escape) {
                     escape = right - domainX; pushX = escape; pushY = 0;
                 }
-                if (top >= 48 + domainNode.height / 2 && domainY - top < escape) {
+                if (top >= graphContent.minimumY + 48 + domainNode.height / 2 && domainY - top < escape) {
                     escape = domainY - top; pushX = 0; pushY = -escape;
                 }
-                if (bottom <= root.height - domainNode.height / 2 - 12 && bottom - domainY < escape) {
+                if (bottom <= graphContent.maximumY - domainNode.height / 2 - 12 && bottom - domainY < escape) {
                     pushX = 0; pushY = bottom - domainY;
                 }
                 fx += pushX * 0.4;
@@ -561,8 +583,8 @@ Rectangle {
                 var overlapX = (geometry[i].width + geometry[j].width) / 2 + 12 * scale - Math.abs(dx);
                 var overlapY = (geometry[i].height + geometry[j].height) / 2 + 10 * scale - Math.abs(dy);
                 if (overlapX > 0 && overlapY > 0) {
-                    var atVerticalBoundary = (dy <= 0 && geometry[i].y <= 48)
-                            || (dy >= 0 && geometry[i].y >= root.height - b1.height - 12);
+                    var atVerticalBoundary = (dy <= 0 && geometry[i].y <= graphContent.minimumY + 48)
+                            || (dy >= 0 && geometry[i].y >= graphContent.maximumY - b1.height - 12);
                     if (overlapX < overlapY || atVerticalBoundary)
                         fx += (dx < 0 || (dx === 0 && i < j) ? -1 : 1) * overlapX * 0.2;
                     else
@@ -616,80 +638,12 @@ Rectangle {
             b1.x += vel.vx;
             b1.y += vel.vy;
 
-            var boundedX = Math.max(12, Math.min(root.width - b1.width - 12, b1.x));
-            var boundedY = Math.max(48, Math.min(root.height - b1.height - 12, b1.y));
+            var boundedX = Math.max(graphContent.minimumX + 12, Math.min(graphContent.maximumX - b1.width - 12, b1.x));
+            var boundedY = Math.max(graphContent.minimumY + 48, Math.min(graphContent.maximumY - b1.height - 12, b1.y));
             if (boundedX !== b1.x) vel.vx = 0;
             if (boundedY !== b1.y) vel.vy = 0;
             b1.x = boundedX;
             b1.y = boundedY;
-        }
-    }
-
-    // Host background canvas (renders grouped rounded rects and hostname labels)
-    Canvas {
-        id: hostBackground
-        anchors.fill: root
-        z: 0
-        onPaint: {
-            var ctx = getContext("2d");
-            ctx.clearRect(0, 0, width, height);
-
-            function drawRoundedRect(x, y, w, h, r) {
-                ctx.beginPath();
-                ctx.moveTo(x + r, y);
-                ctx.lineTo(x + w - r, y);
-                ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-                ctx.lineTo(x + w, y + h - r);
-                ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-                ctx.lineTo(x + r, y + h);
-                ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-                ctx.lineTo(x, y + r);
-                ctx.quadraticCurveTo(x, y, x + r, y);
-                ctx.closePath();
-            }
-
-            var hostNames = Object.keys(hostsMap);
-            for (var hIndex = 0; hIndex < hostNames.length; hIndex++) {
-                var h = hostNames[hIndex];
-                if (h === "") continue; // skip rendering for empty hostname
-
-                var group = hostsMap[h].filter(function(node) { return !node.hiddenByUser; });
-                if (!group || group.length === 0) continue;
-
-                var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                for (var i = 0; i < group.length; i++) {
-                    var n = group[i];
-                    minX = Math.min(minX, n.x);
-                    minY = Math.min(minY, n.y);
-                    maxX = Math.max(maxX, n.x + n.width);
-                    maxY = Math.max(maxY, n.y + n.height);
-                }
-
-                var pad = 20 * nodeDetailViewId.nodeScale;
-                var x = minX - pad;
-                var y = minY - pad;
-                var w = maxX - minX + pad * 2;
-                var groupHeight = maxY - minY + pad * 2;
-                var accent = Qt.tint("transparent", nodeDetailViewId.hostColor(h));
-                ctx.globalAlpha = !nodeDetailViewId.selectedNodeKey || group.some(function(n) {
-                    return nodeDetailViewId.isRelated(n.nodeKey);
-                }) ? 1 : 0.5;
-                var radius = Constants.cardRadius * 1.5;
-                ctx.fillStyle = Qt.rgba(accent.r, accent.g, accent.b, 0.25);
-                drawRoundedRect(x, y, w, groupHeight, radius);
-                ctx.fill();
-                ctx.strokeStyle = Qt.rgba(accent.r, accent.g, accent.b, rootWindow.isDarkMode ? 0.38 : 0.22);
-                ctx.lineWidth = 1;
-                ctx.stroke();
-
-                // Keep the full hostname outside the group, as in the
-                // original view, with stronger contrast and larger type.
-                ctx.globalAlpha = 1;
-                ctx.font = "bold " + (14 * nodeDetailViewId.nodeScale) + "px sans-serif";
-                ctx.fillStyle = rootWindow.isDarkMode ? "#ffffff" : "#202020";
-                ctx.fillText(h, x + 5 * nodeDetailViewId.nodeScale, y - 5 * nodeDetailViewId.nodeScale);
-                ctx.globalAlpha = 1;
-            }
         }
     }
 
@@ -712,14 +666,128 @@ Rectangle {
     // Root area for nodes and edges
     Item {
         id: root
+        onWidthChanged: nodeDetailViewId.expandLayoutBounds()
+        onHeightChanged: nodeDetailViewId.expandLayoutBounds()
         anchors.fill: parent
         anchors.rightMargin: statisticsPanel.expanded ? statisticsPanel.width + 24 : 0
         z: 1
         clip: true
+        WheelHandler {
+            target: null
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onWheel: function(event) {
+                var steps = event.pixelDelta.y ? event.pixelDelta.y / 80 : event.angleDelta.y / 120;
+                if (!steps) { event.accepted = false; return; }
+                nodeDetailViewId.zoomAt(nodeDetailViewId.zoomScale * Math.pow(1.15, steps), event.x, event.y);
+                event.accepted = true;
+            }
+        }
+        PinchHandler {
+            target: null
+            onScaleChanged: function(delta) {
+                if (active)
+                    nodeDetailViewId.zoomAt(nodeDetailViewId.zoomScale * delta, centroid.position.x, centroid.position.y);
+            }
+        }
         MouseArea {
+            id: panArea
+            objectName: "nodeGraphPanArea"
             anchors.fill: parent
-            z: -2
-            onClicked: nodeDetailViewId.selectedNodeKey = ""
+            z: -1
+            property bool panned: false
+            hoverEnabled: true
+            preventStealing: true
+            drag.target: graphContent
+            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+            onPressed: panned = false
+            onPositionChanged: if (drag.active) panned = true
+            onClicked: if (!panned) nodeDetailViewId.selectedNodeKey = ""
+        }
+        // Host background canvas (renders grouped rounded rects and hostname labels)
+        Canvas {
+            id: hostBackground
+            objectName: "nodeHostBackground"
+            anchors.fill: parent
+            z: 0
+            onPaint: {
+                var ctx = getContext("2d");
+                ctx.resetTransform();
+                ctx.clearRect(0, 0, width, height);
+                ctx.setTransform(graphContent.scale, 0, 0, graphContent.scale, graphContent.x, graphContent.y);
+
+                function drawRoundedRect(x, y, w, h, r) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + r, y);
+                    ctx.lineTo(x + w - r, y);
+                    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                    ctx.lineTo(x + w, y + h - r);
+                    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                    ctx.lineTo(x + r, y + h);
+                    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                    ctx.lineTo(x, y + r);
+                    ctx.quadraticCurveTo(x, y, x + r, y);
+                    ctx.closePath();
+                }
+
+                var hostNames = Object.keys(hostsMap);
+                for (var hIndex = 0; hIndex < hostNames.length; hIndex++) {
+                    var h = hostNames[hIndex];
+                    if (h === "") continue; // skip rendering for empty hostname
+
+                    var group = hostsMap[h].filter(function(node) { return !node.hiddenByUser; });
+                    if (!group || group.length === 0) continue;
+
+                    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    for (var i = 0; i < group.length; i++) {
+                        var n = group[i];
+                        minX = Math.min(minX, n.x);
+                        minY = Math.min(minY, n.y);
+                        maxX = Math.max(maxX, n.x + n.width);
+                        maxY = Math.max(maxY, n.y + n.height);
+                    }
+
+                    var pad = 20 * nodeDetailViewId.nodeScale;
+                    var x = minX - pad;
+                    var y = minY - pad;
+                    var w = maxX - minX + pad * 2;
+                    var groupHeight = maxY - minY + pad * 2;
+                    var accent = Qt.tint("transparent", nodeDetailViewId.hostColor(h));
+                    ctx.globalAlpha = !nodeDetailViewId.selectedNodeKey || group.some(function(n) {
+                        return nodeDetailViewId.isRelated(n.nodeKey);
+                    }) ? 1 : 0.5;
+                    var radius = Constants.cardRadius * 1.5;
+                    ctx.fillStyle = Qt.rgba(accent.r, accent.g, accent.b, 0.25);
+                    drawRoundedRect(x, y, w, groupHeight, radius);
+                    ctx.fill();
+                    ctx.strokeStyle = Qt.rgba(accent.r, accent.g, accent.b, rootWindow.isDarkMode ? 0.38 : 0.22);
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    // Keep the full hostname outside the group, as in the
+                    // original view, with stronger contrast and larger type.
+                    ctx.globalAlpha = 1;
+                    ctx.font = "bold " + (14 * nodeDetailViewId.nodeScale) + "px sans-serif";
+                    ctx.fillStyle = rootWindow.isDarkMode ? "#ffffff" : "#202020";
+                    ctx.fillText(h, x + 5 * nodeDetailViewId.nodeScale, y - 5 * nodeDetailViewId.nodeScale);
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+        Item {
+            id: graphContent
+            objectName: "nodeGraphContent"
+            transformOrigin: Item.TopLeft
+            scale: nodeDetailViewId.zoomScale
+            width: root.width
+            height: root.height
+            readonly property real minimumX: nodeDetailViewId.layoutBounds.x
+            readonly property real minimumY: nodeDetailViewId.layoutBounds.y
+            readonly property real maximumX: minimumX + nodeDetailViewId.layoutBounds.width
+            readonly property real maximumY: minimumY + nodeDetailViewId.layoutBounds.height
+            onXChanged: { nodeDetailViewId.expandLayoutBounds(); hostBackground.requestPaint(); }
+            onYChanged: { nodeDetailViewId.expandLayoutBounds(); hostBackground.requestPaint(); }
+            onScaleChanged: { nodeDetailViewId.expandLayoutBounds(); hostBackground.requestPaint(); }
+
         }
     }
 

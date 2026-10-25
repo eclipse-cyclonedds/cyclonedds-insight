@@ -1308,5 +1308,8 @@
     <message id="node.statistics.combined">
         <translation>综合</translation>
     </message>
+    <message id="node.view.zoom">
+        <translation>缩放</translation>
+    </message>
 </context>
 </TS>
