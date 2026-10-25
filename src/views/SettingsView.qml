@@ -29,6 +29,14 @@ Rectangle {
     readonly property color secondaryTextColor: Constants.secondaryTextColor(rootWindow.isDarkMode)
 
     Settings {
+        id: appearanceSettings
+        category: "appearance"
+        property int colorScheme: Qt.ColorScheme.Unknown
+        onColorSchemeChanged: qmlUtils.setColorScheme(colorScheme)
+        Component.onCompleted: qmlUtils.setColorScheme(colorScheme)
+    }
+
+    Settings {
         id: proxySettings
         category: "proxy"
         property alias enabled: useProxyCheckBox.checked
@@ -186,19 +194,24 @@ Rectangle {
                         spacing: 14
 
                         RadioButton {
+                            objectName: "themeSystemButton"
                             text: qsTrId("settings.theme.system")
-                            checked: true
-                            onClicked: if (checked) qmlUtils.setColorScheme(0)
+                            checked: appearanceSettings.colorScheme === Qt.ColorScheme.Unknown
+                            onClicked: if (checked) appearanceSettings.colorScheme = Qt.ColorScheme.Unknown
                         }
 
                         RadioButton {
+                            objectName: "themeLightButton"
                             text: qsTrId("settings.theme.light")
-                            onClicked: if (checked) qmlUtils.setColorScheme(1)
+                            checked: appearanceSettings.colorScheme === Qt.ColorScheme.Light
+                            onClicked: if (checked) appearanceSettings.colorScheme = Qt.ColorScheme.Light
                         }
 
                         RadioButton {
+                            objectName: "themeDarkButton"
                             text: qsTrId("settings.theme.dark")
-                            onClicked: if (checked) qmlUtils.setColorScheme(2)
+                            checked: appearanceSettings.colorScheme === Qt.ColorScheme.Dark
+                            onClicked: if (checked) appearanceSettings.colorScheme = Qt.ColorScheme.Dark
                         }
 
                         Item {
