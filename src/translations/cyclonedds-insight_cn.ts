@@ -141,6 +141,92 @@
     <message id="domain.discover.automatically">
         <translation>自动发现 Domain</translation>
     </message>
+    <message id="domain.scan.joined.count">
+        <translation>已加入：%1</translation>
+    </message>
+    <message id="domain.scan.found.prompt">
+        <translation>发现 %1 个新域。现在添加吗？</translation>
+    </message>
+    <message id="domain.scan.select.all">
+        <translation>全选</translation>
+    </message>
+    <message id="domain.scan.select.none">
+        <translation>清除选择</translation>
+    </message>
+    <message id="domain.scan.joining">
+        <translation>正在加入域… 剩余 %1 个</translation>
+    </message>
+    <message id="domain.scan.joining.one">
+        <translation>正在加入…</translation>
+    </message>
+    <message id="domain.scan.joined">
+        <translation>已加入</translation>
+    </message>
+    <message id="domain.scan.join.one">
+        <translation>加入</translation>
+    </message>
+    <message id="domain.scan.join.selected">
+        <translation>加入所选域 (%1)</translation>
+    </message>
+    <message id="domain.scan.join.all">
+        <translation>加入全部 (%1)</translation>
+    </message>
+    <message id="domain.scan.join.stops">
+        <translation>加入域将停止当前搜索。</translation>
+    </message>
+    <message id="domain.scan.join.failed">
+        <translation>部分域无法加入。详情如下。</translation>
+    </message>
+    <message id="domain.scan.join.error">
+        <translation>无法加入 %1 个域。
+%2</translation>
+    </message>
+    <message id="domain.scan.resource.limit">
+        <translation>没有足够的资源加入更多域。请选择更少的域，或退出已加入的域。</translation>
+    </message>
+    <message id="domain.scan.start">
+        <translation>开始搜索</translation>
+    </message>
+    <message id="domain.scan.ready">
+        <translation>搜索活动的 DDS 域。</translation>
+    </message>
+    <message id="domain.scan.range">
+        <translation>域 ID 为 0–232。已加入的域计入已完成数量。</translation>
+    </message>
+    <message id="domain.scan.background">
+        <translation>关闭此窗口后，搜索仍会继续。</translation>
+    </message>
+    <message id="domain.scan.quick">
+        <translation>正在搜索域…</translation>
+    </message>
+    <message id="domain.scan.extended">
+        <translation>正在重新检查未响应的域…</translation>
+    </message>
+    <message id="domain.scan.cancelled">
+        <translation>域搜索已停止</translation>
+    </message>
+    <message id="domain.scan.incomplete">
+        <translation>域搜索未完成</translation>
+    </message>
+    <message id="domain.scan.complete">
+        <translation>域搜索已完成</translation>
+    </message>
+    <message id="domain.scan.progress">
+        <translation>%1 / %2 · 已发现 %3 个</translation>
+    </message>
+    <message id="domain.scan.join">
+        <translation>加入域 %1</translation>
+    </message>
+    <message id="domain.scan.hint">
+        <translation>请选择已发现的域以加入。未响应的域仍可能处于活动状态。</translation>
+    </message>
+    <message id="domain.scan.errors">
+        <translation>未检查的域：%1。详情如下。</translation>
+    </message>
+    <message id="domain.scan.error">
+        <translation>域搜索无法检查 %1 个域。
+%2</translation>
+    </message>
     <message id="domain.remove.selected">
         <translation>移除所选 Domain</translation>
     </message>
@@ -359,6 +445,9 @@
     <message id="general.start">
         <translation>启动</translation>
     </message>
+    <message id="general.hide">
+        <translation>隐藏</translation>
+    </message>
     <message id="general.stop">
         <translation>停止</translation>
     </message>
@@ -502,6 +591,9 @@
     </message>
 
     <!-- node -->
+    <message id="node.show.hidden">
+        <translation>显示隐藏节点 (%1)</translation>
+    </message>
     <message id="node.hide.self">
         <translation>隐藏自身</translation>
     </message>
@@ -1194,6 +1286,30 @@
     </message>
     <message id="config.network.copy.address">
         <translation>复制</translation>
+    </message>
+    <message id="entity.endpoints">
+        <translation>端点</translation>
+    </message>
+    <message id="node.size.uniform">
+        <translation>大小：相同</translation>
+    </message>
+    <message id="node.size.participants">
+        <translation>大小：参与者数量</translation>
+    </message>
+    <message id="node.size.combined">
+        <translation>大小：综合</translation>
+    </message>
+    <message id="node.statistics.empty">
+        <translation>没有可见节点</translation>
+    </message>
+    <message id="node.statistics.show.domains">
+        <translation>显示域</translation>
+    </message>
+    <message id="node.statistics.combined">
+        <translation>综合</translation>
+    </message>
+    <message id="node.view.zoom">
+        <translation>缩放</translation>
     </message>
 </context>
 </TS>

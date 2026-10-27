@@ -14,7 +14,7 @@ import sys
 from loguru import logger as logging
 from queue import Queue
 from threading import Event
-from PySide6.QtCore import QThread
+from PySide6.QtCore import QThread, Signal
 from cyclonedds import core, builtin, internal
 from cyclonedds.util import duration
 from cyclonedds.builtin import DcpsEndpoint, DcpsParticipant, DcpsTopic
@@ -54,6 +54,9 @@ class BuiltInDataItem():
 
 class BuiltInObserver(QThread):
 
+    sessionReady = Signal(int)
+    initializationFailed = Signal(int, str)
+
     def __init__(self, domain_id: int, queue: Queue):
         super().__init__()
         self.domain_id = domain_id
@@ -82,13 +85,14 @@ class BuiltInObserver(QThread):
                 try:
                     self._run_session()
                     break
-                except Exception:
+                except Exception as error:
                     if self._stop_requested.is_set():
                         break
                     logging.exception(
                         "Builtin observer domain {}: initialization/session failed; retrying in {} seconds. "
                         "Check DDS configuration and Local Network permission if this persists.",
                         self.domain_id, retry_delay)
+                    self.initializationFailed.emit(self.domain_id, str(error))
                 finally:
                     self.guardCondition = None
 
@@ -147,6 +151,7 @@ class BuiltInObserver(QThread):
             ospl_read_condition = core.ReadCondition(ospl_reader, core.SampleState.Any | core.ViewState.Any | core.InstanceState.Any)
             waitset.attach(ospl_read_condition)
 
+            self.sessionReady.emit(self.domain_id)
             while self.running:
 
                 amount_triggered = 0

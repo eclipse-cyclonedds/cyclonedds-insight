@@ -107,6 +107,7 @@ class ParticipantTreeModel(QAbstractItemModel):
     IsHostRole = Qt.UserRole + 7
     IsProcessRole = Qt.UserRole + 8
 
+    add_domain_request_signal = Signal(int)
     remove_domain_request_signal = Signal(int)
     request_endpoints_by_participant_key_signal = Signal(str, int, str)
 
@@ -130,6 +131,7 @@ class ParticipantTreeModel(QAbstractItemModel):
 
         # Connect from self to dds_data
         self.remove_domain_request_signal.connect(self.dds_data.remove_domain, Qt.ConnectionType.QueuedConnection)
+        self.add_domain_request_signal.connect(self.dds_data.add_domain, Qt.ConnectionType.QueuedConnection)
         self.request_endpoints_by_participant_key_signal.connect(self.dds_data.requestEndpointsByParticipantKey, Qt.ConnectionType.QueuedConnection)
 
     def index(self, row, column, parent=QModelIndex()):
@@ -353,7 +355,7 @@ class ParticipantTreeModel(QAbstractItemModel):
 
     @Slot(int)
     def addDomainRequest(self, domain_id):
-        self.dds_data.add_domain(domain_id)
+        self.add_domain_request_signal.emit(domain_id)
 
     @Slot(QModelIndex, result=bool)
     def getIsRowDomain(self, index: QModelIndex):

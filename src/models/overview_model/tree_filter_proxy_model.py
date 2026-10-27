@@ -14,7 +14,6 @@ from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt, QSortFilterP
 from PySide6.QtCore import Signal, Slot
 from loguru import logger as logging
 from dds_access import dds_data
-from dds_access.domain_finder import DomainFinder
 from models.overview_model.tree_model import TreeModel
 
 

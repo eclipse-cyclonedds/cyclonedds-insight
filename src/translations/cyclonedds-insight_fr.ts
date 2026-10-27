@@ -141,6 +141,92 @@
     <message id="domain.discover.automatically">
         <translation>Détecter automatiquement les domaines</translation>
     </message>
+    <message id="domain.scan.joined.count">
+        <translation>Déjà rejoints : %1</translation>
+    </message>
+    <message id="domain.scan.found.prompt">
+        <translation>%1 nouveaux domaines trouvés. Les ajouter maintenant ?</translation>
+    </message>
+    <message id="domain.scan.select.all">
+        <translation>Tout sélectionner</translation>
+    </message>
+    <message id="domain.scan.select.none">
+        <translation>Effacer la sélection</translation>
+    </message>
+    <message id="domain.scan.joining">
+        <translation>Connexion aux domaines… %1 restants</translation>
+    </message>
+    <message id="domain.scan.joining.one">
+        <translation>Connexion…</translation>
+    </message>
+    <message id="domain.scan.joined">
+        <translation>Rejoint</translation>
+    </message>
+    <message id="domain.scan.join.one">
+        <translation>Rejoindre</translation>
+    </message>
+    <message id="domain.scan.join.selected">
+        <translation>Rejoindre la sélection (%1)</translation>
+    </message>
+    <message id="domain.scan.join.all">
+        <translation>Tout rejoindre (%1)</translation>
+    </message>
+    <message id="domain.scan.join.stops">
+        <translation>Rejoindre des domaines arrête la recherche en cours.</translation>
+    </message>
+    <message id="domain.scan.join.failed">
+        <translation>Certains domaines n’ont pas pu être rejoints. Les détails figurent ci-dessous.</translation>
+    </message>
+    <message id="domain.scan.join.error">
+        <translation>Impossible de rejoindre %1 domaines.
+%2</translation>
+    </message>
+    <message id="domain.scan.resource.limit">
+        <translation>Ressources insuffisantes pour rejoindre d’autres domaines. Sélectionnez moins de domaines ou quittez un domaine existant.</translation>
+    </message>
+    <message id="domain.scan.start">
+        <translation>Lancer la recherche</translation>
+    </message>
+    <message id="domain.scan.ready">
+        <translation>Lancez une recherche de domaines DDS actifs.</translation>
+    </message>
+    <message id="domain.scan.range">
+        <translation>Identifiants de domaine 0–232. Les domaines déjà rejoints sont comptés comme traités.</translation>
+    </message>
+    <message id="domain.scan.background">
+        <translation>La recherche continue lorsque cette fenêtre est fermée.</translation>
+    </message>
+    <message id="domain.scan.quick">
+        <translation>Recherche de domaines…</translation>
+    </message>
+    <message id="domain.scan.extended">
+        <translation>Nouvelle vérification des domaines sans réponse…</translation>
+    </message>
+    <message id="domain.scan.cancelled">
+        <translation>Recherche de domaines arrêtée</translation>
+    </message>
+    <message id="domain.scan.incomplete">
+        <translation>Recherche de domaines incomplète</translation>
+    </message>
+    <message id="domain.scan.complete">
+        <translation>Recherche de domaines terminée</translation>
+    </message>
+    <message id="domain.scan.progress">
+        <translation>%1 / %2 · %3 trouvés</translation>
+    </message>
+    <message id="domain.scan.join">
+        <translation>Rejoindre le domaine %1</translation>
+    </message>
+    <message id="domain.scan.hint">
+        <translation>Sélectionnez un domaine trouvé pour le rejoindre. Les domaines sans réponse peuvent être actifs.</translation>
+    </message>
+    <message id="domain.scan.errors">
+        <translation>Domaines non vérifiés : %1. Détails ci-dessous.</translation>
+    </message>
+    <message id="domain.scan.error">
+        <translation>La recherche n’a pas pu vérifier %1 domaines.
+%2</translation>
+    </message>
     <message id="domain.remove.selected">
         <translation>Retirer le domaine sélectionné</translation>
     </message>
@@ -359,6 +445,9 @@
     <message id="general.start">
         <translation>Démarrer</translation>
     </message>
+    <message id="general.hide">
+        <translation>Masquer</translation>
+    </message>
     <message id="general.stop">
         <translation>Arrêter</translation>
     </message>
@@ -502,6 +591,9 @@
     </message>
 
     <!-- node -->
+    <message id="node.show.hidden">
+        <translation>Afficher les nœuds masqués (%1)</translation>
+    </message>
     <message id="node.hide.self">
         <translation>Masquer le nœud local</translation>
     </message>
@@ -1194,6 +1286,30 @@
     </message>
     <message id="config.network.copy.address">
         <translation>Copier</translation>
+    </message>
+    <message id="entity.endpoints">
+        <translation>Points de terminaison</translation>
+    </message>
+    <message id="node.size.uniform">
+        <translation>Taille : Identique</translation>
+    </message>
+    <message id="node.size.participants">
+        <translation>Taille : Participants</translation>
+    </message>
+    <message id="node.size.combined">
+        <translation>Taille : Combinée</translation>
+    </message>
+    <message id="node.statistics.empty">
+        <translation>Aucun nœud visible</translation>
+    </message>
+    <message id="node.statistics.show.domains">
+        <translation>Afficher les domaines</translation>
+    </message>
+    <message id="node.statistics.combined">
+        <translation>Combiné</translation>
+    </message>
+    <message id="node.view.zoom">
+        <translation>Zoom</translation>
     </message>
 </context>
 </TS>

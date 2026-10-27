@@ -11,10 +11,11 @@
 """
 
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel, Qt, QSortFilterProxyModel
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import QObject, QTimer, Signal, Slot, Property, qtTrId
 from loguru import logger as logging
 from dds_access import dds_data
-from dds_access.domain_finder import DomainFinder
+from dds_access.domain_finder import DomainScanner
+from collections import deque
 from models.overview_model.tree_node import TreeNode
 
 
@@ -25,6 +26,9 @@ class TreeModel(QAbstractItemModel):
     HasQosMismatch = Qt.UserRole + 3
     IsTopicRole = Qt.UserRole + 4
 
+    add_domain_request_signal = Signal(int)
+    operationError = Signal(str)
+    domainJoinChanged = Signal()
     remove_domain_request_signal = Signal(int)
     discover_domains_running_signal = Signal(bool)
 
@@ -34,7 +38,16 @@ class TreeModel(QAbstractItemModel):
 
         self.dds_data = dds_data.DdsData()
 
-        self.domainFinderThreads = {}
+        self.domainScanner = DomainScanner(self)
+        self.domainScanner.changed.connect(
+            lambda: self.discover_domains_running_signal.emit(self.domainScanner.running))
+        self.domainScanner.finished.connect(self._scanFinished)
+        self.domainScanner.pausedChanged.connect(self._scanPaused)
+        self._join_queue = deque()
+        self._joining = False
+        self._joining_domain = None
+        self._join_errors = {}
+        self._failed_join = None
 
         # Connect to from dds_data to self
         self.dds_data.new_topic_signal.connect(self.new_topic_slot, Qt.ConnectionType.QueuedConnection)
@@ -44,8 +57,12 @@ class TreeModel(QAbstractItemModel):
         self.dds_data.no_more_mismatch_in_topic_signal.connect(self.no_more_mismatch_in_topic_slot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.publish_mismatch_signal.connect(self.publish_mismatch_slot, Qt.ConnectionType.QueuedConnection)
 
+        self.dds_data.domain_ready_signal.connect(self._domainReady, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.domain_initialization_failed_signal.connect(self._domainJoinFailed, Qt.ConnectionType.QueuedConnection)
+
         # Connect from self to dds_data
         self.remove_domain_request_signal.connect(self.dds_data.remove_domain, Qt.ConnectionType.QueuedConnection)
+        self.add_domain_request_signal.connect(self.dds_data.add_domain, Qt.ConnectionType.QueuedConnection)
 
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
@@ -159,6 +176,8 @@ class TreeModel(QAbstractItemModel):
                         break
 
     def _addDomain(self, domain_id: int):
+        if domain_id != self._joining_domain:
+            self.domainScanner.mark_joined(domain_id)
         # Check if the domain already exists
         for idx in range(self.rootItem.childCount()):
             child: TreeNode = self.rootItem.child(idx)
@@ -174,6 +193,11 @@ class TreeModel(QAbstractItemModel):
 
     @Slot(int)
     def removeDomain(self, domain_id: int):
+        self.domainScanner.mark_joined(domain_id, False)
+        if self._failed_join == domain_id:
+            self._failed_join = None
+            self._joining_domain = None
+            QTimer.singleShot(0, self._continueDomainJoins)
         # Locate the domain index to remove
         dom_child_idx = -1
         for idx in range(self.rootItem.childCount()):
@@ -197,7 +221,7 @@ class TreeModel(QAbstractItemModel):
 
     @Slot(int)
     def addDomainRequest(self, domain_id: int):
-        self.dds_data.add_domain(domain_id)
+        self.add_domain_request_signal.emit(domain_id)
 
     @Slot(QModelIndex, result=bool)
     def getIsRowDomain(self, index: QModelIndex):
@@ -230,31 +254,101 @@ class TreeModel(QAbstractItemModel):
         display = self.data(index, role=self.DisplayRole)
         return str(display)
 
+    @Property(QObject, constant=True)
+    def scanner(self):
+        return self.domainScanner
+
     @Slot()
     def scanDomains(self):
-        self.discover_domains_running_signal.emit(True)
-        for domain_id in range(0, 233):
-            if domain_id not in self.domainFinderThreads:
-                self.domainFinderThreads[domain_id] = DomainFinder(domain_id)
-                self.domainFinderThreads[domain_id].foundDomainSignal.connect(self.scanDomainResult, Qt.ConnectionType.QueuedConnection)
-                self.domainFinderThreads[domain_id].start()
+        if self._joining:
+            return
+        self._join_errors.clear()
+        self.domainJoinChanged.emit()
+        joined = [int(self.rootItem.child(i).data(0)) for i in range(self.rootItem.childCount())]
+        self.domainScanner.start(joined)
 
-    @Slot(int, bool)
-    def scanDomainResult(self, domain_id, found):
-        if domain_id in self.domainFinderThreads:
-            self.domainFinderThreads[domain_id].stop()
-            self.domainFinderThreads[domain_id].wait()
-            del self.domainFinderThreads[domain_id]
+    def _scanFinished(self):
+        if self.domainScanner.errorCount:
+            message = qtTrId("domain.scan.error").replace("%1", str(self.domainScanner.errorCount))
+            self.operationError.emit(message.replace("%2", self.domainScanner.error_details()))
+        if self._joining:
+            self._continueDomainJoins()
 
-        if found:
-            self.dds_data.add_domain(domain_id)
+    @Property(bool, notify=domainJoinChanged)
+    def joiningDomains(self):
+        return self._joining
 
-        if len(self.domainFinderThreads) == 0:
-            self.discover_domains_running_signal.emit(False)
+    @Property("QVariantList", notify=domainJoinChanged)
+    def pendingDomainIds(self):
+        return ([self._joining_domain] if self._joining_domain is not None else []) + list(self._join_queue)
+
+    @Property(str, notify=domainJoinChanged)
+    def domainJoinErrorDetails(self):
+        return "\n".join(f"{domain}: {detail}" for domain, detail in sorted(self._join_errors.items()))
+
+    @Slot("QVariantList")
+    def joinDiscoveredDomains(self, domains):
+        if self._joining:
+            return
+        candidates = set(self.domainScanner.candidateDomains)
+        selected = sorted({int(domain) for domain in domains if type(domain) in (int, float) and domain in candidates})
+        if not selected:
+            return
+        self._join_queue = deque(selected)
+        self._join_errors.clear()
+        self._joining = True
+        self._joining_domain = None
+        self.domainJoinChanged.emit()
+        # Temporarily release probes for safe native initialization, then
+        # continue the same search with its progress and results intact.
+        if self.domainScanner.running:
+            self.domainScanner.pause()
+        else:
+            self._continueDomainJoins()
+
+    @Slot(bool)
+    def _scanPaused(self, paused):
+        if paused and self._joining:
+            self._continueDomainJoins()
+
+    def _continueDomainJoins(self):
+        if self.domainScanner.running and not self.domainScanner.paused:
+            return
+        if not self._joining or self._joining_domain is not None:
+            return
+        while self._join_queue:
+            domain = self._join_queue.popleft()
+            if domain in self.domainScanner.joinedDomains:
+                continue
+            self._joining_domain = domain
+            self.domainJoinChanged.emit()
+            self.add_domain_request_signal.emit(domain)
+            return
+        self._joining = False
+        self.domainScanner.resume()
+        self.domainJoinChanged.emit()
+        if self._join_errors:
+            message = qtTrId("domain.scan.join.error").replace("%1", str(len(self._join_errors)))
+            self.operationError.emit(message.replace("%2", self.domainJoinErrorDetails))
+
+    @Slot(int)
+    def _domainReady(self, domain):
+        if self._joining_domain == domain:
+            self.domainScanner.mark_joined(domain)
+            self._joining_domain = None
+            self.domainJoinChanged.emit()
+            QTimer.singleShot(0, self._continueDomainJoins)
+
+    @Slot(int, str)
+    def _domainJoinFailed(self, domain, detail):
+        if self._joining_domain == domain and self._failed_join is None:
+            self._join_errors[domain] = detail
+            self._failed_join = domain
+            self.remove_domain_request_signal.emit(domain)
+            self.domainJoinChanged.emit()
 
     @Slot(result=None)
     def aboutToClose(self):
-        for domain_id in self.domainFinderThreads:
-            self.domainFinderThreads[domain_id].stop()
-            self.domainFinderThreads[domain_id].wait()
-        self.domainFinderThreads.clear()
+        self._joining = False
+        self._join_queue.clear()
+        self.domainScanner.cancel()

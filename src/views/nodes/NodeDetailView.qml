@@ -38,8 +38,25 @@ Rectangle {
     property var velocities: ({})
     property var hostsMap: ({})       // hostName -> [nodes]
     property int idealLength: 110
-    property real nodeScale: 1.0
+    property real nodeScale: 1.0 // World-space geometry, independent of camera zoom.
+    property real zoomScale: 1.0
+    property rect layoutBounds: Qt.rect(0, 0, 0, 0)
+    property bool changingZoom: false
+    property int sizeMode: 0 // Equal size, participants, combined.
+    property string selectedNodeKey: ""
     property var hostColors: ({})
+    property int hiddenNodeCount: 0
+
+    Menu {
+        id: nodeMenu
+        objectName: "nodeContextMenu"
+        property string nodeKey: ""
+        MenuItem {
+            objectName: "hideNodeAction"
+            text: qsTrId("general.hide")
+            onTriggered: nodeDetailViewId.hideNode(nodeMenu.nodeKey)
+        }
+    }
 
     Component.onCompleted: {
         nodesMap = {};
@@ -47,6 +64,7 @@ Rectangle {
         edgesMap = {};
         velocities = {};
         hostsMap = {};
+        expandLayoutBounds();
         graphModel.setDomainId(domainId, hideSelf, speedEnabled);
     }
 
@@ -95,6 +113,9 @@ Rectangle {
                 }
                 nodeInstance.vendorShortName = vendorShortName || "";
                 nodeInstance.iconSource = vendorPicture || "";
+                nodeInstance.text = name;
+                nodeInstance.nodeName = name;
+                nodeInstance.accentColor = nodeInstance.hostName ? hostColor(nodeInstance.hostName) : Constants.accentColor;
             } else {
                 // create new node
                 var nodeComponent = Qt.createComponent("qrc:/src/views/nodes/Node.qml");
@@ -103,10 +124,10 @@ Rectangle {
                     return;
                 }
 
-                var randomX = Math.random() * root.width;
-                var randomY = Math.random() * root.height;
+                var randomX = 40 + Math.random() * Math.max(0, root.width - 240);
+                var randomY = 60 + Math.random() * Math.max(0, root.height - 180);
 
-                nodeInstance = nodeComponent.createObject(root, {
+                nodeInstance = nodeComponent.createObject(graphContent, {
                     x: randomX,
                     y: randomY,
                     text: name,
@@ -116,6 +137,7 @@ Rectangle {
                     nodeKey: key,
                     vendorShortName: vendorShortName || "",
                     iconSource: vendorPicture || "",
+                    accentColor: hostName ? nodeDetailViewId.hostColor(hostName) : Constants.accentColor,
                     nodeScale: nodeDetailViewId.nodeScale
                 });
 
@@ -124,6 +146,20 @@ Rectangle {
                     return;
                 }
 
+                nodeInstance.selected = Qt.binding(function() { return nodeDetailViewId.selectedNodeKey === key; });
+                nodeInstance.weightScale = Qt.binding(function() {
+                    return nodeDetailViewId.sizeMode === 0 ? 1
+                         : nodeDetailViewId.sizeMode === 1 ? nodeInstance.participantSizeFactor
+                         : nodeInstance.combinedSizeFactor;
+                });
+                nodeInstance.related = Qt.binding(function() { return nodeDetailViewId.isRelated(key); });
+                nodeInstance.selectionActive = Qt.binding(function() { return nodeDetailViewId.selectedNodeKey !== ""; });
+                nodeInstance.activated.connect(function() { nodeDetailViewId.selectNode(key); });
+                nodeInstance.contextMenuRequested.connect(function(menuX, menuY) {
+                    var position = nodeInstance.mapToItem(nodeDetailViewId, menuX, menuY);
+                    nodeMenu.nodeKey = key;
+                    nodeMenu.popup(position.x, position.y);
+                });
                 nodesMap[key] = nodeInstance;
                 if (!velocities[key]) velocities[key] = { vx: 0, vy: 0 };
 
@@ -152,7 +188,7 @@ Rectangle {
                         }
 
                         // create the Edge visual
-                        var edgeInstance = edgeComponent.createObject(root, {
+                        var edgeInstance = edgeComponent.createObject(graphContent, {
                             node1: nodesMap[edgeName],
                             node2: nodeInstance,
                             z: -1,
@@ -164,10 +200,10 @@ Rectangle {
                             return;
                         }
 
-                        edges.push({
+                        edges = edges.concat([{
                             source: nodesMap[edgeName],
                             target: nodeInstance
-                        });
+                        }]);
                         edgesMap[edgeId] = edgeInstance;
                     }
                 }
@@ -195,10 +231,14 @@ Rectangle {
         }
 
         function onRemoveNodeSignal(key, edgeName) {
+            if (nodeDetailViewId.selectedNodeKey === key)
+                nodeDetailViewId.selectedNodeKey = "";
             var hostName = nodesMap[key] ? nodesMap[key].hostName : null;
 
             // destroy the node
             if (nodesMap[key]) {
+                if (nodesMap[key].hiddenByUser) --hiddenNodeCount;
+                if (nodeMenu.nodeKey === key) nodeMenu.close();
                 try { nodesMap[key].destroy(); } catch (e) { /* ignore */ }
                 delete nodesMap[key];
             }
@@ -234,6 +274,7 @@ Rectangle {
                 hostsMap[h] = hostsMap[h].filter(function(n) { return n.nodeKey !== key; });
                 if (hostsMap[h].length === 0) delete hostsMap[h];
             }
+            nodeDetailViewId.refreshNodeRanking();
         }
 
         function onUpdateEdgeSignal(nodeKey, edgeName, t, bps) {
@@ -254,6 +295,18 @@ Rectangle {
                 console.warn("Tried to update non-existing edge:", edgeId);
             }
         }
+
+        function onNodeStatisticsSignal(key, participants, topics, endpoints, participantSize, combinedSize) {
+            var node = nodesMap[key];
+            if (!node) return;
+            node.participantCount = participants;
+            node.topicCount = topics;
+            node.endpointCount = endpoints;
+            node.participantSizeFactor = participantSize;
+            node.combinedSizeFactor = combinedSize;
+        }
+
+        function onNodeStatisticsUpdated() { nodeDetailViewId.refreshNodeRanking(); }
     }
 
     function enableSpeeds(enabled) {
@@ -281,17 +334,216 @@ Rectangle {
     }
 
     function setNodeScale(scale) {
-        nodeDetailViewId.nodeScale = scale;
-        if (!nodesMap) return;
-        for (var key in nodesMap) {
-            if (nodesMap.hasOwnProperty(key)) {
-                nodesMap[key].nodeScale = scale;
-            }
+        zoomAt(scale, root.width / 2, root.height / 2);
+    }
+
+    function zoomAt(scale, centerX, centerY) {
+        var nextScale = Math.max(0.1, Math.min(8, scale));
+        if (nextScale === zoomScale) return;
+        var ratio = nextScale / zoomScale;
+        changingZoom = true;
+        graphContent.x = centerX - (centerX - graphContent.x) * ratio;
+        graphContent.y = centerY - (centerY - graphContent.y) * ratio;
+        zoomScale = nextScale;
+        changingZoom = false;
+        expandLayoutBounds();
+    }
+
+    function expandLayoutBounds() {
+        if (changingZoom || !graphContent || !root) return;
+        // Keep visited world space available, even after panning back.
+        var left = Math.min(layoutBounds.x, -graphContent.x / graphContent.scale);
+        var top = Math.min(layoutBounds.y, -graphContent.y / graphContent.scale);
+        var right = Math.max(layoutBounds.x + layoutBounds.width,
+                             (root.width - graphContent.x) / graphContent.scale);
+        var bottom = Math.max(layoutBounds.y + layoutBounds.height,
+                              (root.height - graphContent.y) / graphContent.scale);
+        layoutBounds = Qt.rect(left, top, right - left, bottom - top);
+    }
+
+    function hostColor(hostName) {
+        // Original hue/saturation/brightness range, retained for this view.
+        if (!hostColors[hostName]) {
+            hostColors[hostName] = Qt.hsva(Math.random(), 0.5 + 0.5 * Math.random(),
+                                          0.7 + 0.3 * Math.random(), 1)
         }
+        return hostColors[hostName]
+    }
+
+    function selectNode(key) {
+        selectedNodeKey = selectedNodeKey === key ? "" : key
+        if (selectedNodeKey) statisticsPanel.showNode(key, nodesMap[key].isDomain)
+        forceActiveFocus()
+    }
+
+    function hideNode(key) {
+        var node = nodesMap[key];
+        if (!node || node.hiddenByUser) return;
+        node.hiddenByUser = true;
+        velocities[key] = { vx: 0, vy: 0 };
+        ++hiddenNodeCount;
+        if (selectedNodeKey === key) selectedNodeKey = "";
+        hostBackground.requestPaint();
+        refreshNodeRanking();
+    }
+
+    function showHiddenNodes() {
+        for (var key in nodesMap) nodesMap[key].hiddenByUser = false;
+        hiddenNodeCount = 0;
+        hostBackground.requestPaint();
+        refreshNodeRanking();
+    }
+
+    function isRelated(key) {
+        if (!selectedNodeKey) return false
+        if (selectedNodeKey === key) return true
+        return edges.some(function(edge) {
+            return !edge.source.hiddenByUser && !edge.target.hiddenByUser
+                    && ((edge.source.nodeKey === selectedNodeKey && edge.target.nodeKey === key)
+                    || (edge.target.nodeKey === selectedNodeKey && edge.source.nodeKey === key))
+        })
+    }
+
+    Keys.onEscapePressed: selectedNodeKey = ""
+
+    function refreshNodeRanking() {
+        if (!statisticsPanel.expanded) return;
+        // The dropdown presents endpoints before topics; Python counts store
+        // participants, topics, endpoints in that order.
+        var metric = [0, 2, 1, 3][statisticsPanel.metric];
+        statisticsPanel.entries = graphModel.nodeStatisticsRows(metric).filter(function(entry) {
+            var node = nodesMap[entry.key];
+            return node && !node.hiddenByUser && (statisticsPanel.showDomains || !node.isDomain);
+        }).map(function(entry) {
+            var node = nodesMap[entry.key];
+            return { key: entry.key, value: entry.value, name: node.nodeName,
+                     hostName: node.hostName, color: node.isDomain ? Constants.graphDomainColor : node.accentColor,
+                     participants: entry.participants, endpoints: entry.endpoints, topics: entry.topics };
+        });
+    }
+
+    NodeStatisticsPanel {
+        id: statisticsPanel
+        objectName: "nodeStatisticsPanel"
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        anchors.margins: 12
+        z: 11
+        selectedNodeKey: nodeDetailViewId.selectedNodeKey
+        onExpandedChanged: if (expanded) nodeDetailViewId.refreshNodeRanking()
+        onMetricChanged: nodeDetailViewId.refreshNodeRanking()
+        onShowDomainsChanged: nodeDetailViewId.refreshNodeRanking()
+        onNodeSelected: function(key) { nodeDetailViewId.selectNode(key); }
     }
 
     function calculatePhysics() {
-        var nodeList = Object.values(nodesMap);
+        var nodeList = Object.values(nodesMap).filter(function(node) { return !node.hiddenByUser; });
+        var activeHosts = {};
+        for (var hostname in hostsMap) {
+            var visibleMembers = hostsMap[hostname].filter(function(node) { return !node.hiddenByUser; });
+            if (visibleMembers.length) activeHosts[hostname] = visibleMembers;
+        }
+        var scale = nodeDetailViewId.nodeScale;
+        // Read QML geometry once per frame, outside the pairwise force loop.
+        var geometry = nodeList.map(function(node) {
+            return { x: node.x, y: node.y, width: node.layoutWidth, height: node.layoutHeight };
+        });
+        var degrees = {};
+        var neighbors = {};
+        for (var edgeIndex = 0; edgeIndex < edges.length; ++edgeIndex) {
+            var connection = edges[edgeIndex];
+            if (connection.source.hiddenByUser || connection.target.hiddenByUser) continue;
+            degrees[connection.source.nodeKey] = (degrees[connection.source.nodeKey] || 0) + 1;
+            degrees[connection.target.nodeKey] = (degrees[connection.target.nodeKey] || 0) + 1;
+            if (!neighbors[connection.source.nodeKey]) neighbors[connection.source.nodeKey] = [];
+            if (!neighbors[connection.target.nodeKey]) neighbors[connection.target.nodeKey] = [];
+            neighbors[connection.source.nodeKey].push(connection.target);
+            neighbors[connection.target.nodeKey].push(connection.source);
+        }
+
+        // Separate host clusters as well as individual nodes. Otherwise several
+        // hosts connected to the same domain settle on top of one another.
+        var hostNames = Object.keys(activeHosts);
+        var hostCenters = {};
+        for (var h = 0; h < hostNames.length; ++h) {
+            var members = activeHosts[hostNames[h]];
+            var cx = 0, cy = 0;
+            var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (var m = 0; m < members.length; ++m) {
+                cx += members[m].x;
+                cy += members[m].y;
+                minX = Math.min(minX, members[m].x);
+                minY = Math.min(minY, members[m].y);
+                maxX = Math.max(maxX, members[m].x + members[m].width);
+                maxY = Math.max(maxY, members[m].y + members[m].height);
+            }
+            hostCenters[hostNames[h]] = {
+                x: cx / members.length, y: cy / members.length,
+                radius: Math.min(Math.sqrt(members.length) * 60 * scale,
+                                 Math.sqrt(root.width * root.height / hostNames.length) * 0.45),
+                left: minX - 20 * scale, right: maxX + 20 * scale,
+                top: minY - 40 * scale, bottom: maxY + 20 * scale
+            };
+        }
+        var hostForces = {};
+        for (var a = 0; a < hostNames.length; ++a) {
+            var center = hostCenters[hostNames[a]];
+            var hx = 0, hy = 0;
+            for (var b = 0; b < hostNames.length; ++b) {
+                if (a === b) continue;
+                var otherCenter = hostCenters[hostNames[b]];
+                var hdx = center.x - otherCenter.x;
+                var hdy = center.y - otherCenter.y;
+                var distance = Math.sqrt(hdx * hdx + hdy * hdy);
+                if (distance < 0.01) { hdx = a < b ? -1 : 1; hdy = 0; distance = 1; }
+                var overlap = center.radius + otherCenter.radius + 40 * scale - distance;
+                if (overlap > 0) {
+                    hx += hdx / distance * overlap * 0.08;
+                    hy += hdy / distance * overlap * 0.08;
+                }
+            }
+            hostForces[hostNames[a]] = { x: hx, y: hy };
+        }
+
+        // Keep domains outside visible host rectangles and their headings.
+        var domainForces = {};
+        for (var domainIndex = 0; domainIndex < nodeList.length; ++domainIndex) {
+            var domainNode = nodeList[domainIndex];
+            if (!domainNode.isDomain || domainNode.isDragging) continue;
+            var fx = 0, fy = 0;
+            var domainX = domainNode.x + domainNode.width / 2;
+            var domainY = domainNode.y + domainNode.height / 2;
+            for (var hostIndex = 0; hostIndex < hostNames.length; ++hostIndex) {
+                var bounds = hostCenters[hostNames[hostIndex]];
+                var left = bounds.left - domainNode.layoutWidth / 2 - 16 * scale;
+                var right = bounds.right + domainNode.layoutWidth / 2 + 16 * scale;
+                var top = bounds.top - domainNode.height / 2 - 16 * scale;
+                var bottom = bounds.bottom + domainNode.layoutHeight - domainNode.height / 2 + 16 * scale;
+                if (domainX <= left || domainX >= right || domainY <= top || domainY >= bottom) continue;
+                var escape = Infinity, pushX = 0, pushY = 0;
+                if (left >= graphContent.minimumX + 12 + domainNode.width / 2) {
+                    escape = domainX - left; pushX = -escape;
+                }
+                if (right <= graphContent.maximumX - domainNode.width / 2 - 12 && right - domainX < escape) {
+                    escape = right - domainX; pushX = escape; pushY = 0;
+                }
+                if (top >= graphContent.minimumY + 48 + domainNode.height / 2 && domainY - top < escape) {
+                    escape = domainY - top; pushX = 0; pushY = -escape;
+                }
+                if (bottom <= graphContent.maximumY - domainNode.height / 2 - 12 && bottom - domainY < escape) {
+                    pushX = 0; pushY = bottom - domainY;
+                }
+                fx += pushX * 0.4;
+                fy += pushY * 0.4;
+                // Let the host yield as well, so opposing host rectangles
+                // cannot trap a domain between their repulsion forces.
+                var reaction = 0.4 / activeHosts[hostNames[hostIndex]].length;
+                hostForces[hostNames[hostIndex]].x -= pushX * reaction;
+                hostForces[hostNames[hostIndex]].y -= pushY * reaction;
+            }
+            domainForces[domainNode.nodeKey] = { x: fx, y: fy };
+        }
 
         for (var i = 0; i < nodeList.length; i++) {
             var b1 = nodeList[i];
@@ -299,42 +551,68 @@ Rectangle {
             if (!velocities[nodeKey])
                 velocities[nodeKey] = { vx: 0, vy: 0 };
             var vel = velocities[nodeKey];
+            if (b1.isDragging) {
+                vel.vx = 0;
+                vel.vy = 0;
+                continue;
+            }
 
             var fx = 0, fy = 0;
+
+            if (b1.isDomain) {
+                fx += domainForces[nodeKey].x;
+                fy += domainForces[nodeKey].y;
+            }
 
             // REPULSION between all nodes
             for (var j = 0; j < nodeList.length; j++) {
                 if (i === j) continue;
-                var b2 = nodeList[j];
-                var dx = b1.x - b2.x;
-                var dy = b1.y - b2.y;
+                var dx = geometry[i].x - geometry[j].x;
+                var dy = geometry[i].y - geometry[j].y;
+                // Coincident nodes need a direction too, including after a drag.
+                if (Math.abs(dx) + Math.abs(dy) < 0.01) { dx = i < j ? -1 : 1; dy = 0; }
                 var distSq = dx*dx + dy*dy + 0.01;
                 var dist = Math.sqrt(distSq);
                 if (dist > 0) {
-                    var force = 2000 / distSq;
+                    var force = Math.min(20 * scale, 2000 * scale * scale / distSq);
                     fx += (dx / dist) * force;
                     fy += (dy / dist) * force;
+                }
+                // A short-range collision force accounts for labels, rather
+                // than treating the visible circles as dimensionless points.
+                var overlapX = (geometry[i].width + geometry[j].width) / 2 + 12 * scale - Math.abs(dx);
+                var overlapY = (geometry[i].height + geometry[j].height) / 2 + 10 * scale - Math.abs(dy);
+                if (overlapX > 0 && overlapY > 0) {
+                    var atVerticalBoundary = (dy <= 0 && geometry[i].y <= graphContent.minimumY + 48)
+                            || (dy >= 0 && geometry[i].y >= graphContent.maximumY - b1.height - 12);
+                    if (overlapX < overlapY || atVerticalBoundary)
+                        fx += (dx < 0 || (dx === 0 && i < j) ? -1 : 1) * overlapX * 0.2;
+                    else
+                        fy += (dy < 0 || (dy === 0 && i < j) ? -1 : 1) * overlapY * 0.2;
                 }
             }
 
             // EDGE SPRING
-            for (var e = 0; e < edges.length; e++) {
-                var edge = edges[e];
-                if (edge.source === b1 || edge.target === b1) {
-                    var other = (edge.source === b1) ? edge.target : edge.source;
-                    var dx2 = other.x - b1.x;
-                    var dy2 = other.y - b1.y;
-                    var dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) || 0.01;
-                    var displacement = dist2 - (nodeDetailViewId.idealLength * nodeDetailViewId.nodeScale);
-                    fx += (dx2 / dist2) * displacement * 0.02;
-                    fy += (dy2 / dist2) * displacement * 0.02;
-                }
+            var connected = neighbors[nodeKey] || [];
+            for (var e = 0; e < connected.length; e++) {
+                var other = connected[e];
+                var dx2 = other.x - b1.x;
+                var dy2 = other.y - b1.y;
+                var dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) || 0.01;
+                var degree = Math.max(degrees[b1.nodeKey] || 1, degrees[other.nodeKey] || 1);
+                var crowding = Math.max(1, Math.min(2.5, Math.sqrt(degree / 6)));
+                var displacement = dist2 - (nodeDetailViewId.idealLength * scale * crowding);
+                var stiffness = 0.02 / Math.max(1, Math.sqrt(degree / 6));
+                fx += (dx2 / dist2) * displacement * stiffness;
+                fy += (dy2 / dist2) * displacement * stiffness;
             }
 
             // HOST GROUP ATTRACTION (only for non-empty host names)
             if (b1.hostName && b1.hostName !== "") {
-                var group = hostsMap[b1.hostName];
+                var group = activeHosts[b1.hostName];
                 if (group) {
+                    fx += hostForces[b1.hostName].x;
+                    fy += hostForces[b1.hostName].y;
                     for (var g = 0; g < group.length; g++) {
                         var b2g = group[g];
                         if (b2g === b1) continue;
@@ -343,8 +621,10 @@ Rectangle {
                         var distH = Math.sqrt(dxh * dxh + dyh * dyh) || 0.01;
                         var hostIdeal = 100 * nodeDetailViewId.nodeScale;
                         var displacementH = distH - hostIdeal;
-                        fx += (dxh / distH) * displacementH * 0.01;
-                        fy += (dyh / distH) * displacementH * 0.01;
+                        // Keep cohesion independent of the number of processes.
+                        var cohesion = 0.08 / Math.max(2, group.length - 1);
+                        fx += (dxh / distH) * displacementH * cohesion;
+                        fy += (dyh / distH) * displacementH * cohesion;
                     }
                 }
             }
@@ -352,118 +632,18 @@ Rectangle {
             // Update velocity & position
             vel.vx += fx * 0.05;
             vel.vy += fy * 0.05;
-            vel.vx *= 0.85;
-            vel.vy *= 0.85;
+            vel.vx = Math.max(-12 * scale, Math.min(12 * scale, vel.vx * 0.85));
+            vel.vy = Math.max(-12 * scale, Math.min(12 * scale, vel.vy * 0.85));
 
             b1.x += vel.vx;
             b1.y += vel.vy;
 
-            b1.x = Math.max(0, Math.min(root.width - b1.width, b1.x));
-            b1.y = Math.max(0, Math.min(root.height - b1.height, b1.y));
-        }
-    }
-
-    // Host background canvas (renders grouped rounded rects and hostname labels)
-    Canvas {
-        id: hostBackground
-        anchors.fill: parent
-        z: 0
-        onPaint: {
-            var ctx = getContext("2d");
-            ctx.clearRect(0, 0, width, height);
-
-            function drawRoundedRect(x, y, w, h, r) {
-                ctx.beginPath();
-                ctx.moveTo(x + r, y);
-                ctx.lineTo(x + w - r, y);
-                ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-                ctx.lineTo(x + w, y + h - r);
-                ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-                ctx.lineTo(x + r, y + h);
-                ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-                ctx.lineTo(x, y + r);
-                ctx.quadraticCurveTo(x, y, x + r, y);
-                ctx.closePath();
-            }
-
-            var hostNames = Object.keys(hostsMap);
-            for (var hIndex = 0; hIndex < hostNames.length; hIndex++) {
-                var h = hostNames[hIndex];
-                if (h === "") continue; // skip rendering for empty hostname
-
-                var group = hostsMap[h];
-                if (!group || group.length === 0) continue;
-
-                var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                for (var i = 0; i < group.length; i++) {
-                    var n = group[i];
-                    minX = Math.min(minX, n.x);
-                    minY = Math.min(minY, n.y);
-                    maxX = Math.max(maxX, n.x + n.width);
-                    maxY = Math.max(maxY, n.y + n.height);
-                }
-
-                function hsvToRgb(h, s, v) {
-                    var r, g, b;
-
-                    var i = Math.floor(h * 6);
-                    var f = h * 6 - i;
-                    var p = v * (1 - s);
-                    var q = v * (1 - f * s);
-                    var t = v * (1 - (1 - f) * s);
-
-                    switch(i % 6) {
-                        case 0: r = v; g = t; b = p; break;
-                        case 1: r = q; g = v; b = p; break;
-                        case 2: r = p; g = v; b = t; break;
-                        case 3: r = p; g = q; b = v; break;
-                        case 4: r = t; g = p; b = v; break;
-                        case 5: r = v; g = p; b = q; break;
-                    }
-                    return [ Math.round(r * 255), Math.round(g * 255), Math.round(b * 255) ];
-                }
-
-                var pad = 20 * nodeDetailViewId.nodeScale;
-
-                // Generate pseudo-random H, S, V based on hIndex for consistency
-                function getColor(hIndex) {
-                    var randomSeed = (hIndex * 9301 + 49297) % 233280;  // simple deterministic seed
-                    // Simple deterministic PRNG for consistent host colors
-                    function random() {
-                        return Math.random();
-                    }
-
-                    var h = random();                  // hue: 0-1
-                    var s = 0.5 + 0.5 * random();     // saturation: 0.5-1.0
-                    var v = 0.7 + 0.3 * random();     // value: 0.7-1.0
-
-                    var rgb = hsvToRgb(h, s, v);
-                    return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.25)`;
-                }
-
-                // Store and reuse host color for consistent coloring
-                if (!hostColors)
-                    hostColors = {};
-                if (!hostColors[h]) {
-                    hostColors[h] = getColor(hIndex);
-                }
-                ctx.fillStyle = hostColors[h];
-
-                drawRoundedRect(
-                    minX - pad,
-                    minY - pad,
-                    (maxX - minX) + pad * 2,
-                    (maxY - minY) + pad * 2,
-                    15
-                );
-                ctx.fill();
-
-                // Draw hostname text
-                ctx.globalAlpha = 1.0;
-                ctx.fillStyle = rootWindow.isDarkMode ? "#FFFFFF" : "#000000";
-                ctx.font = "bold " + (14 * nodeDetailViewId.nodeScale) + "px sans-serif";
-                ctx.fillText(h, minX - pad + (5 * nodeDetailViewId.nodeScale), minY - pad - (5 * nodeDetailViewId.nodeScale));
-            }
+            var boundedX = Math.max(graphContent.minimumX + 12, Math.min(graphContent.maximumX - b1.width - 12, b1.x));
+            var boundedY = Math.max(graphContent.minimumY + 48, Math.min(graphContent.maximumY - b1.height - 12, b1.y));
+            if (boundedX !== b1.x) vel.vx = 0;
+            if (boundedY !== b1.y) vel.vy = 0;
+            b1.x = boundedX;
+            b1.y = boundedY;
         }
     }
 
@@ -486,9 +666,129 @@ Rectangle {
     // Root area for nodes and edges
     Item {
         id: root
+        onWidthChanged: nodeDetailViewId.expandLayoutBounds()
+        onHeightChanged: nodeDetailViewId.expandLayoutBounds()
         anchors.fill: parent
+        anchors.rightMargin: statisticsPanel.expanded ? statisticsPanel.width + 24 : 0
         z: 1
         clip: true
+        WheelHandler {
+            target: null
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onWheel: function(event) {
+                var steps = event.pixelDelta.y ? event.pixelDelta.y / 80 : event.angleDelta.y / 120;
+                if (!steps) { event.accepted = false; return; }
+                nodeDetailViewId.zoomAt(nodeDetailViewId.zoomScale * Math.pow(1.15, steps), event.x, event.y);
+                event.accepted = true;
+            }
+        }
+        PinchHandler {
+            target: null
+            onScaleChanged: function(delta) {
+                if (active)
+                    nodeDetailViewId.zoomAt(nodeDetailViewId.zoomScale * delta, centroid.position.x, centroid.position.y);
+            }
+        }
+        MouseArea {
+            id: panArea
+            objectName: "nodeGraphPanArea"
+            anchors.fill: parent
+            z: -1
+            property bool panned: false
+            hoverEnabled: true
+            preventStealing: true
+            drag.target: graphContent
+            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+            onPressed: panned = false
+            onPositionChanged: if (drag.active) panned = true
+            onClicked: if (!panned) nodeDetailViewId.selectedNodeKey = ""
+        }
+        // Host background canvas (renders grouped rounded rects and hostname labels)
+        Canvas {
+            id: hostBackground
+            objectName: "nodeHostBackground"
+            anchors.fill: parent
+            z: 0
+            onPaint: {
+                var ctx = getContext("2d");
+                ctx.resetTransform();
+                ctx.clearRect(0, 0, width, height);
+                ctx.setTransform(graphContent.scale, 0, 0, graphContent.scale, graphContent.x, graphContent.y);
+
+                function drawRoundedRect(x, y, w, h, r) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + r, y);
+                    ctx.lineTo(x + w - r, y);
+                    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                    ctx.lineTo(x + w, y + h - r);
+                    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                    ctx.lineTo(x + r, y + h);
+                    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                    ctx.lineTo(x, y + r);
+                    ctx.quadraticCurveTo(x, y, x + r, y);
+                    ctx.closePath();
+                }
+
+                var hostNames = Object.keys(hostsMap);
+                for (var hIndex = 0; hIndex < hostNames.length; hIndex++) {
+                    var h = hostNames[hIndex];
+                    if (h === "") continue; // skip rendering for empty hostname
+
+                    var group = hostsMap[h].filter(function(node) { return !node.hiddenByUser; });
+                    if (!group || group.length === 0) continue;
+
+                    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    for (var i = 0; i < group.length; i++) {
+                        var n = group[i];
+                        minX = Math.min(minX, n.x);
+                        minY = Math.min(minY, n.y);
+                        maxX = Math.max(maxX, n.x + n.width);
+                        maxY = Math.max(maxY, n.y + n.height);
+                    }
+
+                    var pad = 20 * nodeDetailViewId.nodeScale;
+                    var x = minX - pad;
+                    var y = minY - pad;
+                    var w = maxX - minX + pad * 2;
+                    var groupHeight = maxY - minY + pad * 2;
+                    var accent = Qt.tint("transparent", nodeDetailViewId.hostColor(h));
+                    ctx.globalAlpha = !nodeDetailViewId.selectedNodeKey || group.some(function(n) {
+                        return nodeDetailViewId.isRelated(n.nodeKey);
+                    }) ? 1 : 0.5;
+                    var radius = Constants.cardRadius * 1.5;
+                    ctx.fillStyle = Qt.rgba(accent.r, accent.g, accent.b, 0.25);
+                    drawRoundedRect(x, y, w, groupHeight, radius);
+                    ctx.fill();
+                    ctx.strokeStyle = Qt.rgba(accent.r, accent.g, accent.b, rootWindow.isDarkMode ? 0.38 : 0.22);
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    // Keep the full hostname outside the group, as in the
+                    // original view, with stronger contrast and larger type.
+                    ctx.globalAlpha = 1;
+                    ctx.font = "bold " + (14 * nodeDetailViewId.nodeScale) + "px sans-serif";
+                    ctx.fillStyle = rootWindow.isDarkMode ? "#ffffff" : "#202020";
+                    ctx.fillText(h, x + 5 * nodeDetailViewId.nodeScale, y - 5 * nodeDetailViewId.nodeScale);
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+        Item {
+            id: graphContent
+            objectName: "nodeGraphContent"
+            transformOrigin: Item.TopLeft
+            scale: nodeDetailViewId.zoomScale
+            width: root.width
+            height: root.height
+            readonly property real minimumX: nodeDetailViewId.layoutBounds.x
+            readonly property real minimumY: nodeDetailViewId.layoutBounds.y
+            readonly property real maximumX: minimumX + nodeDetailViewId.layoutBounds.width
+            readonly property real maximumY: minimumY + nodeDetailViewId.layoutBounds.height
+            onXChanged: { nodeDetailViewId.expandLayoutBounds(); hostBackground.requestPaint(); }
+            onYChanged: { nodeDetailViewId.expandLayoutBounds(); hostBackground.requestPaint(); }
+            onScaleChanged: { nodeDetailViewId.expandLayoutBounds(); hostBackground.requestPaint(); }
+
+        }
     }
 
     function stop() {

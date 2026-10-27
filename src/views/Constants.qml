@@ -49,6 +49,7 @@ Item {
 
     // Brand and semantic colors
     property color accentColor: "#274ff6"
+    property color graphDomainColor: "#14b4ff"
     property color successColor: "#36a269"
     property color errorColor: "#d04a4a"
     property color warningColor: "#f4b83f"

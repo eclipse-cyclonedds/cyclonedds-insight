@@ -236,12 +236,13 @@ if __name__ == "__main__":
 
     # Add domains
     for domainId in domainIds:
-        data.add_domain(domainId)
+        treeModel.addDomainRequest(domainId)
 
     logging.info("qt ...")
     ret_code = app.exec()
     logging.info("qt ... DONE")
 
+    treeModel.domainScanner.shutdown()
     logging.info("Clean up ...")
     logging.debug("Shutdown shapes demo ...")
     shapesDemoModel.stop()

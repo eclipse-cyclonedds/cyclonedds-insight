@@ -141,6 +141,92 @@
     <message id="domain.discover.automatically">
         <translation>ドメインを自動検出</translation>
     </message>
+    <message id="domain.scan.joined.count">
+        <translation>参加済み: %1</translation>
+    </message>
+    <message id="domain.scan.found.prompt">
+        <translation>新しいドメインを %1 件検出しました。今すぐ追加しますか？</translation>
+    </message>
+    <message id="domain.scan.select.all">
+        <translation>すべて選択</translation>
+    </message>
+    <message id="domain.scan.select.none">
+        <translation>選択を解除</translation>
+    </message>
+    <message id="domain.scan.joining">
+        <translation>ドメインに参加中… 残り %1 件</translation>
+    </message>
+    <message id="domain.scan.joining.one">
+        <translation>参加中…</translation>
+    </message>
+    <message id="domain.scan.joined">
+        <translation>参加済み</translation>
+    </message>
+    <message id="domain.scan.join.one">
+        <translation>参加</translation>
+    </message>
+    <message id="domain.scan.join.selected">
+        <translation>選択したドメインに参加 (%1)</translation>
+    </message>
+    <message id="domain.scan.join.all">
+        <translation>すべてに参加 (%1)</translation>
+    </message>
+    <message id="domain.scan.join.stops">
+        <translation>参加を開始すると、現在の検索は停止します。</translation>
+    </message>
+    <message id="domain.scan.join.failed">
+        <translation>一部のドメインに参加できませんでした。詳細は以下をご確認ください。</translation>
+    </message>
+    <message id="domain.scan.join.error">
+        <translation>%1 件のドメインに参加できませんでした。
+%2</translation>
+    </message>
+    <message id="domain.scan.resource.limit">
+        <translation>さらにドメインに参加するためのリソースが不足しています。選択するドメインを減らすか、参加済みのドメインから退出してください。</translation>
+    </message>
+    <message id="domain.scan.start">
+        <translation>検索を開始</translation>
+    </message>
+    <message id="domain.scan.ready">
+        <translation>動作中の DDS ドメインを検索します。</translation>
+    </message>
+    <message id="domain.scan.range">
+        <translation>ドメイン ID は 0–232 です。参加済みのドメインは完了として数えます。</translation>
+    </message>
+    <message id="domain.scan.background">
+        <translation>このウィンドウを閉じても検索は続行されます。</translation>
+    </message>
+    <message id="domain.scan.quick">
+        <translation>ドメインを検索中…</translation>
+    </message>
+    <message id="domain.scan.extended">
+        <translation>応答のないドメインを再確認中…</translation>
+    </message>
+    <message id="domain.scan.cancelled">
+        <translation>ドメイン検索を停止しました</translation>
+    </message>
+    <message id="domain.scan.incomplete">
+        <translation>ドメイン検索は未完了です</translation>
+    </message>
+    <message id="domain.scan.complete">
+        <translation>ドメイン検索が完了しました</translation>
+    </message>
+    <message id="domain.scan.progress">
+        <translation>%1 / %2 · %3 件検出</translation>
+    </message>
+    <message id="domain.scan.join">
+        <translation>ドメイン %1 に参加</translation>
+    </message>
+    <message id="domain.scan.hint">
+        <translation>検出されたドメインを選択して参加してください。応答がないドメインも動作中の可能性があります。</translation>
+    </message>
+    <message id="domain.scan.errors">
+        <translation>確認できなかったドメイン数: %1。詳細は以下をご確認ください。</translation>
+    </message>
+    <message id="domain.scan.error">
+        <translation>ドメイン検索で %1 件のドメインを確認できませんでした。
+%2</translation>
+    </message>
     <message id="domain.remove.selected">
         <translation>選択したドメインを削除</translation>
     </message>
@@ -359,6 +445,9 @@
     <message id="general.start">
         <translation>開始</translation>
     </message>
+    <message id="general.hide">
+        <translation>非表示</translation>
+    </message>
     <message id="general.stop">
         <translation>停止</translation>
     </message>
@@ -502,6 +591,9 @@
     </message>
 
     <!-- node -->
+    <message id="node.show.hidden">
+        <translation>非表示のノードを表示 (%1)</translation>
+    </message>
     <message id="node.hide.self">
         <translation>自身を非表示</translation>
     </message>
@@ -1194,6 +1286,30 @@
     </message>
     <message id="config.network.copy.address">
         <translation>コピー</translation>
+    </message>
+    <message id="entity.endpoints">
+        <translation>エンドポイント</translation>
+    </message>
+    <message id="node.size.uniform">
+        <translation>サイズ: 均一</translation>
+    </message>
+    <message id="node.size.participants">
+        <translation>サイズ: 参加者数</translation>
+    </message>
+    <message id="node.size.combined">
+        <translation>サイズ: 総合</translation>
+    </message>
+    <message id="node.statistics.empty">
+        <translation>表示中のノードはありません</translation>
+    </message>
+    <message id="node.statistics.show.domains">
+        <translation>ドメインを表示</translation>
+    </message>
+    <message id="node.statistics.combined">
+        <translation>総合</translation>
+    </message>
+    <message id="node.view.zoom">
+        <translation>ズーム</translation>
     </message>
 </context>
 </TS>

@@ -209,6 +209,10 @@ ApplicationWindow {
         id: addDomainView
     }
 
+    DomainDiscoveryView {
+        id: domainDiscoveryPopup
+    }
+
     MessageDialog {
         id: noDomainSelectedDialog
         title: qsTrId("general.alert");
@@ -218,6 +222,13 @@ ApplicationWindow {
 
     function showOperationError(message) {
         errorCenter.addError(message)
+    }
+
+    Connections {
+        target: treeModel
+        function onOperationError(message) {
+            rootWindow.showOperationError(message)
+        }
     }
 
     ErrorCenter {

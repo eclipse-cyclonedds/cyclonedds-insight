@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 """
 
-from PySide6.QtCore import Qt, QAbstractItemModel, Qt, Slot, Signal, QThread
+from PySide6.QtCore import Qt, QAbstractItemModel, Slot, Signal, QThread, QTimer
 from cyclonedds.builtin import DcpsParticipant
 from loguru import logger as logging
 from dds_access import dds_utils
@@ -21,6 +21,7 @@ import os
 import sys
 import requests
 import socket
+import math
 from utils.platform_utils import IS_MOBILE
 
 if not IS_MOBILE:
@@ -165,11 +166,14 @@ class GraphModel(QAbstractItemModel):
 
     requestParticipants = Signal(str)
     requestDomainIds = Signal(str)
+    requestGraphEndpoints = Signal(str, int)
 
     newNodeSignal = Signal(str, str, str, str, str, str)
     removeNodeSignal = Signal(str, str)
     removeEdgeBetweenNodes = Signal(str, str)
     updateEdgeSignal = Signal(str, str, str, float)
+    nodeStatisticsSignal = Signal(str, int, int, int, float, float)
+    nodeStatisticsUpdated = Signal()
 
     def __init__(self, parent=None):
         super(GraphModel, self).__init__(parent)
@@ -180,6 +184,13 @@ class GraphModel(QAbstractItemModel):
         self.appNames = {}
         self.domainIds = {}
         self.ignoreSelf = False
+        self.endpoints = {}
+        self.participantNodes = {}
+        self.nodeStatistics = {}
+        self.statisticsTimer = QTimer(self)
+        self.statisticsTimer.setSingleShot(True)
+        self.statisticsTimer.setInterval(100)
+        self.statisticsTimer.timeout.connect(self.publishNodeStatistics)
 
         hostName = socket.gethostname()
         if IS_MOBILE:
@@ -193,6 +204,7 @@ class GraphModel(QAbstractItemModel):
         # self to dds_data
         self.requestParticipants.connect(self.dds_data.requestParticipants, Qt.ConnectionType.QueuedConnection)
         self.requestDomainIds.connect(self.dds_data.requestDomainIds, Qt.ConnectionType.QueuedConnection)
+        self.requestGraphEndpoints.connect(self.dds_data.requestGraphEndpoints, Qt.ConnectionType.QueuedConnection)
 
         # From dds_data to self
         self.dds_data.new_participant_signal.connect(self.newParticipantSlot, Qt.ConnectionType.QueuedConnection)
@@ -201,6 +213,9 @@ class GraphModel(QAbstractItemModel):
         self.dds_data.new_domain_signal.connect(self.newDomainSlot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.removed_domain_signal.connect(self.removedDomainSlot, Qt.ConnectionType.QueuedConnection)
         self.dds_data.response_domain_ids_signal.connect(self.responseDomainIdsSlot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.new_endpoint_signal.connect(self.newEndpointSlot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.removed_endpoint_signal.connect(self.removedEndpointSlot, Qt.ConnectionType.QueuedConnection)
+        self.dds_data.response_graph_endpoints_signal.connect(self.responseGraphEndpointsSlot, Qt.ConnectionType.QueuedConnection)
 
         self.dgbPorts = {}
         self.graphStatistics = GraphStatisticThread(self)
@@ -218,11 +233,15 @@ class GraphModel(QAbstractItemModel):
         self.ignoreSelf = ignoreSelf
 
         self.endpoints = {}
+        self.participantNodes = {}
+        self.nodeStatistics = {}
         self.appNames = {}
+        self.domainIds = {}
         self.currentRequestId = str(uuid.uuid4())
 
         self.requestDomainIds.emit(self.currentRequestId)
         self.requestParticipants.emit(self.currentRequestId)
+        self.requestGraphEndpoints.emit(self.currentRequestId, domain_id)
 
         if speedEnabled:
             self.start()
@@ -236,6 +255,7 @@ class GraphModel(QAbstractItemModel):
         if domain_id not in self.domainIds.keys():
             self.domainIds[domain_id] = []
             self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "", "", "")
+            self.scheduleNodeStatistics()
 
     @Slot(str, int, object)
     def response_participants_slot(self, request_id: str, domain_id: int, participants):
@@ -259,9 +279,16 @@ class GraphModel(QAbstractItemModel):
         nodeKey = f"{host}:{appName}"
 
         if nodeKey == self.selfName and self.ignoreSelf:
+            if (domain_id, str(participant.key)) in self.participantNodes:
+                self.removedParticipantSlot(domain_id, str(participant.key))
             return
 
         domainIdStr = f"Domain {domain_id}"
+        participantKey = str(participant.key)
+        previousNode = self.participantNodes.get((domain_id, participantKey))
+        if previousNode and previousNode != nodeKey:
+            self.removeParticipantFromApps(domain_id, participantKey)
+        self.participantNodes[(domain_id, participantKey)] = nodeKey
 
         if domain_id not in self.domainIds.keys():
             self.domainIds[domain_id] = [str(participant.key)]
@@ -278,9 +305,11 @@ class GraphModel(QAbstractItemModel):
             if domain_id not in self.appNames[nodeKey]:
                 self.appNames[nodeKey][domain_id] = [str(participant.key)]
             else:
-                self.appNames[nodeKey][domain_id].append(str(participant.key))
+                if participantKey not in self.appNames[nodeKey][domain_id]:
+                    self.appNames[nodeKey][domain_id].append(participantKey)
 
         self.newNodeSignal.emit(nodeKey, appName, domainIdStr, host, getVendorShortName(participant), getVendorPicture(participant))
+        self.scheduleNodeStatistics()
 
         # Extracting debug monitor address
         dbg_mon_str: str = getProperty(participant, DEBUG_MONITORS)
@@ -297,6 +326,18 @@ class GraphModel(QAbstractItemModel):
 
     @Slot(int, str)
     def removedParticipantSlot(self, domainId: int, participantKey: str):
+        self.participantNodes.pop((domainId, participantKey), None)
+        self.endpoints = {key: value for key, value in self.endpoints.items()
+                          if not (key[0] == domainId and value[0] == participantKey)}
+        if participantKey in self.domainIds.get(domainId, []):
+            self.domainIds[domainId].remove(participantKey)
+        self.removeParticipantFromApps(domainId, participantKey)
+        if participantKey in self.dgbPorts:
+            del self.dgbPorts[participantKey]
+        self.graphStatistics.setDbgPorts(self.dgbPorts)
+        self.scheduleNodeStatistics()
+
+    def removeParticipantFromApps(self, domainId, participantKey):
         toBeRemovedApps = []
         for appName in list(self.appNames.keys()):
             if domainId in self.appNames[appName]:
@@ -320,15 +361,25 @@ class GraphModel(QAbstractItemModel):
                 del self.appNames[remApp]
                 self.removeNodeSignal.emit(remApp, "")
 
-        if participantKey in self.dgbPorts:
-            del self.dgbPorts[participantKey]
-        self.graphStatistics.setDbgPorts(self.dgbPorts)
-
     @Slot(int)
     def removedDomainSlot(self, domainId: int):
         if domainId in self.domainIds.keys():
+            for nodeKey in list(self.appNames):
+                if domainId not in self.appNames[nodeKey]:
+                    continue
+                del self.appNames[nodeKey][domainId]
+                self.removeEdgeBetweenNodes.emit(nodeKey, f"Domain {domainId}")
+                if not any(self.appNames[nodeKey].values()):
+                    del self.appNames[nodeKey]
+                    self.removeNodeSignal.emit(nodeKey, "")
+            self.participantNodes = {key: value for key, value in self.participantNodes.items()
+                                     if key[0] != domainId}
+            self.endpoints = {key: value for key, value in self.endpoints.items() if key[0] != domainId}
+            self.dgbPorts = {key: value for key, value in self.dgbPorts.items() if value[3] != domainId}
+            self.graphStatistics.setDbgPorts(self.dgbPorts)
             del self.domainIds[domainId]
             self.removeNodeSignal.emit(f"Domain {domainId}", "")
+            self.scheduleNodeStatistics()
 
     @Slot(str, list)
     def responseDomainIdsSlot(self, requestId: str, domainIds):
@@ -341,6 +392,81 @@ class GraphModel(QAbstractItemModel):
                     self.domainIds[domainId] = []
                     domainIdStr = f"Domain {domainId}"
                     self.newNodeSignal.emit(domainIdStr, domainIdStr, "", "", "", "")
+        self.scheduleNodeStatistics()
+
+    def scheduleNodeStatistics(self):
+        # Coalesce discovery bursts, while still updating during continuous traffic.
+        if not self.statisticsTimer.isActive():
+            self.statisticsTimer.start()
+
+    @Slot(str, int, object)
+    def newEndpointSlot(self, requestId, domainId, data):
+        if requestId or not self.acceptDomainId(domainId):
+            return
+        endpoint = data.endpoint
+        self.endpoints[(domainId, str(endpoint.key))] = (
+            str(endpoint.participant_key), str(endpoint.topic_name))
+        self.scheduleNodeStatistics()
+
+    @Slot(str, int, object)
+    def responseGraphEndpointsSlot(self, requestId, domainId, endpoints):
+        if requestId != self.currentRequestId or not self.acceptDomainId(domainId):
+            return
+        for key, participant, topic in endpoints:
+            self.endpoints[(domainId, key)] = (participant, topic)
+        self.scheduleNodeStatistics()
+
+    @Slot(int, str)
+    def removedEndpointSlot(self, domainId, endpointKey):
+        if self.endpoints.pop((domainId, endpointKey), None) is not None:
+            self.scheduleNodeStatistics()
+
+    @Slot()
+    def publishNodeStatistics(self):
+        counts = {key: [0, set(), 0] for key in self.appNames}
+        for domain in self.domainIds:
+            counts[f"Domain {domain}"] = [0, set(), 0]
+        for (domain, participant), nodeKey in self.participantNodes.items():
+            for key in (nodeKey, f"Domain {domain}"):
+                counts[key][0] += 1
+        for (domain, _), (participant, topic) in self.endpoints.items():
+            nodeKey = self.participantNodes.get((domain, participant))
+            if nodeKey is None:
+                continue  # Endpoints may arrive before their participant metadata.
+            for key in (nodeKey, f"Domain {domain}"):
+                counts[key][1].add((domain, topic))
+                counts[key][2] += 1
+
+        # Compare processes with processes, and domains with domains. Logarithmic
+        # scaling keeps small nodes readable beside very large installations.
+        domainKeys = {f"Domain {domain}" for domain in self.domainIds}
+        maxima = {False: [0, 0, 0], True: [0, 0, 0]}
+        metrics = {key: (value[0], len(value[1]), value[2]) for key, value in counts.items()}
+        for key, values in metrics.items():
+            maximum = maxima[key in domainKeys]
+            for index, value in enumerate(values):
+                maximum[index] = max(maximum[index], value)
+        for key, values in metrics.items():
+            maximum = maxima[key in domainKeys]
+            ratios = [math.log1p(value) / math.log1p(top) if top else 0
+                      for value, top in zip(values, maximum)]
+            available = sum(top > 0 for top in maximum)
+            combined = sum(ratios) / available if available else 0
+            # A single participant uses the unweighted base size, even when it
+            # is the largest node. Only additional participants increase size.
+            participantRatio = math.log(values[0]) / math.log(maximum[0]) if values[0] > 1 else 0
+            self.nodeStatisticsSignal.emit(key, *values, 1 + 0.85 * participantRatio, 1 + 0.85 * combined)
+        self.nodeStatistics = metrics
+        self.nodeStatisticsUpdated.emit()
+
+    @Slot(int, result=list)
+    def nodeStatisticsRows(self, metric):
+        if metric not in (0, 1, 2, 3):
+            return []
+        rows = [{"key": key, "value": sum(values) if metric == 3 else values[metric],
+                 "participants": values[0], "topics": values[1], "endpoints": values[2]}
+                for key, values in self.nodeStatistics.items()]
+        return sorted(rows, key=lambda row: (-row["value"], row["key"].casefold()))
 
     @Slot(int, str, str, float)
     def onGraphStatisticsData(self, domain_id: int, nodeKey: str, t: str, bps: float):
