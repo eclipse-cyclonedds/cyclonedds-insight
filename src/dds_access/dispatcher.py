@@ -72,6 +72,7 @@ class DispatcherThread(QThread):
         self.writerIdsByHandle = {}
         self.writerParticipantIdsByHandle = {}
         self.writerData = {}
+        self.endpointGuids = {}
         self.mutex = Lock()
         self.dpSetUpDone = Event()
 
@@ -109,11 +110,14 @@ class DispatcherThread(QThread):
     @Slot()
     def deleteAllWriters(self):
         logging.info(f"Delete all writers")  
+        for id in self.writerData:
+            self.endpointGuids.pop(id, None)
         self.writerData.clear()
 
     def deleteWriter(self, id: str):
         if id in self.writerData:
             logging.info(f"Delete writer {id}")
+            self.endpointGuids.pop(id, None)
             del self.writerData[id]
 
     @Slot()
@@ -122,6 +126,7 @@ class DispatcherThread(QThread):
         self.guardCondition.set(True)
         for id, tp, sub, rd, readCondition in self.readerData:
             logging.info(f"Delete reader {id} ({tp.name})")
+            self.endpointGuids.pop(id, None)
             self.waitset.detach(readCondition)
             del rd
             del sub
@@ -134,6 +139,7 @@ class DispatcherThread(QThread):
         for i, (readerId, tp, sub, rd, readCondition) in enumerate(self.readerData):
             if readerId == _id:
                 logging.info(f"Delete reader {_id} ({tp.name})")
+                self.endpointGuids.pop(_id, None)
                 self.guardCondition.set(True)
                 self.waitset.detach(readCondition)
                 del rd
@@ -158,11 +164,13 @@ class DispatcherThread(QThread):
                 self.waitset.attach(readCondition)
                 self.guardCondition.set(False)
                 self.readerData.append((id, topic, subscriber, reader, readCondition))
+                self.endpointGuids[id] = str(reader.guid)
 
             elif entity_type == EntityType.WRITER:
                 publisher = Publisher(self.domain_participant, qos=pubSubQos, listener=self.listener)
                 writer = DataWriter(publisher, topic, qos=endpQos, listener=self.listener)
                 self.writerData[id] = (publisher, writer, topic_name)
+                self.endpointGuids[id] = str(writer.guid)
 
             logging.info(f"Add endpoint {topic_name} ... Success")
             self.endpointCreated.emit(id)
@@ -171,6 +179,10 @@ class DispatcherThread(QThread):
             message = f"Failed to create endpoint '{topic_name}': {e}"
             logging.error(message)
             self.endpointCreationFailed.emit(id, message)
+
+    def endpointIdForGuid(self, guid: str):
+        # Only endpoints created by this dispatcher can be managed by the UI.
+        return next((id for id, key in tuple(self.endpointGuids.items()) if key == guid), "")
 
     def run(self):
         self.dpSetUpDone.clear()

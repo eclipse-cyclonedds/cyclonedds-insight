@@ -238,6 +238,9 @@
     </message>
 
     <!-- endpoint -->
+    <message id="endpoint.delete">
+        <translation>エンドポイントを削除</translation>
+    </message>
     <message id="endpoint.details">
         <translation>詳細</translation>
     </message>

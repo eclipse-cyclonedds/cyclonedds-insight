@@ -238,6 +238,9 @@
     </message>
 
     <!-- endpoint -->
+    <message id="endpoint.delete">
+        <translation>Endpoint verwijderen</translation>
+    </message>
     <message id="endpoint.details">
         <translation>Details</translation>
     </message>

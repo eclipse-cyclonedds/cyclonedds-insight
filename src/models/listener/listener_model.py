@@ -109,6 +109,18 @@ class ListenerModel(QAbstractListModel):
     def allChecked(self):
         return bool(self.readers) and all(reader.isChecked for reader in self.readers.values())
 
+    @Slot(int, str, result=str)
+    def endpointIdForGuid(self, domainId: int, guid: str):
+        thread = self.threads.get(domainId)
+        readerId = thread.endpointIdForGuid(guid) if thread else ""
+        return readerId if readerId in self.readers else ""
+
+    @Slot(int, str)
+    def deleteEndpoint(self, domainId: int, guid: str):
+        readerId = self.endpointIdForGuid(domainId, guid)
+        if readerId:
+            self.deleteReader(readerId)
+
     @Slot(str)
     def deleteReader(self, _id: str):
         if _id in self.readers:

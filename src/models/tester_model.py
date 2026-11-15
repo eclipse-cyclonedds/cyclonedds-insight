@@ -752,6 +752,18 @@ class TesterModel(QAbstractListModel):
         self.endResetModel()
         self.countChanged.emit()
 
+    @Slot(int, str, result=str)
+    def endpointIdForGuid(self, domainId: int, guid: str):
+        thread = self.threads.get(domainId)
+        writerId = thread.endpointIdForGuid(guid) if thread else ""
+        return writerId if isinstance(self.items.get(writerId), WriterItem) else ""
+
+    @Slot(int, str)
+    def deleteEndpoint(self, domainId: int, guid: str):
+        writerId = self.endpointIdForGuid(domainId, guid)
+        if writerId:
+            self.deleteWriter(list(self.items).index(writerId))
+
     @Slot(int)
     def deleteWriter(self, currentIndex: int):
         if currentIndex < 0:
