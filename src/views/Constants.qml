@@ -67,6 +67,10 @@ Item {
     property int pageMargin: 16
 
     // Theme-aware colors
+    function endpointOwnerColor(darkMode) {
+        return darkMode ? "#d1adff" : "#7040a0"
+    }
+
     function mainContentColor(darkMode) {
         return darkMode ? darkMainContent : lightMainContent
     }
