@@ -30,6 +30,14 @@ Rectangle {
     property int writerCount: 0
     property int readerCount: 0
 
+    function createEndpoint(entityType) {
+        const topicTypes = endpointWriterModel.getAllTopicTypes()
+            .concat(endpointReaderModel.getAllTopicTypes())
+        const uniqueTypes = topicTypes.filter((type, index) => topicTypes.indexOf(type) === index)
+        readerTesterDialogId.setTypes(domainId, topicName, uniqueTypes, entityType)
+        readerTesterDialogId.open()
+    }
+
     readonly property color secondaryTextColor: Constants.secondaryTextColor(rootWindow.isDarkMode)
 
     EndpointModel {
@@ -116,25 +124,7 @@ Rectangle {
                     Layout.fillWidth: topicHeader.compact
                     Layout.minimumWidth: 0
                     text: qsTrId("listener.create.reader")
-                    onClicked: {
-                        var writerTypes = endpointWriterModel.getAllTopicTypes()
-                        var readerTypes = endpointReaderModel.getAllTopicTypes()
-                        var combinedArray = [];
-
-                        function addModelToCombinedArray(model) {
-                            var i = 0;
-                            while (i < model.length) {
-                                if (combinedArray.indexOf(model[i]) === -1) {
-                                    combinedArray.push(model[i]);
-                                }
-                                i++;
-                            }
-                        }
-                        addModelToCombinedArray(writerTypes);
-                        addModelToCombinedArray(readerTypes);
-                        readerTesterDialogId.setTypes(domainId, topicName, combinedArray, 3);
-                        readerTesterDialogId.open();
-                    }
+                    onClicked: topicEndpointView.createEndpoint(3)
                 }
 
                 Button {
@@ -142,25 +132,7 @@ Rectangle {
                     Layout.fillWidth: topicHeader.compact
                     Layout.minimumWidth: 0
                     text: qsTrId("tester.create.writer")
-                    onClicked: {
-                        var writerTypes = endpointWriterModel.getAllTopicTypes()
-                        var readerTypes = endpointReaderModel.getAllTopicTypes()
-                        var combinedArray = [];
-
-                        function addModelToCombinedArray(model) {
-                            var i = 0;
-                            while (i < model.length) {
-                                if (combinedArray.indexOf(model[i]) === -1) {
-                                    combinedArray.push(model[i]);
-                                }
-                                i++;
-                            }
-                        }
-                        addModelToCombinedArray(writerTypes);
-                        addModelToCombinedArray(readerTypes);
-                        readerTesterDialogId.setTypes(domainId, topicName, combinedArray, 4);
-                        readerTesterDialogId.open();
-                    }
+                    onClicked: topicEndpointView.createEndpoint(4)
                 }
 
             }
@@ -245,6 +217,8 @@ Rectangle {
                         }
 
                         delegate: EndpointCard {
+                            domainId: topicEndpointView.domainId
+                            onCreateEndpointRequested: (entityType) => topicEndpointView.createEndpoint(entityType)
                             isWriter: true
                             readerModel: endpointReaderModel
                             writerModel: endpointWriterModel
@@ -298,6 +272,8 @@ Rectangle {
                         }
 
                         delegate: EndpointCard {
+                            domainId: topicEndpointView.domainId
+                            onCreateEndpointRequested: (entityType) => topicEndpointView.createEndpoint(entityType)
                             isWriter: false
                             readerModel: endpointReaderModel
                             writerModel: endpointWriterModel

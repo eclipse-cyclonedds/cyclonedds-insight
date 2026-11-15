@@ -238,6 +238,9 @@
     </message>
 
     <!-- endpoint -->
+    <message id="endpoint.delete">
+        <translation>删除端点</translation>
+    </message>
     <message id="endpoint.details">
         <translation>详细信息</translation>
     </message>

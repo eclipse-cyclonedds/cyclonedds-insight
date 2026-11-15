@@ -24,6 +24,9 @@ Item {
     required property bool isWriter
     required property var readerModel
     required property var writerModel
+    required property int domainId
+
+    signal createEndpointRequested(int entityType)
     required property string endpoint_key
     required property string endpoint_participant_key
     required property string endpoint_participant_instance_handle
@@ -67,6 +70,56 @@ Item {
         detailWindow.visible = true
     }
 
+    Menu {
+        id: endpointMenu
+        objectName: "endpointContextMenu"
+        property bool canDelete: false
+
+        function updateDeleteActions() {
+            removeItem(deleteSeparator)
+            removeItem(deleteAction)
+            if (canDelete) {
+                addItem(deleteSeparator)
+                addItem(deleteAction)
+            }
+        }
+
+        Component.onCompleted: updateDeleteActions()
+        onCanDeleteChanged: updateDeleteActions()
+
+        MenuItem {
+            objectName: "createReaderAction"
+            text: qsTrId("listener.create.reader")
+            onTriggered: card.createEndpointRequested(3)
+        }
+
+        MenuItem {
+            objectName: "createWriterAction"
+            text: qsTrId("tester.create.writer")
+            onTriggered: card.createEndpointRequested(4)
+        }
+
+        MenuSeparator {
+            id: deleteSeparator
+            visible: endpointMenu.canDelete
+        }
+
+        MenuItem {
+            id: deleteAction
+            objectName: "deleteEndpointAction"
+            text: qsTrId("endpoint.delete")
+            visible: endpointMenu.canDelete
+            enabled: endpointMenu.canDelete
+            onTriggered: {
+                if (card.isWriter) {
+                    testerModel.deleteEndpoint(card.domainId, card.endpoint_key)
+                } else {
+                    listenerModel.deleteEndpoint(card.domainId, card.endpoint_key)
+                }
+            }
+        }
+    }
+
     Rectangle {
         id: surface
         anchors.fill: parent
@@ -90,9 +143,17 @@ Item {
             id: cardMouseArea
             anchors.fill: parent
             hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
             cursorShape: Qt.PointingHandCursor
             onClicked: (mouse) => {
-                card.openDetails(mapToGlobal(mouse.x, mouse.y))
+                if (mouse.button === Qt.RightButton) {
+                    const ownerModel = card.isWriter ? testerModel : listenerModel
+                    endpointMenu.canDelete = ownerModel.endpointIdForGuid(
+                        card.domainId, card.endpoint_key) !== ""
+                    endpointMenu.popup()
+                } else {
+                    card.openDetails(mapToGlobal(mouse.x, mouse.y))
+                }
             }
         }
 

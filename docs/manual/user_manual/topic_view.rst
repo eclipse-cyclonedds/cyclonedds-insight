@@ -17,6 +17,12 @@ This view is the default view when starting |var-project|, it shows all discover
 By selecting a Topic, the main area under "details" shows information about the selected Topic, including topic name, type, publishers, subscribers, partitions.
 When you hover or click on a datareader or datawriter, additional information about the selected entity is shown like QoS settings.
 
+Right-click a reader or writer card to create a reader or writer for the selected
+topic. The creation dialog uses the topic's discovered types. For endpoints created
+in this application, the menu also offers **Delete endpoint**. Deleting an endpoint
+here also removes it from Listener or Tester, including writer sequence references.
+Endpoints belonging to other applications cannot be deleted.
+
 .. image:: ../_static/images/cyclonedds-insight.png
 
 Automatic domain discovery
